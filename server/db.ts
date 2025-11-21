@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, users, requests, leaveRequests, carRequests, expenditureRequests, requestApprovals, requestAttachments, leaveBalances } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +89,96 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+/**
+ * Get all requests for a user
+ */
+export async function getUserRequests(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(requests).where(eq(requests.userId, userId));
+}
+
+/**
+ * Get pending approval requests for a manager
+ */
+export async function getPendingApprovals(approverId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(requestApprovals)
+    .where(eq(requestApprovals.approverId, approverId));
+}
+
+/**
+ * Get request details with related data
+ */
+export async function getRequestDetails(requestId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(requests).where(eq(requests.id, requestId)).limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
+/**
+ * Get leave request details
+ */
+export async function getLeaveRequestDetails(requestId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(leaveRequests).where(eq(leaveRequests.requestId, requestId)).limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
+/**
+ * Get car request details
+ */
+export async function getCarRequestDetails(requestId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(carRequests).where(eq(carRequests.requestId, requestId)).limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
+/**
+ * Get expenditure request details
+ */
+export async function getExpenditureRequestDetails(requestId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(expenditureRequests).where(eq(expenditureRequests.requestId, requestId)).limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
+/**
+ * Get request attachments
+ */
+export async function getRequestAttachments(requestId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(requestAttachments).where(eq(requestAttachments.requestId, requestId));
+}
+
+/**
+ * Get user leave balance
+ */
+export async function getUserLeaveBalance(userId: number, year: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db
+    .select()
+    .from(leaveBalances)
+    .where(and(eq(leaveBalances.userId, userId), eq(leaveBalances.year, year)))
+    .limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
+/**
+ * Get request approvals
+ */
+export async function getRequestApprovals(requestId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(requestApprovals).where(eq(requestApprovals.requestId, requestId));
+}
