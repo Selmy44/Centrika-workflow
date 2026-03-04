@@ -1,0 +1,41 @@
+{
+  "name": "centrika-backend",
+  "version": "0.1.0",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "dev": "NODE_ENV=development tsx watch src/index.ts",
+    "build": "esbuild src/index.ts --bundle --platform=node --external:*.css --outdir=dist --format=esm",
+    "start": "NODE_ENV=production node dist/index.js",
+    "check": "tsc --noEmit",
+    "migrate": "drizzle-kit migrate",
+    "seed": "tsx scripts/seedHeads.ts",
+    "seed:users": "tsx scripts/seedUsers.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1000.0",
+    "@aws-sdk/s3-request-presigner": "^3.1000.0",
+    "@trpc/server": "^11.6.0",
+    "axios": "^1.13.6",
+    "bcryptjs": "^3.0.3",
+    "cookie": "^1.1.1",
+    "crypto-random-string": "^5.0.0",
+    "dotenv": "^17.2.2",
+    "drizzle-orm": "0.44.6",
+    "express": "^4.21.2",
+    "jose": "6.1.0",
+    "nodemailer": "^6.10.1",
+    "postgres": "^3.4.7",
+    "redis": "^4.7.1",
+    "speakeasy": "^2.0.0",
+    "superjson": "^2.2.6",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "drizzle-kit": "^0.31.4",
+    "esbuild": "^0.25.0",
+    "tsx": "^4.19.1",
+    "typescript": "^5.0.0"
+  }
+}
