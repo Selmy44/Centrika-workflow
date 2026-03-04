@@ -67,7 +67,7 @@ function RecentRequestsSection() {
         <div className="space-y-3">
           {recentRequests.map((request: any) => (
             <Link key={request.id} href={`/requests/${request.id}`}>
-              <Card className="bg-card border-border hover:border-accent transition-colors cursor-pointer">
+              <Card className="bg-card border-border hover:border-accent transition-colors cursor-pointer mb-2">
                 <CardContent className="pt-4 pb-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3 flex-1">
