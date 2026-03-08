@@ -15,6 +15,8 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { sendEmail, emailTemplates } from "./core/email";
 import { sendOtp, verifyOtp } from "./core/otp";
+import { z } from "zod";
+import { users } from "../drizzle/schema";
 
 export const appRouter = router({
   auth: router({
