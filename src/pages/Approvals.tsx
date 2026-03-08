@@ -44,8 +44,8 @@ export default function Approvals() {
   const [searchTerm, setSearchTerm] = useState("");
 
   const { data: pendingRequests, isLoading, refetch } = trpc.requests.listPendingApprovals.useQuery(undefined, {
-    // Only fetch if they're logged in and have an approver role
-    enabled: isAuthenticated && user?.role !== "user",
+    // Only fetch if they're logged in and have an approver role (or additional roles that imply approval access)
+    enabled: isAuthenticated && (user?.role !== "user" || !!user?.additionalRoles),
   });
 
   // Filter requests based on search term
@@ -119,8 +119,8 @@ export default function Approvals() {
     return null;
   }
 
-  // Regular employees don't have approval responsibilities
-  if (user?.role === "user") {
+  // Regular employees without any additional roles don't have approval responsibilities
+  if (user?.role === "user" && !user?.additionalRoles) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[60vh]">

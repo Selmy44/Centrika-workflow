@@ -13,6 +13,13 @@ export function useAuth(options?: UseAuthOptions) {
     options ?? {};
   const utils = trpc.useUtils();
 
+  const hasRole = useCallback((user: any, roleToCheck: string) => {
+    if (!user) return false;
+    if (user.role === roleToCheck) return true;
+    if (user.additionalRoles && user.additionalRoles.includes(roleToCheck)) return true;
+    return false;
+  }, []);
+
   const meQuery = trpc.auth.me.useQuery(undefined, {
     retry: false,
     refetchOnWindowFocus: true,
@@ -82,5 +89,6 @@ export function useAuth(options?: UseAuthOptions) {
     ...state,
     refresh: () => meQuery.refetch(),
     logout,
+    hasRole: (role: string) => hasRole(state.user, role),
   };
 }

@@ -31,7 +31,7 @@ interface Props {
  * Styled to match LeaveRequestForm design system.
  */
 export default function ExpenditureRequestApprovalView({ requestData, onApprove, onReject, isLoading = false, onClose, onBack }: Props) {
-    const { user } = useAuth();
+    const { user, hasRole } = useAuth();
     const [approvalComments, setApprovalComments] = useState("");
     const [signatureFile, setSignatureFile] = useState<File | null>(null);
     const [signaturePreview, setSignaturePreview] = useState("");
@@ -56,7 +56,7 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
     };
 
     const getApprovalLevelLabel = () => {
-        switch (user?.role) {
+        switch (requestData?.currentApprovalLevel) {
             case "head_of_department": return "Department Head Approval";
             case "hr": return "HR Approval";
             case "head_of_finance": return "Finance Head Approval";
@@ -341,7 +341,7 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
                                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     Reject
                                 </Button>
-                                {user?.role === "head_of_finance" ? (
+                                {requestData?.currentApprovalLevel === "head_of_finance" ? (
                                     <>
                                         <Button
                                             disabled={isLoading}

@@ -29,7 +29,7 @@ import { LayoutDashboard, LogOut, PanelLeft, FileText, CheckCircle, Settings, Us
 import { useTheme } from "@/contexts/ThemeContext";
 import ThemeToggleIcon from "@/components/ui/ThemeToggleIcon";
 import NotificationIcon from "@/components/NotificationIcon";
-import { CSSProperties, useEffect, useRef, useState } from "react";
+import { CSSProperties, useCallback, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
@@ -37,9 +37,9 @@ import { CreateRequestDialog } from "@/components/CreateRequestDialog";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
-  { 
-    icon: FileText, 
-    label: "New Request", 
+  {
+    icon: FileText,
+    label: "New Request",
     path: "#",
     submenu: [
       { label: "Leave Request", action: "leave" },
@@ -58,8 +58,8 @@ const adminMenuItems = [
   { icon: Users, label: "User Management", path: "/admin/users" },
   { icon: Search, label: "Employee Directory", path: "/employee-directory" },
   { icon: CheckCircle, label: "Approvals", path: "/approvals" },
-  { 
-    icon: BarChart3, 
+  {
+    icon: BarChart3,
     label: "System Reports",
     path: "#",
     submenu: [
@@ -67,8 +67,8 @@ const adminMenuItems = [
       { label: "Leave Statistics", path: "/leave-analytics" },
     ]
   },
-  { 
-    icon: Lock, 
+  {
+    icon: Lock,
     label: "Security",
     path: "#",
     submenu: [
@@ -85,8 +85,8 @@ const financeMenuItems = [
   { icon: DollarSign, label: "Finance Reports", path: "/finance" },
   { icon: CheckCircle, label: "Pending Approvals", path: "/approvals" },
   { icon: TrendingUp, label: "Expenditure Tracking", path: "/expenditure-tracking" },
-  { 
-    icon: BarChart3, 
+  {
+    icon: BarChart3,
     label: "Budget Analysis",
     path: "/budget-analysis",
     submenu: [
@@ -104,8 +104,8 @@ const hrMenuItems = [
   { icon: Users, label: "Employee Management", path: "/admin/users" },
   { icon: Search, label: "Employee Directory", path: "/employee-directory" },
   { icon: CheckCircle, label: "Approvals", path: "/approvals" },
-  { 
-    icon: Calendar, 
+  {
+    icon: Calendar,
     label: "Leave Management",
     path: "#",
     submenu: [
@@ -114,8 +114,8 @@ const hrMenuItems = [
       { label: "Leave Reports", path: "/leave-analytics" },
     ]
   },
-  { 
-    icon: Bell, 
+  {
+    icon: Bell,
     label: "Invitations",
     path: "#",
     submenu: [
@@ -123,8 +123,8 @@ const hrMenuItems = [
       { label: "Sent Invitations", path: "/admin/users" },
     ]
   },
-  { 
-    icon: BarChart3, 
+  {
+    icon: BarChart3,
     label: "Analytics & Reports",
     path: "#",
     submenu: [
@@ -141,9 +141,9 @@ const deptHeadMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
   { icon: CheckCircle, label: "Pending Approvals", path: "/approvals" },
   { icon: Users, label: "Department Team", path: "/employee-directory" },
-  { 
-    icon: FileText, 
-    label: "New Request", 
+  {
+    icon: FileText,
+    label: "New Request",
     path: "#",
     submenu: [
       { label: "Leave Request", action: "leave" },
@@ -152,8 +152,8 @@ const deptHeadMenuItems = [
     ]
   },
   { icon: FileText, label: "My Requests", path: "/requests" },
-  { 
-    icon: Calendar, 
+  {
+    icon: Calendar,
     label: "Leave Management",
     path: "#",
     submenu: [
@@ -161,8 +161,8 @@ const deptHeadMenuItems = [
       { label: "Approval History", path: "/approval-history" },
     ]
   },
-  { 
-    icon: BarChart3, 
+  {
+    icon: BarChart3,
     label: "Analytics",
     path: "#",
     submenu: [
@@ -177,8 +177,8 @@ const deptHeadMenuItems = [
 const ceoMenuItems = [
   { icon: LayoutDashboard, label: "Executive Dashboard", path: "/" },
   { icon: CheckCircle, label: "Approvals", path: "/approvals" },
-  { 
-    icon: BarChart3, 
+  {
+    icon: BarChart3,
     label: "Business Analytics",
     path: "#",
     submenu: [
@@ -190,8 +190,8 @@ const ceoMenuItems = [
   },
   { icon: Users, label: "Organization View", path: "/employee-directory" },
   { icon: Search, label: "Employee Directory", path: "/employee-directory" },
-  { 
-    icon: TrendingUp, 
+  {
+    icon: TrendingUp,
     label: "Strategic Reports",
     path: "#",
     submenu: [
@@ -286,7 +286,33 @@ function DashboardLayoutContent({
   children,
   setSidebarWidth,
 }: DashboardLayoutContentProps) {
-  const { user, logout } = useAuth();
+  const { user, logout, hasRole } = useAuth();
+
+  const getCombinedMenuItems = useCallback(() => {
+    if (!user) return menuItems;
+
+    // Base menus depending on roles
+    let combined: any[] = [];
+    if (hasRole('admin')) combined = [...combined, ...adminMenuItems];
+    if (hasRole('ceo_md')) combined = [...combined, ...ceoMenuItems];
+    if (hasRole('head_of_department')) combined = [...combined, ...deptHeadMenuItems];
+    if (hasRole('hr')) combined = [...combined, ...hrMenuItems];
+    if (hasRole('head_of_finance')) combined = [...combined, ...financeMenuItems];
+
+    if (combined.length === 0) {
+      combined = [...menuItems];
+    } else {
+      combined = [...combined, { icon: User, label: "Profile", path: "/profile" }, { icon: Settings, label: "Settings", path: "/settings" }];
+    }
+
+    const seenLabels = new Set();
+    return combined.filter(item => {
+      if (seenLabels.has(item.label)) return false;
+      seenLabels.add(item.label);
+      return true;
+    });
+  }, [user, hasRole]);
+
   const { data: pendingApprovals } = trpc.requests.listPendingApprovals.useQuery(undefined, { enabled: !!user && user.role !== "user" });
   const { theme, toggleTheme, switchable } = useTheme();
   const [location, setLocation] = useLocation();
@@ -391,26 +417,16 @@ function DashboardLayoutContent({
 
           <SidebarContent className="gap-0">
             <SidebarMenu className="px-2 py-1">
-              {(user?.role === "admin" 
-                ? adminMenuItems 
-                : user?.role === "head_of_finance"
-                ? financeMenuItems
-                : user?.role === "hr"
-                ? hrMenuItems
-                : user?.role === "head_of_department"
-                ? deptHeadMenuItems
-                : user?.role === "ceo_md"
-                ? ceoMenuItems
-                : menuItems).map(item => {
+              {getCombinedMenuItems().map((item: any) => {
                 const isActive = location === item.path;
                 const hasSubmenu = "submenu" in item && item.submenu;
-                
+
                 // Check if any submenu item is active
                 const isSubmenuActive = hasSubmenu && item.submenu?.some((subitem: any) => subitem.path === location);
-                
+
                 // Keep dropdown open if submenu is active
                 const shouldExpand = expandedItem === item.label || isSubmenuActive;
-                
+
                 return (
                   <SidebarMenuItem key={item.path}>
                     <SidebarMenuButton
@@ -427,7 +443,7 @@ function DashboardLayoutContent({
                         <ChevronDown className={`ml-auto h-4 w-4 transition-transform ${shouldExpand ? "rotate-180" : ""}`} />
                       )}
                     </SidebarMenuButton>
-                    
+
                     {hasSubmenu && shouldExpand && (
                       <SidebarMenuSub className="ml-0 border-l-2 border-blue-500/30 pl-4 py-2">
                         {item.submenu?.map((subitem: any) => {
@@ -442,11 +458,10 @@ function DashboardLayoutContent({
                                     setLocation(subitem.path);
                                   }
                                 }}
-                                className={`h-9 text-sm font-medium rounded-md transition-all duration-200 ${
-                                  isSubitemActive 
-                                    ? "bg-blue-500/20 text-blue-400 font-semibold" 
-                                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                                }`}
+                                className={`h-9 text-sm font-medium rounded-md transition-all duration-200 ${isSubitemActive
+                                  ? "bg-blue-500/20 text-blue-400 font-semibold"
+                                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                                  }`}
                               >
                                 {subitem.label}
                               </SidebarMenuSubButton>
