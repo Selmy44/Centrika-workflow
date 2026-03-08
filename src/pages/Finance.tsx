@@ -21,7 +21,7 @@ import { Link } from "wouter";
 import { toast } from "sonner";
 
 export default function Finance() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, hasRole } = useAuth();
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
@@ -39,7 +39,7 @@ export default function Finance() {
   });
 
   const { data: pendingRequests, isLoading: pendingLoading, refetch } = trpc.requests.listPendingApprovals.useQuery(undefined, {
-    enabled: isAuthenticated && user?.role === "head_of_finance",
+    enabled: isAuthenticated && hasRole("head_of_finance"),
     staleTime: 10000,
   });
 
@@ -70,8 +70,8 @@ export default function Finance() {
   });
 
   const hasAccess = useMemo(() => {
-    return user && ["head_of_finance", "admin", "hr", "ceo_md"].includes(user.role);
-  }, [user]);
+    return user && (hasRole("head_of_finance") || ["admin", "hr", "ceo_md"].includes(user.role));
+  }, [user, hasRole]);
 
   // Filter requests based on search term
   const filteredPendingRequests = useMemo(() => {
@@ -282,7 +282,7 @@ export default function Finance() {
         </Card>
 
         {/* Pending Approvals Section - Only for head_of_finance */}
-        {user?.role === "head_of_finance" && (
+        {hasRole("head_of_finance") && (
           <Card className="bg-card border-border shadow-md">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">

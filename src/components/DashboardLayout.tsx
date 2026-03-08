@@ -49,8 +49,6 @@ const menuItems = [
   },
   { icon: FileText, label: "My Requests", path: "/requests" },
   { icon: Calendar, label: "Leave Balance", path: "/leave-balance" },
-  { icon: User, label: "Profile", path: "/profile" },
-  { icon: Settings, label: "Settings", path: "/settings" },
 ];
 
 const adminMenuItems = [
@@ -76,8 +74,6 @@ const adminMenuItems = [
       { label: "System Settings", path: "/system-settings" },
     ]
   },
-  { icon: User, label: "Profile", path: "/profile" },
-  { icon: Settings, label: "Settings", path: "/system-settings" },
 ];
 
 const financeMenuItems = [
@@ -95,8 +91,6 @@ const financeMenuItems = [
     ]
   },
   { icon: AlertCircle, label: "Audit Log", path: "/system-settings" },
-  { icon: User, label: "Profile", path: "/profile" },
-  { icon: Settings, label: "Settings", path: "/settings" },
 ];
 
 const hrMenuItems = [
@@ -133,8 +127,6 @@ const hrMenuItems = [
       { label: "Employee Directory", path: "/employee-directory" },
     ]
   },
-  { icon: User, label: "Profile", path: "/profile" },
-  { icon: Settings, label: "Settings", path: "/system-settings" },
 ];
 
 const deptHeadMenuItems = [
@@ -170,8 +162,6 @@ const deptHeadMenuItems = [
       { label: "Team Statistics", path: "/team-statistics" },
     ]
   },
-  { icon: User, label: "Profile", path: "/profile" },
-  { icon: Settings, label: "Settings", path: "/settings" },
 ];
 
 const ceoMenuItems = [
@@ -199,8 +189,6 @@ const ceoMenuItems = [
       { label: "Budget Analytics", path: "/budget-analysis" },
     ]
   },
-  { icon: User, label: "Profile", path: "/profile" },
-  { icon: Settings, label: "Settings", path: "/system-settings" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -301,8 +289,6 @@ function DashboardLayoutContent({
 
     if (combined.length === 0) {
       combined = [...menuItems];
-    } else {
-      combined = [...combined, { icon: User, label: "Profile", path: "/profile" }, { icon: Settings, label: "Settings", path: "/settings" }];
     }
 
     const seenLabels = new Set();
@@ -477,9 +463,30 @@ function DashboardLayoutContent({
           </SidebarContent>
 
           <SidebarFooter className="p-3">
+            <SidebarMenu className="px-2 pb-2 border-t border-border pt-2 mt-auto">
+              {[
+                { icon: User, label: "Profile", path: "/profile" },
+                { icon: Settings, label: "Settings", path: "/settings" }
+              ].map((item) => {
+                const isActive = location === item.path;
+                return (
+                  <SidebarMenuItem key={item.path}>
+                    <SidebarMenuButton
+                      isActive={isActive}
+                      onClick={() => setLocation(item.path)}
+                      tooltip={item.label}
+                      className={`h-10 transition-all font-normal`}
+                    >
+                      <item.icon className={`h-4 w-4 ${isActive ? "text-white dark:text-white" : ""}`} />
+                      <span>{item.label}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-3 rounded-lg px-1 py-1 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <button className="flex items-center gap-3 rounded-lg px-2 py-2 mt-1 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   <Avatar className="h-9 w-9 border shrink-0">
                     <AvatarFallback className="text-xs font-medium">
                       {user?.name?.charAt(0).toUpperCase()}
