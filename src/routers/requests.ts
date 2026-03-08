@@ -127,6 +127,8 @@ export const requestsRouter = router({
         departureDate: z.string(),
         departureTime: z.string().optional(),
         passengers: z.number().int().min(1),
+        driverName: z.string().optional(),
+        carInfo: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -154,12 +156,23 @@ export const requestsRouter = router({
         departureDate: input.departureDate,
         departureTime: input.departureTime,
         passengers: input.passengers,
+        driverName: input.driverName,
+        carInfo: input.carInfo,
       };
 
       await db.insert(carRequests).values(insertCarRequest);
 
       return result[0];
     }),
+
+  getAvailableDrivers: protectedProcedure.query(async () => {
+    // Hardcoded for now — can be moved to a DB table later
+    return [
+      { name: "Rukundo", car: "Toyota RAV4 — RAB 123A" },
+      { name: "Celestin", car: "Toyota Hilux — RAC 456B" },
+      { name: "Olivier", car: "Suzuki Escudo — RAD 789C" },
+    ];
+  }),
 
   createExpenditureRequest: protectedProcedure
     .input(
@@ -305,24 +318,39 @@ export const requestsRouter = router({
           throw new TRPCError({ code: "BAD_REQUEST", message: "Only draft requests can be submitted" });
         }
 
+        // ===== TYPE-SPECIFIC ROUTING =====
         let approverId: number;
-        if (input.initialApproverId) {
-          approverId = input.initialApproverId;
-          console.log("[submitRequest] Using provided initialApproverId:", approverId);
-        } else {
-          // Fallback: find any department head
-          const departmentHeads = await db.select().from(users).where(eq(users.role, "head_of_department")).limit(1);
-          if (!departmentHeads.length) {
-            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "No department head found to approve request" });
+        let initialApprovalLevel: string;
+
+        if (request.type === "car") {
+          // CAR REQUESTS: Route directly to HR
+          initialApprovalLevel = "hr";
+          const hrUsers = await db.select().from(users).where(eq(users.role, "hr" as any)).limit(1);
+          if (!hrUsers.length) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "No HR user found to approve car request" });
           }
-          approverId = departmentHeads[0].id;
-          console.log("[submitRequest] No initialApproverId provided, using fallback:", approverId);
+          approverId = hrUsers[0].id;
+          console.log("[submitRequest] Car request — routing to HR:", approverId);
+        } else {
+          // LEAVE & EXPENDITURE: Route to HOD
+          initialApprovalLevel = "head_of_department";
+          if (input.initialApproverId) {
+            approverId = input.initialApproverId;
+            console.log("[submitRequest] Using provided initialApproverId:", approverId);
+          } else {
+            const departmentHeads = await db.select().from(users).where(eq(users.role, "head_of_department")).limit(1);
+            if (!departmentHeads.length) {
+              throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "No department head found to approve request" });
+            }
+            approverId = departmentHeads[0].id;
+            console.log("[submitRequest] No initialApproverId provided, using fallback:", approverId);
+          }
         }
 
-        console.log("[submitRequest] Updating request status to pending with approverId:", approverId);
+        console.log("[submitRequest] Updating request status to pending with approverId:", approverId, "level:", initialApprovalLevel);
         await db.update(requests).set({
           status: "pending",
-          currentApprovalLevel: "head_of_department",
+          currentApprovalLevel: initialApprovalLevel as any,
           initialApproverId: approverId,
           updatedAt: new Date()
         }).where(eq(requests.id, input.id));
@@ -331,7 +359,7 @@ export const requestsRouter = router({
         const insertApproval: InsertRequestApproval = {
           requestId: input.id,
           approverId,
-          approvalLevel: "head_of_department",
+          approvalLevel: initialApprovalLevel as any,
           status: "pending",
         };
         console.log("[submitRequest] Creating approval record:", insertApproval);
@@ -443,6 +471,7 @@ export const requestsRouter = router({
         requestId: z.number(),
         comments: z.string().optional(),
         signatureFileId: z.number().optional(),
+        escalateToCeo: z.boolean().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -494,153 +523,11 @@ export const requestsRouter = router({
 
       await db.insert(requestApprovals).values(insertApproval);
 
-      const approvalChain = ["head_of_department", "hr", "head_of_finance", "ceo_md", "final"];
-      const currentIndex = request.currentApprovalLevel ? approvalChain.indexOf(request.currentApprovalLevel) : -1;
+      // ===== TYPE-SPECIFIC APPROVAL CHAINS =====
 
-      // For LEAVE requests, approval at HOD level is final - no further approval needed
-      if (request.type === "leave" && request.currentApprovalLevel === "head_of_department") {
-        // Leave request is fully approved at HOD level
+      // Helper: mark request as fully approved and notify employee
+      const finalApprove = async () => {
         await db.update(requests).set({ status: "approved", updatedAt: new Date() }).where(eq(requests.id, input.requestId));
-
-        const currentYear = new Date().getFullYear();
-        const leaveDetails = await db
-          .select()
-          .from(leaveRequests)
-          .where(eq(leaveRequests.requestId, input.requestId))
-          .limit(1);
-
-        if (leaveDetails.length > 0 && leaveDetails[0].leaveType === "annual") {
-          const daysTaken = leaveDetails[0].leaveDaysRequested || 0;
-
-          let balance = await db
-            .select()
-            .from(leaveBalances)
-            .where(and(eq(leaveBalances.userId, request.userId), eq(leaveBalances.year, currentYear)))
-            .limit(1);
-
-          // If no balance exists, create one
-          if (balance.length === 0) {
-            await db.insert(leaveBalances).values({
-              userId: request.userId,
-              year: currentYear,
-              annualLeaveEntitled: 18,
-              annualLeaveCarryover: 0,
-              annualLeaveTaken: daysTaken,
-              annualLeaveRemaining: 18 - daysTaken,
-              sickLeave: 10,
-              personalLeave: 3,
-              updatedAt: new Date(),
-            });
-          } else {
-            const newTaken = (balance[0].annualLeaveTaken || 0) + daysTaken;
-            const newRemaining = (balance[0].annualLeaveEntitled + balance[0].annualLeaveCarryover) - newTaken;
-
-            await db.update(leaveBalances).set({
-              annualLeaveTaken: newTaken,
-              annualLeaveRemaining: newRemaining,
-              updatedAt: new Date(),
-            }).where(
-              and(
-                eq(leaveBalances.userId, request.userId),
-                eq(leaveBalances.year, currentYear)
-              )
-            );
-          }
-        }
-
-        const requesterUser = await db.select().from(users).where(eq(users.id, request.userId)).limit(1);
-        if (requesterUser.length > 0) {
-          // Notify the employee
-          await db.insert(notifications).values({
-            userId: request.userId,
-            requestId: input.requestId,
-            triggeredByUserId: ctx.user.id,
-            type: "request_approved",
-            title: `Your leave request was approved`,
-            message: `Your leave request has been approved by ${ctx.user.name || 'your Head of Department'}.`,
-          });
-
-          // Get leave details for comprehensive notifications
-          const leaveReqData = await db.select().from(leaveRequests).where(eq(leaveRequests.requestId, input.requestId)).limit(1);
-          const leaveDetail = leaveReqData[0];
-          const startDate = leaveDetail?.startDate || "TBD";
-          const endDate = leaveDetail?.endDate || "TBD";
-          const leaveType = leaveDetail?.leaveType || "leave";
-          const daysRequested = leaveDetail?.leaveDaysRequested || 0;
-          const reason = leaveDetail?.reason || "";
-          const employeeName = requesterUser[0].name || "Employee";
-          const hodName = ctx.user.name || "Head of Department";
-          const approvalDate = new Date().toLocaleDateString('en-US', {
-            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-            hour: '2-digit', minute: '2-digit',
-          });
-          const requestNumber = request.title || `Request #${input.requestId}`;
-
-          // Send email to employee
-          (async () => {
-            try {
-              if (requesterUser[0].email) {
-                const emailData = emailTemplates.leaveRequestApprovedEmail(
-                  employeeName, hodName, requestNumber, startDate, endDate
-                );
-                await sendEmail(requesterUser[0].email, emailData.subject, emailData.html);
-                console.log("[approveRequest] Approval email sent to employee:", requesterUser[0].email);
-              }
-            } catch (emailError) {
-              console.error("[approveRequest] Failed to send employee approval email:", emailError);
-            }
-          })();
-
-          // Notify HR and CEO/MD about the approved leave
-          (async () => {
-            try {
-              const hrAndCeoUsers = await db.select().from(users).where(
-                sql`${users.role} IN ('hr', 'ceo_md')`
-              );
-
-              for (const recipient of hrAndCeoUsers) {
-                // In-app notification
-                await db.insert(notifications).values({
-                  userId: recipient.id,
-                  requestId: input.requestId,
-                  triggeredByUserId: ctx.user.id,
-                  type: "request_approved",
-                  title: `Leave Approved: ${employeeName}`,
-                  message: `${employeeName}'s ${leaveType} leave (${startDate} to ${endDate}, ${daysRequested} days) has been approved by ${hodName}.`,
-                });
-
-                // Email with full details
-                if (recipient.email) {
-                  const emailData = emailTemplates.leaveApprovedNotificationEmail(
-                    recipient.name || recipient.role.toUpperCase(),
-                    employeeName,
-                    hodName,
-                    leaveType.charAt(0).toUpperCase() + leaveType.slice(1),
-                    startDate,
-                    endDate,
-                    daysRequested,
-                    reason,
-                    requestNumber,
-                    approvalDate
-                  );
-                  await sendEmail(recipient.email, emailData.subject, emailData.html);
-                  console.log(`[approveRequest] Leave notification email sent to ${recipient.role}:`, recipient.email);
-                }
-              }
-            } catch (notifError) {
-              console.error("[approveRequest] Failed to send HR/CEO notifications:", notifError);
-              // Don't throw - notification failure shouldn't block the approval
-            }
-          })();
-        }
-
-        return { success: true };
-      }
-
-      if (currentIndex === -1 || currentIndex === approvalChain.length - 1) {
-        // All approvals complete - request is approved!
-        await db.update(requests).set({ status: "approved", updatedAt: new Date() }).where(eq(requests.id, input.requestId));
-
         const requesterUser = await db.select().from(users).where(eq(users.id, request.userId)).limit(1);
         if (requesterUser.length > 0) {
           await db.insert(notifications).values({
@@ -652,39 +539,26 @@ export const requestsRouter = router({
             message: `Your ${request.type} request has been fully approved and is now finalized.`,
           });
         }
-
-        return { success: true };
-      }
-
-      // Still more people to approve - route to the next stage
-      const nextLevel = approvalChain[currentIndex + 1];
-      const roleForNextLevel: Record<string, string> = {
-        "head_of_department": "head_of_department",
-        "hr": "hr",
-        "head_of_finance": "head_of_finance",
-        "ceo_md": "ceo_md",
-        "final": "ceo_md",
       };
 
-      const nextRole = roleForNextLevel[nextLevel];
-
-      const nextUsers = await db.select().from(users).where(eq(users.role, nextRole as any)).limit(1);
-      if (nextUsers.length) {
+      // Helper: route to next approver
+      const routeToNext = async (nextLevel: string, nextRole: string) => {
+        const nextUsers = await db.select().from(users).where(eq(users.role, nextRole as any)).limit(1);
+        if (!nextUsers.length) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `No ${nextRole} found to approve request at next level` });
+        }
         const nextApproverId = nextUsers[0].id;
-        const nextApproval: InsertRequestApproval = {
+        await db.insert(requestApprovals).values({
           requestId: input.requestId,
           approverId: nextApproverId,
           approvalLevel: nextLevel as any,
           status: "pending",
-        };
-        await db.insert(requestApprovals).values(nextApproval);
-
+        });
         await db.update(requests).set({
           status: "pending",
           currentApprovalLevel: nextLevel as any,
           updatedAt: new Date()
         }).where(eq(requests.id, input.requestId));
-
         await db.insert(notifications).values({
           userId: nextApproverId,
           requestId: input.requestId,
@@ -693,24 +567,163 @@ export const requestsRouter = router({
           title: `${request.type} request awaiting your approval`,
           message: `A ${request.type} request is now waiting for your approval.`,
         });
+        // Notify requester that it moved to next stage
+        await db.insert(notifications).values({
+          userId: request.userId,
+          requestId: input.requestId,
+          triggeredByUserId: ctx.user.id,
+          type: "request_approved",
+          title: `Your ${request.type} request was approved at this stage`,
+          message: `Your ${request.type} request has been approved and is now at the next stage of review.`,
+        });
+      };
 
-        // Also notify the requester that their request was approved at this stage and is moving forward
+      // ── LEAVE: HOD is final. HR + CEO/MD get notifications only ──
+      if (request.type === "leave" && request.currentApprovalLevel === "head_of_department") {
+        await db.update(requests).set({ status: "approved", updatedAt: new Date() }).where(eq(requests.id, input.requestId));
+
+        // Update leave balance for annual leave
+        const currentYear = new Date().getFullYear();
+        const leaveDetails = await db.select().from(leaveRequests).where(eq(leaveRequests.requestId, input.requestId)).limit(1);
+        if (leaveDetails.length > 0 && leaveDetails[0].leaveType === "annual") {
+          const daysTaken = leaveDetails[0].leaveDaysRequested || 0;
+          let balance = await db.select().from(leaveBalances)
+            .where(and(eq(leaveBalances.userId, request.userId), eq(leaveBalances.year, currentYear))).limit(1);
+          if (balance.length === 0) {
+            await db.insert(leaveBalances).values({
+              userId: request.userId, year: currentYear,
+              annualLeaveEntitled: 18, annualLeaveCarryover: 0,
+              annualLeaveTaken: daysTaken, annualLeaveRemaining: 18 - daysTaken,
+              sickLeave: 10, personalLeave: 3, updatedAt: new Date(),
+            });
+          } else {
+            const newTaken = (balance[0].annualLeaveTaken || 0) + daysTaken;
+            const newRemaining = (balance[0].annualLeaveEntitled + balance[0].annualLeaveCarryover) - newTaken;
+            await db.update(leaveBalances).set({ annualLeaveTaken: newTaken, annualLeaveRemaining: newRemaining, updatedAt: new Date() })
+              .where(and(eq(leaveBalances.userId, request.userId), eq(leaveBalances.year, currentYear)));
+          }
+        }
+
+        // Notify employee
         const requesterUser = await db.select().from(users).where(eq(users.id, request.userId)).limit(1);
         if (requesterUser.length > 0) {
           await db.insert(notifications).values({
-            userId: request.userId,
-            requestId: input.requestId,
-            triggeredByUserId: ctx.user.id,
-            type: "request_approved",
-            title: `Your ${request.type} request was approved`,
-            message: `Your ${request.type} request has been approved and is now at the next stage of review.`,
+            userId: request.userId, requestId: input.requestId, triggeredByUserId: ctx.user.id,
+            type: "request_approved", title: `Your leave request was approved`,
+            message: `Your leave request has been approved by ${ctx.user.name || 'your Head of Department'}.`,
           });
+
+          const leaveReqData = await db.select().from(leaveRequests).where(eq(leaveRequests.requestId, input.requestId)).limit(1);
+          const leaveDetail = leaveReqData[0];
+          const startDate = leaveDetail?.startDate || "TBD";
+          const endDate = leaveDetail?.endDate || "TBD";
+          const leaveType = leaveDetail?.leaveType || "leave";
+          const daysRequested = leaveDetail?.leaveDaysRequested || 0;
+          const reason = leaveDetail?.reason || "";
+          const employeeName = requesterUser[0].name || "Employee";
+          const hodName = ctx.user.name || "Head of Department";
+          const approvalDate = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+          const requestNumber = request.title || `Request #${input.requestId}`;
+
+          // Email to employee
+          (async () => {
+            try {
+              if (requesterUser[0].email) {
+                const emailData = emailTemplates.leaveRequestApprovedEmail(employeeName, hodName, requestNumber, startDate, endDate);
+                await sendEmail(requesterUser[0].email, emailData.subject, emailData.html);
+              }
+            } catch (e) { console.error("[approveRequest] Failed to send employee email:", e); }
+          })();
+
+          // Notify HR and CEO/MD (notification only, no approval)
+          (async () => {
+            try {
+              const hrAndCeoUsers = await db.select().from(users).where(sql`${users.role} IN ('hr', 'ceo_md')`);
+              for (const recipient of hrAndCeoUsers) {
+                await db.insert(notifications).values({
+                  userId: recipient.id, requestId: input.requestId, triggeredByUserId: ctx.user.id,
+                  type: "request_approved", title: `Leave Approved: ${employeeName}`,
+                  message: `${employeeName}'s ${leaveType} leave (${startDate} to ${endDate}, ${daysRequested} days) has been approved by ${hodName}.`,
+                });
+                if (recipient.email) {
+                  const emailData = emailTemplates.leaveApprovedNotificationEmail(
+                    recipient.name || recipient.role.toUpperCase(), employeeName, hodName,
+                    leaveType.charAt(0).toUpperCase() + leaveType.slice(1), startDate, endDate,
+                    daysRequested, reason, requestNumber, approvalDate
+                  );
+                  await sendEmail(recipient.email, emailData.subject, emailData.html);
+                }
+              }
+            } catch (e) { console.error("[approveRequest] Failed to send HR/CEO notifications:", e); }
+          })();
         }
 
         return { success: true };
-      } else {
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `No ${nextRole} found to approve request at next level` });
       }
+
+      // ── CAR: HR is final. No further routing, no CEO/MD notification ──
+      if (request.type === "car" && request.currentApprovalLevel === "hr") {
+        await finalApprove();
+        console.log("[approveRequest] Car request approved by HR (final)");
+        return { success: true };
+      }
+
+      // ── EXPENDITURE: Type-specific chain HOD → HR → Finance → (optional) CEO/MD ──
+      if (request.type === "expenditure") {
+        const currentLevel = request.currentApprovalLevel;
+
+        if (currentLevel === "head_of_department") {
+          // HOD approved → route to HR
+          await routeToNext("hr", "hr");
+          console.log("[approveRequest] Expenditure: HOD approved, routed to HR");
+          return { success: true };
+        }
+
+        if (currentLevel === "hr") {
+          // HR approved → route to Head of Finance
+          await routeToNext("head_of_finance", "head_of_finance");
+          console.log("[approveRequest] Expenditure: HR approved, routed to Head of Finance");
+          return { success: true };
+        }
+
+        if (currentLevel === "head_of_finance") {
+          if (input.escalateToCeo) {
+            // Finance chose to escalate → route to CEO/MD
+            await routeToNext("ceo_md", "ceo_md");
+            console.log("[approveRequest] Expenditure: Finance escalated to CEO/MD");
+            return { success: true };
+          } else {
+            // Finance final approval
+            await finalApprove();
+            console.log("[approveRequest] Expenditure: Finance final approved");
+            return { success: true };
+          }
+        }
+
+        if (currentLevel === "ceo_md") {
+          // CEO/MD final approval
+          await finalApprove();
+          console.log("[approveRequest] Expenditure: CEO/MD final approved");
+          return { success: true };
+        }
+      }
+
+      // ── FALLBACK: Generic chain for any other case ──
+      const approvalChain = ["head_of_department", "hr", "head_of_finance", "ceo_md", "final"];
+      const currentIndex = request.currentApprovalLevel ? approvalChain.indexOf(request.currentApprovalLevel) : -1;
+
+      if (currentIndex === -1 || currentIndex === approvalChain.length - 1) {
+        await finalApprove();
+        return { success: true };
+      }
+
+      const nextLevel = approvalChain[currentIndex + 1];
+      const roleForNextLevel: Record<string, string> = {
+        "head_of_department": "head_of_department", "hr": "hr",
+        "head_of_finance": "head_of_finance", "ceo_md": "ceo_md", "final": "ceo_md",
+      };
+      await routeToNext(nextLevel, roleForNextLevel[nextLevel]);
+      return { success: true };
     }),
 
   rejectRequest: protectedProcedure

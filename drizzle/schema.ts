@@ -76,6 +76,8 @@ export const carRequests = pgTable("car_requests", {
   departureDate: varchar("departure_date", { length: 10 }).notNull(),
   departureTime: varchar("departure_time", { length: 5 }),
   passengers: integer("passengers").default(1).notNull(),
+  driverName: varchar("driver_name", { length: 255 }),
+  carInfo: varchar("car_info", { length: 255 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
