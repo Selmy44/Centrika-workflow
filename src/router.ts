@@ -9,9 +9,7 @@ import { invitationsRouter } from "./routers/invitations";
 import { upsertUser, getDb } from "./db";
 import { SignJWT } from "jose";
 import { ENV } from "./core/env";
-import { users, requests, leaveRequests, carRequests, expenditureRequests, requestApprovals, requestAttachments, passwordResetTokens, notifications, formSubmissions, type InsertUser } from "../drizzle/schema";
-import { eq, inArray } from "drizzle-orm";
-import { z } from "zod";
+import { eq, inArray, or, ilike } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
@@ -510,7 +508,12 @@ export const appRouter = router({
           email: users.email,
           role: users.role,
           department: users.department,
-        }).from(users).where(eq(users.role, "head_of_department")).orderBy(users.name);
+        }).from(users).where(
+          or(
+            eq(users.role, "head_of_department"),
+            ilike(users.additionalRoles, "%head_of_department%")
+          )
+        ).orderBy(users.name);
 
         // Simple deduplication: keep only first occurrence per department
         const seen = new Set<string>();
@@ -539,7 +542,12 @@ export const appRouter = router({
         name: users.name,
         email: users.email,
         role: users.role,
-      }).from(users).where(eq(users.role, "hr"));
+      }).from(users).where(
+        or(
+          eq(users.role, "hr"),
+          ilike(users.additionalRoles, "%hr%")
+        )
+      );
 
       // Sort alphabetically by name
       return hrUsers.sort((a, b) => (a.name || '').localeCompare(b.name || ''));

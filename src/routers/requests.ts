@@ -3,7 +3,7 @@ import { protectedProcedure, router } from "../core/trpc";
 import { getDb } from "../db";
 import { requests, users, leaveRequests, carRequests, expenditureRequests, requestApprovals, requestAttachments, leaveBalances, notifications, formSubmissions, InsertRequest, InsertLeaveRequest, InsertCarRequest, InsertExpenditureRequest, InsertRequestApproval, InsertRequestAttachment, InsertNotification, InsertFormSubmission, type Request } from "../../drizzle/schema";
 import { TRPCError } from "@trpc/server";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql, or, ilike } from "drizzle-orm";
 import { sendEmail, emailTemplates } from "../core/email";
 import {
   uploadFileToSpaces,
@@ -507,7 +507,9 @@ export const requestsRouter = router({
         throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid approval level" });
       }
       const expectedRole = approvalLevelToRoleMap[request.currentApprovalLevel];
-      if (ctx.user.role !== expectedRole && ctx.user.role !== "admin") {
+      const hasSecondaryRole = ctx.user.additionalRoles && ctx.user.additionalRoles.includes(expectedRole);
+
+      if (ctx.user.role !== expectedRole && !hasSecondaryRole && ctx.user.role !== "admin") {
         throw new TRPCError({ code: "FORBIDDEN", message: `Only ${expectedRole} can approve at this level` });
       }
 
@@ -543,7 +545,12 @@ export const requestsRouter = router({
 
       // Helper: route to next approver
       const routeToNext = async (nextLevel: string, nextRole: string) => {
-        const nextUsers = await db.select().from(users).where(eq(users.role, nextRole as any)).limit(1);
+        const nextUsers = await db.select().from(users).where(
+          or(
+            eq(users.role, nextRole as any),
+            ilike(users.additionalRoles, `%${nextRole}%`)
+          )
+        ).limit(1);
         if (!nextUsers.length) {
           throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `No ${nextRole} found to approve request at next level` });
         }
@@ -1045,7 +1052,11 @@ export const requestsRouter = router({
     }
 
     // For approvers (HOD, HR, Finance, CEO), show requests waiting for their approval
-    if (["head_of_department", "hr", "head_of_finance", "ceo_md"].includes(ctx.user.role)) {
+    const isApprover =
+      ["head_of_department", "hr", "head_of_finance", "ceo_md"].includes(ctx.user.role) ||
+      !!ctx.user.additionalRoles;
+
+    if (isApprover) {
       const pendingApprovals = await db
         .select()
         .from(requestApprovals)
@@ -1330,7 +1341,16 @@ export const requestsRouter = router({
       throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
     }
 
-    if (ctx.user.role !== "hr" && ctx.user.role !== "admin" && ctx.user.role !== "ceo_md") {
+    const hasHrOrHigherPrivileges =
+      ctx.user.role === "hr" ||
+      ctx.user.role === "admin" ||
+      ctx.user.role === "ceo_md" ||
+      (ctx.user.additionalRoles && (
+        ctx.user.additionalRoles.includes("hr") ||
+        ctx.user.additionalRoles.includes("ceo_md")
+      ));
+
+    if (!hasHrOrHigherPrivileges) {
       throw new TRPCError({ code: "FORBIDDEN", message: "Only HR and admins can view all employees" });
     }
 
