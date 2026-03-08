@@ -19,7 +19,7 @@ import {
 
 interface Props {
     requestData: any;
-    onApprove: (data: { comments?: string; signatureFile?: File }) => void;
+    onApprove: (data: { comments?: string; signatureFile?: File; escalateToCeo?: boolean }) => void;
     onReject: (reason: string) => void;
     isLoading?: boolean;
     onClose?: () => void;
@@ -341,14 +341,35 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
                                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     Reject
                                 </Button>
-                                <Button
-                                    disabled={isLoading}
-                                    onClick={() => onApprove({ comments: approvalComments, signatureFile: signatureFile || undefined })}
-                                    className="bg-green-600 hover:bg-green-700"
-                                >
-                                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Approve {signatureFile ? "& Sign" : ""}
-                                </Button>
+                                {user?.role === "head_of_finance" ? (
+                                    <>
+                                        <Button
+                                            disabled={isLoading}
+                                            onClick={() => onApprove({ comments: approvalComments, signatureFile: signatureFile || undefined, escalateToCeo: false })}
+                                            className="bg-green-600 hover:bg-green-700"
+                                        >
+                                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                            Approve (Final)
+                                        </Button>
+                                        <Button
+                                            disabled={isLoading}
+                                            onClick={() => onApprove({ comments: approvalComments, signatureFile: signatureFile || undefined, escalateToCeo: true })}
+                                            className="bg-blue-600 hover:bg-blue-700"
+                                        >
+                                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                            Approve & Forward to CEO/MD
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <Button
+                                        disabled={isLoading}
+                                        onClick={() => onApprove({ comments: approvalComments, signatureFile: signatureFile || undefined })}
+                                        className="bg-green-600 hover:bg-green-700"
+                                    >
+                                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        Approve {signatureFile ? "& Sign" : ""}
+                                    </Button>
+                                )}
                             </>
                         )}
                     </div>

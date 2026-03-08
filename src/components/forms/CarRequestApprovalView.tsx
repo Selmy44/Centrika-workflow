@@ -230,18 +230,24 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                                 <span className="text-sm font-medium text-gray-600">Person(s)</span>
                             </div>
                         </Row>
+                        <Row label="2.6 Driver">
+                            <Input value={car?.driverName || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                        </Row>
+                        <Row label="2.7 Vehicle">
+                            <Input value={car?.carInfo || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                        </Row>
                         {car?.purpose && (
-                            <Row label="2.6 Purpose">
+                            <Row label="2.8 Purpose">
                                 <Textarea value={car.purpose} disabled className="min-h-20 border-blue-300 text-xs bg-gray-100 cursor-not-allowed !text-black" />
                             </Row>
                         )}
                         {requestData?.title && (
-                            <Row label="2.7 Request Title">
+                            <Row label="2.9 Request Title">
                                 <Input value={requestData.title} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
                             </Row>
                         )}
                         {requestData?.description && (
-                            <Row label="2.8 Description">
+                            <Row label="2.10 Description">
                                 <Textarea value={requestData.description} disabled className="min-h-20 border-blue-300 text-xs bg-gray-100 cursor-not-allowed !text-black" />
                             </Row>
                         )}

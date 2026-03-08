@@ -38,7 +38,8 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
     departureDate: "",
     departureTime: "",
     passengers: "1",
-    reportingManager: "",
+    driverName: "",
+    carInfo: "",
     department: "",
     employeeName: "",
     dateOfEmployment: "",
@@ -46,7 +47,7 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
     position: "",
   });
 
-  const { data: heads = [] } = trpc.users.listHeads.useQuery(undefined, {
+  const { data: drivers = [] } = trpc.requests.getAvailableDrivers.useQuery(undefined, {
     staleTime: Infinity,
     gcTime: Infinity,
     refetchOnWindowFocus: false,
@@ -54,10 +55,6 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
     refetchOnMount: false,
     retry: 1,
   });
-
-  const uniqueHeads = Array.from(
-    new Map(heads.map((h: any) => [h.id, h])).values()
-  );
 
   const createCar = trpc.requests.createCarRequest.useMutation();
   const submitRequest = trpc.requests.submitRequest.useMutation();
@@ -71,16 +68,13 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
         department: user.department || "",
         position: user.position || "",
         dateOfEmployment: autoFillData.dateOfEmployment || "",
-        reportingManager: autoFillData.managerId
-          ? String(autoFillData.managerId)
-          : "",
       }));
     }
   }, [user, autoFillData]);
 
   const validate = () => {
-    if (!form.reportingManager) {
-      toast.error("Please select a reporting manager");
+    if (!form.driverName) {
+      toast.error("Please select a driver and vehicle");
       return false;
     }
     if (!form.destination.trim()) {
@@ -115,13 +109,13 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
         departureDate: form.departureDate,
         departureTime: form.departureTime,
         passengers: parseInt(form.passengers),
+        driverName: form.driverName,
+        carInfo: form.carInfo,
       });
 
       if (submit) {
-        await submitRequest.mutateAsync({
-          id: request.id,
-          initialApproverId: Number(form.reportingManager),
-        });
+        // Car requests auto-route to HR — no initialApproverId needed
+        await submitRequest.mutateAsync({ id: request.id });
       }
 
       toast.success(
@@ -338,25 +332,37 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
             </Row>
           </Section>
 
-          {/* 4. APPROVAL WORKFLOW */}
-          <Section title="4. APPROVAL WORKFLOW">
-            <Row label="4.1 Reporting Manager">
+          {/* 4. DRIVER & VEHICLE */}
+          <Section title="4. DRIVER & VEHICLE">
+            <Row label="4.1 Select Driver & Car">
               <Select
-                value={form.reportingManager}
-                onValueChange={(v) => setForm({ ...form, reportingManager: v })}
+                value={form.driverName}
+                onValueChange={(v) => {
+                  const driver = drivers.find((d: any) => d.name === v);
+                  setForm({ ...form, driverName: v, carInfo: driver?.car || "" });
+                }}
               >
                 <SelectTrigger className="w-full h-10 border-blue-300 bg-white text-black font-medium focus:ring-blue-500">
-                  <SelectValue placeholder="-- Select Department Head --" />
+                  <SelectValue placeholder="-- Select a Driver --" />
                 </SelectTrigger>
                 <SelectContent className="bg-white border-blue-200">
-                  {uniqueHeads.map((head: any) => (
-                    <SelectItem key={head.id} value={head.id.toString()} className="focus:bg-blue-500 focus:text-white">
-                      {head.name}
+                  {drivers.map((driver: any) => (
+                    <SelectItem key={driver.name} value={driver.name} className="focus:bg-blue-500 focus:text-white">
+                      {driver.name} — {driver.car}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </Row>
+            {form.carInfo && (
+              <Row label="4.2 Assigned Vehicle">
+                <Input
+                  value={form.carInfo}
+                  className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium"
+                  disabled
+                />
+              </Row>
+            )}
           </Section>
         </div>
 
