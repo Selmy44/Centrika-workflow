@@ -1,8 +1,10 @@
 {
+  "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
@@ -10,9 +12,8 @@
     "outDir": "dist",
     "resolveJsonModule": true,
     "lib": [
-      "ES2022"
+      "ESNext"
     ],
-    "baseUrl": ".",
     "noEmit": true,
     "types": [
       "node"
@@ -20,6 +21,7 @@
   },
   "include": [
     "src",
-    "drizzle"
+    "scripts",
+    "*.ts"
   ]
 }
