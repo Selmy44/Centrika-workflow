@@ -53,7 +53,7 @@ export default function TeamStatistics() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-foreground">
-                {isLoading ? "-" : `${(teamStats?.totalRequests / (teamStats?.totalMembers || 1)).toFixed(1) || 0}`}
+                {isLoading ? "-" : `${((teamStats?.totalRequests || 0) / (teamStats?.totalMembers || 1)).toFixed(1) || 0}`}
               </div>
               <p className="text-xs text-muted-foreground mt-2">Per team member</p>
             </CardContent>
@@ -68,7 +68,7 @@ export default function TeamStatistics() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-foreground">
-                {isLoading ? "-" : `${Math.round((teamStats?.approvedCount / (teamStats?.totalRequests || 1)) * 100) || 0}%`}
+                {isLoading ? "-" : `${Math.round(((teamStats?.approvedCount || 0) / (teamStats?.totalRequests || 1)) * 100) || 0}%`}
               </div>
               <p className="text-xs text-muted-foreground mt-2">Overall team success</p>
             </CardContent>

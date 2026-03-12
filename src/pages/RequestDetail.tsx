@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { Link, useParams } from "wouter";
 import LeaveRequestForm from "@/components/forms/LeaveRequestForm";
+import AssetRequestForm from "@/components/forms/AssetRequestForm";
 import { useEffect, useState } from "react";
 import { trpc } from "@/lib/trpc";
 
@@ -72,7 +73,14 @@ export default function RequestDetail() {
                 isReadOnly={true}
               />
             )}
-            {!["leave", "car", "expenditure"].includes(requestData.type) && (
+            {requestData.type === "asset" && (
+              <AssetRequestForm
+                // @ts-ignore
+                requestData={requestData}
+                isReadOnly={true}
+              />
+            )}
+            {!["leave", "car", "expenditure", "asset"].includes(requestData.type) && (
               <Card className="bg-card border-border">
                 <CardContent className="pt-6">
                   <div className="text-center py-8">

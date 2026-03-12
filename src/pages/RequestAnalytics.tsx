@@ -52,7 +52,7 @@ export default function RequestAnalytics() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-foreground">
-                {isLoading ? "-" : `${Math.round((analyticsData?.approvedCount / analyticsData?.totalRequests) * 100) || 0}%`}
+                {isLoading ? "-" : `${Math.round(((analyticsData?.approvedCount || 0) / (analyticsData?.totalRequests || 1)) * 100) || 0}%`}
               </div>
               <p className="text-xs text-muted-foreground mt-2">Success rate</p>
             </CardContent>

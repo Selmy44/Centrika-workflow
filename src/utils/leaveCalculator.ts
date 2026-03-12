@@ -185,8 +185,8 @@ export const getNonWorkingDaysInRange = (
   startDate: string,
   endDate: string
 ): { weekends: Date[]; rwandanHolidays: Date[]; otherHolidays: Date[] } => {
-  const result = { weekends: [], rwandanHolidays: [], otherHolidays: [] };
-  
+  const result: { weekends: Date[]; rwandanHolidays: Date[]; otherHolidays: Date[] } = { weekends: [], rwandanHolidays: [], otherHolidays: [] };
+
   if (!startDate || !endDate) return result;
 
   const start = new Date(`${startDate}T00:00:00Z`);

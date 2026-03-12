@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
 import { formatDateTime } from "@/lib/dateFormatter";
-import { Loader2, FileText, Car, DollarSign, RefreshCw, CheckCircle2, XCircle, Clock, Trash2 } from "lucide-react";
+import { Loader2, FileText, Car, DollarSign, RefreshCw, CheckCircle2, XCircle, Clock, Trash2, Package } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
@@ -28,7 +28,7 @@ export default function Requests() {
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
-  
+
   const { data: requests, isLoading, refetch } = trpc.requests.listUserRequests.useQuery(undefined, {
     enabled: isAuthenticated,
   });
@@ -50,7 +50,7 @@ export default function Requests() {
       setSelectedRequest(null);
       refetch();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(error.message || "Failed to cancel request");
     },
   });
@@ -67,6 +67,8 @@ export default function Requests() {
         return <Car className="text-purple-400" size={20} />;
       case "expenditure":
         return <DollarSign className="text-green-400" size={20} />;
+      case "asset":
+        return <Package className="text-orange-400" size={20} />;
       default:
         return null;
     }
@@ -113,48 +115,48 @@ export default function Requests() {
           </Card>
         ) : requests && requests.length > 0 ? (
           filteredRequests.length > 0 ? (
-          <div className="space-y-3">
-            {filteredRequests.map((request: any) => (
-              <Card key={request.id} className="bg-card border-border">
-                <CardContent className="pt-6">
-                  <div className="flex items-start justify-between">
-                    <Link href={`/requests/${request.id}`} className="flex-1">
-                      <div className="flex items-start gap-4 cursor-pointer hover:opacity-80 transition-opacity">
-                        <div className="p-2 bg-muted rounded-lg">{getRequestIcon(request.type)}</div>
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-foreground">{request.title}</h3>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {request.type.charAt(0).toUpperCase() + request.type.slice(1)} Request
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-2">
-                            Created on {formatDate(request.createdAt)}
-                          </p>
+            <div className="space-y-3">
+              {filteredRequests.map((request: any) => (
+                <Card key={request.id} className="bg-card border-border">
+                  <CardContent className="pt-6">
+                    <div className="flex items-start justify-between">
+                      <Link href={`/requests/${request.id}`} className="flex-1">
+                        <div className="flex items-start gap-4 cursor-pointer hover:opacity-80 transition-opacity">
+                          <div className="p-2 bg-muted rounded-lg">{getRequestIcon(request.type)}</div>
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-foreground">{request.title}</h3>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {request.type.charAt(0).toUpperCase() + request.type.slice(1)} Request
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-2">
+                              Created on {formatDate(request.createdAt)}
+                            </p>
+                          </div>
                         </div>
+                      </Link>
+                      <div className="flex items-center gap-3 ml-4">
+                        <StatusBadge status={request.status} />
+                        {(request.status === "pending" || request.status === "draft") && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-red-600 border-red-500/30 hover:bg-red-500/10"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setSelectedRequest(request);
+                              setShowCancelDialog(true);
+                            }}
+                          >
+                            <Trash2 size={16} />
+                            Cancel
+                          </Button>
+                        )}
                       </div>
-                    </Link>
-                    <div className="flex items-center gap-3 ml-4">
-                      <StatusBadge status={request.status} />
-                      {(request.status === "pending" || request.status === "draft") && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-red-600 border-red-500/30 hover:bg-red-500/10"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setSelectedRequest(request);
-                            setShowCancelDialog(true);
-                          }}
-                        >
-                          <Trash2 size={16} />
-                          Cancel
-                        </Button>
-                      )}
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           ) : (
             <Card className="bg-card border-border">
               <CardContent className="pt-6">
