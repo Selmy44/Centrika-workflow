@@ -19,9 +19,9 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
 
   if (!isUnauthorized) return;
 
-  // Don't redirect to OAuth if already on login or signup page
+  // Don't redirect to OAuth if already on login page
   const currentPath = window.location.pathname;
-  if (currentPath.includes("/login") || currentPath.includes("/signup")) {
+  if (currentPath.includes("/login")) {
     return;
   }
 
@@ -39,12 +39,18 @@ queryClient.getQueryCache().subscribe(event => {
 queryClient.getMutationCache().subscribe(event => {
   if (event.type === "updated" && event.action.type === "error") {
     const error = event.mutation.state.error;
+
+    if (error instanceof TRPCClientError && error.message === 'Invalid email or password') {
+      // This is a specific login failure, which should be handled by the
+      // component's `onError` callback. We can suppress the global error log.
+      return;
+    }
     redirectToLoginIfUnauthorized(error);
     console.error("[API Mutation Error]", error);
   }
 });
 
-const trpcClient = trpc.createClient({
+const trpcClient = (trpc as any).createClient({
   links: [
     httpBatchLink({
       url: `${import.meta.env.VITE_API_URL || ""}/api/trpc`,
@@ -59,10 +65,12 @@ const trpcClient = trpc.createClient({
   ],
 });
 
+const TrpcProvider = (trpc as any).Provider;
+
 createRoot(document.getElementById("root")!).render(
-  <trpc.Provider client={trpcClient} queryClient={queryClient}>
+  <TrpcProvider client={trpcClient} queryClient={queryClient}>
     <QueryClientProvider client={queryClient}>
       <App />
     </QueryClientProvider>
-  </trpc.Provider>
+  </TrpcProvider>
 );
