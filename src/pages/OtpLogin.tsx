@@ -34,13 +34,13 @@ export default function OtpLoginPage() {
       setError("");
       setTimeout(() => otpInputRef.current?.focus(), 100);
     },
-    onError: (err) => {
+    onError: (err: any) => {
       setError(err.message || "Failed to send OTP. Please try again.");
     },
   });
 
   const verifyOtpMutation = trpc.mfa.verifyOtpLogin.useMutation({
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       setSuccess(true);
       setError("");
       // Show success message, then redirect
@@ -48,7 +48,7 @@ export default function OtpLoginPage() {
         setLocation("/dashboard");
       }, 1500);
     },
-    onError: (err) => {
+    onError: (err: any) => {
       setError(err.message || "Invalid OTP. Please try again.");
       setOtp("");
     },
@@ -107,7 +107,7 @@ export default function OtpLoginPage() {
   const isOtpExpired = timeLeft === 0 && step === "otp";
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
       <Card className="w-full max-w-md shadow-2xl border-slate-700 bg-slate-800/50 backdrop-blur">
         <CardHeader className="text-center space-y-2">
           <div className="flex justify-center mb-4">
@@ -224,9 +224,8 @@ export default function OtpLoginPage() {
                       {timeLeft > 0 && (
                         <div className="absolute right-3 top-1/2 -translate-y-1/2">
                           <span
-                            className={`text-sm font-semibold ${
-                              timeLeft < 60 ? "text-red-400" : "text-slate-400"
-                            }`}
+                            className={`text-sm font-semibold ${timeLeft < 60 ? "text-red-400" : "text-slate-400"
+                              }`}
                           >
                             {formatTime(timeLeft)}
                           </span>

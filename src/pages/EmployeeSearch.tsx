@@ -27,14 +27,14 @@ export function EmployeeSearch() {
   const { data: employees, isLoading: isLoadingEmployees } = trpc.employees.list.useQuery(
     {
       search: searchQuery,
-      department: selectedDepartment,
+      departmentId: selectedDepartment ? Number(selectedDepartment) : undefined,
       role: selectedRole,
     },
     { enabled: !!user }
   );
 
   const { data: departments } = trpc.employees.getDepartments.useQuery(
-    {},
+    undefined,
     { enabled: !!user }
   );
 
@@ -49,7 +49,7 @@ export function EmployeeSearch() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -79,9 +79,9 @@ export function EmployeeSearch() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">All Departments</SelectItem>
-                {departments?.map((dept) => (
-                  <SelectItem key={dept} value={dept}>
-                    {dept}
+                {departments?.map((dept: any) => (
+                  <SelectItem key={dept.id} value={String(dept.id)}>
+                    {dept.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -110,7 +110,7 @@ export function EmployeeSearch() {
             <div className="p-8 text-center text-gray-500">Loading employees...</div>
           ) : employees && employees.length > 0 ? (
             <div className="divide-y">
-              {employees.map((employee) => (
+              {employees.map((employee: any) => (
                 <div
                   key={employee.id}
                   className="p-6 hover:bg-gray-50 cursor-pointer transition-colors flex items-center justify-between"
@@ -118,7 +118,7 @@ export function EmployeeSearch() {
                 >
                   <div className="flex items-center gap-4 flex-1">
                     {/* Avatar */}
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold">
+                    <div className="w-12 h-12 rounded-full bg-linear-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold">
                       {employee.name
                         ?.split(" ")
                         .map((n: string) => n[0])
@@ -169,7 +169,7 @@ export function EmployeeSearch() {
             <div className="space-y-6">
               {/* Header */}
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold text-xl">
+                <div className="w-16 h-16 rounded-full bg-linear-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold text-xl">
                   {employeeDetail.name
                     ?.split(" ")
                     .map((n: string) => n[0])

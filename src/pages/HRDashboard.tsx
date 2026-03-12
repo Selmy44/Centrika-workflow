@@ -114,7 +114,7 @@ export default function HRDashboard() {
                 <p className="text-gray-400">No employees found</p>
               </div>
             ) : (
-              <div className="space-y-2 max-h-[600px] overflow-y-auto">
+              <div className="space-y-2 max-h-150 overflow-y-auto">
                 {filteredEmployees.map((employee: any) => (
                   <button
                     key={employee?.id}
@@ -216,7 +216,7 @@ export default function HRDashboard() {
                 </h3>
 
                 {employeeLeaveData.leaveRequests && employeeLeaveData.leaveRequests.length > 0 ? (
-                  <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                  <div className="space-y-2 max-h-75 overflow-y-auto">
                     {employeeLeaveData.leaveRequests.map((req: any) => (
                       <div
                         key={req.id}

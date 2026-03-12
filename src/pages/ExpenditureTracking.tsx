@@ -3,7 +3,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Table } from "recharts";
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { TrendingUp, DollarSign, AlertCircle, Plus, Filter } from "lucide-react";
 import { useState } from "react";
 
@@ -37,7 +37,7 @@ export default function ExpenditureTracking() {
   const { isAuthenticated } = useAuth();
   const [filter, setFilter] = useState<string | null>(null);
 
-  const filteredExpenditures = filter 
+  const filteredExpenditures = filter
     ? expenditures.filter(e => e.status === filter)
     : expenditures;
 
@@ -172,14 +172,14 @@ export default function ExpenditureTracking() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis dataKey="month" stroke="#6b7280" />
                   <YAxis stroke="#6b7280" />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: "#1f2937", 
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#1f2937",
                       border: "1px solid #374151",
                       borderRadius: "8px"
                     }}
                     labelStyle={{ color: "#f3f4f6" }}
-                    formatter={(value) => `KES ${(value / 1000).toFixed(0)}K`}
+                    formatter={(value) => `KES ${(Number(value) / 1000).toFixed(0)}K`}
                   />
                   <Legend />
                   <Bar dataKey="operations" fill="#3b82f6" radius={[8, 8, 0, 0]} />
@@ -214,8 +214,8 @@ export default function ExpenditureTracking() {
                     </div>
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                       <div
-                        className="bg-blue-500 h-2 rounded-full transition-all"
-                        style={{ width: `${cat.percentage}%` }}
+                        className="bg-blue-500 h-2 rounded-full transition-all w-[var(--progress)]"
+                        style={{ "--progress": `${cat.percentage}%` } as any}
                       />
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">

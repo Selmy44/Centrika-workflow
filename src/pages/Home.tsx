@@ -7,7 +7,7 @@ import { trpc } from "@/lib/trpc";
 import { formatDateTime } from "@/lib/dateFormatter";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ProfileCard } from "@/components/ProfileCard";
-import { Loader2, FileText, Car, DollarSign, CheckCircle, Clock, XCircle, CheckCircle2 } from "lucide-react";
+import { Loader2, FileText, Car, DollarSign, CheckCircle, Clock, XCircle, CheckCircle2, Package } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useMemo, useState } from "react";
 import { CreateRequestDialog } from "@/components/CreateRequestDialog";
@@ -27,6 +27,8 @@ function RecentRequestsSection() {
         return <Car className="text-purple-400" size={20} />;
       case "expenditure":
         return <DollarSign className="text-green-400" size={20} />;
+      case "asset":
+        return <Package className="text-orange-400" size={20} />;
       default:
         return null;
     }
@@ -139,7 +141,7 @@ export default function Home() {
 
 function EmployeeDashboard({ user }: { user: any }) {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogType, setDialogType] = useState<"leave" | "car" | "expenditure">("leave");
+  const [dialogType, setDialogType] = useState<"leave" | "car" | "expenditure" | "asset">("leave");
 
   const { data: stats, isLoading: statsLoading } = trpc.requests.getDashboardStats.useQuery(undefined, {
     staleTime: 10000, // Data considered stale after 10 seconds
@@ -202,7 +204,7 @@ function EmployeeDashboard({ user }: { user: any }) {
         {/* Quick Actions - Request Cards */}
         <div>
           <h2 className="text-xl font-semibold text-foreground mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="bg-card border-border hover:border-accent transition-colors cursor-pointer h-full" onClick={() => {
               setDialogType("leave");
               setDialogOpen(true);
@@ -264,6 +266,28 @@ function EmployeeDashboard({ user }: { user: any }) {
               </CardHeader>
               <CardContent>
                 <Button className="w-full gap-2 bg-green-600 hover:bg-green-700">
+                  Create Request
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-card border-border hover:border-accent transition-colors cursor-pointer h-full" onClick={() => {
+              setDialogType("asset");
+              setDialogOpen(true);
+            }}>
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-orange-500/10 rounded-lg">
+                    <Package className="text-orange-400" size={24} />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Asset Request</CardTitle>
+                    <CardDescription>Request items or equipment</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Button className="w-full gap-2 bg-orange-600 hover:bg-orange-700">
                   Create Request
                 </Button>
               </CardContent>

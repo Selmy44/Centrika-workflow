@@ -28,8 +28,10 @@ export default function CarRequest() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const createCarRequest = trpc.requests.createCarRequest.useMutation();
-  const submitRequest = trpc.requests.submitRequest.useMutation();
+  const { data: departmentHeads } = (trpc as any).employees.getDepartmentHeads.useQuery();
+
+  const createCarRequest = (trpc as any).requests.createCarRequest.useMutation();
+  const submitRequest = (trpc as any).requests.submitRequest.useMutation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -152,7 +154,7 @@ export default function CarRequest() {
                     <SelectValue placeholder="Select your department head" />
                   </SelectTrigger>
                   <SelectContent className="bg-card border-border">
-                    {departmentHeads.map((head) => (
+                    {departmentHeads?.map((head: any) => (
                       <SelectItem key={head.id} value={head.id.toString()}>
                         {head.name}
                       </SelectItem>

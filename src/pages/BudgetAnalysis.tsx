@@ -145,14 +145,14 @@ export default function BudgetAnalysis() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis dataKey="quarter" stroke="#6b7280" />
                   <YAxis stroke="#6b7280" />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: "#1f2937", 
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#1f2937",
                       border: "1px solid #374151",
                       borderRadius: "8px"
                     }}
                     labelStyle={{ color: "#f3f4f6" }}
-                    formatter={(value) => [`KES ${(value / 1000).toFixed(0)}K`, '']}
+                    formatter={(value) => [`KES ${(Number(value) / 1000).toFixed(0)}K`, '']}
                   />
                   <Legend />
                   <Bar dataKey="budgeted" fill="#3b82f6" radius={[8, 8, 0, 0]} name="Budgeted" />
@@ -188,14 +188,14 @@ export default function BudgetAnalysis() {
                       <Cell key={`cell-${index}`} fill={EXPENSE_COLORS[index % EXPENSE_COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: "#1f2937", 
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#1f2937",
                       border: "1px solid #374151",
                       borderRadius: "8px"
                     }}
                     labelStyle={{ color: "#f3f4f6" }}
-                    formatter={(value) => `KES ${(value / 1000000).toFixed(1)}M`}
+                    formatter={(value) => `KES ${(Number(value) / 1000000).toFixed(1)}M`}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -218,14 +218,14 @@ export default function BudgetAnalysis() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis dataKey="department" stroke="#6b7280" angle={-45} textAnchor="end" height={80} />
                 <YAxis stroke="#6b7280" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: "#1f2937", 
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#1f2937",
                     border: "1px solid #374151",
                     borderRadius: "8px"
                   }}
                   labelStyle={{ color: "#f3f4f6" }}
-                  formatter={(value) => `KES ${(value / 1000).toFixed(0)}K`}
+                  formatter={(value) => `KES ${(Number(value) / 1000).toFixed(0)}K`}
                 />
                 <Legend />
                 <Bar dataKey="budgeted" fill="#3b82f6" radius={[8, 8, 0, 0]} name="Budgeted" />
@@ -250,14 +250,14 @@ export default function BudgetAnalysis() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis dataKey="month" stroke="#6b7280" />
                 <YAxis stroke="#6b7280" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: "#1f2937", 
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#1f2937",
                     border: "1px solid #374151",
                     borderRadius: "8px"
                   }}
                   labelStyle={{ color: "#f3f4f6" }}
-                  formatter={(value) => `KES ${(value / 1000).toFixed(0)}K`}
+                  formatter={(value) => `KES ${(Number(value) / 1000).toFixed(0)}K`}
                 />
                 <Legend />
                 <Line
@@ -313,10 +313,9 @@ export default function BudgetAnalysis() {
                   </div>
                   <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                     <div
-                      className={`h-2 rounded-full transition-all ${
-                        dept.percent > 95 ? "bg-red-500" : "bg-blue-500"
-                      }`}
-                      style={{ width: `${dept.percent}%` }}
+                      className={`h-2 rounded-full transition-all w-[var(--progress)] ${dept.percent > 95 ? "bg-red-500" : "bg-blue-500"
+                        }`}
+                      style={{ "--progress": `${dept.percent}%` } as any}
                     />
                   </div>
                   <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">

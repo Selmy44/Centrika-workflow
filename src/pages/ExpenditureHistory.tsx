@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 export default function ExpenditureHistory() {
   const { user, isAuthenticated } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
-  const { data: expenditures, isLoading } = trpc.requests.getExpenditureHistory.useQuery(undefined, {
+  const { data: expenditures, isLoading } = (trpc as any).requests.getExpenditureHistory.useQuery(undefined, {
     enabled: isAuthenticated,
     staleTime: 30000,
   });
@@ -172,7 +172,7 @@ export default function ExpenditureHistory() {
                             )}
                           </div>
                         </div>
-                        <div className="text-right flex-shrink-0">
+                        <div className="text-right shrink-0">
                           <p className="text-2xl font-bold text-green-600">
                             {formatCurrency(expenditure.amount, expenditure.currency)}
                           </p>
@@ -213,7 +213,6 @@ export default function ExpenditureHistory() {
                             </p>
                           </div>
                         </div>
-
                         <div className="flex items-center gap-2">
                           <Calendar className="text-muted-foreground" size={16} />
                           <div>

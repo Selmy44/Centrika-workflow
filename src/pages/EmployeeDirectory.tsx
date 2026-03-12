@@ -4,36 +4,42 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Users, Mail, Phone, MapPin, Search, Filter } from "lucide-react";
+import { trpc } from "@/lib/trpc";
+import { Users, Mail, Phone, MapPin, Search, Loader2 } from "lucide-react";
 import { useState } from "react";
-
-const employees = [
-  { id: 1, name: "John Muigai", email: "john.muigai@centrika.rw", phone: "+256-702-123-456", department: "Engineering", role: "Senior Developer", location: "Kigali", status: "Active" },
-  { id: 2, name: "Sarah Kipchoge", email: "sarah.kipchoge@centrika.rw", phone: "+256-702-234-567", department: "Sales", role: "Sales Manager", location: "Nairobi", status: "Active" },
-  { id: 3, name: "Mike Kamau", email: "mike.kamau@centrika.rw", phone: "+256-702-345-678", department: "Engineering", role: "UI Designer", location: "Kigali", status: "Active" },
-  { id: 4, name: "Emily Kariuki", email: "emily.kariuki@centrika.rw", phone: "+256-702-456-789", department: "Finance", role: "Finance Manager", location: "Kampala", status: "Active" },
-  { id: 5, name: "David Ochieng", email: "david.ochieng@centrika.rw", phone: "+256-702-567-890", department: "Operations", role: "Operations Manager", location: "Dar es Salaam", status: "On Leave" },
-  { id: 6, name: "Grace Muturi", email: "grace.muturi@centrika.rw", phone: "+256-702-678-901", department: "HR", role: "HR Manager", location: "Kigali", status: "Active" },
-  { id: 7, name: "James Kiplagat", email: "james.kiplagat@centrika.rw", phone: "+256-702-789-012", department: "Marketing", role: "Marketing Lead", location: "Kigali", status: "Active" },
-  { id: 8, name: "Rose Mutua", email: "rose.mutua@centrika.rw", phone: "+256-702-890-123", department: "Engineering", role: "Backend Developer", location: "Kigali", status: "Inactive" },
-];
-
-const departments = Array.from(new Set(employees.map(e => e.department)));
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function EmployeeDirectory() {
-  const { isAuthenticated } = useAuth();
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedDept, setSelectedDept] = useState<string | null>(null);
+  const [selectedDeptId, setSelectedDeptId] = useState<number | null>(null);
+  const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
-  const filteredEmployees = employees.filter(emp => {
-    const matchesSearch = emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.phone.includes(searchTerm);
-    const matchesDept = !selectedDept || emp.department === selectedDept;
-    return matchesSearch && matchesDept;
-  });
+  const { data: employees = [], isLoading: isLoadingEmployees } = trpc.employees.list.useQuery({
+    search: searchTerm,
+    departmentId: selectedDeptId || undefined,
+  }, { enabled: !!user });
 
-  const getStatusColor = (status: string) => {
+  const { data: departments = [], isLoading: isLoadingDepts } = trpc.employees.getDepartments.useQuery(undefined, { enabled: !!user });
+
+  const { data: employeeDetail, isLoading: isLoadingDetail } = trpc.employees.getDetail.useQuery(
+    { employeeId: selectedEmployee?.id || 0 },
+    { enabled: showDetailModal && !!selectedEmployee }
+  );
+
+  const handleEmployeeClick = (employee: any) => {
+    setSelectedEmployee(employee);
+    setShowDetailModal(true);
+  };
+
+  const getStatusColor = (status?: string | null) => {
     switch (status) {
       case "Active":
         return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
@@ -42,33 +48,49 @@ export default function EmployeeDirectory() {
       case "Inactive":
         return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
       default:
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
+        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
     }
   };
 
-  const getDeptColor = (dept: string) => {
+  const getDeptColor = (dept?: string | null) => {
+    if (!dept) return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
+    
     const colors: Record<string, string> = {
       Engineering: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-      Sales: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+      "Human Resources": "bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200",
       Finance: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
+      "Sales & Marketing": "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
       Operations: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
-      HR: "bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200",
-      Marketing: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
     };
-    return colors[dept] || "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
+
+    if (colors[dept]) return colors[dept];
+
+    const fallbackColors = [
+      "bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200",
+      "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200",
+      "bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200",
+      "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200",
+      "bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-200",
+    ];
+    
+    const hash = dept.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return fallbackColors[hash % fallbackColors.length];
   };
 
   return (
     <DashboardLayout>
       <div className="space-y-8 p-8">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
-            Employee Directory
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Contact information and details for all company employees
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+              Employee Directory
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">
+              Contact information and details for all company employees
+            </p>
+          </div>
+          {(isLoadingEmployees || isLoadingDepts) && <Loader2 className="h-6 w-6 animate-spin text-blue-600" />}
         </div>
 
         {/* Search and Filter */}
@@ -76,7 +98,7 @@ export default function EmployeeDirectory() {
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
             <Input
-              placeholder="Search by name, email, or phone..."
+              placeholder="Search by name, email, or staff ID..."
               className="pl-10 bg-white dark:bg-slate-700"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -84,20 +106,20 @@ export default function EmployeeDirectory() {
           </div>
           <div className="flex gap-2 flex-wrap">
             <Button
-              variant={selectedDept === null ? "default" : "outline"}
-              onClick={() => setSelectedDept(null)}
+              variant={selectedDeptId === null ? "default" : "outline"}
+              onClick={() => setSelectedDeptId(null)}
               size="sm"
             >
               All Departments
             </Button>
-            {departments.map((dept) => (
+            {departments.map((dept: any) => (
               <Button
-                key={dept}
-                variant={selectedDept === dept ? "default" : "outline"}
-                onClick={() => setSelectedDept(dept)}
+                key={dept.id}
+                variant={selectedDeptId === dept.id ? "default" : "outline"}
+                onClick={() => setSelectedDeptId(dept.id)}
                 size="sm"
               >
-                {dept}
+                {dept.name}
               </Button>
             ))}
           </div>
@@ -129,7 +151,7 @@ export default function EmployeeDirectory() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-green-600 dark:text-green-400">
-                {employees.filter(e => e.status === "Active").length}
+                {employees.filter((e: any) => e.status === "Active" || !e.status).length}
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                 available for work
@@ -156,7 +178,7 @@ export default function EmployeeDirectory() {
 
         {/* Employee Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredEmployees.map((employee) => (
+          {employees.map((employee: any) => (
             <Card
               key={employee.id}
               className="bg-white dark:bg-slate-800 hover:shadow-lg transition-shadow hover:-translate-y-1 duration-200"
@@ -169,17 +191,17 @@ export default function EmployeeDirectory() {
                       {employee.name}
                     </h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                      {employee.role}
+                      {employee.position || employee.role}
                     </p>
                   </div>
                   <Badge className={getStatusColor(employee.status)}>
-                    {employee.status}
+                    {employee.status || "Active"}
                   </Badge>
                 </div>
 
                 {/* Department Badge */}
                 <Badge className={`${getDeptColor(employee.department)} mb-4`}>
-                  {employee.department}
+                  {employee.department || "No Department"}
                 </Badge>
 
                 {/* Contact Info */}
@@ -193,25 +215,30 @@ export default function EmployeeDirectory() {
                       {employee.email}
                     </a>
                   </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <Phone className="h-4 w-4 text-gray-400" />
-                    <a
-                      href={`tel:${employee.phone}`}
-                      className="text-blue-600 dark:text-blue-400 hover:underline"
-                    >
-                      {employee.phone}
-                    </a>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
-                    <MapPin className="h-4 w-4 text-gray-400" />
-                    {employee.location}
-                  </div>
+                  {employee.phoneNumber && (
+                    <div className="flex items-center gap-3 text-sm">
+                      <Phone className="h-4 w-4 text-gray-400" />
+                      <a
+                        href={`tel:${employee.phoneNumber}`}
+                        className="text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        {employee.phoneNumber}
+                      </a>
+                    </div>
+                  )}
+                  {employee.location && (
+                    <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
+                      <MapPin className="h-4 w-4 text-gray-400" />
+                      {employee.location}
+                    </div>
+                  )}
                 </div>
 
                 {/* Action Button */}
                 <Button
                   variant="outline"
                   className="w-full text-sm"
+                  onClick={() => handleEmployeeClick(employee)}
                 >
                   View Profile
                 </Button>
@@ -221,7 +248,7 @@ export default function EmployeeDirectory() {
         </div>
 
         {/* No Results */}
-        {filteredEmployees.length === 0 && (
+        {!isLoadingEmployees && employees.length === 0 && (
           <Card className="bg-gray-50 dark:bg-slate-900 border-dashed">
             <CardContent className="p-12 text-center">
               <Users className="h-12 w-12 text-gray-400 mx-auto mb-4 opacity-50" />
@@ -235,24 +262,145 @@ export default function EmployeeDirectory() {
           </Card>
         )}
 
-        {/* Info Card */}
+        {/* Archive Info Card */}
         <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
           <CardHeader>
             <CardTitle className="text-lg">Directory Information</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
             <p>
-              <strong>Search Tips:</strong> You can search by employee name, email, or phone number.
+              <strong>Search Tips:</strong> You can search by employee name, email, or staff ID.
             </p>
             <p>
               <strong>Status Indicators:</strong> Green (Active), Yellow (On Leave), Gray (Inactive)
             </p>
             <p>
-              <strong>Contact Preference:</strong> Click the email or phone to reach out directly using your default email or phone client.
+              <strong>Privacy:</strong> Contact details are for internal business use only.
             </p>
           </CardContent>
         </Card>
       </div>
+
+      {/* Employee Detail Modal */}
+      <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
+        <DialogContent className="max-w-2xl bg-white dark:bg-slate-900 border-none shadow-2xl">
+          <DialogHeader className="border-b border-gray-100 dark:border-slate-800 pb-4">
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              <Users className="w-5 h-5 text-blue-600" />
+              Employee Profile
+            </DialogTitle>
+          </DialogHeader>
+
+          {isLoadingDetail ? (
+            <div className="flex flex-col items-center justify-center py-12 gap-4">
+              <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+              <p className="text-gray-500 animate-pulse">Fetching profile details...</p>
+            </div>
+          ) : employeeDetail ? (
+            <div className="space-y-8 pt-4">
+              {/* Profile Header */}
+              <div className="flex items-center gap-6">
+                <div className="w-24 h-24 rounded-2xl bg-linear-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-3xl shadow-lg shadow-blue-500/20">
+                  {employeeDetail.name
+                    ?.split(" ")
+                    .map((n: string) => n[0])
+                    .join("")
+                    .toUpperCase()
+                    .slice(0, 2) || "U"}
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {employeeDetail.name}
+                    </h2>
+                    <Badge className={getStatusColor(employeeDetail.status)}>
+                      {employeeDetail.status || "Active"}
+                    </Badge>
+                  </div>
+                  <p className="text-lg text-gray-600 dark:text-gray-400 font-medium">
+                    {employeeDetail.position || employeeDetail.role}
+                  </p>
+                  <p className="text-sm text-blue-600 dark:text-blue-400 font-semibold uppercase tracking-wider">
+                    {employeeDetail.department}
+                  </p>
+                </div>
+              </div>
+
+              {/* Info Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 dark:bg-slate-800/50 p-6 rounded-2xl">
+                <div className="space-y-1">
+                  <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+                    Email Address
+                  </p>
+                  <div className="flex items-center gap-2 text-gray-900 dark:text-white font-medium">
+                    <Mail className="w-4 h-4 text-gray-400" />
+                    {employeeDetail.email}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+                    Phone Number
+                  </p>
+                  <div className="flex items-center gap-2 text-gray-900 dark:text-white font-medium">
+                    <Phone className="w-4 h-4 text-gray-400" />
+                    {employeeDetail.phoneNumber || "Not provided"}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+                    Office Location
+                  </p>
+                  <div className="flex items-center gap-2 text-gray-900 dark:text-white font-medium">
+                    <MapPin className="w-4 h-4 text-gray-400" />
+                    {employeeDetail.location || "Kigali, Rwanda"}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+                    Staff ID
+                  </p>
+                  <div className="text-gray-900 dark:text-white font-medium pl-6">
+                    {employeeDetail.staffId || "N/A"}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+                    Joined Date
+                  </p>
+                  <div className="text-gray-900 dark:text-white font-medium pl-6">
+                    {employeeDetail.dateOfEmployment || "N/A"}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+                    Activity
+                  </p>
+                  <div className="text-gray-900 dark:text-white font-medium pl-6">
+                    {employeeDetail.requestsCount} total requests
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <Button 
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 h-11"
+                  onClick={() => window.location.href = `mailto:${employeeDetail.email}`}
+                >
+                  <Mail className="w-4 h-4 mr-2" />
+                  Send Email
+                </Button>
+                <Button 
+                  variant="outline" 
+                   className="flex-1 h-11"
+                  onClick={() => setShowDetailModal(false)}
+                >
+                  Close Profile
+                </Button>
+              </div>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }

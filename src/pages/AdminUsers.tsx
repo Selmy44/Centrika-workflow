@@ -25,6 +25,7 @@ import { Loader2, Edit2, Trash2, Plus, Mail, RotateCw, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { InviteUserModal } from "@/components/InviteUserModal";
+import SingleDatePicker from "@/components/SingleDatePicker";
 
 export default function AdminUsers() {
   const { isAuthenticated, user } = useAuth();
@@ -37,86 +38,93 @@ export default function AdminUsers() {
   const [role, setRole] = useState("");
   const [department, setDepartment] = useState("");
   const [managerId, setManagerId] = useState("");
+  const [staffId, setStaffId] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [createEmail, setCreateEmail] = useState("");
   const [createName, setCreateName] = useState("");
-  const [createDepartment, setCreateDepartment] = useState("");
+  const [createDepartmentId, setCreateDepartmentId] = useState("");
+  const [createPosition, setCreatePosition] = useState("");
+  const [createEmploymentDate, setCreateEmploymentDate] = useState("");
 
-  const { data: users, isLoading, refetch } = trpc.users.listAll.useQuery(undefined, {
+  const { data: users, isLoading, refetch } = (trpc as any).users.listAll.useQuery(undefined, {
     enabled: isAuthenticated && user?.role === "admin",
   });
 
-  const { data: pendingInvitations, refetch: refetchInvitations } = trpc.invitations.getPendingInvitations.useQuery(undefined, {
+  const { data: pendingInvitations, refetch: refetchInvitations } = (trpc as any).invitations.getPendingInvitations.useQuery(undefined, {
     enabled: isAuthenticated && user?.role === "admin",
   });
 
-  const updateUserMutation = trpc.users.updateUser.useMutation({
+  const { data: departments } = (trpc as any).employees.getDepartments.useQuery();
+
+  const updateUserMutation = (trpc as any).users.updateUser.useMutation({
     onSuccess: () => {
       toast.success("User updated successfully!");
       setShowDialog(false);
       setEditingUser(null);
       refetch();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(error.message || "Failed to update user");
     },
   });
 
-  const resetPasswordMutation = trpc.users.resetUserPassword.useMutation({
+  const resetPasswordMutation = (trpc as any).users.resetUserPassword.useMutation({
     onSuccess: () => {
       toast.success("Password reset successfully!");
       setShowPasswordDialog(false);
       setNewPassword("");
       setEditingUser(null);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(error.message || "Failed to reset password");
     },
   });
 
-  const deleteUserMutation = trpc.users.deleteUser.useMutation({
+  const deleteUserMutation = (trpc as any).users.deleteUser.useMutation({
     onSuccess: () => {
       toast.success("User deleted successfully!");
       setShowDeleteDialog(false);
       setEditingUser(null);
       refetch();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(error.message || "Failed to delete user");
     },
   });
 
-  const resendInvitationMutation = trpc.invitations.resendInvitation.useMutation({
-    onSuccess: (data) => {
+  const resendInvitationMutation = (trpc as any).invitations.resendInvitation.useMutation({
+    onSuccess: (data: any) => {
       toast.success(data.message);
       refetchInvitations();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(error.message || "Failed to resend invitation");
     },
   });
 
-  const cancelInvitationMutation = trpc.invitations.cancelInvitation.useMutation({
-    onSuccess: (data) => {
+  const cancelInvitationMutation = (trpc as any).invitations.cancelInvitation.useMutation({
+    onSuccess: (data: any) => {
       toast.success(data.message);
       refetchInvitations();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(error.message || "Failed to cancel invitation");
     },
   });
 
-  const createUserMutation = trpc.users.createUser.useMutation({
-    onSuccess: (data) => {
+  const createUserMutation = (trpc as any).users.createUser.useMutation({
+    onSuccess: (data: any) => {
       toast.success(`User created! Temporary password: ${data.message.split(': ')[1]}`);
       setShowCreateDialog(false);
       setCreateEmail("");
       setCreateName("");
-      setCreateDepartment("");
+      setCreateDepartmentId("");
+      setCreatePosition("");
+      setCreateEmploymentDate("");
       refetch();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(error.message || "Failed to create user");
     },
   });
@@ -145,14 +153,16 @@ export default function AdminUsers() {
 
   const filteredUsers = users?.filter((user: any) =>
     user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.department?.name?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
   const handleEditClick = (userData: any) => {
     setEditingUser(userData);
     setRole(userData.role || "user");
-    setDepartment(userData.department || "");
+    setDepartment(userData.departmentId ? String(userData.departmentId) : "");
     setManagerId(userData.managerId ? String(userData.managerId) : "");
+    setStaffId(userData.staffId || "");
     setShowDialog(true);
   };
 
@@ -163,8 +173,9 @@ export default function AdminUsers() {
       await updateUserMutation.mutateAsync({
         userId: editingUser.id,
         role: role as any,
-        department: department || undefined,
+        departmentId: department ? parseInt(department) : undefined,
         managerId: managerId ? parseInt(managerId) : undefined,
+        staffId: staffId || undefined,
       });
     } catch (error) {
       console.error(error);
@@ -211,14 +222,14 @@ export default function AdminUsers() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
-            <Button 
+            <Button
               onClick={() => setShowCreateDialog(true)}
               className="gap-2 bg-accent hover:bg-accent/90"
             >
               <Plus size={18} />
               Create User
             </Button>
-            <Button 
+            <Button
               onClick={() => setShowInviteModal(true)}
               className="gap-2 bg-green-600 hover:bg-green-700"
             >
@@ -261,6 +272,7 @@ export default function AdminUsers() {
                     <tr className="border-b border-border">
                       <th className="text-left py-3 px-4 font-semibold text-foreground">Name</th>
                       <th className="text-left py-3 px-4 font-semibold text-foreground">Email</th>
+                      <th className="text-left py-3 px-4 font-semibold text-foreground">Staff ID</th>
                       <th className="text-left py-3 px-4 font-semibold text-foreground">Role</th>
                       <th className="text-left py-3 px-4 font-semibold text-foreground">Department</th>
                       <th className="text-left py-3 px-4 font-semibold text-foreground">Manager</th>
@@ -272,8 +284,9 @@ export default function AdminUsers() {
                       <tr key={userData.id} className="border-b border-border hover:bg-muted/50 transition-colors">
                         <td className="py-3 px-4 text-foreground font-medium">{userData.name}</td>
                         <td className="py-3 px-4 text-muted-foreground">{userData.email}</td>
+                        <td className="py-3 px-4 text-muted-foreground font-mono text-xs">{userData.staffId || "-"}</td>
                         <td className="py-3 px-4">{getRoleBadge(userData.role)}</td>
-                        <td className="py-3 px-4 text-muted-foreground">{userData.department || "-"}</td>
+                        <td className="py-3 px-4 text-muted-foreground">{userData.department?.name || "-"}</td>
                         <td className="py-3 px-4 text-muted-foreground">
                           {userData.managerId ? `ID: ${userData.managerId}` : "-"}
                         </td>
@@ -344,6 +357,19 @@ export default function AdminUsers() {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="staffId">Staff ID</Label>
+              <Input
+                id="staffId"
+                placeholder="e.g. CTK-2025-10-14 081"
+                value={staffId}
+                onChange={(e) => setStaffId(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Format: CTK-YYYY-MM-DD NNN
+              </p>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="role">Role</Label>
               <Select value={role} onValueChange={setRole}>
                 <SelectTrigger>
@@ -362,12 +388,18 @@ export default function AdminUsers() {
 
             <div className="space-y-2">
               <Label htmlFor="department">Department</Label>
-              <Input
-                id="department"
-                placeholder="e.g., Engineering, Sales, HR"
-                value={department}
-                onChange={(e) => setDepartment(e.target.value)}
-              />
+              <Select value={department} onValueChange={setDepartment}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select department" />
+                </SelectTrigger>
+                <SelectContent>
+                  {departments?.map((dept: any) => (
+                    <SelectItem key={dept.id} value={String(dept.id)}>
+                      {dept.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
@@ -527,17 +559,37 @@ export default function AdminUsers() {
 
             <div className="space-y-2">
               <Label htmlFor="createDepartment">Department</Label>
-              <Select value={createDepartment} onValueChange={setCreateDepartment}>
+              <Select value={createDepartmentId} onValueChange={setCreateDepartmentId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select department" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Tech">Tech</SelectItem>
-                  <SelectItem value="Operations">Operations</SelectItem>
-                  <SelectItem value="Finance">Finance</SelectItem>
-                  <SelectItem value="Administrator">Administrator</SelectItem>
+                  {departments?.map((dept: any) => (
+                    <SelectItem key={dept.id} value={String(dept.id)}>
+                      {dept.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="createPosition">Position</Label>
+              <Input
+                id="createPosition"
+                placeholder="e.g., Software Engineer"
+                value={createPosition}
+                onChange={(e) => setCreatePosition(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="createDate">Date of Employment</Label>
+              <SingleDatePicker
+                value={createEmploymentDate}
+                onChange={setCreateEmploymentDate}
+                label="Pick a date"
+              />
             </div>
 
             <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
@@ -553,11 +605,11 @@ export default function AdminUsers() {
             </Button>
             <Button
               onClick={async () => {
-                if (!createName || !createEmail || !createDepartment) {
+                if (!createName || !createEmail || !createDepartmentId) {
                   toast.error("Name, email, and department are required");
                   return;
                 }
-                
+
                 if (!createEmail.endsWith("@centrika.rw")) {
                   toast.error("Email must be a company email (username@centrika.rw)");
                   return;
@@ -567,7 +619,9 @@ export default function AdminUsers() {
                   await createUserMutation.mutateAsync({
                     name: createName,
                     email: createEmail,
-                    department: createDepartment,
+                    departmentId: createDepartmentId ? parseInt(createDepartmentId) : undefined,
+                    position: createPosition,
+                    dateOfEmployment: createEmploymentDate,
                     role: "user",
                   });
                 } catch (error) {
@@ -584,8 +638,8 @@ export default function AdminUsers() {
       </Dialog>
 
       {/* Invite User Modal */}
-      <InviteUserModal 
-        open={showInviteModal} 
+      <InviteUserModal
+        open={showInviteModal}
         onOpenChange={setShowInviteModal}
         onSuccess={() => {
           refetchInvitations();

@@ -20,7 +20,7 @@ export default function EmployeeDashboard() {
   const queryParams = new URLSearchParams(window.location.search);
   const employeeId = queryParams.get("id");
 
-  const { data: employeeData, isLoading } = trpc.requests.getEmployeeProfile.useQuery(
+  const { data: employeeData, isLoading } = (trpc as any).requests.getEmployeeProfile.useQuery(
     { employeeId: employeeId || "" },
     { enabled: !!employeeId && isAuthenticated }
   );
@@ -110,11 +110,11 @@ export default function EmployeeDashboard() {
         </Button>
 
         {/* Employee Profile Card */}
-        <Card className="bg-gradient-to-r from-slate-500 to-slate-600 border-slate-500 overflow-hidden text-white">
+        <Card className="bg-linear-to-r from-slate-500 to-slate-600 border-slate-500 overflow-hidden text-white">
           <CardContent className="p-0">
             <div className="flex items-center gap-8 p-8">
               {/* Profile Picture */}
-              <div className="flex-shrink-0">
+              <div className="shrink-0">
                 <Avatar className="h-28 w-28 border-4 border-white/30">
                   <AvatarImage src={employee.profileImage || ""} alt={employee.name} />
                   <AvatarFallback className="bg-slate-400 text-2xl font-bold">
@@ -137,7 +137,7 @@ export default function EmployeeDashboard() {
               </div>
 
               {/* Role Badge */}
-              <div className="flex-shrink-0">
+              <div className="shrink-0">
                 <Badge className="bg-white/20 text-white border border-white/40 px-4 py-2 text-sm font-semibold">
                   {employee.role === "head_of_department" ? "Head of Department" : "User"}
                 </Badge>
@@ -263,7 +263,7 @@ export default function EmployeeDashboard() {
                 <p className="text-muted-foreground">No requests found</p>
               </div>
             ) : (
-              <div className="space-y-3 max-h-[600px] overflow-y-auto">
+              <div className="space-y-3 max-h-150 overflow-y-auto">
                 {employeeRequests.map((request: any) => (
                   <Card key={request.id} className="bg-muted border-border hover:border-accent transition-colors">
                     <CardContent className="pt-4 pb-4">

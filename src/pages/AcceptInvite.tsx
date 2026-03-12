@@ -18,11 +18,11 @@ export default function AcceptInvite() {
   const [invitationData, setInvitationData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const verifyToken = trpc.invitations.verifyInvitationToken.useQuery(
+  const verifyToken = (trpc as any).invitations.verifyInvitationToken.useQuery(
     { token: token || "" },
     {
       enabled: !!token,
-      onSuccess: (data) => {
+      onSuccess: (data: any) => {
         if (data.valid) {
           setInvitationData(data);
           setError(null);
@@ -38,15 +38,15 @@ export default function AcceptInvite() {
     }
   );
 
-  const acceptInvitation = trpc.invitations.acceptInvitation.useMutation({
-    onSuccess: (data) => {
+  const acceptInvitation = (trpc as any).invitations.acceptInvitation.useMutation({
+    onSuccess: (data: any) => {
       toast.success(data.message);
       setTimeout(() => {
         navigate("/login");
       }, 2000);
     },
-    onError: (error) => {
-      toast.error(error.message || "Failed to create account");
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to activate account");
       setIsSubmitting(false);
     },
   });
@@ -78,7 +78,7 @@ export default function AcceptInvite() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 to-indigo-100">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
           <p className="text-gray-600">Verifying your invitation...</p>
@@ -89,7 +89,7 @@ export default function AcceptInvite() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 to-indigo-100">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Invitation Expired or Invalid</CardTitle>
@@ -112,7 +112,7 @@ export default function AcceptInvite() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 to-indigo-100 px-4">
       <Card className="w-full max-w-md">
         <CardHeader>
           <div className="text-center mb-4">
@@ -194,7 +194,7 @@ export default function AcceptInvite() {
               className="w-full bg-blue-600 hover:bg-blue-700"
             >
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isSubmitting ? "Creating Account..." : "Create Account"}
+              {isSubmitting ? "Activating Account..." : "Activate Account"}
             </Button>
           </form>
 

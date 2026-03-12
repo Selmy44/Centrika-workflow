@@ -143,20 +143,20 @@ export default function LeaveAnalytics() {
                 <AreaChart data={monthlyData}>
                   <defs>
                     <linearGradient id="colorTaken" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0.1}/>
+                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0.1} />
                     </linearGradient>
                     <linearGradient id="colorRemaining" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0.1}/>
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0.1} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis dataKey="month" stroke="#6b7280" />
                   <YAxis stroke="#6b7280" />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: "#1f2937", 
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#1f2937",
                       border: "1px solid #374151",
                       borderRadius: "8px"
                     }}
@@ -207,8 +207,8 @@ export default function LeaveAnalytics() {
                     </div>
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                       <div
-                        className="bg-blue-500 h-2 rounded-full transition-all"
-                        style={{ width: `${type.percent}%` }}
+                        className="bg-blue-500 h-2 rounded-full transition-all w-[var(--progress)]"
+                        style={{ "--progress": `${type.percent}%` } as any}
                       />
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -236,9 +236,9 @@ export default function LeaveAnalytics() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis dataKey="department" stroke="#6b7280" angle={-45} textAnchor="end" height={80} />
                 <YAxis stroke="#6b7280" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: "#1f2937", 
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#1f2937",
                     border: "1px solid #374151",
                     borderRadius: "8px"
                   }}
@@ -267,9 +267,9 @@ export default function LeaveAnalytics() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis dataKey="month" stroke="#6b7280" />
                 <YAxis stroke="#6b7280" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: "#1f2937", 
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#1f2937",
                     border: "1px solid #374151",
                     borderRadius: "8px"
                   }}

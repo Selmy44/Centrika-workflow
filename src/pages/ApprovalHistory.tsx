@@ -13,7 +13,7 @@ export default function ApprovalHistory() {
   const { user, isAuthenticated } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { data: approvalHistory, isLoading } = trpc.requests.getApprovalHistory.useQuery(
+  const { data: approvalHistory, isLoading } = (trpc as any).requests.getApprovalHistory.useQuery(
     undefined,
     { enabled: isAuthenticated }
   );

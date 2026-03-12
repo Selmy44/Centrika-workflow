@@ -26,14 +26,14 @@ export default function ExpenditureRequest() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { data: departmentHeads = [] } = trpc.users.listHeads.useQuery();
+  const { data: departmentHeads = [] } = (trpc as any).users.listHeads.useQuery();
   
   const uniqueHeads = Array.from(
     new Map(departmentHeads.map((h: any) => [h.id, h])).values()
   );
 
-  const createExpenditureRequest = trpc.requests.createExpenditureRequest.useMutation();
-  const submitRequest = trpc.requests.submitRequest.useMutation();
+  const createExpenditureRequest = (trpc as any).requests.createExpenditureRequest.useMutation();
+  const submitRequest = (trpc as any).requests.submitRequest.useMutation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -205,7 +205,7 @@ export default function ExpenditureRequest() {
                     <SelectValue placeholder="Select your department head" />
                   </SelectTrigger>
                   <SelectContent className="bg-card border-border">
-                    {uniqueHeads.map((head) => (
+                    {uniqueHeads.map((head: any) => (
                       <SelectItem key={head.id} value={head.id.toString()}>
                         {head.name}
                       </SelectItem>

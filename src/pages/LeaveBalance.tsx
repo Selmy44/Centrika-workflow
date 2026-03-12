@@ -39,7 +39,7 @@ export default function LeaveBalance() {
 
   const eligible = leaveBalance.isEligibleForAnnualLeave;
   const monthsToEligibility = eligible ? 0 : Math.max(0, 12 - (leaveBalance.monthsEmployed || 0));
-  
+
   // Data for charts
   const leaveBreakdown = [
     { name: "Taken", value: leaveBalance.annualLeaveTaken || 0, fill: "#ef4444" },
@@ -72,14 +72,14 @@ export default function LeaveBalance() {
         {!eligible && (
           <div className="bg-orange-50 dark:bg-orange-950/30 border-l-4 border-orange-500 p-4 rounded">
             <div className="flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-orange-600 mt-0.5 flex-shrink-0" />
+              <AlertCircle className="h-5 w-5 text-orange-600 mt-0.5 shrink-0" />
               <div>
                 <h3 className="font-semibold text-orange-900 dark:text-orange-200">
                   Annual Leave Not Yet Available
                 </h3>
                 <p className="text-sm text-orange-800 dark:text-orange-300 mt-1">
                   You will be eligible after {monthsToEligibility} more month(s) of employment.
-                  Currently, you have accrued <span className="font-semibold">{leaveBalance.totalAnnualLeave?.toFixed(1) || '0'} days</span>.
+                  Currently, you have accrued <span className="font-semibold">{(leaveBalance as any).totalAnnualLeave?.toFixed(1) || '0'} days</span>.
                 </p>
               </div>
             </div>
@@ -96,10 +96,10 @@ export default function LeaveBalance() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-gray-900 dark:text-white">
-                {leaveBalance.totalAnnualLeave?.toFixed(1) || '0'}
+                {(leaveBalance as any).totalAnnualLeave?.toFixed(1) || '0'}
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                {leaveBalance.completedFullYear ? "18 base + accrual" : "Based on employment period"}
+                {leaveBalance.isEligibleForAnnualLeave ? "18 base + accrual" : "Based on employment period"}
               </p>
             </CardContent>
           </Card>
@@ -144,7 +144,7 @@ export default function LeaveBalance() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                {leaveBalance.yearsEmployed}y {(leaveBalance.monthsEmployed || 0) % 12}m
+                {(leaveBalance as any).yearsEmployed}y {(leaveBalance.monthsEmployed || 0) % 12}m
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                 with company
@@ -178,7 +178,7 @@ export default function LeaveBalance() {
                       <Cell key={`cell-${index}`} fill={entry.fill} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => value.toFixed(1)} />
+                  <Tooltip formatter={(value) => Number(value).toFixed(1)} />
                 </PieChart>
               </ResponsiveContainer>
             </CardContent>
@@ -196,9 +196,9 @@ export default function LeaveBalance() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis dataKey="month" stroke="#6b7280" />
                   <YAxis stroke="#6b7280" />
-                  <Tooltip 
+                  <Tooltip
                     contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e7eb" }}
-                    formatter={(value) => `${value.toFixed(1)} days`}
+                    formatter={(value) => `${Number(value).toFixed(1)} days`}
                   />
                   <Bar dataKey="days" fill="#3b82f6" radius={[8, 8, 0, 0]} />
                 </BarChart>
@@ -208,7 +208,7 @@ export default function LeaveBalance() {
         </div>
 
         {/* Leave Policy Info */}
-        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-800">
+        <Card className="bg-linear-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-800">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <Calendar className="h-5 w-5 text-blue-600" />

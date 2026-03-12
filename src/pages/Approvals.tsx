@@ -10,6 +10,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import LeaveRequestForm from "@/components/forms/LeaveRequestForm";
 import CarRequestApprovalView from "@/components/forms/CarRequestApprovalView";
 import ExpenditureRequestApprovalView from "@/components/forms/ExpenditureRequestApprovalView";
+import AssetRequestApprovalView from "@/components/forms/AssetRequestApprovalView";
 import {
   Dialog,
   DialogContent,
@@ -20,7 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
 import { formatDateTime } from "@/lib/dateFormatter";
-import { Loader2, FileText, Car, DollarSign, CheckCircle, XCircle, Clock, Eye } from "lucide-react";
+import { Loader2, FileText, Car, DollarSign, CheckCircle, XCircle, Clock, Eye, Package } from "lucide-react";
 import { Link, useSearch } from "wouter";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
@@ -43,7 +44,7 @@ export default function Approvals() {
   const [approverSignatureUrl, setApproverSignatureUrl] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { data: pendingRequests, isLoading, refetch } = trpc.requests.listPendingApprovals.useQuery(undefined, {
+  const { data: pendingRequests, isLoading, refetch } = (trpc as any).requests.listPendingApprovals.useQuery(undefined, {
     // Only fetch if they're logged in and have an approver role (or additional roles that imply approval access)
     enabled: isAuthenticated && (user?.role !== "user" || !!user?.additionalRoles),
   });
@@ -68,12 +69,12 @@ export default function Approvals() {
     }
   }, [requestIdFromUrl, pendingRequests]);
 
-  const { data: requestFiles, isLoading: filesLoading } = trpc.requests.getRequestFilesForReview.useQuery(
+  const { data: requestFiles, isLoading: filesLoading } = (trpc as any).requests.getRequestFilesForReview.useQuery(
     { requestId: selectedRequest?.id || 0 },
     { enabled: showFilesDialog && !!selectedRequest?.id }
   );
 
-  const approveMutation = trpc.requests.approveRequest.useMutation({
+  const approveMutation = (trpc as any).requests.approveRequest.useMutation({
     onSuccess: () => {
       toast.success("Request approved successfully");
       setShowApproveDialog(false);
@@ -86,12 +87,12 @@ export default function Approvals() {
       queryClient.invalidateQueries({ queryKey: ["requests", "getDashboardStats"] });
       queryClient.invalidateQueries({ queryKey: ["requests", "getRecentRequests"] });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(error.message || "Failed to approve request");
     },
   });
 
-  const rejectMutation = trpc.requests.rejectRequest.useMutation({
+  const rejectMutation = (trpc as any).requests.rejectRequest.useMutation({
     onSuccess: () => {
       toast.success("Request rejected");
       setShowRejectDialog(false);
@@ -102,15 +103,15 @@ export default function Approvals() {
       queryClient.invalidateQueries({ queryKey: ["requests", "getDashboardStats"] });
       queryClient.invalidateQueries({ queryKey: ["requests", "getRecentRequests"] });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(error.message || "Failed to reject request");
     },
   });
 
-  const storeFormData = trpc.requests.storeLeaveFormData.useMutation();
+  const storeFormData = (trpc as any).requests.storeLeaveFormData.useMutation();
 
   // Dynamic query for fetching form data when approving
-  const getFormDataDynamic = trpc.requests.getLeaveFormData.useQuery(
+  const getFormDataDynamic = (trpc as any).requests.getLeaveFormData.useQuery(
     { requestId: selectedRequest?.id || 0 },
     { enabled: !!selectedRequest?.id && selectedRequest?.type === "leave" } // Only for leave requests
   );
@@ -146,6 +147,8 @@ export default function Approvals() {
         return <Car className="text-purple-400" size={20} />;
       case "expenditure":
         return <DollarSign className="text-green-400" size={20} />;
+      case "asset":
+        return <Package className="text-orange-400" size={20} />;
       default:
         return null;
     }
@@ -176,7 +179,7 @@ export default function Approvals() {
     setShowRejectDialog(true);
   };
 
-  const addAttachmentMutation = trpc.requests.addAttachment.useMutation();
+  const addAttachmentMutation = (trpc as any).requests.addAttachment.useMutation();
 
   const confirmApprove = () => {
     if (selectedRequest) {
@@ -343,6 +346,7 @@ export default function Approvals() {
                     accept="image/*,.pdf"
                     onChange={(e) => setSignatureFile(e.target.files?.[0] || null)}
                     className="w-full"
+                    title="Upload signature file"
                   />
                   {signatureFile && (
                     <p className="text-xs text-muted-foreground mt-2">Selected: {signatureFile.name}</p>
@@ -573,6 +577,28 @@ export default function Approvals() {
                     {/* ===== EXPENDITURE REQUEST ===== */}
                     {selectedRequest.type === "expenditure" && (
                       <ExpenditureRequestApprovalView
+                        requestData={selectedRequest}
+                        onApprove={(data) => {
+                          approveMutation.mutate({
+                            requestId: selectedRequest.id,
+                            comments: data.comments,
+                            signatureFileId: undefined,
+                          });
+                        }}
+                        onReject={(reason) => {
+                          rejectMutation.mutate({
+                            requestId: selectedRequest.id,
+                            comments: reason,
+                          });
+                          setShowFullFormDialog(false);
+                        }}
+                        isLoading={approveMutation.isPending || rejectMutation.isPending}
+                      />
+                    )}
+
+                    {/* ===== ASSET REQUEST ===== */}
+                    {selectedRequest.type === "asset" && (
+                      <AssetRequestApprovalView
                         requestData={selectedRequest}
                         onApprove={(data) => {
                           approveMutation.mutate({

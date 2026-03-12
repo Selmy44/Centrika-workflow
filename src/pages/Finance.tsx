@@ -51,7 +51,7 @@ export default function Finance() {
       setSelectedRequest(null);
       refetch();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(error.message || "Failed to approve request");
     },
   });
@@ -64,7 +64,7 @@ export default function Finance() {
       setSelectedRequest(null);
       refetch();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(error.message || "Failed to reject request");
     },
   });
