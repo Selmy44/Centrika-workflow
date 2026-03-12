@@ -1,3 +1,4 @@
+#!/usr/bin/env tsx
 import * as fs from "fs";
 import * as path from "path";
 import * as dotenv from "dotenv";
@@ -13,26 +14,25 @@ if (fs.existsSync(envPath)) {
   dotenv.config({ path: envPath });
 }
 
-import { connectDatabase } from "../src/db";
-import { users } from "../../drizzle/schema";
+import { PrismaClient } from "@prisma/client";
 import { sendOtp } from "../src/core/otp";
 import { sendEmail, emailTemplates } from "../src/core/email";
+
+const prisma = new PrismaClient();
 
 async function sendOtpToAllUsers() {
   console.log("📧 Starting OTP distribution to all users...\n");
 
   try {
-    const db = connectDatabase();
-    if (!db) {
-      console.error("❌ Database connection failed - check DATABASE_URL env var");
-      process.exit(1);
-    }
+    // Get all users with emails
+    const usersWithEmails = await prisma.user.findMany({
+      where: {
+        email: { not: null },
+      },
+      select: { id: true, email: true, name: true },
+      orderBy: { id: "asc" },
+    });
 
-    // Get all users with emails - using raw query to avoid Drizzle type issues
-    const allUsers = await (db as any).execute(
-      `SELECT id, email, name FROM users WHERE email IS NOT NULL ORDER BY id`
-    );
-    const usersWithEmails = (allUsers as any[]).filter((u: any) => u.email);
     console.log(`Found ${usersWithEmails.length} users with emails\n`);
 
     let successCount = 0;
@@ -89,9 +89,11 @@ async function sendOtpToAllUsers() {
     }
 
     console.log("\n🎉 OTP distribution complete!\n");
+    await prisma.$disconnect();
     process.exit(0);
   } catch (error) {
     console.error("💥 Script failed:", error);
+    await prisma.$disconnect();
     process.exit(1);
   }
 }

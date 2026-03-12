@@ -1,74 +1,83 @@
 import "dotenv/config";
-import { getDb } from "../src/db";
-import { users } from "../../drizzle/schema";
+import { connectDatabase, prisma, upsertUser } from "../src/db.js";
 import bcrypt from "bcryptjs";
-import crypto from "crypto";
+import crypto from "node:crypto";
 
 async function seedUsers() {
-  const db = await getDb();
-  if (!db) {
-    console.error("Database not available");
-    process.exit(1);
-  }
+  await connectDatabase();
 
-  const seedUsers = [
+  const seedUsersData = [
     {
-      email: "snshuti@centrika.rw",
-      name: "Selmy Nshuti",
+      email: "msebagabo@centrika.rw",
+      name: "Moses Sebagabo",
+      password: "Rwanda@123",
+      role: "admin" as const,
+      phoneNumber: "+250-788-123-456",
+      location: "Kigali, Rwanda",
+      status: "Active",
+    },
+    {
+      email: "snshuti@centrika.rw", 
+      name: "Selmy Nshuti", 
       password: "Centrika@2024",
       role: "admin" as const,
+      phoneNumber: "+250-788-123-456",
+      location: "Kigali, Rwanda",
+      status: "Active",
+      departmentId: 1, // Engineering
     },
     {
       email: "tngassa@centrika.rw",
       name: "Théophile NGASSA",
       password: "Centrika@2024",
       role: "ceo_md" as const,
+      phoneNumber: "+250-788-234-567",
+      location: "Kigali, Rwanda",
+      status: "Active",
+      departmentId: 5, // Operations
     },
     {
       email: "employee1@centrika.rw",
       name: "John Employee",
       password: "Centrika@2024",
       role: "user" as const,
+      phoneNumber: "+250-788-345-678",
+      location: "Kigali, Rwanda",
+      status: "On Leave",
+      departmentId: 3, // Finance
     },
   ];
 
   console.log("Seeding users...");
 
-  for (const user of seedUsers) {
+  for (const user of seedUsersData) {
     try {
-      // Check if user already exists
-      const existingUsers = await db
-        .select()
-        .from(users)
-        .where((u) => u.email === user.email);
-
-      if (existingUsers && existingUsers.length > 0) {
-        console.log(`✓ User ${user.email} already exists`);
-        continue;
-      }
-
       // Hash password
       const hashedPassword = await bcrypt.hash(user.password, 10);
       const openId = `email-${crypto.randomBytes(16).toString("hex")}`;
 
-      // Insert user
-      await db.insert(users).values({
+      // Upsert user
+      await upsertUser({
         openId,
         email: user.email,
         name: user.name,
         password: hashedPassword,
         loginMethod: "email",
         role: user.role,
-        lastSignedIn: new Date(),
+        phoneNumber: user.phoneNumber,
+        location: user.location,
+        status: user.status,
+        departmentId: user.departmentId,
       });
 
-      console.log(`✓ Created user: ${user.email} (${user.role})`);
+      console.log(`✓ Created/Updated user: ${user.email} (${user.role})`);
     } catch (error) {
       console.error(`✗ Error creating user ${user.email}:`, error);
     }
   }
 
   console.log("✓ Seeding complete!");
+  await prisma.$disconnect();
   process.exit(0);
 }
 

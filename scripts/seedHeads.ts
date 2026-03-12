@@ -1,20 +1,8 @@
-#!/usr/bin/env tsx
 import "dotenv/config";
-import { getDb } from "../src/db";
-import { upsertUser } from "../src/db";
-import postgres from "postgres";
-import { drizzle } from "drizzle-orm/postgres-js";
+import { upsertUser, connectDatabase, prisma } from "../src/db.js";
 
 async function seed() {
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) {
-    console.error("[Database] DATABASE_URL not set");
-    process.exit(1);
-  }
-
-  // Create a direct connection for seeding
-  const client = postgres(databaseUrl);
-  const db = drizzle(client);
+  await connectDatabase();
   console.log("[Database] Connected to PostgreSQL for seeding");
 
   const heads = [
@@ -23,7 +11,7 @@ async function seed() {
       name: "Doreen MBABAZI",
       email: "doreen.mbabazi@centrika.com",
       loginMethod: "dev",
-      role: "head_of_department",
+      role: "head_of_department" as const,
       department: "Administration",
       position: "Head of Administration",
     },
@@ -32,7 +20,7 @@ async function seed() {
       name: "Patrick NDABARASA",
       email: "patrick.ndabarasa@centrika.com",
       loginMethod: "dev",
-      role: "head_of_department",
+      role: "head_of_department" as const,
       department: "Finance",
       position: "Head of Finance",
     },
@@ -41,7 +29,7 @@ async function seed() {
       name: "Gad AGABA",
       email: "gad.agaba@centrika.com",
       loginMethod: "dev",
-      role: "head_of_department",
+      role: "head_of_department" as const,
       department: "Technology",
       position: "Head of IT",
     },
@@ -50,7 +38,7 @@ async function seed() {
       name: "Odilon TUYISHIME",
       email: "odilon.tuyishime@centrika.com",
       loginMethod: "dev",
-      role: "head_of_department",
+      role: "head_of_department" as const,
       department: "Operations",
       position: "Head of Operations",
     },
@@ -59,7 +47,7 @@ async function seed() {
       name: "Tresor NGASA",
       email: "tresor.ngasa@centrika.com",
       loginMethod: "dev",
-      role: "ceo_md",
+      role: "ceo_md" as const,
       position: "CEO/MD",
     },
     {
@@ -67,16 +55,14 @@ async function seed() {
       name: "Eric KAMANZI",
       email: "eric.kamanzi@centrika.com",
       loginMethod: "dev",
-      role: "ceo_md",
+      role: "ceo_md" as const,
       position: "CEO/MD",
     },
   ];
 
   for (const h of heads) {
     try {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      await upsertUser(h);
+      await upsertUser(h as any);
       console.log(`✅ Upserted user: ${h.name} (${h.role})`);
     } catch (err) {
       console.error(`❌ Failed to upsert ${h.name}:`, err);
@@ -84,9 +70,7 @@ async function seed() {
   }
 
   console.log("Seeding complete.");
-  
-  // Close the connection
-  await client.end();
+  await prisma.$disconnect();
   process.exit(0);
 }
 
