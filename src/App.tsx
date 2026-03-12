@@ -16,6 +16,7 @@ import RequestDetail from "./pages/RequestDetail";
 import LeaveRequest from "./pages/LeaveRequest";
 import CarRequest from "./pages/CarRequest";
 import ExpenditureRequest from "./pages/ExpenditureRequest";
+import AssetRequest from "./pages/AssetRequest";
 import Approvals from "./pages/Approvals";
 import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
@@ -34,6 +35,7 @@ import SystemSettings from "./pages/SystemSettings";
 import ApprovalHistory from "./pages/ApprovalHistory";
 import RequestAnalytics from "./pages/RequestAnalytics";
 import TeamStatistics from "./pages/TeamStatistics";
+import DepartmentManagement from "./pages/DepartmentManagement";
 
 function Router() {
   const { isAuthenticated, loading } = useAuth();
@@ -47,13 +49,12 @@ function Router() {
     );
   }
 
-  // If not authenticated, show login/signup pages
+  // If not authenticated, show login pages
   if (!isAuthenticated) {
     return (
       <Switch>
         <Route path="/login" component={Login} />
         <Route path="/otp-login" component={OtpLogin} />
-        {/* <Route path="/signup" component={SignUp} /> - SignUp page hidden, users request account via HR */}
         <Route path="/forgot-password" component={ForgotPassword} />
         <Route path="/reset-password" component={ResetPassword} />
         <Route path="/accept-invite/:token" component={AcceptInvite} />
@@ -72,6 +73,7 @@ function Router() {
       <Route path="/requests/leave" component={LeaveRequest} />
       <Route path="/requests/car" component={CarRequest} />
       <Route path="/requests/expenditure" component={ExpenditureRequest} />
+      <Route path="/requests/asset" component={AssetRequest} />
       <Route path="/approvals" component={Approvals} />
       <Route path="/approval-history" component={ApprovalHistory} />
       <Route path="/request-analytics" component={RequestAnalytics} />
@@ -87,6 +89,7 @@ function Router() {
       <Route path="/leave-analytics" component={LeaveAnalytics} />
       <Route path="/budget-analysis" component={BudgetAnalysis} />
       <Route path="/admin/users" component={AdminUsers} />
+      <Route path="/admin/departments" component={DepartmentManagement} />
       <Route path="/profile" component={Profile} />
       <Route path="/settings" component={Settings} />
       <Route path="/system-settings" component={SystemSettings} />
@@ -105,10 +108,10 @@ function Router() {
 function App() {
   return (
     <ErrorBoundary>
-        <ThemeProvider
-          defaultTheme="light"
-          switchable={true}
-        >
+      <ThemeProvider
+        defaultTheme="light"
+        switchable={true}
+      >
         <TooltipProvider>
           <Toaster />
           <Router />

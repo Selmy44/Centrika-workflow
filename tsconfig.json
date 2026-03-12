@@ -8,6 +8,7 @@
             "DOM.Iterable"
         ],
         "jsx": "react-jsx",
+        "forceConsistentCasingInFileNames": true,
         "strict": true,
         "noEmit": true,
         "esModuleInterop": true,
@@ -16,8 +17,8 @@
         "allowImportingTsExtensions": true,
         "resolveJsonModule": true,
         "isolatedModules": true,
-        "baseUrl": ".",
         "types": [
+            "node",
             "vite/client"
         ],
         "paths": {
@@ -28,7 +29,7 @@
     },
     "include": [
         "src",
-        "../backend/src/index.ts"
+        "../oneportal-backend/src/index.ts"
     ],
     "exclude": [
         "node_modules",
