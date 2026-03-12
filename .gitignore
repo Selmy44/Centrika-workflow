@@ -108,3 +108,5 @@ temp/
 
 # Local development data
 .local-data/
+
+/src/generated/prisma
