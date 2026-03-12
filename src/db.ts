@@ -1,98 +1,64 @@
-import { eq, and } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
-import { InsertUser, users, requests, leaveRequests, carRequests, expenditureRequests, requestApprovals, requestAttachments, leaveBalances } from "../drizzle/schema";
+import { PrismaClient, Prisma } from "@prisma/client";
 
-let _db: ReturnType<typeof drizzle> | null = null;
+export type User = Prisma.UserGetPayload<{ include: { department: true } }>;
 
-// Lazily create the drizzle instance so local tooling can run without a DB.
-export async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
-    try {
-      const client = postgres(process.env.DATABASE_URL, {
-        max: 10,
-      });
-      _db = drizzle(client);
-      console.log("[Database] Connected to PostgreSQL");
-    } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
-      _db = null;
-    }
-  }
-  return _db;
-}
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
+};
 
-export function connectDatabase() {
-  const url = process.env.DATABASE_URL;
-  if (!url) {
-    console.warn("[Database] DATABASE_URL not set, will work in local-only mode");
-    return null;
-  }
+export const prisma =
+  globalForPrisma.prisma ??
+  new PrismaClient({
+    log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
+  });
 
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+
+export async function connectDatabase() {
   try {
-    const client = postgres(url, {
-      max: 10,
-    });
-    _db = drizzle(client);
-    console.log("[Database] Connected to PostgreSQL");
-    return _db;
+    await prisma.$connect();
+    console.log("✅ Database connected successfully via Prisma");
   } catch (error) {
-    console.error("[Database] Connection error:", error);
-    return null;
+    console.error("❌ Database connection failed:", error);
+    throw error;
   }
 }
 
-export async function upsertUser(user: InsertUser): Promise<void> {
+export async function getDb() {
+  return prisma;
+}
+
+export async function upsertUser(user: any): Promise<void> {
   if (!user.openId) {
     throw new Error("User openId is required for upsert");
   }
 
-  const db = await getDb();
-  if (!db) {
-    throw new Error("Database not available");
-  }
-
   try {
-    const values: InsertUser = {
+    const data = {
       openId: user.openId,
       name: user.name,
       email: user.email,
       password: user.password,
       loginMethod: user.loginMethod,
       role: user.role || "user",
-      department: user.department,
       position: user.position,
       staffId: user.staffId,
       dateOfEmployment: user.dateOfEmployment,
-      managerId: user.managerId,
+      departmentId: user.departmentId,
+      phoneNumber: user.phoneNumber,
+      location: user.location,
+      status: user.status,
       lastSignedIn: user.lastSignedIn || new Date(),
     };
 
-    // Check if user exists
-    const existing = await db.select().from(users).where(eq(users.openId, user.openId)).limit(1);
-
-    if (existing.length > 0) {
-      // Update existing user
-      await db
-        .update(users)
-        .set({
-          name: values.name,
-          email: values.email,
-          password: values.password,
-          loginMethod: values.loginMethod,
-          department: values.department,
-          position: values.position,
-          staffId: values.staffId,
-          dateOfEmployment: values.dateOfEmployment,
-          managerId: values.managerId,
-          lastSignedIn: values.lastSignedIn,
-          updatedAt: new Date(),
-        })
-        .where(eq(users.openId, user.openId));
-    } else {
-      // Insert new user
-      await db.insert(users).values(values);
-    }
+    await prisma.user.upsert({
+      where: { openId: user.openId },
+      update: {
+        ...data,
+        updatedAt: new Date(),
+      },
+      create: data,
+    });
   } catch (error) {
     console.error("[Database] Failed to upsert user:", error);
     throw error;
@@ -100,99 +66,90 @@ export async function upsertUser(user: InsertUser): Promise<void> {
 }
 
 export async function getUserByOpenId(openId: string) {
-  const db = await getDb();
-  if (!db) {
-    throw new Error("Database not available");
-  }
-
-  const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
-
-  return result.length > 0 ? result[0] : undefined;
+  return prisma.user.findUnique({
+    where: { openId },
+    include: { department: true }
+  });
 }
 
 export async function getUserById(id: number) {
-  const db = await getDb();
-  if (!db) {
-    throw new Error("Database not available");
-  }
-
-  const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
-  return result.length > 0 ? result[0] : undefined;
+  return prisma.user.findUnique({
+    where: { id },
+    include: { department: true }
+  });
 }
 
 export async function getUserByEmail(email: string) {
-  const db = await getDb();
-  if (!db) {
-    throw new Error("Database not available");
-  }
-
-  const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
-  return result.length > 0 ? result[0] : undefined;
+  return prisma.user.findFirst({
+    where: { email },
+    include: { department: true }
+  });
 }
 
 export async function getUserRequests(userId: number) {
-  const db = await getDb();
-  if (!db) return [];
-  return db.select().from(requests).where(eq(requests.userId, userId));
+  return prisma.request.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" }
+  });
 }
 
 export async function getPendingApprovals() {
-  const db = await getDb();
-  if (!db) return [];
-  return db
-    .select()
-    .from(requestApprovals)
-    .where(eq(requestApprovals.status, "pending"));
+  return prisma.requestApproval.findMany({
+    where: { status: "pending" },
+    include: { request: true }
+  });
 }
 
 export async function getRequestDetails(requestId: number) {
-  const db = await getDb();
-  if (!db) return null;
-  const result = await db.select().from(requests).where(eq(requests.id, requestId)).limit(1);
-  return result.length > 0 ? result[0] : null;
+  return prisma.request.findUnique({
+    where: { id: requestId },
+    include: {
+      user: true,
+      leaveRequest: true,
+      carRequest: true,
+      expenditureRequest: true,
+      assetRequest: true,
+      attachments: true,
+      approvals: {
+        include: { approver: true }
+      }
+    }
+  });
 }
 
 export async function getLeaveRequestDetails(requestId: number) {
-  const db = await getDb();
-  if (!db) return null;
-  const result = await db.select().from(leaveRequests).where(eq(leaveRequests.requestId, requestId)).limit(1);
-  return result.length > 0 ? result[0] : null;
+  return prisma.leaveRequest.findUnique({
+    where: { requestId }
+  });
 }
 
 export async function getCarRequestDetails(requestId: number) {
-  const db = await getDb();
-  if (!db) return null;
-  const result = await db.select().from(carRequests).where(eq(carRequests.requestId, requestId)).limit(1);
-  return result.length > 0 ? result[0] : null;
+  return prisma.carRequest.findUnique({
+    where: { requestId }
+  });
 }
 
 export async function getExpenditureRequestDetails(requestId: number) {
-  const db = await getDb();
-  if (!db) return null;
-  const result = await db.select().from(expenditureRequests).where(eq(expenditureRequests.requestId, requestId)).limit(1);
-  return result.length > 0 ? result[0] : null;
+  return prisma.expenditureRequest.findUnique({
+    where: { requestId }
+  });
 }
 
 export async function getRequestAttachments(requestId: number) {
-  const db = await getDb();
-  if (!db) return [];
-  return db.select().from(requestAttachments).where(eq(requestAttachments.requestId, requestId));
+  return prisma.requestAttachment.findMany({
+    where: { requestId }
+  });
 }
 
 export async function getUserLeaveBalance(userId: number, year: number) {
-  const db = await getDb();
-  if (!db) return null;
-
-  const result = await db
-    .select()
-    .from(leaveBalances)
-    .where(and(eq(leaveBalances.userId, userId), eq(leaveBalances.year, year)))
-    .limit(1);
-  return result.length > 0 ? result[0] : null;
+  return prisma.leaveBalance.findFirst({
+    where: { userId, year }
+  });
 }
 
 export async function getRequestApprovals(requestId: number) {
-  const db = await getDb();
-  if (!db) return [];
-  return db.select().from(requestApprovals).where(eq(requestApprovals.requestId, requestId));
+  return prisma.requestApproval.findMany({
+    where: { requestId },
+    include: { approver: true }
+  });
 }
