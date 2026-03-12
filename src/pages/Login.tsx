@@ -85,7 +85,7 @@ export default function Login() {
           }}
         />
       ) : (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
           <div className="w-full max-w-md">
             <Card className="bg-slate-800/50 border-slate-700 backdrop-blur hover:border-slate-700">
               <CardHeader className="space-y-2 text-center">
@@ -137,7 +137,7 @@ export default function Login() {
                   <Button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold py-2"
+                    className="w-full bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold py-2"
                   >
                     {isLoading ? (
                       <>

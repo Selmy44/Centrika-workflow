@@ -48,11 +48,11 @@ export default function Profile() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [profileImage, setProfileImage] = useState<string>(user?.profileImage || "");
   const [uploadingImage, setUploadingImage] = useState(false);
-  
+
   // Edit profile form
   const [editName, setEditName] = useState(user?.name || "");
   const [editEmail, setEditEmail] = useState(user?.email || "");
-  const [editDepartment, setEditDepartment] = useState(user?.department || "");
+  const [editDepartmentId, setEditDepartmentId] = useState(user?.departmentId?.toString() || "");
   const [editPosition, setEditPosition] = useState(user?.position || "");
   const [editStaffId, setEditStaffId] = useState(user?.staffId || "");
   const [editDateOfEmployment, setEditDateOfEmployment] = useState(user?.dateOfEmployment || "");
@@ -67,9 +67,10 @@ export default function Profile() {
   const [deletePassword, setDeletePassword] = useState("");
 
   const { data: managers = [] } = trpc.users.listHeads.useQuery();
-  
+  const { data: departments = [] } = (trpc as any).employees.getDepartments.useQuery();
+
   const uniqueManagers = Array.from(
-    new Map(managers.map(m => [m.id, m])).values()
+    new Map(managers.map((m: any) => [m.id, m])).values()
   );
 
   // Mutations
@@ -79,7 +80,7 @@ export default function Profile() {
   const utils = trpc.useUtils();
 
   const handleEditProfile = async () => {
-    if (!editName || !editEmail || !editDepartment || !editPosition || !editStaffId || !editDateOfEmployment || !editManagerId) {
+    if (!editName || !editEmail || !editDepartmentId || !editPosition || !editStaffId || !editDateOfEmployment || !editManagerId) {
       toast.error("Please fill in all fields");
       return;
     }
@@ -88,7 +89,7 @@ export default function Profile() {
       await updateProfileMutation.mutateAsync({
         name: editName,
         email: editEmail,
-        department: editDepartment,
+        departmentId: parseInt(editDepartmentId),
         position: editPosition,
         staffId: editStaffId,
         dateOfEmployment: editDateOfEmployment,
@@ -139,7 +140,7 @@ export default function Profile() {
       await updateProfileMutation.mutateAsync({
         name: user?.name || editName,
         email: user?.email || editEmail,
-        department: user?.department || editDepartment,
+        departmentId: user?.departmentId || parseInt(editDepartmentId),
         position: user?.position || editPosition,
         staffId: user?.staffId || editStaffId,
         dateOfEmployment: user?.dateOfEmployment || editDateOfEmployment,
@@ -235,7 +236,7 @@ export default function Profile() {
                         {user.name?.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <label 
+                    <label
                       htmlFor="profile-image-upload"
                       className="absolute bottom-0 right-0 bg-blue-600 hover:bg-blue-700 rounded-full p-2 cursor-pointer transition-colors"
                     >
@@ -282,7 +283,7 @@ export default function Profile() {
                         <Building2 size={16} />
                         <span>Department</span>
                       </div>
-                      <p className="text-foreground font-medium">{user.department || "Not provided"}</p>
+                      <p className="text-foreground font-medium">{user.department?.name || "Not provided"}</p>
                     </div>
 
                     <div>
@@ -327,8 +328,8 @@ export default function Profile() {
                           user.role === "admin"
                             ? "bg-purple-500/20 text-purple-400 border-purple-500/30"
                             : user.role === "head_of_department"
-                            ? "bg-orange-500/20 text-orange-400 border-orange-500/30"
-                            : "bg-blue-500/20 text-blue-400 border-blue-500/30"
+                              ? "bg-orange-500/20 text-orange-400 border-orange-500/30"
+                              : "bg-blue-500/20 text-blue-400 border-blue-500/30"
                         }
                       >
                         {user.role === "admin" ? "Administrator" : user.role === "head_of_department" ? "Head of Department" : "User"}
@@ -395,15 +396,16 @@ export default function Profile() {
                             <Label htmlFor="edit-department" className="text-slate-200 font-semibold text-sm">
                               Department
                             </Label>
-                            <Select value={editDepartment} onValueChange={setEditDepartment}>
+                            <Select value={editDepartmentId} onValueChange={setEditDepartmentId}>
                               <SelectTrigger id="edit-department" className="bg-slate-700/50 border-slate-600 text-white h-10 text-sm hover:bg-slate-700/70 transition-colors focus:border-blue-500">
                                 <SelectValue placeholder="Select department" />
                               </SelectTrigger>
                               <SelectContent className="bg-slate-800 border-slate-700">
-                                <SelectItem value="IT" className="text-white">IT</SelectItem>
-                                <SelectItem value="Operations" className="text-white">Operations</SelectItem>
-                                <SelectItem value="Finance" className="text-white">Finance</SelectItem>
-                                <SelectItem value="Administration" className="text-white">Administration</SelectItem>
+                                {departments?.map((dept: any) => (
+                                  <SelectItem key={dept.id} value={dept.id.toString()} className="text-white">
+                                    {dept.name}
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </div>
@@ -472,8 +474,8 @@ export default function Profile() {
                         <Button variant="outline" onClick={() => setShowEditDialog(false)} className="bg-slate-700/50 border-slate-600 text-white hover:bg-slate-600 h-10 px-6 text-sm">
                           Cancel
                         </Button>
-                        <Button 
-                          onClick={handleEditProfile} 
+                        <Button
+                          onClick={handleEditProfile}
                           disabled={updateProfileMutation.isPending}
                           className="bg-blue-600 hover:bg-blue-700 text-white h-10 px-6 text-sm"
                         >
@@ -520,8 +522,8 @@ export default function Profile() {
                         <Button variant="outline" onClick={() => setShowPasswordDialog(false)}>
                           Cancel
                         </Button>
-                        <Button 
-                          onClick={handleChangePassword} 
+                        <Button
+                          onClick={handleChangePassword}
                           disabled={changePasswordMutation.isPending}
                           className="bg-blue-600 hover:bg-blue-700"
                         >
@@ -532,7 +534,7 @@ export default function Profile() {
                     </DialogContent>
                   </Dialog>
 
-                  <Button 
+                  <Button
                     onClick={handleSaveProfileImage}
                     disabled={uploadingImage || !profileImage}
                     className="bg-green-600 hover:bg-green-700 text-white"
@@ -541,14 +543,14 @@ export default function Profile() {
                     Save Profile Image
                   </Button>
 
-                  <Button 
+                  <Button
                     onClick={async () => {
                       try {
                         setUploadingImage(true);
                         await updateProfileMutation.mutateAsync({
                           name: user?.name || editName,
                           email: user?.email || editEmail,
-                          department: user?.department || editDepartment,
+                          departmentId: user?.departmentId || parseInt(editDepartmentId),
                           position: user?.position || editPosition,
                           staffId: user?.staffId || editStaffId,
                           dateOfEmployment: user?.dateOfEmployment || editDateOfEmployment,
@@ -609,8 +611,8 @@ export default function Profile() {
                   Download My Data
                 </Button>
                 <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="w-full justify-start text-destructive hover:bg-destructive/10"
                     onClick={() => setShowDeleteDialog(true)}
                   >

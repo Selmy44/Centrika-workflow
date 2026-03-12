@@ -87,6 +87,7 @@ export default function Settings() {
                     <input
                       type="checkbox"
                       id="email-notifications"
+                      aria-label="Email Notifications"
                       checked={emailNotifications}
                       onChange={(e) => setEmailNotifications(e.target.checked)}
                       className="w-4 h-4 rounded border-border"
@@ -105,6 +106,7 @@ export default function Settings() {
                     <input
                       type="checkbox"
                       id="push-notifications"
+                      aria-label="Push Notifications"
                       checked={pushNotifications}
                       onChange={(e) => setPushNotifications(e.target.checked)}
                       className="w-4 h-4 rounded border-border"
@@ -211,7 +213,7 @@ export default function Settings() {
 
                 <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
                   <div className="flex gap-3">
-                    <Shield className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                    <Shield className="h-5 w-5 text-blue-500 mt-0.5 shrink-0" />
                     <div className="space-y-2">
                       <p className="font-semibold text-sm text-blue-400">Data Protection</p>
                       <p className="text-sm text-blue-300">

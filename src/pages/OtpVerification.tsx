@@ -68,7 +68,7 @@ export default function OtpVerification({ email, onBack }: OtpVerificationProps)
   const otpDigits = otpCode.padEnd(6, " ").split("").slice(0, 6);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <Card className="bg-slate-800/50 border-slate-700 backdrop-blur hover:border-slate-700">
           {/* Header with back button */}
@@ -83,7 +83,7 @@ export default function OtpVerification({ email, onBack }: OtpVerificationProps)
             </button>
 
             <div className="flex justify-center mb-4">
-              <div className="bg-gradient-to-br from-orange-500/20 to-amber-500/20 p-4 rounded-full border border-orange-500/30">
+              <div className="bg-linear-to-br from-orange-500/20 to-amber-500/20 p-4 rounded-full border border-orange-500/30">
                 <Mail className="h-8 w-8 text-orange-500" />
               </div>
             </div>
@@ -139,7 +139,7 @@ export default function OtpVerification({ email, onBack }: OtpVerificationProps)
               <Button
                 type="submit"
                 disabled={isLoading || otpCode.length < 6}
-                className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold py-3 text-base transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-linear-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold py-3 text-base transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <>
