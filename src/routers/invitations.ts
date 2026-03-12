@@ -1,11 +1,10 @@
 import { protectedProcedure, router } from "../core/trpc";
-import { getDb } from "../db";
-import { invitations, users } from "../../drizzle/schema";
-import { eq, and } from "drizzle-orm";
+import { prisma } from "../db";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { sendEmail, emailTemplates } from "../core/email";
 import crypto from "crypto";
+import bcrypt from "bcryptjs";
 
 // Generate unique invitation token
 function generateInvitationToken(): string {
@@ -23,29 +22,19 @@ export const invitationsRouter = router({
     .mutation(async ({ ctx, input }) => {
       try {
         // Only admin and hr can invite users
-        if (!ctx.user || !["admin", "hr"].includes(ctx.user.role)) {
+        if (!["admin", "hr"].includes(ctx.user.role)) {
           throw new TRPCError({
             code: "FORBIDDEN",
             message: "Only admins and HR can invite users",
           });
         }
 
-        const db = await getDb();
-        if (!db) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Database not available",
-          });
-        }
-
         // Check if user already exists
-        const existingUser = await db
-          .select()
-          .from(users)
-          .where(eq(users.email, input.email))
-          .limit(1);
+        const existingUser = await prisma.user.findFirst({
+          where: { email: input.email }
+        });
 
-        if (existingUser.length > 0) {
+        if (existingUser) {
           throw new TRPCError({
             code: "BAD_REQUEST",
             message: "User with this email already exists",
@@ -53,27 +42,21 @@ export const invitationsRouter = router({
         }
 
         // Check if invitation already exists and is still pending
-        const existingInvitation = await db
-          .select()
-          .from(invitations)
-          .where(
-            and(
-              eq(invitations.email, input.email),
-              eq(invitations.status, "pending"),
-              // Check if not expired
-              // expiresAt > now is checked below
-            )
-          )
-          .limit(1);
+        const existingInvitation = await prisma.invitation.findFirst({
+          where: {
+            email: input.email,
+            status: "pending",
+          }
+        });
 
-        if (existingInvitation.length > 0) {
+        if (existingInvitation) {
           // Check if it's expired
-          if (existingInvitation[0].expiresAt < new Date()) {
+          if (existingInvitation.expiresAt < new Date()) {
             // Update to expired
-            await db
-              .update(invitations)
-              .set({ status: "expired" })
-              .where(eq(invitations.id, existingInvitation[0].id));
+            await prisma.invitation.update({
+              where: { id: existingInvitation.id },
+              data: { status: "expired" }
+            });
           } else {
             throw new TRPCError({
               code: "BAD_REQUEST",
@@ -86,24 +69,26 @@ export const invitationsRouter = router({
         const token = generateInvitationToken();
         const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-        const newInvitation = await db.insert(invitations).values({
-          email: input.email,
-          token,
-          role: input.role,
-          name: input.name,
-          createdBy: ctx.user.id,
-          status: "pending",
-          expiresAt,
-        }).returning();
+        const newInvitation = await prisma.invitation.create({
+          data: {
+            email: input.email,
+            token,
+            role: input.role,
+            name: input.name,
+            createdBy: ctx.user.id,
+            status: "pending",
+            expiresAt,
+          }
+        });
 
         // Send invitation email
         const inviteLink = `${process.env.VITE_OAUTH_PORTAL_URL || "http://localhost:5173"}/accept-invite/${token}`;
 
         // Convert role to display format
-        const roleDisplay = ctx.user.role === "head_of_department" ? "Department Head" :
-          ctx.user.role === "head_of_finance" ? "Finance" :
-            ctx.user.role === "ceo_md" ? "CEO/MD" :
-              ctx.user.role.charAt(0).toUpperCase() + ctx.user.role.slice(1);
+        const roleDisplay = input.role === "head_of_department" ? "Department Head" :
+          input.role === "head_of_finance" ? "Finance" :
+            input.role === "ceo_md" ? "CEO/MD" :
+              input.role.charAt(0).toUpperCase() + input.role.slice(1);
 
         const emailData = emailTemplates.userInvitationEmail(
           input.name,
@@ -121,7 +106,7 @@ export const invitationsRouter = router({
 
         return {
           success: true,
-          invitationId: newInvitation[0].id,
+          invitationId: newInvitation.id,
           message: `Invitation sent to ${input.email}`,
         };
       } catch (error) {
@@ -133,48 +118,31 @@ export const invitationsRouter = router({
   // Get pending invitations
   getPendingInvitations: protectedProcedure.query(async ({ ctx }) => {
     try {
-      if (!ctx.user || !["admin", "hr"].includes(ctx.user.role)) {
+      if (!["admin", "hr"].includes(ctx.user.role)) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Only admins and HR can view invitations",
         });
       }
 
-      const db = await getDb();
-      if (!db) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Database not available",
-        });
-      }
-
-      const allInvitations = await db
-        .select()
-        .from(invitations)
-        .where(eq(invitations.status, "pending"));
+      const allInvitations = await prisma.invitation.findMany({
+        where: { status: "pending" }
+      });
 
       // Separate active and expired
       const now = new Date();
-      const active = allInvitations.filter(inv => inv.expiresAt > now);
-      const expired = allInvitations.filter(inv => inv.expiresAt <= now);
+      const active = allInvitations.filter((inv: any) => inv.expiresAt > now);
+      const expired = allInvitations.filter((inv: any) => inv.expiresAt <= now);
 
       // Update expired statuses in DB
-      for (const expiredInv of expired) {
-        await db
-          .update(invitations)
-          .set({ status: "expired" })
-          .where(eq(invitations.id, expiredInv.id));
+      if (expired.length > 0) {
+        await prisma.invitation.updateMany({
+          where: { id: { in: expired.map((inv: any) => inv.id) } },
+          data: { status: "expired" }
+        });
       }
 
-      return active.map(inv => ({
-        id: inv.id,
-        email: inv.email,
-        name: inv.name,
-        role: inv.role,
-        createdAt: inv.createdAt,
-        expiresAt: inv.expiresAt,
-        status: inv.status,
-      }));
+      return active;
     } catch (error) {
       console.error("Error fetching invitations:", error);
       throw error;
@@ -186,56 +154,44 @@ export const invitationsRouter = router({
     .input(z.object({ invitationId: z.number() }))
     .mutation(async ({ ctx, input }) => {
       try {
-        if (!ctx.user || !["admin", "hr"].includes(ctx.user.role)) {
+        if (!["admin", "hr"].includes(ctx.user.role)) {
           throw new TRPCError({
             code: "FORBIDDEN",
             message: "Only admins and HR can resend invitations",
           });
         }
 
-        const db = await getDb();
-        if (!db) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Database not available",
-          });
-        }
+        const inv = await prisma.invitation.findUnique({
+          where: { id: input.invitationId }
+        });
 
-        const invitation = await db
-          .select()
-          .from(invitations)
-          .where(eq(invitations.id, input.invitationId))
-          .limit(1);
-
-        if (!invitation.length) {
+        if (!inv) {
           throw new TRPCError({
             code: "NOT_FOUND",
             message: "Invitation not found",
           });
         }
 
-        const inv = invitation[0];
-
         // Extend expiry by 1 day
         const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-        await db
-          .update(invitations)
-          .set({
+        await prisma.invitation.update({
+          where: { id: input.invitationId },
+          data: {
             expiresAt,
             status: "pending",
             updatedAt: new Date(),
-          })
-          .where(eq(invitations.id, input.invitationId));
+          }
+        });
 
         // Resend email
         const inviteLink = `${process.env.VITE_OAUTH_PORTAL_URL || "http://localhost:5173"}/accept-invite/${inv.token}`;
 
         // Convert role to display format
-        const roleDisplay = ctx.user.role === "head_of_department" ? "Department Head" :
-          ctx.user.role === "head_of_finance" ? "Finance" :
-            ctx.user.role === "ceo_md" ? "CEO/MD" :
-              ctx.user.role.charAt(0).toUpperCase() + ctx.user.role.slice(1);
+        const roleDisplay = inv.role === "head_of_department" ? "Department Head" :
+          inv.role === "head_of_finance" ? "Finance" :
+            inv.role === "ceo_md" ? "CEO/MD" :
+              inv.role.charAt(0).toUpperCase() + inv.role.slice(1);
 
         const emailData = emailTemplates.userInvitationEmail(
           inv.name || "User",
@@ -265,41 +221,31 @@ export const invitationsRouter = router({
     .input(z.object({ invitationId: z.number() }))
     .mutation(async ({ ctx, input }) => {
       try {
-        if (!ctx.user || !["admin", "hr"].includes(ctx.user.role)) {
+        if (!["admin", "hr"].includes(ctx.user.role)) {
           throw new TRPCError({
             code: "FORBIDDEN",
             message: "Only admins and HR can cancel invitations",
           });
         }
 
-        const db = await getDb();
-        if (!db) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Database not available",
-          });
-        }
+        const invitation = await prisma.invitation.findUnique({
+          where: { id: input.invitationId }
+        });
 
-        const invitation = await db
-          .select()
-          .from(invitations)
-          .where(eq(invitations.id, input.invitationId))
-          .limit(1);
-
-        if (!invitation.length) {
+        if (!invitation) {
           throw new TRPCError({
             code: "NOT_FOUND",
             message: "Invitation not found",
           });
         }
 
-        await db
-          .update(invitations)
-          .set({
+        await prisma.invitation.update({
+          where: { id: input.invitationId },
+          data: {
             status: "expired",
             updatedAt: new Date(),
-          })
-          .where(eq(invitations.id, input.invitationId));
+          }
+        });
 
         return {
           success: true,
@@ -319,29 +265,17 @@ export const invitationsRouter = router({
     }))
     .mutation(async ({ input }) => {
       try {
-        const db = await getDb();
-        if (!db) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Database not available",
-          });
-        }
-
         // Find invitation by token
-        const invitationResult = await db
-          .select()
-          .from(invitations)
-          .where(eq(invitations.token, input.token))
-          .limit(1);
+        const invitation = await prisma.invitation.findUnique({
+          where: { token: input.token }
+        });
 
-        if (!invitationResult.length) {
+        if (!invitation) {
           throw new TRPCError({
             code: "NOT_FOUND",
             message: "Invalid or expired invitation link",
           });
         }
-
-        const invitation = invitationResult[0];
 
         // Check if invitation is valid
         if (invitation.status !== "pending") {
@@ -353,10 +287,10 @@ export const invitationsRouter = router({
 
         if (invitation.expiresAt < new Date()) {
           // Mark as expired
-          await db
-            .update(invitations)
-            .set({ status: "expired" })
-            .where(eq(invitations.id, invitation.id));
+          await prisma.invitation.update({
+            where: { id: invitation.id },
+            data: { status: "expired" }
+          });
 
           throw new TRPCError({
             code: "BAD_REQUEST",
@@ -365,13 +299,11 @@ export const invitationsRouter = router({
         }
 
         // Check if user already exists
-        const existingUser = await db
-          .select()
-          .from(users)
-          .where(eq(users.email, invitation.email))
-          .limit(1);
+        const existingUser = await prisma.user.findFirst({
+          where: { email: invitation.email }
+        });
 
-        if (existingUser.length > 0) {
+        if (existingUser) {
           throw new TRPCError({
             code: "BAD_REQUEST",
             message: "User already exists with this email",
@@ -379,37 +311,39 @@ export const invitationsRouter = router({
         }
 
         // Hash password
-        const bcryptjs = await import("bcryptjs");
-        const hashedPassword = await bcryptjs.default.hash(input.password, 10);
+        const hashedPassword = await bcrypt.hash(input.password, 10);
 
         // Create user
-        const newUser = await db.insert(users).values({
-          openId: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          name: invitation.name,
-          email: invitation.email,
-          password: hashedPassword,
-          role: invitation.role as any,
-          loginMethod: "email",
-        }).returning();
+        const newUser = await prisma.user.create({
+          data: {
+            openId: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            name: invitation.name || "User",
+            email: invitation.email,
+            password: hashedPassword,
+            role: invitation.role as any,
+            loginMethod: "email",
+            lastSignedIn: new Date(),
+          }
+        });
 
         // Mark invitation as accepted
-        await db
-          .update(invitations)
-          .set({
+        await prisma.invitation.update({
+          where: { id: invitation.id },
+          data: {
             status: "accepted",
             acceptedAt: new Date(),
             updatedAt: new Date(),
-          })
-          .where(eq(invitations.id, invitation.id));
+          }
+        });
 
         // Send welcome email
         const welcomeEmailData = emailTemplates.welcomeEmail(
-          newUser[0].name,
-          newUser[0].email
+          newUser.name || "User",
+          newUser.email || ""
         );
 
         try {
-          await sendEmail(newUser[0].email, welcomeEmailData.subject, welcomeEmailData.html);
+          await sendEmail(newUser.email || "", welcomeEmailData.subject, welcomeEmailData.html);
         } catch (emailError) {
           console.error("Failed to send welcome email:", emailError);
           // Don't fail the account creation if email fails
@@ -417,7 +351,7 @@ export const invitationsRouter = router({
 
         return {
           success: true,
-          userId: newUser[0].id,
+          userId: newUser.id,
           message: "Account created successfully! You can now log in.",
         };
       } catch (error) {
@@ -431,25 +365,13 @@ export const invitationsRouter = router({
     .input(z.object({ token: z.string() }))
     .query(async ({ input }) => {
       try {
-        const db = await getDb();
-        if (!db) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Database not available",
-          });
-        }
+        const invitation = await prisma.invitation.findUnique({
+          where: { token: input.token }
+        });
 
-        const invitationResult = await db
-          .select()
-          .from(invitations)
-          .where(eq(invitations.token, input.token))
-          .limit(1);
-
-        if (!invitationResult.length) {
+        if (!invitation) {
           return { valid: false, message: "Invalid invitation link" };
         }
-
-        const invitation = invitationResult[0];
 
         if (invitation.status !== "pending") {
           return { valid: false, message: `Invitation has already been ${invitation.status}` };

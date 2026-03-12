@@ -1,7 +1,5 @@
 import { protectedProcedure, router } from "../core/trpc";
-import { getDb } from "../db";
-import { users, leaveRequests, requests } from "../../drizzle/schema";
-import { eq, ilike, and } from "drizzle-orm";
+import { prisma } from "../db";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
@@ -9,61 +7,52 @@ export const employeesRouter = router({
   list: protectedProcedure
     .input(z.object({
       search: z.string().optional(),
-      department: z.string().optional(),
+      departmentId: z.number().optional(),
       role: z.string().optional(),
     }))
     .query(async ({ ctx, input }) => {
       const allowedRoles = ["admin", "hr", "head_of_department", "ceo_md"];
 
-      if (!ctx.user || !allowedRoles.includes(ctx.user.role)) {
+      if (!allowedRoles.includes(ctx.user.role)) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "You don't have permission to view employee directory",
         });
       }
 
-      const db = await getDb();
-      if (!db) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Database not available",
-        });
-      }
-
       try {
-        let query = db.select().from(users);
+        const employees = await prisma.user.findMany({
+          where: {
+            AND: [
+              input.search ? {
+                OR: [
+                  { name: { contains: input.search, mode: "insensitive" } },
+                  { email: { contains: input.search, mode: "insensitive" } },
+                ]
+              } : {},
+              input.departmentId ? { departmentId: input.departmentId } : {},
+              input.role ? { role: input.role as any } : {},
+            ]
+          },
+          include: {
+            department: true,
+          },
+          orderBy: { name: "asc" }
+        });
 
-        const filters = [];
-
-        if (input.search) {
-          filters.push(
-            ilike(users.name, `%${input.search}%`)
-          );
-        }
-
-        if (input.department) {
-          filters.push(eq(users.department, input.department));
-        }
-
-        if (input.role) {
-          filters.push(eq(users.role, input.role as any));
-        }
-
-        // Apply filters
-        if (filters.length > 0) {
-          query = query.where(and(...filters));
-        }
-
-        const employeeList = await query;
-        return employeeList.map(emp => ({
+        return employees.map(emp => ({
           id: emp.id,
           name: emp.name,
           email: emp.email,
-          department: emp.department,
+          department: emp.department?.name,
+          departmentId: emp.departmentId,
           position: emp.position,
           staffId: emp.staffId,
           role: emp.role,
           profileImage: emp.profileImage,
+          phoneNumber: (emp as any).phoneNumber,
+          location: (emp as any).location,
+          status: (emp as any).status,
         }));
       } catch (error) {
         console.error("[employees.list] Error fetching employees:", error);
@@ -81,68 +70,51 @@ export const employeesRouter = router({
     .query(async ({ ctx, input }) => {
       const allowedRoles = ["admin", "hr", "head_of_department", "ceo_md"];
 
-      if (!ctx.user || !allowedRoles.includes(ctx.user.role)) {
+      if (!allowedRoles.includes(ctx.user.role)) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "You don't have permission to view employee details",
         });
       }
 
-      const db = await getDb();
-      if (!db) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Database not available",
-        });
-      }
-
       try {
-        const employee = await db
-          .select()
-          .from(users)
-          .where(eq(users.id, input.employeeId))
-          .limit(1);
+        const employee = await prisma.user.findUnique({
+          where: { id: input.employeeId },
+          include: {
+            department: true,
+            requests: {
+              include: {
+                leaveRequest: true,
+              }
+            },
+          }
+        });
 
-        if (!employee || employee.length === 0) {
+        if (!employee) {
           throw new TRPCError({
             code: "NOT_FOUND",
             message: "Employee not found",
           });
         }
 
-        const emp = employee[0];
-
-        const employeeRequests = await db
-          .select()
-          .from(requests)
-          .where(eq(requests.userId, input.employeeId));
-
-        const leaveReqs = await db
-          .select()
-          .from(leaveRequests)
-          .where(
-            and(
-              ...employeeRequests
-                .map(req => eq(leaveRequests.requestId, req.id))
-                .reduce((acc, filter, idx) => {
-                  if (idx === 0) return [filter];
-                  return acc;
-                }, [] as any[])
-            )
-          );
-
         return {
-          id: emp.id,
-          name: emp.name,
-          email: emp.email,
-          department: emp.department,
-          position: emp.position,
-          staffId: emp.staffId,
-          role: emp.role,
-          dateOfEmployment: emp.dateOfEmployment,
-          profileImage: emp.profileImage,
-          leaveHistory: leaveReqs,
-          requestsCount: employeeRequests.length,
+          id: employee.id,
+          name: employee.name,
+          email: employee.email,
+          department: employee.department?.name,
+          departmentId: employee.departmentId,
+          position: employee.position,
+          staffId: employee.staffId,
+          role: employee.role,
+          dateOfEmployment: employee.dateOfEmployment,
+          profileImage: employee.profileImage,
+          phoneNumber: (employee as any).phoneNumber,
+          location: (employee as any).location,
+          status: (employee as any).status,
+          leaveHistory: employee.requests
+            .filter(r => r.type === "leave" && r.leaveRequest)
+            .map(r => r.leaveRequest),
+          requestsCount: employee.requests.length,
         };
       } catch (error) {
         console.error("[employees.getDetail] Error fetching employee details:", error);
@@ -154,36 +126,10 @@ export const employeesRouter = router({
     }),
 
   getDepartments: protectedProcedure.query(async ({ ctx }) => {
-    const allowedRoles = ["admin", "hr", "head_of_department", "ceo_md"];
-
-    if (!ctx.user || !allowedRoles.includes(ctx.user.role)) {
-      throw new TRPCError({
-        code: "FORBIDDEN",
-        message: "You don't have permission to access this",
-      });
-    }
-
-    const db = await getDb();
-    if (!db) {
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Database not available",
-      });
-    }
-
     try {
-      const result = await db
-        .select({ department: users.department })
-        .from(users)
-        .where(and(
-          (col) => col.isNotNull(users.department)
-        ));
-
-      const departments = Array.from(
-        new Set(result.map(r => r.department).filter(Boolean))
-      );
-
-      return departments;
+      return prisma.department.findMany({
+        orderBy: { name: "asc" }
+      });
     } catch (error) {
       console.error("[employees.getDepartments] Error fetching departments:", error);
       throw new TRPCError({
@@ -192,4 +138,106 @@ export const employeesRouter = router({
       });
     }
   }),
+
+  createDepartment: protectedProcedure
+    .input(z.object({
+      name: z.string().min(2),
+      description: z.string().optional(),
+      hodId: z.number().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const allowedRoles = ["admin", "hr", "ceo_md"];
+      if (!allowedRoles.includes(ctx.user.role)) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You don't have permission to manage departments",
+        });
+      }
+
+      try {
+        return await prisma.department.create({
+          data: {
+            name: input.name,
+            description: input.description,
+            hodId: input.hodId,
+          },
+        });
+      } catch (error) {
+        console.error("[employees.createDepartment] Error:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to create department",
+        });
+      }
+    }),
+
+  updateDepartment: protectedProcedure
+    .input(z.object({
+      id: z.number(),
+      name: z.string().min(2).optional(),
+      description: z.string().optional(),
+      hodId: z.number().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const allowedRoles = ["admin", "hr", "ceo_md"];
+      if (!allowedRoles.includes(ctx.user.role)) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You don't have permission to manage departments",
+        });
+      }
+
+      try {
+        const { id, ...data } = input;
+        return await prisma.department.update({
+          where: { id },
+          data,
+        });
+      } catch (error) {
+        console.error("[employees.updateDepartment] Error:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to update department",
+        });
+      }
+    }),
+
+  deleteDepartment: protectedProcedure
+    .input(z.object({
+      id: z.number(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const allowedRoles = ["admin", "hr", "ceo_md"];
+      if (!allowedRoles.includes(ctx.user.role)) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You don't have permission to delete departments",
+        });
+      }
+
+      try {
+        // Check if department has users
+        const userCount = await prisma.user.count({
+          where: { departmentId: input.id }
+        });
+
+        if (userCount > 0) {
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message: "Cannot delete department with active employees. Reassign employees first.",
+          });
+        }
+
+        return await prisma.department.delete({
+          where: { id: input.id },
+        });
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        console.error("[employees.deleteDepartment] Error:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to delete department",
+        });
+      }
+    }),
 });

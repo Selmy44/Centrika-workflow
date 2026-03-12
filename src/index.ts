@@ -54,10 +54,12 @@ async function start() {
 
   // Try to connect DB at startup
   try {
-    connectDatabase();
+    await connectDatabase();
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
-    console.warn("[DB] Database connection note:", msg);
+    console.error("❌ Database connection failed during startup:", msg);
+    // Optionally exit if DB is required
+    // process.exit(1);
   }
 
   // tRPC API

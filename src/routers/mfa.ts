@@ -1,19 +1,9 @@
 import { router, publicProcedure, protectedProcedure } from "../core/trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { getDb } from "../db";
-import {
-  mfaMethods,
-  otpTokens,
-  magicLinks,
-  mfaSessions,
-  users,
-} from "../../drizzle/schema";
-import { eq, and, gt } from "drizzle-orm";
-import bcrypt from "bcryptjs";
-import { generateOtpCode, generateToken, sendOtp, verifyOtp, getUserByEmail } from "../core/otp";
+import { prisma } from "../db";
+import { generateToken, sendOtp, verifyOtp, getUserByEmail } from "../core/otp";
 import { sendEmail, emailTemplates } from "../core/email";
-import { setMfaSessionInRedis, getMfaSessionFromRedis, deleteMfaSessionFromRedis } from "../core/redis";
 import { getSessionCookieOptions } from "../core/cookies";
 import { SignJWT } from "jose";
 import { ENV } from "../core/env";
@@ -57,7 +47,6 @@ export const mfaRouter = router({
         return {
           success: true,
           message: "OTP sent to your email",
-          // In production, remove the code from response
           expiresIn: 600, // 10 minutes
         };
       } catch (error) {
@@ -99,9 +88,8 @@ export const mfaRouter = router({
         }
 
         const token = await new SignJWT({
-          userId: user.id,
-          email: user.email,
-          role: user.role,
+          openId: user.openId,
+          appId: ENV.appId,
           name: user.name,
         })
           .setProtectedHeader({ alg: "HS256" })
@@ -119,6 +107,7 @@ export const mfaRouter = router({
             email: user.email,
             name: user.name,
             role: user.role,
+            openId: user.openId,
           },
         };
       } catch (error) {
@@ -148,21 +137,15 @@ export const mfaRouter = router({
           };
         }
 
-        const db = await getDb();
-        if (!db) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Database not available",
-          });
-        }
-
         const token = generateToken(32);
         const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
-        await db.insert(magicLinks).values({
-          userId: user.id,
-          token,
-          expiresAt,
+        await prisma.magicLink.create({
+          data: {
+            userId: user.id,
+            token,
+            expiresAt,
+          }
         });
 
         const magicLink = `${ENV.appUrl}/auth/magic-link?token=${token}`;
@@ -189,58 +172,32 @@ export const mfaRouter = router({
     .input(z.object({ token: z.string() }))
     .mutation(async ({ input, ctx }) => {
       try {
-        const db = await getDb();
-        if (!db) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Database not available",
-          });
-        }
+        const link = await prisma.magicLink.findFirst({
+          where: {
+            token: input.token,
+            isUsed: false,
+            expiresAt: { gt: new Date() }
+          },
+          include: { user: true }
+        });
 
-        const linkResult = await db
-          .select()
-          .from(magicLinks)
-          .where(
-            and(
-              eq(magicLinks.token, input.token),
-              eq(magicLinks.isUsed, false),
-              gt(magicLinks.expiresAt, new Date())
-            )
-          )
-          .limit(1);
-
-        if (linkResult.length === 0) {
+        if (!link) {
           throw new TRPCError({
             code: "BAD_REQUEST",
             message: "Invalid or expired magic link",
           });
         }
 
-        const link = linkResult[0];
-        const userResult = await db
-          .select()
-          .from(users)
-          .where(eq(users.id, link.userId))
-          .limit(1);
+        const user = link.user;
 
-        if (userResult.length === 0) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "User not found",
-          });
-        }
-
-        const user = userResult[0];
-
-        await db
-          .update(magicLinks)
-          .set({ isUsed: true, usedAt: new Date() })
-          .where(eq(magicLinks.id, link.id));
+        await prisma.magicLink.update({
+          where: { id: link.id },
+          data: { isUsed: true, usedAt: new Date() }
+        });
 
         const token = await new SignJWT({
-          userId: user.id,
-          email: user.email,
-          role: user.role,
+          openId: user.openId,
+          appId: ENV.appId,
           name: user.name,
         })
           .setProtectedHeader({ alg: "HS256" })
@@ -258,6 +215,7 @@ export const mfaRouter = router({
             email: user.email,
             name: user.name,
             role: user.role,
+            openId: user.openId,
           },
         };
       } catch (error) {
@@ -276,29 +234,10 @@ export const mfaRouter = router({
    */
   getMfaMethods: protectedProcedure.query(async ({ ctx }) => {
     try {
-      if (!ctx.user) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "Not authenticated",
-        });
-      }
-
-      const db = await getDb();
-      if (!db) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Database not available",
-        });
-      }
-
-      const methods = await db
-        .select()
-        .from(mfaMethods)
-        .where(eq(mfaMethods.userId, ctx.user.id));
-
-      return methods;
+      return prisma.mfaMethodSettings.findMany({
+        where: { userId: ctx.user.id }
+      });
     } catch (error) {
-      if (error instanceof TRPCError) throw error;
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
         message: "Failed to fetch MFA methods",
@@ -312,33 +251,15 @@ export const mfaRouter = router({
    */
   setupMfaEmail: protectedProcedure.mutation(async ({ ctx }) => {
     try {
-      if (!ctx.user) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "Not authenticated",
-        });
-      }
+      const existing = await prisma.mfaMethodSettings.findFirst({
+        where: {
+          userId: ctx.user.id,
+          method: "email",
+          isVerified: true
+        }
+      });
 
-      const db = await getDb();
-      if (!db) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Database not available",
-        });
-      }
-
-      const existing = await db
-        .select()
-        .from(mfaMethods)
-        .where(
-          and(
-            eq(mfaMethods.userId, ctx.user.id),
-            eq(mfaMethods.method, "email")
-          )
-        )
-        .limit(1);
-
-      if (existing.length > 0 && existing[0].isVerified) {
+      if (existing) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Email MFA is already set up",
@@ -377,21 +298,6 @@ export const mfaRouter = router({
     .input(z.object({ code: z.string().length(6) }))
     .mutation(async ({ ctx, input }) => {
       try {
-        if (!ctx.user) {
-          throw new TRPCError({
-            code: "UNAUTHORIZED",
-            message: "Not authenticated",
-          });
-        }
-
-        const db = await getDb();
-        if (!db) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Database not available",
-          });
-        }
-
         const verifyResult = await verifyOtp(ctx.user.id, input.code, "email");
         if (!verifyResult.success) {
           throw new TRPCError({
@@ -400,32 +306,30 @@ export const mfaRouter = router({
           });
         }
 
-        const existing = await db
-          .select()
-          .from(mfaMethods)
-          .where(
-            and(
-              eq(mfaMethods.userId, ctx.user.id),
-              eq(mfaMethods.method, "email")
-            )
-          )
-          .limit(1);
+        const existing = await prisma.mfaMethodSettings.findFirst({
+          where: {
+            userId: ctx.user.id,
+            method: "email"
+          }
+        });
 
-        if (existing.length > 0) {
-          await db
-            .update(mfaMethods)
-            .set({
+        if (existing) {
+          await prisma.mfaMethodSettings.update({
+            where: { id: existing.id },
+            data: {
               isVerified: true,
               isEnabled: true,
               updatedAt: new Date(),
-            })
-            .where(eq(mfaMethods.id, existing[0].id));
+            }
+          });
         } else {
-          await db.insert(mfaMethods).values({
-            userId: ctx.user.id,
-            method: "email",
-            isVerified: true,
-            isEnabled: true,
+          await prisma.mfaMethodSettings.create({
+            data: {
+              userId: ctx.user.id,
+              method: "email",
+              isVerified: true,
+              isEnabled: true,
+            }
           });
         }
 
@@ -449,37 +353,19 @@ export const mfaRouter = router({
     .input(z.object({ method: z.enum(["email", "sms", "totp"]) }))
     .mutation(async ({ ctx, input }) => {
       try {
-        if (!ctx.user) {
-          throw new TRPCError({
-            code: "UNAUTHORIZED",
-            message: "Not authenticated",
-          });
-        }
-
-        const db = await getDb();
-        if (!db) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Database not available",
-          });
-        }
-
-        await db
-          .update(mfaMethods)
-          .set({ isEnabled: false, updatedAt: new Date() })
-          .where(
-            and(
-              eq(mfaMethods.userId, ctx.user.id),
-              eq(mfaMethods.method, input.method)
-            )
-          );
+        await prisma.mfaMethodSettings.updateMany({
+          where: {
+            userId: ctx.user.id,
+            method: input.method
+          },
+          data: { isEnabled: false, updatedAt: new Date() }
+        });
 
         return {
           success: true,
           message: `${input.method} MFA disabled`,
         };
       } catch (error) {
-        if (error instanceof TRPCError) throw error;
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to disable MFA",
@@ -487,24 +373,16 @@ export const mfaRouter = router({
       }
     }),
 
-  // ==================== Placeholder for SMS MFA (using Twilio) ====================
-
   sendSmsMfa: protectedProcedure
     .input(z.object({ phoneNumber: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      // TODO: Implement Twilio SMS OTP
-      // This is a placeholder for future SMS MFA implementation
       throw new TRPCError({
         code: "NOT_IMPLEMENTED",
         message: "SMS MFA coming soon",
       });
     }),
 
-  // ==================== Placeholder for TOTP (Google Authenticator) ====================
-
   setupTotp: protectedProcedure.mutation(async ({ ctx }) => {
-    // TODO: Implement TOTP setup with QR code
-    // This is a placeholder for future TOTP implementation
     throw new TRPCError({
       code: "NOT_IMPLEMENTED",
       message: "TOTP setup coming soon",
