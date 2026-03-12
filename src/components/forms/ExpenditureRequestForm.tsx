@@ -129,7 +129,7 @@ export default function ExpenditureRequestForm({ onSuccess, onClose, onBack }: P
   if (!isAuthenticated) return null;
 
   return (
-    <div className="w-full bg-white text-black px-10 leave-form-container relative">
+    <div className="w-full bg-white text-black px-4 leave-form-container relative">
 
       {/* CLOSE/BACK BUTTON */}
       <button
@@ -144,12 +144,12 @@ export default function ExpenditureRequestForm({ onSuccess, onClose, onBack }: P
 
       <div>
         {/* ===== HEADER WITH LOGO AND CONTACT INFO ===== */}
-        <div className="flex justify-between items-start px-8 py-6 gap-12">
+        <div className="flex justify-between items-start px-6 py-3 gap-8">
           <div className="shrink-0">
             <img
               src="/logo/centrikaLogo.png"
               alt="Centrika Logo"
-              className="h-32 w-auto"
+              className="h-20 w-auto"
             />
           </div>
           <div className="text-sm flex-1 flex justify-end">

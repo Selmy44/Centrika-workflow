@@ -33,7 +33,7 @@ export function InviteUserModal({ open, onOpenChange, onSuccess }: InviteUserMod
   const [role, setRole] = useState("");
 
   const sendInvitationMutation = trpc.invitations.sendInvitation.useMutation({
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       toast.success(data.message);
       setEmail("");
       setName("");
@@ -41,7 +41,7 @@ export function InviteUserModal({ open, onOpenChange, onSuccess }: InviteUserMod
       onOpenChange(false);
       onSuccess?.();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(error.message || "Failed to send invitation");
     },
   });
@@ -120,7 +120,7 @@ export function InviteUserModal({ open, onOpenChange, onSuccess }: InviteUserMod
 
           <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
             <div className="flex gap-2 text-sm text-blue-800">
-              <Mail className="h-4 w-4 flex-shrink-0 mt-0.5" />
+              <Mail className="h-4 w-4 shrink-0 mt-0.5" />
               <div>
                 <p className="font-medium">Invitation Email</p>
                 <p className="text-xs mt-1">

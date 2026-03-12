@@ -79,7 +79,7 @@ export default function SickLeaveForm({ onSuccess }: Props) {
         ...prev,
         employeeName: user.name || "",
         staffId: user.staffId || "",
-        department: user.department || "",
+        department: user.department?.name || "",
         position: user.position || "",
         dateOfEmployment: autoFillData.dateOfEmployment || "",
         reportingManager: autoFillData.managerId ? String(autoFillData.managerId) : "",
@@ -228,6 +228,7 @@ export default function SickLeaveForm({ onSuccess }: Props) {
                   endDate={form.endDate}
                   onStartDateChange={(date) => setForm({ ...form, startDate: date })}
                   onEndDateChange={(date) => setForm({ ...form, endDate: date })}
+                  maxDays={30}
                 />
               </div>
 
@@ -261,8 +262,8 @@ export default function SickLeaveForm({ onSuccess }: Props) {
 
           {/* 3. MEDICAL INFORMATION */}
           <div className="border rounded-lg p-4 bg-yellow-50 border-yellow-300">
-          <div className="flex gap-2 mb-4">
-            <AlertCircle className="text-yellow-600 shrink-0" size={20} />
+            <div className="flex gap-2 mb-4">
+              <AlertCircle className="text-yellow-600 shrink-0" size={20} />
               <div>
                 <h2 className="text-lg font-bold text-red-600">3. MEDICAL INFORMATION *</h2>
                 <p className="text-sm text-gray-600">Medical documentation is required for all sick leave requests</p>

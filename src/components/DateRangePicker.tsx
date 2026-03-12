@@ -10,6 +10,7 @@ interface DateRangePickerProps {
   onStartDateChange: (date: string) => void;
   onEndDateChange: (date: string) => void;
   disabled?: boolean;
+  maxDays: number;
 }
 
 export default function DateRangePicker({
@@ -18,6 +19,7 @@ export default function DateRangePicker({
   onStartDateChange,
   onEndDateChange,
   disabled = false,
+  maxDays,
 }: DateRangePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectingEnd, setSelectingEnd] = useState(false);
@@ -56,25 +58,25 @@ export default function DateRangePicker({
 
   const calculateBusinessDaysForDateRange = (startDateStr: string, endDateStr: string) => {
     if (!startDateStr || !endDateStr) return 0;
-    
+
     const start = new Date(startDateStr);
     const end = new Date(endDateStr);
     let businessDays = 0;
     const current = new Date(start);
-    
+
     while (current <= end) {
       const dayOfWeek = current.getDay();
       const dateString = current.toISOString().split('T')[0];
       const holidayType = getHolidayType(dateString);
-      
+
       // Count only weekdays (Mon-Fri) that are not holidays
       if (dayOfWeek !== 0 && dayOfWeek !== 6 && !holidayType) {
         businessDays++;
       }
-      
+
       current.setDate(current.getDate() + 1);
     }
-    
+
     return businessDays;
   };
 
@@ -95,7 +97,7 @@ export default function DateRangePicker({
       // Second click: set end date with validation
       if (dateString >= startDate) {
         const businessDaysCount = calculateBusinessDaysForDateRange(startDate, dateString);
-        if (businessDaysCount <= 18) {
+        if (businessDaysCount <= maxDays) {
           onEndDateChange(dateString);
           setSelectingEnd(false);
         }
@@ -155,13 +157,13 @@ export default function DateRangePicker({
       const isStart = isStartDate(day);
       const isEnd = isEndDate(day);
       const inRange = isInRange(day);
-      
+
       const year = displayMonth.getFullYear();
       const month = String(displayMonth.getMonth() + 1).padStart(2, '0');
       const dayStr = String(day).padStart(2, '0');
       const dateString = `${year}-${month}-${dayStr}`;
       const holidayType = getHolidayType(dateString);
-      
+
       const dateObj = new Date(year, displayMonth.getMonth(), day);
       const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
 
@@ -174,12 +176,12 @@ export default function DateRangePicker({
             ${isStart || isEnd
               ? "bg-blue-600 text-white font-bold shadow-lg"
               : inRange
-              ? "bg-blue-200 text-blue-900 font-semibold"
-              : isWeekend
-              ? "bg-purple-100 text-purple-700"
-              : holidayType
-              ? "bg-cyan-100 text-cyan-700"
-              : "text-gray-800 hover:bg-gray-200"
+                ? "bg-blue-200 text-blue-900 font-semibold"
+                : isWeekend
+                  ? "bg-purple-100 text-purple-700"
+                  : holidayType
+                    ? "bg-cyan-100 text-cyan-700"
+                    : "text-gray-800 hover:bg-gray-200"
             }
             ${selectingEnd && inRange ? "opacity-100" : ""}
             disabled:opacity-50 disabled:cursor-not-allowed
@@ -203,25 +205,25 @@ export default function DateRangePicker({
 
   const getDayCount = () => {
     if (!startDate || !endDate) return 0;
-    
+
     const start = new Date(startDate);
     const end = new Date(endDate);
     let businessDays = 0;
     const current = new Date(start);
-    
+
     while (current <= end) {
       const dayOfWeek = current.getDay();
       const dateString = current.toISOString().split('T')[0];
       const holidayType = getHolidayType(dateString);
-      
+
       // Count only weekdays (Mon-Fri) that are not holidays
       if (dayOfWeek !== 0 && dayOfWeek !== 6 && !holidayType) {
         businessDays++;
       }
-      
+
       current.setDate(current.getDate() + 1);
     }
-    
+
     return businessDays;
   };
 
@@ -277,13 +279,12 @@ export default function DateRangePicker({
         {/* Duration Badge */}
         {startDate && endDate && (
           <div className="flex items-center gap-2">
-            <div className={`px-4 py-3 rounded-lg border-2 text-center flex-1 transition-colors ${
-              getDayCount() > 18 
-                ? "bg-red-100 border-red-300" 
-                : "bg-blue-100 border-blue-300"
-            }`}>
-              <div className={`text-xs ${getDayCount() > 18 ? "text-red-600" : "text-blue-600"}`}>Duration</div>
-              <div className={`font-bold text-lg ${getDayCount() > 18 ? "text-red-900" : "text-blue-900"}`}>{getDayCount()} days</div>
+            <div className={`px-4 py-3 rounded-lg border-2 text-center flex-1 transition-colors ${getDayCount() > maxDays
+              ? "bg-red-100 border-red-300"
+              : "bg-blue-100 border-blue-300"
+              }`}>
+              <div className={`text-xs ${getDayCount() > maxDays ? "text-red-600" : "text-blue-600"}`}>Duration</div>
+              <div className={`font-bold text-lg ${getDayCount() > maxDays ? "text-red-900" : "text-blue-900"}`}>{getDayCount()} days</div>
             </div>
           </div>
         )}
@@ -366,72 +367,72 @@ export default function DateRangePicker({
 
                   {/* Days of next month */}
                   <div className="grid grid-cols-7 gap-3">
-                {(() => {
-                  const nextMonth = new Date(displayMonth.getFullYear(), displayMonth.getMonth() + 1);
-                  const daysInNextMonth = getDaysInMonth(nextMonth);
-                  const firstDayOfNext = getFirstDayOfMonth(nextMonth);
-                  const days = [];
+                    {(() => {
+                      const nextMonth = new Date(displayMonth.getFullYear(), displayMonth.getMonth() + 1);
+                      const daysInNextMonth = getDaysInMonth(nextMonth);
+                      const firstDayOfNext = getFirstDayOfMonth(nextMonth);
+                      const days = [];
 
-                  for (let i = 0; i < firstDayOfNext; i++) {
-                    days.push(
-                      <div key={`empty-${i}`} className="h-12"></div>
-                    );
-                  }
+                      for (let i = 0; i < firstDayOfNext; i++) {
+                        days.push(
+                          <div key={`empty-${i}`} className="h-12"></div>
+                        );
+                      }
 
-                  for (let day = 1; day <= daysInNextMonth; day++) {
-                    const year = nextMonth.getFullYear();
-                    const month = nextMonth.getMonth();
-                    const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                    
-                    const isStart = startDate === dateString;
-                    const isEnd = endDate === dateString;
-                    const inRange = (() => {
-                      if (!startDate || !endDate) return false;
-                      const date = new Date(year, month, day);
-                      const start = new Date(startDate);
-                      const end = new Date(endDate);
-                      return date > start && date < end;
-                    })();
-                    
-                    const { bg, text, title } = getDayColorClass(year, month, day);
+                      for (let day = 1; day <= daysInNextMonth; day++) {
+                        const year = nextMonth.getFullYear();
+                        const month = nextMonth.getMonth();
+                        const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
-                    days.push(
-                      <button
-                        key={day}
-                        onClick={() => {
-                          const selectedDate = new Date(Date.UTC(year, month, day));
-                          const selectedDateString = selectedDate.toISOString().split('T')[0];
+                        const isStart = startDate === dateString;
+                        const isEnd = endDate === dateString;
+                        const inRange = (() => {
+                          if (!startDate || !endDate) return false;
+                          const date = new Date(year, month, day);
+                          const start = new Date(startDate);
+                          const end = new Date(endDate);
+                          return date > start && date < end;
+                        })();
 
-                          if (!selectingEnd) {
-                            onStartDateChange(selectedDateString);
-                            setSelectingEnd(true);
-                          } else {
-                            if (selectedDateString >= startDate) {
-                              onEndDateChange(selectedDateString);
-                              setSelectingEnd(false);
-                            }
-                          }
-                        }}
-                        className={`
+                        const { bg, text, title } = getDayColorClass(year, month, day);
+
+                        days.push(
+                          <button
+                            key={day}
+                            onClick={() => {
+                              const selectedDate = new Date(Date.UTC(year, month, day));
+                              const selectedDateString = selectedDate.toISOString().split('T')[0];
+
+                              if (!selectingEnd) {
+                                onStartDateChange(selectedDateString);
+                                setSelectingEnd(true);
+                              } else {
+                                if (selectedDateString >= startDate) {
+                                  onEndDateChange(selectedDateString);
+                                  setSelectingEnd(false);
+                                }
+                              }
+                            }}
+                            className={`
                           h-12 rounded-lg font-bold text-sm transition-all flex items-center justify-center
                           ${isStart || isEnd
-                            ? "bg-blue-600 text-white font-bold shadow-lg"
-                            : inRange
-                            ? "bg-blue-200 text-blue-900 font-semibold"
-                            : `${bg} ${text}`
-                          }
+                                ? "bg-blue-600 text-white font-bold shadow-lg"
+                                : inRange
+                                  ? "bg-blue-200 text-blue-900 font-semibold"
+                                  : `${bg} ${text}`
+                              }
                           disabled:opacity-50 disabled:cursor-not-allowed
                         `}
-                        disabled={disabled}
-                        title={title}
-                      >
-                        {day}
-                      </button>
-                    );
-                  }
+                            disabled={disabled}
+                            title={title}
+                          >
+                            {day}
+                          </button>
+                        );
+                      }
 
-                  return days;
-                })()}
+                      return days;
+                    })()}
                   </div>
                 </div>
               </div>
@@ -447,9 +448,9 @@ export default function DateRangePicker({
                     <span className="font-semibold">{formatDisplayDate(startDate)}</span> to <span className="font-semibold">{formatDisplayDate(endDate)}</span>
                   </p>
                   <p className="text-xs text-blue-600 mt-1">Total: <span className="font-bold">{getDayCount()} days</span></p>
-                  {getDayCount() > 18 && (
+                  {getDayCount() > maxDays && (
                     <p className="text-xs text-red-600 mt-2 font-semibold">
-                      ⚠️ Selection exceeds 18 business days. Please select fewer days.
+                      ⚠️ Selection exceeds {maxDays} business days. Please select fewer days.
                     </p>
                   )}
                   <button

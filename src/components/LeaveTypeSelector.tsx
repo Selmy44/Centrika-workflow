@@ -83,7 +83,7 @@ export function LeaveTypeSelector({
           ✕
         </Button>
         <DialogHeader className="space-y-2 pb-3 border-b px-6 pt-6 pr-14">
-          <DialogTitle className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
+          <DialogTitle className="text-xl font-bold bg-linear-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
             Select Leave Type
           </DialogTitle>
           <DialogDescription className="text-xs text-gray-600">
@@ -116,7 +116,7 @@ export function LeaveTypeSelector({
 
                       {/* Button */}
                       <Button
-                        className={`w-full font-semibold transition-colors duration-200 text-white text-xs h-6 mt-1 bg-gradient-to-r ${leave.color}`}
+                        className={`w-full font-semibold transition-colors duration-200 text-white text-xs h-6 mt-1 bg-linear-to-r ${leave.color}`}
                         onClick={() => handleSelect(leave.id)}
                       >
                         Select

@@ -140,7 +140,7 @@ export function FileReviewComponent({
                         </p>
                       </div>
                     </div>
-                    <div className="flex gap-2 ml-2 flex-shrink-0">
+                    <div className="flex gap-2 ml-2 shrink-0">
                       {isImage(file.mimeType) && (
                         <button
                           onClick={() => setPreviewFile(file)}

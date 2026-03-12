@@ -2,7 +2,7 @@ interface ProfileCardProps {
   user: {
     name?: string;
     email?: string;
-    department?: string;
+    department?: string | { name: string };
     position?: string;
     role?: string;
     profileImage?: string;
@@ -37,12 +37,17 @@ export function ProfileCard({ user }: ProfileCardProps) {
 
   const initials = getInitials(user?.name);
   const avatarGradient = getAvatarColor(user?.name);
+  
+  // Safely get department name
+  const departmentName = typeof user?.department === 'object' 
+    ? user.department.name 
+    : user?.department;
 
   return (
     <div className="relative rounded-3xl border border-gray-200 bg-white/80 backdrop-blur-xl shadow-lg p-8 overflow-hidden mr-0">
       
       {/* Subtle Background Accent */}
-      <div className="absolute inset-0 bg-gradient-to-br from-gray-50 via-white to-gray-100 opacity-70 pointer-events-none" />
+      <div className="absolute inset-0 bg-linear-to-br from-gray-50 via-white to-gray-100 opacity-70 pointer-events-none" />
 
       <div className="relative flex items-start justify-between gap-8">
         
@@ -51,7 +56,7 @@ export function ProfileCard({ user }: ProfileCardProps) {
           
           {/* Floating Avatar */}
           <div
-            className={`w-24 h-24 rounded-3xl ${user?.profileImage ? '' : `bg-gradient-to-br ${avatarGradient}`} flex items-center justify-center text-white text-3xl font-semibold shadow-xl ring-4 ring-white overflow-hidden`}
+            className={`w-24 h-24 rounded-3xl ${user?.profileImage ? '' : `bg-linear-to-br ${avatarGradient}`} flex items-center justify-center text-white text-3xl font-semibold shadow-xl ring-4 ring-white overflow-hidden`}
           >
             {user?.profileImage ? (
               <img 
@@ -87,17 +92,17 @@ export function ProfileCard({ user }: ProfileCardProps) {
                 </div>
               )}
 
-              {user?.department && user?.position && (
+              {departmentName && user?.position && (
                 <div className="w-px h-12 bg-gray-300"></div>
               )}
 
-              {user?.department && (
+              {departmentName && (
                 <div>
                   <p className="text-xs uppercase tracking-wider text-gray-400">
                     Department
                   </p>
                   <p className="text-sm font-medium text-gray-800 mt-1">
-                    {user.department}
+                    {departmentName}
                   </p>
                 </div>
               )}

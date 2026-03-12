@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { LeaveTypeSelector } from "@/components/LeaveTypeSelector";
 import LeaveRequestForm from "@/components/forms/LeaveRequestForm";
 import CarRequestForm from "@/components/forms/CarRequestForm";
 import ExpenditureRequestForm from "@/components/forms/ExpenditureRequestForm";
+import AssetRequestForm from "@/components/forms/AssetRequestForm";
 
-type RequestType = "leave" | "car" | "expenditure";
+type RequestType = "leave" | "car" | "expenditure" | "asset";
 type LeaveType = "annual" | "sick" | "personal" | "unpaid" | "parental";
 
 interface CreateRequestDialogProps {
@@ -73,11 +74,14 @@ export function CreateRequestDialog({
       {initialRequestType === "leave" && selectedLeaveType && (
         <Dialog open={showFormDialog} onOpenChange={handleCloseAll}>
           <DialogContent
-            className="!w-[85vw] !max-w-[85vw] !max-h-[85vh] !overflow-y-auto !p-0 !flex !flex-col !gap-0"
-            style={{ width: "85vw", maxWidth: "85vw" }}
-            onInteractOutside={(e) => e.preventDefault()}
+            className="!w-[70vw] !max-w-[900px] !max-h-[90vh] !overflow-y-auto !p-0 !flex !flex-col !gap-0"
+            style={{ width: "70vw", maxWidth: "900px" }}
+
             showCloseButton={false}
           >
+            <DialogHeader className="sr-only">
+              <DialogTitle>Create Leave Request</DialogTitle>
+            </DialogHeader>
             <div className="flex-1 overflow-y-auto w-full">
               <LeaveRequestForm
                 onSuccess={handleSuccess}
@@ -93,10 +97,13 @@ export function CreateRequestDialog({
       {initialRequestType === "car" && (
         <Dialog open={showFormDialog} onOpenChange={handleCloseAll}>
           <DialogContent
-            className="!w-[85vw] !max-w-[85vw] !max-h-[85vh] !overflow-y-auto !p-0 !flex !flex-col !gap-0"
-            style={{ width: "85vw", maxWidth: "85vw" }}
-            onInteractOutside={(e) => e.preventDefault()}
+            className="!w-[70vw] !max-w-[900px] !max-h-[90vh] !overflow-y-auto !p-0 !flex !flex-col !gap-0"
+            style={{ width: "70vw", maxWidth: "900px" }}
+
           >
+            <DialogHeader className="sr-only">
+              <DialogTitle>Create Car Request</DialogTitle>
+            </DialogHeader>
             <div className="flex-1 overflow-y-auto w-full">
               <CarRequestForm onSuccess={handleSuccess} />
             </div>
@@ -108,12 +115,32 @@ export function CreateRequestDialog({
       {initialRequestType === "expenditure" && (
         <Dialog open={showFormDialog} onOpenChange={handleCloseAll}>
           <DialogContent
-            className="!w-[85vw] !max-w-[85vw] !max-h-[85vh] !overflow-y-auto !p-0 !flex !flex-col !gap-0"
-            style={{ width: "85vw", maxWidth: "85vw" }}
-            onInteractOutside={(e) => e.preventDefault()}
+            className="!w-[70vw] !max-w-[900px] !max-h-[90vh] !overflow-y-auto !p-0 !flex !flex-col !gap-0"
+            style={{ width: "70vw", maxWidth: "900px" }}
+
           >
+            <DialogHeader className="sr-only">
+              <DialogTitle>Create Expenditure Request</DialogTitle>
+            </DialogHeader>
             <div className="flex-1 overflow-y-auto w-full">
               <ExpenditureRequestForm onSuccess={handleSuccess} />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+      {/* Asset Request Form Dialog */}
+      {initialRequestType === "asset" && (
+        <Dialog open={showFormDialog} onOpenChange={handleCloseAll}>
+          <DialogContent
+            className="!w-[70vw] !max-w-[900px] !max-h-[90vh] !overflow-y-auto !p-0 !flex !flex-col !gap-0"
+            style={{ width: "70vw", maxWidth: "900px" }}
+            onInteractOutside={(e) => e.preventDefault()}
+          >
+            <DialogHeader className="sr-only">
+              <DialogTitle>Create Asset Request</DialogTitle>
+            </DialogHeader>
+            <div className="flex-1 overflow-y-auto w-full">
+              <AssetRequestForm onSuccess={handleSuccess} />
             </div>
           </DialogContent>
         </Dialog>

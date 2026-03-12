@@ -135,13 +135,13 @@ export default function NotificationIcon() {
                     >
                       <div className="flex gap-3">
                         {/* Icon */}
-                        <div className="flex-shrink-0 mt-1">{getNotificationIcon(notif.type)}</div>
+                        <div className="shrink-0 mt-1">{getNotificationIcon(notif.type)}</div>
 
                         {/* Content */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
                             <p className="text-sm font-medium text-foreground line-clamp-1">{notif.title}</p>
-                            {!notif.isRead && <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1.5" />}
+                            {!notif.isRead && <div className="w-2 h-2 bg-blue-500 rounded-full shrink-0 mt-1.5" />}
                           </div>
                           <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{notif.message}</p>
                           <div className="flex items-center gap-2 mt-2">

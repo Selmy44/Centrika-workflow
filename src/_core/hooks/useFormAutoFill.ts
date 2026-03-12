@@ -11,12 +11,12 @@ export function useFormAutoFill() {
 
   const autoFillData = useMemo(
     () => ({
-      department: user?.department || "",
+      department: user?.department?.name || "",
       position: user?.position || "",
       staffId: user?.staffId || "",
       dateOfEmployment: user?.dateOfEmployment || "",
       managerId: user?.managerId || null,
-      managerName: user?.managerName || "", // Will be populated from user profile
+      managerName: (user as any)?.managerName || "", // Will be populated from user profile
       employeeName: user?.name || "",
       employeeEmail: user?.email || "",
     }),
