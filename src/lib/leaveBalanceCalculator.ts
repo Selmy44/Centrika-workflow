@@ -76,7 +76,7 @@ export function calculateAnnualLeaveBalance(
 
     // Calculate months and years employed
     const monthsDiff = (today.getFullYear() - empDate.getFullYear()) * 12 + 
-                       (today.getMonth() - empDate.getMonth());
+                      (today.getMonth() - empDate.getMonth());
     
     // Only count complete months (not including partial months)
     const completeMonths = Math.floor(monthsDiff);

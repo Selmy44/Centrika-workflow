@@ -16,10 +16,9 @@ async function getRedisClient(): Promise<RedisClientType | null> {
 
   try {
     redisClient = createClient({
-      host: ENV.redisHost || "localhost",
-      port: parseInt(ENV.redisPort || "6379"),
-      password: ENV.redisPassword || undefined,
       socket: {
+        host: ENV.redisHost || "localhost",
+        port: parseInt(ENV.redisPort || "6379"),
         reconnectStrategy: (retries) => {
           if (retries > 3) {
             console.warn("[Redis] Failed to reconnect after 3 attempts");
@@ -29,6 +28,7 @@ async function getRedisClient(): Promise<RedisClientType | null> {
           return 100 * retries;
         },
       },
+      password: ENV.redisPassword || undefined,
     });
 
     redisClient.on("error", (err) => {

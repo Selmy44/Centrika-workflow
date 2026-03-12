@@ -4,7 +4,7 @@ import axios, { type AxiosInstance } from "axios";
 import { parse as parseCookieHeader } from "cookie";
 import type { Request } from "express";
 import { SignJWT, jwtVerify } from "jose";
-import type { User } from "../../drizzle/schema";
+import type { User } from "../db";
 import * as db from "../db";
 import { ENV } from "./env";
 import type {
@@ -186,7 +186,6 @@ class SDKServer {
     cookieValue: string | undefined | null
   ): Promise<{ openId: string; appId: string; name: string } | null> {
     if (!cookieValue) {
-      console.warn("[Auth] Missing session cookie");
       return null;
     }
 
@@ -202,7 +201,6 @@ class SDKServer {
         !isNonEmptyString(appId) ||
         !isNonEmptyString(name)
       ) {
-        console.warn("[Auth] Session payload missing required fields");
         return null;
       }
 
@@ -242,7 +240,6 @@ class SDKServer {
   }
 
   async authenticateRequest(req: Request): Promise<User> {
-    // Regular authentication flow
     const cookies = this.parseCookies(req.headers.cookie);
     const sessionCookie = cookies.get(COOKIE_NAME);
     const session = await this.verifySession(sessionCookie);
@@ -255,7 +252,6 @@ class SDKServer {
     const signedInAt = new Date();
     let user = await db.getUserByOpenId(sessionUserId);
 
-    // If user not in DB, try to sync from OAuth server
     if (!user) {
       try {
         const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
@@ -269,7 +265,6 @@ class SDKServer {
         user = await db.getUserByOpenId(userInfo.openId);
       } catch (error) {
         console.error("[Auth] Failed to sync user from OAuth:", error);
-        // For email/password signup, this is expected to fail since there's no OAuth server
         throw ForbiddenError("User not found");
       }
     }
@@ -278,19 +273,14 @@ class SDKServer {
       throw ForbiddenError("User not found");
     }
 
-    // Update last signed in - just update the timestamp, preserve other fields
-    const appDb = await db.getDb();
-    if (appDb) {
-      const { users } = await import("../../drizzle/schema");
-      const { eq } = await import("drizzle-orm");
-      await appDb
-        .update(users)
-        .set({
-          lastSignedIn: signedInAt,
-          updatedAt: new Date(),
-        })
-        .where(eq(users.openId, user.openId));
-    }
+    // Update last signed in using Prisma
+    await db.prisma.user.update({
+      where: { openId: user.openId },
+      data: {
+        lastSignedIn: signedInAt,
+        updatedAt: new Date(),
+      },
+    });
 
     return user;
   }

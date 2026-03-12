@@ -1,7 +1,5 @@
 import crypto from "crypto";
-import { getDb } from "../db";
-import { otpTokens, users } from "../../drizzle/schema";
-import { eq, and, gt } from "drizzle-orm";
+import { prisma } from "../db";
 import { setOtpInRedis, getOtpFromRedis, deleteOtpFromRedis } from "./redis";
 import { sendEmail, emailTemplates } from "./email";
 
@@ -28,23 +26,20 @@ export async function sendOtp(
   destination: string
 ): Promise<{ success: boolean; message: string; code?: string }> {
   try {
-    const db = await getDb();
-    if (!db) {
-      return { success: false, message: "Database not available" };
-    }
-
     // Generate OTP code
     const code = generateOtpCode();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
     // Store in database
-    await db.insert(otpTokens).values({
-      userId,
-      code,
-      method,
-      destination,
-      expiresAt,
-      attempts: 0,
+    await prisma.otpToken.create({
+      data: {
+        userId,
+        code,
+        method,
+        destination,
+        expiresAt,
+        attempts: 0,
+      }
     });
 
     // Also store in Redis for faster verification (with automatic expiration)
@@ -54,13 +49,11 @@ export async function sendOtp(
     if (method === "email") {
       try {
         // Get user's name for the email template
-        const userRecord = await db
-          .select()
-          .from(users)
-          .where(eq(users.id, userId))
-          .limit(1);
+        const userRecord = await prisma.user.findUnique({
+          where: { id: userId }
+        });
 
-        const userName = userRecord[0]?.name || "User";
+        const userName = userRecord?.name || "User";
         const emailTemplate = emailTemplates.otpEmail(userName, code, 10);
 
         const success = await sendEmail(
@@ -114,25 +107,18 @@ export async function verifyOtp(
   method: "email" | "sms"
 ): Promise<{ success: boolean; message: string }> {
   try {
-    const db = await getDb();
-    if (!db) {
-      return { success: false, message: "Database not available" };
-    }
-
     // First check Redis for faster verification
     const redisCode = await getOtpFromRedis(userId);
     if (redisCode === code) {
       // Mark as used in DB
-      await db
-        .update(otpTokens)
-        .set({ usedAt: new Date() })
-        .where(
-          and(
-            eq(otpTokens.userId, userId),
-            eq(otpTokens.code, code),
-            eq(otpTokens.method, method)
-          )
-        );
+      await prisma.otpToken.updateMany({
+        where: {
+          userId,
+          code,
+          method,
+        },
+        data: { usedAt: new Date() }
+      });
 
       // Remove from Redis
       await deleteOtpFromRedis(userId);
@@ -141,36 +127,34 @@ export async function verifyOtp(
     }
 
     // Fallback to database check
-    const otpRecord = await db
-      .select()
-      .from(otpTokens)
-      .where(
-        and(
-          eq(otpTokens.userId, userId),
-          eq(otpTokens.code, code),
-          eq(otpTokens.method, method),
-          gt(otpTokens.expiresAt, new Date())
-        )
-      )
-      .limit(1);
+    const otpRecord = await prisma.otpToken.findFirst({
+      where: {
+        userId,
+        code,
+        method,
+        expiresAt: { gt: new Date() },
+        usedAt: null,
+      },
+      orderBy: { createdAt: "desc" }
+    });
 
-    if (otpRecord.length === 0) {
+    if (!otpRecord) {
       return { success: false, message: "Invalid or expired OTP" };
     }
 
     // Check attempts
-    if ((otpRecord[0].attempts || 0) >= 3) {
+    if ((otpRecord.attempts || 0) >= 3) {
       return { success: false, message: "Too many attempts. Please request a new OTP" };
     }
 
     // Mark as used
-    await db
-      .update(otpTokens)
-      .set({
+    await prisma.otpToken.update({
+      where: { id: otpRecord.id },
+      data: {
         usedAt: new Date(),
-        attempts: (otpRecord[0].attempts || 0) + 1,
-      })
-      .where(eq(otpTokens.id, otpRecord[0].id));
+        attempts: (otpRecord.attempts || 0) + 1,
+      }
+    });
 
     // Clean up from Redis
     await deleteOtpFromRedis(userId);
@@ -190,16 +174,9 @@ export async function verifyOtp(
  */
 export async function getUserByEmail(email: string) {
   try {
-    const db = await getDb();
-    if (!db) return null;
-
-    const result = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, email))
-      .limit(1);
-
-    return result[0] || null;
+    return prisma.user.findFirst({
+      where: { email }
+    });
   } catch (error) {
     console.error("[Auth] Get user failed:", error);
     return null;
@@ -211,13 +188,9 @@ export async function getUserByEmail(email: string) {
  */
 export async function cleanupExpiredOtps(): Promise<void> {
   try {
-    const db = await getDb();
-    if (!db) return;
-
-    await db
-      .delete(otpTokens)
-      .where(gt(new Date(), otpTokens.expiresAt));
-
+    await prisma.otpToken.deleteMany({
+      where: { expiresAt: { lt: new Date() } }
+    });
     console.log("[OTP] Cleanup completed");
   } catch (error) {
     console.error("[OTP] Cleanup failed:", error);
@@ -233,29 +206,22 @@ export async function incrementOtpAttempts(
   method: "email" | "sms"
 ): Promise<number> {
   try {
-    const db = await getDb();
-    if (!db) return 0;
+    const otpRecord = await prisma.otpToken.findFirst({
+      where: {
+        userId,
+        code,
+        method,
+      }
+    });
 
-    const otpRecord = await db
-      .select()
-      .from(otpTokens)
-      .where(
-        and(
-          eq(otpTokens.userId, userId),
-          eq(otpTokens.code, code),
-          eq(otpTokens.method, method)
-        )
-      )
-      .limit(1);
+    if (!otpRecord) return 0;
 
-    if (otpRecord.length === 0) return 0;
+    const newAttempts = (otpRecord.attempts || 0) + 1;
 
-    const newAttempts = (otpRecord[0].attempts || 0) + 1;
-
-    await db
-      .update(otpTokens)
-      .set({ attempts: newAttempts })
-      .where(eq(otpTokens.id, otpRecord[0].id));
+    await prisma.otpToken.update({
+      where: { id: otpRecord.id },
+      data: { attempts: newAttempts }
+    });
 
     return newAttempts;
   } catch (error) {
