@@ -25,12 +25,14 @@ import {
  */
 
 interface Props {
+    requestData?: any;
+    isReadOnly?: boolean;
     onSuccess?: () => void;
     onClose?: () => void;
     onBack?: () => void;
 }
 
-export default function AssetRequestForm({ onSuccess, onClose, onBack }: Props) {
+export default function AssetRequestForm({ requestData, isReadOnly = false, onSuccess, onClose, onBack }: Props) {
     const { user, isAuthenticated } = useAuth();
     const autoFillData = useFormAutoFill();
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -52,7 +54,24 @@ export default function AssetRequestForm({ onSuccess, onClose, onBack }: Props) 
     });
 
     useEffect(() => {
-        if (user && autoFillData) {
+        if (requestData) {
+            setForm(prev => ({
+                ...prev,
+                requestNumber: requestData.requestNumber || prev.requestNumber,
+                employeeName: requestData.user?.name || requestData.employeeName || prev.employeeName,
+                staffId: requestData.user?.staffId || requestData.staffId || prev.staffId,
+                department: requestData.user?.department?.name || requestData.department || prev.department,
+                position: requestData.user?.position || requestData.position || prev.position,
+                dateOfEmployment: requestData.user?.dateOfEmployment || requestData.dateOfEmployment || prev.dateOfEmployment,
+                title: requestData.title || prev.title,
+                itemName: requestData.itemName || prev.itemName,
+                category: requestData.category || prev.category,
+                estimatedCost: requestData.estimatedCost || prev.estimatedCost,
+                currency: requestData.currency || prev.currency,
+                description: requestData.description || prev.description,
+                reportingManager: requestData.initialApproverId || prev.reportingManager,
+            }));
+        } else if (user && autoFillData) {
             const sequence = String(Math.floor(Math.random() * 10000)).padStart(5, '0');
             const currentMonth = String(new Date().getMonth() + 1).padStart(2, '0');
             const docId = `AR-${new Date().getFullYear()}-${currentMonth}-${sequence}`;
@@ -68,7 +87,7 @@ export default function AssetRequestForm({ onSuccess, onClose, onBack }: Props) 
                 reportingManager: autoFillData.managerId ? String(autoFillData.managerId) : "",
             }));
         }
-    }, [user, autoFillData]);
+    }, [user, autoFillData, requestData]);
 
     const { data: heads = [] } = trpc.users.listHeads.useQuery(undefined, {
         staleTime: Infinity,
@@ -275,6 +294,7 @@ export default function AssetRequestForm({ onSuccess, onClose, onBack }: Props) 
                                 onChange={e => setForm({ ...form, title: e.target.value })}
                                 placeholder="e.g., Replacement Laptop for IT Dept"
                                 className="border-blue-300 h-8 text-xs font-medium"
+                                disabled={isReadOnly}
                             />
                         </Row>
                         <Row label="2.2 Item Name">
@@ -283,10 +303,15 @@ export default function AssetRequestForm({ onSuccess, onClose, onBack }: Props) 
                                 onChange={e => setForm({ ...form, itemName: e.target.value })}
                                 placeholder="e.g., MacBook Pro M3, Office Desk, etc."
                                 className="border-blue-300 h-8 text-xs"
+                                disabled={isReadOnly}
                             />
                         </Row>
                         <Row label="2.3 Asset Category">
-                            <Select value={form.category} onValueChange={v => setForm({ ...form, category: v })}>
+                            <Select 
+                                value={form.category} 
+                                onValueChange={v => setForm({ ...form, category: v })}
+                                disabled={isReadOnly}
+                            >
                                 <SelectTrigger className="w-full h-8 border-blue-300 text-xs">
                                     <SelectValue placeholder="-- Select Category --" />
                                 </SelectTrigger>
@@ -306,8 +331,13 @@ export default function AssetRequestForm({ onSuccess, onClose, onBack }: Props) 
                                     onChange={e => setForm({ ...form, estimatedCost: e.target.value })}
                                     placeholder="0.00"
                                     className="border-blue-300 h-8 text-xs font-bold text-blue-800"
+                                    disabled={isReadOnly}
                                 />
-                                <Select value={form.currency} onValueChange={v => setForm({ ...form, currency: v })}>
+                                <Select 
+                                    value={form.currency} 
+                                    onValueChange={v => setForm({ ...form, currency: v })}
+                                    disabled={isReadOnly}
+                                >
                                     <SelectTrigger className="w-28 h-8 border-blue-300 text-xs">
                                         <SelectValue />
                                     </SelectTrigger>
@@ -325,6 +355,7 @@ export default function AssetRequestForm({ onSuccess, onClose, onBack }: Props) 
                                 onChange={e => setForm({ ...form, description: e.target.value })}
                                 placeholder="Provide detailed specifications, reason for request, and any other relevant information..."
                                 className="min-h-24 border-blue-300 text-xs"
+                                disabled={isReadOnly}
                             />
                         </Row>
                     </Section>
@@ -335,6 +366,7 @@ export default function AssetRequestForm({ onSuccess, onClose, onBack }: Props) 
                             <Select
                                 value={form.reportingManager}
                                 onValueChange={v => setForm({ ...form, reportingManager: v })}
+                                disabled={isReadOnly}
                             >
                                 <SelectTrigger className="w-full h-10 border-blue-300 bg-white text-black font-medium focus:ring-blue-500 mt-1 mb-1">
                                     <SelectValue placeholder="-- Select Department Head --" />
@@ -355,40 +387,42 @@ export default function AssetRequestForm({ onSuccess, onClose, onBack }: Props) 
                 </div>
 
                 {/* ===== ACTIONS ===== */}
-                <div className="flex justify-between items-center px-6 py-4 border-t border-blue-400 bg-gray-50 gap-4 mb-4">
-                    <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            disabled={isSubmitting}
-                            type="button"
-                            onClick={() => window.print()}
-                            className="border-blue-400 text-blue-600 h-9"
-                        >
-                            <Printer size={16} className="mr-1" /> Print
-                        </Button>
+                {!isReadOnly && (
+                    <div className="flex justify-between items-center px-6 py-4 border-t border-blue-400 bg-gray-50 gap-4 mb-4">
+                        <div className="flex gap-2">
+                            <Button
+                                variant="outline"
+                                disabled={isSubmitting}
+                                type="button"
+                                onClick={() => window.print()}
+                                className="border-blue-400 text-blue-600 h-9"
+                            >
+                                <Printer size={16} className="mr-1" /> Print
+                            </Button>
+                        </div>
+                        <div className="flex gap-2">
+                            <Button
+                                variant="outline"
+                                disabled={isSubmitting}
+                                type="button"
+                                onClick={() => handleSubmit(false)}
+                                className="border-blue-400 h-9"
+                            >
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Save Draft
+                            </Button>
+                            <Button
+                                disabled={isSubmitting}
+                                type="button"
+                                onClick={() => handleSubmit(true)}
+                                className="bg-blue-600 hover:bg-blue-700 h-9 transition-colors font-bold"
+                            >
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Submit for Approval
+                            </Button>
+                        </div>
                     </div>
-                    <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            disabled={isSubmitting}
-                            type="button"
-                            onClick={() => handleSubmit(false)}
-                            className="border-blue-400 h-9"
-                        >
-                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Save Draft
-                        </Button>
-                        <Button
-                            disabled={isSubmitting}
-                            type="button"
-                            onClick={() => handleSubmit(true)}
-                            className="bg-blue-600 hover:bg-blue-700 h-9 transition-colors font-bold"
-                        >
-                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Submit for Approval
-                        </Button>
-                    </div>
-                </div>
+                )}
 
                 {/* ===== FOOTER ===== */}
                 <div className="text-center text-[10px] text-gray-500 py-3 border-t border-gray-100 space-y-1">

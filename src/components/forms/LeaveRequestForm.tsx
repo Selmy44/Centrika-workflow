@@ -15,6 +15,8 @@ import { FormContainer, FormHeader, FormSection, FormRow, EmployeeInfoSection, F
 
 interface LeaveRequestFormProps {
   requestId?: number;
+  requestData?: any; // Added to support passing existing request data
+  isApprover?: boolean; // Explicitly control if the view is for an approver
   isReadOnly?: boolean;
   onApprove?: (data: any) => void;
   onReject?: (reason: string) => void;
@@ -27,6 +29,8 @@ interface LeaveRequestFormProps {
 
 export default function LeaveRequestForm({
   requestId,
+  requestData,
+  isApprover: propsIsApprover,
   isReadOnly = false,
   onApprove,
   onReject,
@@ -77,12 +81,22 @@ export default function LeaveRequestForm({
   const headsOfDept = trpc.users.listHeads.useQuery();
   const hrUsers = trpc.users.getHRUsers.useQuery();
 
-  const isApprover = !!onApprove || !!onReject;
+  const isApprover = propsIsApprover !== undefined ? propsIsApprover : (!!onApprove || !!onReject);
   const effectiveIsReadOnly = isReadOnly || isApprover;
 
-  // Auto-fill employee info
+  // Auto-fill employee info or use requestData
   useEffect(() => {
-    if (user && !requestId) {
+    if (requestData) {
+      // If we have requestData, populate what we can
+      setForm((prev: any) => ({
+        ...prev,
+        employeeName: requestData.user?.name || requestData.employee?.name || prev.employeeName,
+        staffId: requestData.user?.staffId || requestData.employee?.staffId || prev.staffId,
+        department: requestData.user?.department?.name || requestData.employee?.department || prev.department,
+        position: requestData.user?.position || requestData.employee?.position || prev.position,
+        leaveType: requestData.type === "leave" ? (requestData.leaveType || prev.leaveType) : prev.leaveType,
+      }));
+    } else if (user && !requestId) {
       const deptName = typeof user.department === 'object' ? user.department?.name : (user.department || "");
       setForm((prev: any) => ({
         ...prev,
@@ -94,7 +108,7 @@ export default function LeaveRequestForm({
         leaveType: initialLeaveType || prev.leaveType,
       }));
     }
-  }, [user, requestId, initialLeaveType]);
+  }, [user, requestId, initialLeaveType, requestData]);
 
   const uniqueHeads = headsOfDept.data || [];
   const uniqueHR = hrUsers.data || [];

@@ -75,7 +75,6 @@ export default function RequestDetail() {
             )}
             {requestData.type === "asset" && (
               <AssetRequestForm
-                // @ts-ignore
                 requestData={requestData}
                 isReadOnly={true}
               />
