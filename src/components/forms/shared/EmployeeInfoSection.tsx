@@ -41,7 +41,7 @@ const EmployeeInfoSection: React.FC<EmployeeInfoSectionProps> = ({
       <FormRow label="1.1 Employee Full Name">
         <Input
           value={employeeName}
-          className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium"
+          className="border-[#3b6dae]/20 h-8 text-[11px] bg-[#c79d2d]/5 cursor-not-allowed !text-[#3b6dae] font-black"
           disabled
         />
       </FormRow>
@@ -49,28 +49,28 @@ const EmployeeInfoSection: React.FC<EmployeeInfoSectionProps> = ({
         <Input
           type="date"
           value={dateOfEmployment}
-          className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium"
+          className="border-[#3b6dae]/20 h-8 text-[11px] bg-[#c79d2d]/5 cursor-not-allowed !text-[#3b6dae] font-black"
           disabled
         />
       </FormRow>
       <FormRow label="1.3 Staff ID">
         <Input
           value={staffId}
-          className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium"
+          className="border-[#3b6dae]/20 h-8 text-[11px] bg-[#c79d2d]/5 cursor-not-allowed !text-[#3b6dae] font-black"
           disabled
         />
       </FormRow>
       <FormRow label="1.4 Department">
         <Input
           value={department}
-          className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium"
+          className="border-[#3b6dae]/20 h-8 text-[11px] bg-[#c79d2d]/5 cursor-not-allowed !text-[#3b6dae] font-black"
           disabled
         />
       </FormRow>
       <FormRow label="1.5 Position / Title">
         <Input
           value={position}
-          className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium"
+          className="border-[#3b6dae]/20 h-8 text-[11px] bg-[#c79d2d]/5 cursor-not-allowed !text-[#3b6dae] font-black"
           disabled
         />
       </FormRow>
@@ -82,7 +82,7 @@ const EmployeeInfoSection: React.FC<EmployeeInfoSectionProps> = ({
             onValueChange={onManagerChange}
             disabled={isReadOnly}
           >
-            <SelectTrigger className="h-7 border-blue-300 bg-white text-xs">
+            <SelectTrigger className="h-8 border-[#3b6dae]/20 bg-white text-[11px] font-black">
               <SelectValue placeholder="Select department head" />
             </SelectTrigger>
             <SelectContent>

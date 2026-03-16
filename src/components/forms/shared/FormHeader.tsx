@@ -19,60 +19,67 @@ const FormHeader: React.FC<FormHeaderProps> = ({
   status,
   date
 }) => {
-  const titleBg = variant === "yellow" ? "bg-yellow-500" : "bg-blue-600";
+  const titleBg = "bg-linear-to-r from-[#3b6dae] to-[#2d5385]";
   
   return (
-    <div>
+    <div className="bg-[#FFFAE8]">
       {/* ===== HEADER WITH LOGO AND CONTACT INFO ===== */}
-      <div className="flex justify-between items-start px-6 py-3 gap-8">
+      <div className="flex justify-between items-start px-8 py-5 gap-8">
         {/* LEFT: LOGO */}
         <div className="shrink-0">
           <img
             src="/logo/centrikaLogo.png"
             alt="Centrika Logo"
-            className="h-20 w-auto"
+            className="h-24 w-auto drop-shadow-sm"
           />
         </div>
 
         {/* RIGHT: CONTACT INFO WITH ICONS AND METADATA */}
-        <div className="text-sm flex-1 flex flex-col items-end gap-4">
-          <div className="flex flex-col gap-2 items-start">
-            <div className="flex items-center gap-2">
-              <Phone size={14} className="text-blue-600" />
-              <span className="text-blue-600 font-semibold">+250 788 123 099</span>
+        <div className="text-xs flex-1 flex flex-col items-end gap-5">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-right">
+            <div className="flex items-center justify-end gap-2">
+              <span className="text-[#3b6dae] font-black tracking-tight">+250 788 123 099</span>
+              <div className="p-1 bg-[#3b6dae]/5 rounded">
+                <Phone size={12} className="text-[#3b6dae]" />
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Mail size={14} className="text-blue-600" />
-              <span className="text-blue-600 font-semibold">info@centrika.rw</span>
+            <div className="flex items-center justify-end gap-2">
+              <span className="text-[#3b6dae] font-black tracking-tight">info@centrika.rw</span>
+              <div className="p-1 bg-[#3b6dae]/5 rounded">
+                <Mail size={12} className="text-[#3b6dae]" />
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Globe size={14} className="text-blue-600" />
-              <span className="text-blue-600 font-semibold">www.centrika.rw</span>
+            <div className="flex items-center justify-end gap-2">
+              <span className="text-[#3b6dae] font-black tracking-tight">www.centrika.rw</span>
+              <div className="p-1 bg-[#3b6dae]/5 rounded">
+                <Globe size={12} className="text-[#3b6dae]" />
+              </div>
             </div>
-            <div className="flex items-start gap-2">
-              <MapPin size={14} className="text-blue-600 shrink-0 mt-0.5" />
-              <div className="flex flex-col">
-                <span className="text-blue-600 font-semibold">Room F002, 2nd Floor, CHIC Building,</span>
-                <span className="text-blue-600 font-semibold">Plot 1007, KN2 Kigali-Rwanda</span>
+            <div className="flex items-center justify-end gap-2">
+              <div className="flex flex-col text-right">
+                <span className="text-[#3b6dae] font-black tracking-tight">Kigali, Rwanda</span>
+              </div>
+              <div className="p-1 bg-[#3b6dae]/5 rounded">
+                <MapPin size={12} className="text-[#3b6dae]" />
               </div>
             </div>
           </div>
 
           {(documentId || status || date) && (
-            <div className="flex gap-4 text-[10px] items-center border-t pt-2 w-fit">
+            <div className="flex gap-6 text-[9px] items-center border-t border-[#3b6dae]/10 pt-3 w-fit">
               {documentId && (
                 <div className="flex flex-col items-end">
-                  <span className="text-gray-400 uppercase font-medium">Document ID</span>
-                  <span className="font-bold text-blue-900">{documentId}</span>
+                  <span className="text-slate-400 uppercase font-black tracking-widest">Document ID</span>
+                  <span className="font-black text-[#3b6dae]">{documentId}</span>
                 </div>
               )}
               {status && (
                 <div className="flex flex-col items-end">
-                  <span className="text-gray-400 uppercase font-medium">Status</span>
-                  <span className={`font-bold px-2 py-0.5 rounded ${
-                    status.toLowerCase() === 'approved' ? 'bg-green-100 text-green-700' :
-                    status.toLowerCase() === 'rejected' ? 'bg-red-100 text-red-700' :
-                    'bg-blue-100 text-blue-700'
+                  <span className="text-slate-400 uppercase font-black tracking-widest">Status</span>
+                  <span className={`font-black px-2 py-0.5 rounded text-[8px] ${
+                    status.toLowerCase() === 'approved' ? 'bg-[#3b6dae]/10 text-[#3b6dae]' :
+                    status.toLowerCase() === 'rejected' ? 'bg-rose-100 text-rose-600' :
+                    'bg-[#c79d2d]/20 text-[#3b6dae]'
                   }`}>
                     {status.toUpperCase()}
                   </span>
@@ -80,8 +87,8 @@ const FormHeader: React.FC<FormHeaderProps> = ({
               )}
               {date && (
                 <div className="flex flex-col items-end">
-                  <span className="text-gray-400 uppercase font-medium">Date</span>
-                  <span className="font-bold text-blue-900">{date}</span>
+                  <span className="text-slate-400 uppercase font-black tracking-widest">Date Issued</span>
+                  <span className="font-black text-[#3b6dae]">{date}</span>
                 </div>
               )}
             </div>
@@ -90,7 +97,7 @@ const FormHeader: React.FC<FormHeaderProps> = ({
       </div>
 
       {/* ===== TITLE BAR ===== */}
-      <div className={`${titleBg} text-white text-center font-bold py-2 text-lg tracking-wide shadow-sm`}>
+      <div className={`${titleBg} text-white text-center font-black py-3 text-sm tracking-[0.2em] shadow-lg border-y border-[#c79d2d]/20`}>
         {title.toUpperCase()}
       </div>
     </div>

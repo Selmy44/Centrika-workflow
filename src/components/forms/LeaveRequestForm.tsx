@@ -171,26 +171,26 @@ export default function LeaveRequestForm({
 
       <div className="space-y-6">
         {/* REQUEST HEADER SECTION */}
-        <div className="grid grid-cols-5 gap-3 px-6 py-3 text-sm items-end no-print bg-gray-50 border-b">
-          <div>
-            <p className="font-semibold text-blue-600 mb-1 text-xs">Department</p>
-            <Input value={form.department} disabled className="h-7 text-xs bg-white" />
+        <div className="grid grid-cols-5 gap-4 px-8 py-4 text-[10px] items-end no-print bg-[#c79d2d]/5 border-b border-[#3b6dae]/10">
+          <div className="col-span-1">
+            <p className="font-black text-[#3b6dae] mb-1.5 uppercase tracking-tighter text-[10px]">Department</p>
+            <Input value={form.department} disabled className="h-8 text-[11px] bg-white border-[#3b6dae]/20 font-black text-[#3b6dae]" />
           </div>
           <div>
-            <p className="font-semibold text-blue-600 mb-1 text-xs">Nature of Leave</p>
-            <Input value={form.leaveType.charAt(0).toUpperCase() + form.leaveType.slice(1)} disabled className="h-7 text-xs bg-white" />
+            <p className="font-black text-[#3b6dae] mb-1.5 uppercase tracking-tighter text-[10px]">Nature of Leave</p>
+            <Input value={form.leaveType.charAt(0).toUpperCase() + form.leaveType.slice(1)} disabled className="h-8 text-[11px] bg-white border-[#3b6dae]/20 font-black text-[#3b6dae]" />
           </div>
           <div>
-            <p className="font-semibold text-blue-600 text-xs mb-1">Year</p>
-            <Input value={form.year} disabled className="h-7 text-xs bg-white" />
+            <p className="font-black text-[#3b6dae] mb-1.5 uppercase tracking-tighter text-[10px]">Year</p>
+            <Input value={form.year} disabled className="h-8 text-[11px] bg-white border-[#3b6dae]/20 font-black text-[#3b6dae]" />
           </div>
           <div>
-            <p className="font-semibold text-blue-600 text-xs mb-1">Month</p>
-            <Input value={form.month} disabled className="h-7 text-xs bg-white" />
+            <p className="font-black text-[#3b6dae] mb-1.5 uppercase tracking-tighter text-[10px]">Month</p>
+            <Input value={form.month} disabled className="h-8 text-[11px] bg-white border-[#3b6dae]/20 font-black text-[#3b6dae]" />
           </div>
           <div>
-            <p className="font-semibold text-blue-600 text-xs mb-1">Document ID</p>
-            <Input value={form.documentId} placeholder="Auto-generated" disabled className="h-7 text-xs bg-white" />
+            <p className="font-black text-[#3b6dae] mb-1.5 uppercase tracking-tighter text-[10px]">Document ID</p>
+            <Input value={form.documentId} placeholder="Auto-generated" disabled className="h-8 text-[11px] bg-white border-[#3b6dae]/20 font-black text-[#3b6dae]" />
           </div>
         </div>
 
