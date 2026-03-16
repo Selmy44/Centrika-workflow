@@ -48,6 +48,11 @@ export async function upsertUser(user: any): Promise<void> {
       phoneNumber: user.phoneNumber,
       location: user.location,
       status: user.status,
+      dateOfBirth: user.dateOfBirth,
+      jobDescription: user.jobDescription,
+      contractType: user.contractType,
+      contractStart: user.contractStart,
+      contractEnd: user.contractEnd,
       lastSignedIn: user.lastSignedIn || new Date(),
     };
 

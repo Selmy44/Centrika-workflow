@@ -11,10 +11,17 @@ import { createContext } from "./core/context";
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise((resolve) => {
     const server = net.createServer();
-    server.listen(port, () => {
+    server.once('error', (err: any) => {
+      if (err.code === 'EADDRINUSE') {
+        resolve(false);
+      } else {
+        resolve(true); // Treat other errors as available, or handle differently
+      }
+    });
+    server.once('listening', () => {
       server.close(() => resolve(true));
     });
-    server.on("error", () => resolve(false));
+    server.listen(port);
   });
 }
 
@@ -22,7 +29,7 @@ async function findAvailablePort(startPort = 3001) {
   for (let p = startPort; p < startPort + 20; p++) {
     if (await isPortAvailable(p)) return p;
   }
-  throw new Error("No available port found");
+  return startPort; // Fallback to startPort if all fail, let it crash naturally
 }
 
 async function start() {
@@ -71,11 +78,9 @@ async function start() {
     })
   );
 
-  const preferredPort = parseInt(process.env.PORT || "3001");
-  const port = await findAvailablePort(preferredPort);
-  if (port !== preferredPort) {
-    console.log(`Port ${preferredPort} busy, using ${port}`);
-  }
+  const port = process.env.PORT ? parseInt(process.env.PORT) : 3001;
+  
+  // Just try to bind to the port. If it fails, let it crash so we know immediately.
 
   server.listen(port, () => {
     console.log(`✅ Centrika Backend running on http://localhost:${port}`);
