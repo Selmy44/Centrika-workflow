@@ -5,9 +5,9 @@ import React, { memo } from "react";
  */
 const FormFooter: React.FC = () => {
   return (
-    <div className="text-center text-xs text-gray-600 py-3 border-t border-gray-200 space-y-1">
-      <p>www.centrika.rw</p>
-      <p>1 | Centrika Ltd | Motto: Delivering Tomorrow's Solutions Today</p>
+    <div className="text-center text-[10px] text-[#3b6dae]/50 py-5 border-t border-[#3b6dae]/10 space-y-2 bg-[#c79d2d]/5 font-bold uppercase tracking-widest">
+      <p className="hover:text-[#3b6dae] transition-colors cursor-pointer">www.centrika.rw</p>
+      <p className="text-[#3b6dae]/30">© 2026 Centrika Ltd • Delivering Tomorrow's Solutions Today</p>
     </div>
   );
 };

@@ -30,15 +30,15 @@ const FormActions: React.FC<FormActionsProps> = ({
   isRequestRejected
 }) => {
   return (
-    <div className="flex justify-between items-center px-6 py-4 border-t border-blue-400 bg-gray-50 gap-4 no-print">
+    <div className="flex justify-between items-center px-8 py-5 border-t border-[#3b6dae]/10 bg-[#c79d2d]/10 gap-4 no-print backdrop-blur-md">
       <div className="flex gap-2">
         <Button
           variant="outline"
           disabled={isSubmitting}
           onClick={() => window.print()}
-          className="border-blue-400 text-blue-600"
+          className="border-[#3b6dae]/20 text-[#3b6dae] font-black text-[10px] tracking-widest uppercase hover:bg-[#3b6dae] hover:text-white transition-all h-9"
         >
-          <Printer size={16} className="mr-1" /> Print
+          <Printer size={14} className="mr-2" /> Print Doc
         </Button>
         <Button
           variant="outline"
@@ -46,9 +46,9 @@ const FormActions: React.FC<FormActionsProps> = ({
           onClick={() => {
             toast.info("Download functionality requires backend PDF generation");
           }}
-          className="border-blue-400 text-blue-600"
+          className="border-[#3b6dae]/20 text-[#3b6dae] font-black text-[10px] tracking-widest uppercase hover:bg-[#3b6dae] hover:text-white transition-all h-9"
         >
-          <Download size={16} className="mr-1" /> Download
+          <Download size={14} className="mr-2" /> Export PDF
         </Button>
       </div>
 
@@ -59,7 +59,7 @@ const FormActions: React.FC<FormActionsProps> = ({
               variant="outline"
               disabled={isSubmitting}
               onClick={onReject}
-              className="border-red-400 text-red-600 hover:bg-red-50"
+              className="border-rose-400 text-rose-600 hover:bg-rose-50 font-black text-[10px] tracking-widest uppercase h-9"
             >
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Reject
@@ -67,10 +67,10 @@ const FormActions: React.FC<FormActionsProps> = ({
             <Button
               disabled={isSubmitting}
               onClick={onApprove}
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-[#3b6dae] hover:bg-[#2d5385] font-black text-[10px] tracking-widest uppercase h-9 shadow-lg"
             >
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Approve
+              Approve Request
             </Button>
           </>
         ) : !isReadOnly && !isRequestApproved && !isRequestRejected ? (
@@ -80,7 +80,7 @@ const FormActions: React.FC<FormActionsProps> = ({
                 variant="outline"
                 disabled={isSubmitting}
                 onClick={onSave}
-                className="border-blue-400"
+                className="border-[#3b6dae]/20 text-[#3b6dae] font-black text-[10px] tracking-widest uppercase h-9"
               >
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save Draft
@@ -90,7 +90,7 @@ const FormActions: React.FC<FormActionsProps> = ({
               <Button
                 disabled={isSubmitting}
                 onClick={onSubmit}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-[#3b6dae] hover:bg-[#2d5385] font-black text-[10px] tracking-widest uppercase h-9 shadow-lg"
               >
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Submit Request

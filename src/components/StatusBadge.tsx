@@ -7,51 +7,51 @@ interface StatusBadgeProps {
 
 export function StatusBadge({ status, size = "md" }: StatusBadgeProps) {
   const sizeClasses = {
-    sm: "px-2 py-1 text-xs",
-    md: "px-3 py-1.5 text-sm",
-    lg: "px-4 py-2 text-base",
+    sm: "px-2 py-0.5 text-[10px]",
+    md: "px-2.5 py-1 text-xs",
+    lg: "px-3.5 py-1.5 text-sm",
   };
 
-  switch (status) {
+  switch (status.toLowerCase()) {
     case "approved":
       return (
-        <div className={`flex items-center gap-2 ${sizeClasses[size]} rounded-full bg-linear-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/30 hover:border-emerald-500/50 transition-all`}>
-          <CheckCircle2 size={size === "sm" ? 14 : size === "lg" ? 18 : 16} className="text-emerald-500 animate-pulse" />
-          <span className={`font-semibold text-emerald-600 dark:text-emerald-400`}>Approved</span>
+        <div className={`flex items-center gap-1.5 ${sizeClasses[size]} rounded-lg bg-[#3b6dae]/10 border border-[#3b6dae]/20 transition-all`}>
+          <div className="w-1.5 h-1.5 rounded-full bg-[#3b6dae]" />
+          <span className="font-bold text-[#3b6dae] uppercase tracking-wider">Approved</span>
         </div>
       );
     case "rejected":
       return (
-        <div className={`flex items-center gap-2 ${sizeClasses[size]} rounded-full bg-linear-to-r from-red-500/10 to-rose-500/10 border border-red-500/30 hover:border-red-500/50 transition-all`}>
-          <XCircle size={size === "sm" ? 14 : size === "lg" ? 18 : 16} className="text-red-500 animate-pulse" />
-          <span className={`font-semibold text-red-600 dark:text-red-400`}>Rejected</span>
-        </div>
-      );
-    case "cancelled":
-      return (
-        <div className={`flex items-center gap-2 ${sizeClasses[size]} rounded-full bg-linear-to-r from-gray-500/10 to-slate-500/10 border border-gray-500/30 hover:border-gray-500/50 transition-all`}>
-          <AlertCircle size={size === "sm" ? 14 : size === "lg" ? 18 : 16} className="text-gray-500" />
-          <span className={`font-semibold text-gray-600 dark:text-gray-400`}>Cancelled</span>
+        <div className={`flex items-center gap-1.5 ${sizeClasses[size]} rounded-lg bg-[#FE5E33]/10 border border-[#FE5E33]/20 transition-all`}>
+          <div className="w-1.5 h-1.5 rounded-full bg-[#FE5E33]" />
+          <span className="font-bold text-[#FE5E33] uppercase tracking-wider">Rejected</span>
         </div>
       );
     case "pending":
       return (
-        <div className={`flex items-center gap-2 ${sizeClasses[size]} rounded-full bg-linear-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 hover:border-amber-500/50 transition-all`}>
-          <Clock size={size === "sm" ? 14 : size === "lg" ? 18 : 16} className="text-amber-500 animate-spin" />
-          <span className={`font-semibold text-amber-600 dark:text-amber-400`}>Pending</span>
+        <div className={`flex items-center gap-1.5 ${sizeClasses[size]} rounded-lg bg-[#FFB600]/10 border border-[#FFB600]/20 transition-all`}>
+          <div className="w-1.5 h-1.5 rounded-full bg-[#FFB600] animate-pulse" />
+          <span className="font-bold text-[#FFB600] uppercase tracking-wider">Pending</span>
+        </div>
+      );
+    case "cancelled":
+      return (
+        <div className={`flex items-center gap-1.5 ${sizeClasses[size]} rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-all`}>
+          <div className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+          <span className="font-bold text-slate-500 uppercase tracking-wider">Cancelled</span>
         </div>
       );
     case "draft":
       return (
-        <div className={`flex items-center gap-2 ${sizeClasses[size]} rounded-full bg-linear-to-r from-slate-500/10 to-gray-500/10 border border-slate-500/30 hover:border-slate-500/50 transition-all`}>
-          <FileText size={size === "sm" ? 14 : size === "lg" ? 18 : 16} className="text-slate-500" />
-          <span className={`font-semibold text-slate-600 dark:text-slate-400`}>Draft</span>
+        <div className={`flex items-center gap-1.5 ${sizeClasses[size]} rounded-lg bg-[#3b6dae]/10 dark:bg-[#3b6dae]/20 border border-[#3b6dae]/20 dark:border-[#3b6dae]/30 transition-all`}>
+          <div className="w-1.5 h-1.5 rounded-full bg-[#3b6dae]" />
+          <span className="font-bold text-[#3b6dae] uppercase tracking-wider">Draft</span>
         </div>
       );
     default:
       return (
-        <div className={`flex items-center gap-2 ${sizeClasses[size]} rounded-full bg-muted border border-border`}>
-          <span className={`font-semibold text-muted-foreground capitalize`}>{status}</span>
+        <div className={`flex items-center gap-1.5 ${sizeClasses[size]} rounded-lg bg-muted border border-border`}>
+          <span className="font-bold text-muted-foreground uppercase tracking-wider">{status}</span>
         </div>
       );
   }
