@@ -73,7 +73,7 @@ export default function AnnualLeaveForm({ onSuccess }: Props) {
         ...prev,
         employeeName: user.name || "",
         staffId: user.staffId || "",
-        department: user.department?.name || "",
+        department: user.department || "",
         position: user.position || "",
         dateOfEmployment: autoFillData.dateOfEmployment || "",
         reportingManager: autoFillData.managerId ? String(autoFillData.managerId) : "",
@@ -208,7 +208,6 @@ export default function AnnualLeaveForm({ onSuccess }: Props) {
                   endDate={form.endDate}
                   onStartDateChange={(date) => setForm({ ...form, startDate: date })}
                   onEndDateChange={(date) => setForm({ ...form, endDate: date })}
-                  maxDays={18}
                 />
               </div>
 
