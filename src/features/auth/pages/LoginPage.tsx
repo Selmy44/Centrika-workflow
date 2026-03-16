@@ -6,22 +6,22 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { APP_LOGO, APP_TITLE } from "@/const";
+// import { getLoginUrl } from "@/const"; // OAuth - Commented out, no longer needed
 import { useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/PasswordInput";
-import { ArrowRight } from "lucide-react";
-import { Link } from "wouter";
-import OtpVerificationPage from "./OtpVerificationPage";
+import OtpVerification from "./OtpVerificationPage";
 
-export default function LoginPage() {
+export default function Login() {
   const [, navigate] = useLocation();
   const [isLoading, setIsLoading] = useState(false);
   const [showOtpPage, setShowOtpPage] = useState(false);
   const [currentEmail, setCurrentEmail] = useState("");
   // const [useOAuth, setUseOAuth] = useState(false); // OAuth - Commented out, no longer needed
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
 
   const utils = trpc.useUtils();
   const login = trpc.auth.login.useMutation();
@@ -34,7 +34,7 @@ export default function LoginPage() {
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !password) {
+    if (!formData.email || !formData.password) {
       toast.error("Please fill in all fields");
       return;
     }
@@ -43,13 +43,13 @@ export default function LoginPage() {
 
     try {
       const result = await login.mutateAsync({
-        email: email,
-        password: password,
+        email: formData.email,
+        password: formData.password,
       });
 
       if (result.success) {
         toast.success("OTP sent to your email!");
-        setCurrentEmail(email);
+        setCurrentEmail(formData.email);
         setShowOtpPage(true);
       }
     } catch (error: any) {
@@ -77,7 +77,7 @@ export default function LoginPage() {
   return (
     <>
       {showOtpPage ? (
-        <OtpVerificationPage 
+        <OtpVerification 
           email={currentEmail} 
           onBack={() => {
             setShowOtpPage(false);
@@ -85,104 +85,143 @@ export default function LoginPage() {
           }}
         />
       ) : (
-        <div className="min-h-screen bg-[#f8fcfb] relative overflow-hidden flex items-center justify-center p-4">
-          {/* Background Mesh Gradients */}
-          <div className="absolute top-0 -left-4 w-96 h-96 bg-[#3b6dae]/10 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" />
-          <div className="absolute top-0 -right-4 w-96 h-96 bg-[#c79d2d]/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" style={{ animationDelay: '1s' }} />
-          <div className="absolute -bottom-8 left-20 w-96 h-96 bg-[#3b6dae]/10 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" style={{ animationDelay: '2s' }} />
-          <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px]" />
-
-          <div className="w-full max-w-md relative z-10">
-            <Card className="bg-white/80 border-[#3b6dae]/10 backdrop-blur-xl shadow-2xl shadow-[#3b6dae]/10 overflow-hidden">
-              {/* Subtle top accent line */}
-              <div className="h-1 w-full bg-linear-to-r from-[#3b6dae] to-[#c79d2d]" />
-              
-              <CardHeader className="space-y-6 pb-6 pt-10 px-8 text-left">
-                <div className="flex justify-between items-start">
-                  <div className="p-4 bg-white rounded-2xl shadow-sm border border-[#3b6dae]/5">
-                    <img src={APP_LOGO} alt={APP_TITLE} className="h-10 w-auto" />
-                  </div>
+        <div className="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+          <div className="w-full max-w-md">
+            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur hover:border-slate-700">
+              <CardHeader className="space-y-2 text-center">
+                <div className="flex justify-center mb-4">
+                  <img src="/logo/centrikaLogo.png" alt="Centrika" className="h-32 w-auto" />
                 </div>
-                <div className="space-y-1">
-                  <CardTitle className="text-2xl font-black text-[#3b6dae] tracking-tight uppercase">Welcome Back</CardTitle>
-                  <CardDescription className="text-[#3b6dae]/60 font-semibold tracking-wide">
-                    Access the Centrika Enterprise Portal
-                  </CardDescription>
-                </div>
+                <CardTitle className="text-2xl text-white">Welcome Back</CardTitle>
+                <CardDescription className="text-slate-400">
+                  Sign in to your Centrika OnePortal account
+                </CardDescription>
               </CardHeader>
 
-              <CardContent className="px-8 pb-8">
-                <form onSubmit={handleEmailLogin} className="space-y-5">
+              <CardContent>
+                <form onSubmit={handleEmailLogin} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="text-[#3b6dae] font-bold text-xs uppercase tracking-wider pl-1">
-                      Portal Identity
+                    <Label htmlFor="email" className="text-slate-200">
+                      Email Address
                     </Label>
                     <Input
                       id="email"
                       type="email"
-                      placeholder="name@centrika.rw"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="username@centrika.rw"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="bg-slate-700/50 border-slate-600 text-white placeholder-slate-500 focus:border-blue-500 hover:bg-slate-700/70 transition-colors"
                       required
-                      className="h-12 bg-white/70 border-[#3b6dae]/10 text-[#3b6dae] placeholder:text-[#3b6dae]/30 focus:border-[#3b6dae]/30 focus:ring-[#3b6dae]/10 transition-all font-semibold rounded-xl px-4"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between px-1">
-                      <Label htmlFor="password" className="text-[#3b6dae] font-bold text-xs uppercase tracking-wider">
-                        Security Phrase
-                      </Label>
-                      <a
-                        href="#"
-                        className="text-xs text-[#3b6dae]/60 hover:text-[#3b6dae] font-bold transition-colors"
-                      >
-                        Recovery?
-                      </a>
-                    </div>
-                    
-                    <div className="[&>div>input]:h-12 [&>div>input]:bg-white/70 [&>div>input]:border-[#3b6dae]/10 [&>div>input]:text-[#3b6dae] [&>div>input]:focus:border-[#3b6dae]/30 [&>div>input]:focus:ring-[#3b6dae]/10 [&>div>input]:font-semibold [&>div>input]:rounded-xl [&>div]:px-0 [&>div>button]:text-[#3b6dae]/40 hover:[&>div>button]:text-[#3b6dae]">
-                      <PasswordInput
-                        id="password"
-                        value={password}
-                        onChange={setPassword}
-                        required
-                      />
-                    </div>
+                    <Label htmlFor="password" className="text-slate-200">
+                      Password
+                    </Label>
+                    <PasswordInput
+                      value={formData.password}
+                      onChange={(password) => setFormData({ ...formData, password })}
+                      placeholder="••••••••"
+                      id="password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => navigate("/forgot-password")}
+                      className="text-xs text-blue-400 hover:text-blue-300 font-semibold mt-2"
+                    >
+                      Forgot Password?
+                    </button>
                   </div>
 
-                  <div className="pt-2">
-                    <Button
-                      type="submit"
-                      className="w-full h-12 bg-[#3b6dae] hover:bg-[#2d5385] text-white font-black tracking-widest uppercase text-xs shadow-xl shadow-[#3b6dae]/20 transition-all active:scale-[0.98] rounded-xl"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <>
-                          Authenticate Access
-                          <ArrowRight className="ml-2 h-4 w-4" />
-                        </>
-                      )}
-                    </Button>
-                  </div>
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold py-2"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Signing In...
+                      </>
+                    ) : (
+                      "Sign In"
+                    )}
+                  </Button>
 
-                  <p className="text-center text-[#3b6dae]/50 text-xs font-semibold pt-4">
-                    New to OnePortal?{" "}
-                    <Link
-                      href="/otp-login"
-                      className="text-[#c79d2d] hover:text-[#a07e24] font-black underline decoration-2 underline-offset-4 transition-colors"
-                    >
-                      OTP Login
-                    </Link>
+                  <p className="text-center text-slate-400 text-sm">
+                    Don't have an account?{" "}
+                    <span className="text-blue-400 font-semibold">
+                      Contact HR to request access
+                    </span>
                   </p>
                 </form>
+
+                {/* <div className="mt-6 pt-6 border-t border-slate-600">
+                  <p className="text-center text-xs text-slate-500 mb-3">Development - Quick Login</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <Button
+                      type="button"
+                      onClick={() => handleDevLogin("user")}
+                      size="sm"
+                      variant="ghost"
+                      className="text-xs h-8 text-slate-200 hover:text-slate-100 hover:bg-slate-700/50"
+                    >
+                      Employee
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => handleDevLogin("head_of_department")}
+                      size="sm"
+                      variant="ghost"
+                      className="text-xs h-8 text-slate-200 hover:text-slate-100 hover:bg-slate-700/50"
+                    >
+                      Dept Head
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => handleDevLogin("hr")}
+                      size="sm"
+                      variant="ghost"
+                      className="text-xs h-8 text-slate-200 hover:text-slate-100 hover:bg-slate-700/50"
+                    >
+                      HR
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => handleDevLogin("head_of_finance")}
+                      size="sm"
+                      variant="ghost"
+                      className="text-xs h-8 text-slate-200 hover:text-slate-100 hover:bg-slate-700/50"
+                    >
+                      Finance
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => handleDevLogin("ceo_md")}
+                      size="sm"
+                      variant="ghost"
+                      className="text-xs h-8 text-slate-200 hover:text-slate-100 hover:bg-slate-700/50"
+                    >
+                      CEO/MD
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => handleDevLogin("admin")}
+                      size="sm"
+                      variant="ghost"
+                      className="text-xs h-8 text-slate-200 hover:text-slate-100 hover:bg-slate-700/50"
+                    >
+                      Admin
+                    </Button>
+                  </div>
+                </div> */}
+               
               </CardContent>
             </Card>
 
-            <div className="mt-8 text-center text-[#3b6dae]/30 text-[10px] font-black tracking-widest uppercase space-y-1">
-              <p>Centrika OnePortal System</p>
+            <div className="mt-12 text-center text-slate-500 text-sm">
+              <p>Centrika OnePortal Management System</p>
               <p>© 2026 All rights reserved</p>
             </div>
           </div>
