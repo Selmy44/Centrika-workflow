@@ -6,18 +6,14 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, ArrowLeft, Mail } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-} from "@/components/ui/input-otp";
+import { Input } from "@/components/ui/input";
 
 interface OtpVerificationProps {
   email: string;
   onBack: () => void;
 }
 
-export default function OtpVerificationPage({ email, onBack }: OtpVerificationProps) {
+export default function OtpVerification({ email, onBack }: OtpVerificationProps) {
   const [, navigate] = useLocation();
   const [isLoading, setIsLoading] = useState(false);
   const [otpCode, setOtpCode] = useState("");
@@ -72,110 +68,127 @@ export default function OtpVerificationPage({ email, onBack }: OtpVerificationPr
   const otpDigits = otpCode.padEnd(6, " ").split("").slice(0, 6);
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] relative overflow-hidden flex items-center justify-center p-4">
-      {/* Background Mesh Gradients */}
-      <div className="absolute top-0 -left-4 w-96 h-96 bg-[#3b6dae]/10 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" />
-      <div className="absolute top-0 -right-4 w-96 h-96 bg-[#c79d2d]/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" style={{ animationDelay: '1s' }} />
-      <div className="absolute -bottom-8 left-20 w-96 h-96 bg-[#3b6dae]/10 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" style={{ animationDelay: '2s' }} />
-      <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px]" />
+    <div className="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <Card className="bg-slate-800/50 border-slate-700 backdrop-blur hover:border-slate-700">
+          {/* Header with back button */}
+          <CardHeader className="space-y-2 text-center relative pb-6">
+            <button
+              type="button"
+              onClick={onBack}
+              disabled={isLoading}
+              className="absolute left-6 top-6 text-slate-400 hover:text-slate-200 transition-colors disabled:opacity-50"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
 
-      <div className="w-full max-w-md relative z-10">
-        <Card className="bg-white/80 border-[#3b6dae]/10 backdrop-blur-xl shadow-2xl shadow-[#3b6dae]/10 overflow-hidden">
-          {/* Subtle top accent line */}
-          <div className="h-1 w-full bg-linear-to-r from-[#3b6dae] to-[#c79d2d]" />
-
-          {/* Header */}
-          <CardHeader className="space-y-4 pb-6 pt-10 px-8 text-left">
-            <div className="space-y-1">
-              <p className="text-sm font-semibold text-[#3b6dae]/70">
-                Get started! 👋
-              </p>
-              <CardTitle className="text-3xl font-black text-[#3b6dae] tracking-tight">
-                Email verification with OTP
-              </CardTitle>
+            <div className="flex justify-center mb-4">
+              <div className="bg-linear-to-br from-orange-500/20 to-amber-500/20 p-4 rounded-full border border-orange-500/30">
+                <Mail className="h-8 w-8 text-orange-500" />
+              </div>
             </div>
-            <CardDescription className="text-[#3b6dae]/60 font-medium text-sm leading-relaxed max-w-[90%]">
-              Enter the verification code sent to your email address.<br/>
-              If you haven't received it, click the <span className="font-bold text-[#3b6dae]">Resend Code</span> button below to request a new one.
+
+            <CardTitle className="text-2xl text-white">Verify Your Email</CardTitle>
+            <CardDescription className="text-slate-400">
+              We've sent a 6-digit code to <span className="text-orange-400 font-semibold">{email}</span>
             </CardDescription>
           </CardHeader>
 
-          <CardContent className="px-8 pb-10">
-            <form onSubmit={handleOtpSubmit} className="space-y-8">
+          <CardContent>
+            <form onSubmit={handleOtpSubmit} className="space-y-6">
               {/* OTP Input Section */}
-              <div className="flex justify-center pt-2">
-                <InputOTP
-                  maxLength={6}
-                  value={otpCode}
-                  onChange={(value) => setOtpCode(value)}
-                  disabled={isLoading}
-                  autoFocus
-                >
-                  <InputOTPGroup className="gap-3">
-                    {[0, 1, 2, 3, 4, 5].map((index) => (
-                      <InputOTPSlot
-                        key={index}
-                        index={index}
-                        className="w-14 h-14 text-2xl font-black text-[#3b6dae] border-[#3b6dae]/20 rounded-xl bg-white shadow-sm transition-all focus-within:border-[#3b6dae] focus-within:ring-2 focus-within:ring-[#3b6dae]/20"
-                      />
-                    ))}
-                  </InputOTPGroup>
-                </InputOTP>
+              <div className="space-y-4">
+                <Label className="text-slate-200 block text-center text-sm">Enter Verification Code</Label>
+
+                {/* Single input field */}
+                <div className="relative">
+                  <Input
+                    id="otp"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="000000"
+                    value={otpCode}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, "").slice(0, 6);
+                      setOtpCode(value);
+                    }}
+                    className="bg-slate-700/50 border-slate-600 text-white placeholder-slate-500 focus:border-orange-500 focus:ring-orange-500/20 hover:bg-slate-700/70 transition-colors text-center text-3xl tracking-[0.5em] font-semibold py-6"
+                    required
+                    disabled={isLoading}
+                    maxLength={6}
+                    autoFocus
+                  />
+                </div>
+
+                {/* Visual OTP dots display */}
+                <div className="flex justify-center gap-2 mt-4">
+                  {[0, 1, 2, 3, 4, 5].map((index) => (
+                    <div
+                      key={index}
+                      className={`h-3 w-3 rounded-full transition-all ${
+                        otpCode.length > index
+                          ? "bg-orange-500 scale-100"
+                          : "bg-slate-600/50 scale-75"
+                      }`}
+                    />
+                  ))}
+                </div>
               </div>
 
               {/* Submit Button */}
-              <div className="pt-2">
+              <Button
+                type="submit"
+                disabled={isLoading || otpCode.length < 6}
+                className="w-full bg-linear-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold py-3 text-base transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Verifying...
+                  </>
+                ) : (
+                  "Verify Code"
+                )}
+              </Button>
+
+              {/* Help Section */}
+              <div className="space-y-3 pt-4 border-t border-slate-700">
+                <p className="text-center text-xs text-slate-400">
+                  Didn't receive the code?
+                </p>
                 <Button
-                  type="submit"
-                  disabled={isLoading || otpCode.length < 6}
-                  className="w-full h-14 bg-[#3b6dae] hover:bg-[#2d5385] text-white font-bold tracking-wide uppercase text-sm shadow-xl shadow-[#3b6dae]/20 transition-all active:scale-[0.98] rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                  type="button"
+                  onClick={handleResendOtp}
+                  disabled={isLoading || resendCountdown > 0}
+                  variant="outline"
+                  className="w-full text-orange-400 border-orange-500/50 hover:bg-orange-500/10 hover:border-orange-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Verifying...
-                    </>
+                  {resendCountdown > 0 ? (
+                    <>Resend in {resendCountdown}s</>
                   ) : (
-                    "SIGN IN"
+                    <>Resend Code</>
                   )}
                 </Button>
               </div>
 
-              {/* Help Section */}
-              <div className="pt-6 border-t border-[#3b6dae]/10">
-                <p className="text-sm font-medium text-[#3b6dae]/60">
-                  Didn't receive code?{" "}
-                  <button
-                    type="button"
-                    onClick={handleResendOtp}
-                    disabled={isLoading || resendCountdown > 0}
-                    className="font-bold text-[#3b6dae] hover:text-[#2d5385] hover:underline disabled:opacity-50 disabled:no-underline"
-                  >
-                    {resendCountdown > 0 ? `Resend in ${resendCountdown}s` : "Resend the Code"}
-                  </button>
-                </p>
-              </div>
-
               {/* Back to Login */}
-              <div className="flex justify-center mt-2">
-                <Button
-                  type="button"
-                  onClick={onBack}
-                  disabled={isLoading}
-                  variant="ghost"
-                  className="h-10 px-4 text-[#3b6dae]/60 hover:text-[#3b6dae] hover:bg-transparent font-bold uppercase tracking-wider text-xs rounded-xl transition-all disabled:opacity-50"
-                >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Login
-                </Button>
-              </div>
+              <Button
+                type="button"
+                onClick={onBack}
+                disabled={isLoading}
+                variant="ghost"
+                className="w-full text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-colors disabled:opacity-50"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Login
+              </Button>
             </form>
           </CardContent>
         </Card>
 
         {/* Footer */}
-        <div className="mt-8 text-center text-[#3b6dae]/30 text-[10px] font-black tracking-widest uppercase space-y-1">
-          <p>Centrika OnePortal System</p>
+        <div className="mt-12 text-center text-slate-500 text-sm">
+          <p>Centrika OnePortal Management System</p>
           <p>© 2026 All rights reserved</p>
         </div>
       </div>
