@@ -104,7 +104,7 @@ export default function DepartmentManagement() {
     }
   };
 
-  const filteredDepts = departments.filter(d => 
+  const filteredDepts = departments.filter((d: any) => 
     d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     d.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );

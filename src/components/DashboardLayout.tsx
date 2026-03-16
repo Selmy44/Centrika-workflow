@@ -550,7 +550,7 @@ function DashboardLayoutContent({
                 <Avatar className="h-8 w-8 md:h-9 md:w-9 border-2 border-[#3b6dae]/10 dark:border-blue-500/20 shadow-sm shrink-0">
                   <AvatarImage src={user?.profileImage || ""} alt={user?.name || "User"} className="object-cover" />
                   <AvatarFallback className="text-[10px] font-black bg-linear-to-br from-[#3b6dae] to-[#2d5385] text-white">
-                    {user?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || "-"}
+                    {user?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || "-"}
                   </AvatarFallback>
                 </Avatar>
                 <div className="hidden lg:flex flex-col">
