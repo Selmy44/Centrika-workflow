@@ -47,7 +47,14 @@ export async function sendEmail(to: string, subject: string, html: string) {
 
     console.log(`[Email] Sent to ${to}: ${subject}`);
     return true;
-  } catch (error) {
+  } catch (error: any) {
+    console.error("[Email Error Details]:", {
+      message: error?.message,
+      code: error?.code,
+      command: error?.command,
+      response: error?.response,
+      responseCode: error?.responseCode
+    });
     console.warn("[Email] Send failed (continuing anyway):", error instanceof Error ? error.message : String(error));
     return true; // Return true anyway to not block the login
   }
