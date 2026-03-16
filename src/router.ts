@@ -7,6 +7,12 @@ import { mfaRouter } from "./routers/mfa";
 import { employeesRouter } from "./routers/employees";
 import { invitationsRouter } from "./routers/invitations";
 import { workflowRouter } from "./routers/workflow";
+import { commentsRouter } from "./routers/comments";
+import { announcementsRouter } from "./routers/announcements";
+import { suggestionsRouter } from "./routers/suggestions";
+import { policiesRouter } from "./routers/policies";
+import { analyticsRouter } from "./routers/analytics";
+import { hrRouter } from "./routers/hr";
 import { upsertUser, prisma } from "./db";
 import { SignJWT } from "jose";
 import { ENV } from "./core/env";
@@ -40,6 +46,11 @@ export const appRouter = router({
         dateOfEmployment: z.string().min(1, "Date of employment is required"),
         managerId: z.number().optional(),
         role: z.enum(["user", "admin", "hr", "head_of_department", "head_of_finance", "ceo_md"]).default("user"),
+        dateOfBirth: z.string().optional(),
+        jobDescription: z.string().optional(),
+        contractType: z.string().optional(),
+        contractStart: z.string().optional(),
+        contractEnd: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         // Only HR and Admin can register users
@@ -91,6 +102,12 @@ export const appRouter = router({
             staffId: input.staffId || "",
             dateOfEmployment: input.dateOfEmployment,
             managerId: input.managerId,
+            // @ts-ignore - resolve stale IDE Prisma type cache
+            dateOfBirth: input.dateOfBirth,
+            jobDescription: input.jobDescription,
+            contractType: input.contractType,
+            contractStart: input.contractStart,
+            contractEnd: input.contractEnd,
             lastSignedIn: new Date(),
           }
         });
@@ -261,6 +278,11 @@ export const appRouter = router({
         dateOfEmployment: z.string().optional(),
         managerId: z.number().nullable().optional(),
         profileImage: z.string().optional(),
+        dateOfBirth: z.string().optional(),
+        jobDescription: z.string().optional(),
+        contractType: z.string().optional(),
+        contractStart: z.string().optional(),
+        contractEnd: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         // If email is being changed, check it's not already in use by someone else
@@ -284,6 +306,12 @@ export const appRouter = router({
             dateOfEmployment: input.dateOfEmployment,
             managerId: input.managerId,
             profileImage: input.profileImage,
+            // @ts-ignore - resolve stale IDE Prisma type cache
+            dateOfBirth: input.dateOfBirth,
+            jobDescription: input.jobDescription,
+            contractType: input.contractType,
+            contractStart: input.contractStart,
+            contractEnd: input.contractEnd,
             updatedAt: new Date(),
           }
         });
@@ -526,6 +554,11 @@ export const appRouter = router({
         position: z.string().optional(),
         role: z.enum(["user", "admin", "hr", "head_of_department", "head_of_finance", "ceo_md"]).default("user"),
         dateOfEmployment: z.string().optional(),
+        dateOfBirth: z.string().optional(),
+        jobDescription: z.string().optional(),
+        contractType: z.string().optional(),
+        contractStart: z.string().optional(),
+        contractEnd: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         if (ctx.user.role !== "admin" && ctx.user.role !== "hr") {
@@ -556,6 +589,12 @@ export const appRouter = router({
             departmentId: input.departmentId,
             position: input.position || "Staff",
             dateOfEmployment,
+            // @ts-ignore - resolve stale IDE Prisma type cache
+            dateOfBirth: input.dateOfBirth,
+            jobDescription: input.jobDescription,
+            contractType: input.contractType,
+            contractStart: input.contractStart,
+            contractEnd: input.contractEnd,
             staffId: "", // Will be generated below
           }
         });
@@ -577,9 +616,15 @@ export const appRouter = router({
       .input(z.object({
         userId: z.number(),
         role: z.enum(["user", "admin", "hr", "head_of_department", "head_of_finance", "ceo_md"]),
-        departmentId: z.number().optional(),
+        departmentId: z.number().optional().nullable(),
         managerId: z.number().optional().nullable(),
         staffId: z.string().optional(),
+        position: z.string().optional(),
+        dateOfBirth: z.string().optional(),
+        jobDescription: z.string().optional(),
+        contractType: z.string().optional(),
+        contractStart: z.string().optional(),
+        contractEnd: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         if (ctx.user.role !== "admin") {
@@ -593,6 +638,13 @@ export const appRouter = router({
             departmentId: input.departmentId,
             managerId: input.managerId,
             staffId: input.staffId,
+            position: input.position,
+            // @ts-ignore - resolve stale IDE Prisma type cache
+            dateOfBirth: input.dateOfBirth,
+            jobDescription: input.jobDescription,
+            contractType: input.contractType,
+            contractStart: input.contractStart,
+            contractEnd: input.contractEnd,
             updatedAt: new Date(),
           }
         });
@@ -687,6 +739,12 @@ export const appRouter = router({
 
   employees: employeesRouter,
   mfa: mfaRouter,
+  comments: commentsRouter,
+  announcements: announcementsRouter,
+  suggestions: suggestionsRouter,
+  policies: policiesRouter,
+  analytics: analyticsRouter,
+  hr: hrRouter,
 });
 
 export type AppRouter = typeof appRouter;

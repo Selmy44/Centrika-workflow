@@ -76,6 +76,8 @@ enum NotificationType {
   approval_needed
   approval_completed
   escalation_notification
+  new_comment
+  workflow_update
 }
 
 enum MfaMethod {
@@ -105,6 +107,11 @@ model User {
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @default(now()) @updatedAt @map("updated_at")
   lastSignedIn      DateTime @default(now()) @map("last_signed_in")
+  dateOfBirth       String?  @map("date_of_birth") @db.VarChar(10)
+  jobDescription    String?  @map("job_description") @db.Text
+  contractType      String?  @map("contract_type") @db.VarChar(50)
+  contractStart     String?  @map("contract_start") @db.VarChar(10)
+  contractEnd       String?  @map("contract_end") @db.VarChar(10)
 
   department        Department? @relation("DepartmentUsers", fields: [departmentId], references: [id])
   hodOfDepartment   Department? @relation("DepartmentHOD")
@@ -123,6 +130,11 @@ model User {
   subordinates      User[]   @relation("UserManager")
   sentInvitations   Invitation[]
   approvalLogs      ApprovalLog[]
+  comments          RequestComment[]
+  announcements     Announcement[]   @relation("UserAnnouncements")
+  suggestions       Suggestion[]
+  employeeDocuments EmployeeDocument[] @relation("EmployeeDocs")
+  verifiedDocuments EmployeeDocument[] @relation("VerifiedDocs")
 
   @@map("users")
 }
@@ -135,8 +147,9 @@ model Department {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
 
-  hod         User?    @relation("DepartmentHOD", fields: [hodId], references: [id])
-  users       User[]   @relation("DepartmentUsers")
+  hod           User?          @relation("DepartmentHOD", fields: [hodId], references: [id], onDelete: SetNull)
+  users         User[]         @relation("DepartmentUsers")
+  announcements Announcement[]
 
   @@map("departments")
 }
@@ -163,6 +176,7 @@ model Request {
   notifications        Notification[]
   formSubmission       FormSubmission?
   approvalLogs         ApprovalLog[]
+  comments             RequestComment[]
 
   @@map("requests")
 }
@@ -477,4 +491,73 @@ model ApprovalLog {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("approval_logs")
+}
+
+model RequestComment {
+  id        Int      @id @default(autoincrement())
+  requestId Int      @map("request_id")
+  userId    Int      @map("user_id")
+  content   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  request   Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("request_comments")
+}
+
+model Announcement {
+  id           Int         @id @default(autoincrement())
+  title        String
+  content      String      @db.Text
+  authorId     Int         @map("author_id")
+  departmentId Int?        @map("department_id")
+  createdAt    DateTime    @default(now()) @map("created_at")
+
+  author       User        @relation("UserAnnouncements", fields: [authorId], references: [id], onDelete: Cascade)
+  department   Department? @relation(fields: [departmentId], references: [id])
+
+  @@map("announcements")
+}
+
+model Suggestion {
+  id          Int      @id @default(autoincrement())
+  content     String   @db.Text
+  isAnonymous Boolean  @default(true) @map("is_anonymous")
+  userId      Int?     @map("user_id") // Optional link to user if not anonymous
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("suggestions")
+}
+
+model Policy {
+  id          Int      @id @default(autoincrement())
+  title       String   @db.VarChar(255)
+  category    String   @db.VarChar(100)
+  content     String   @db.Text
+  lastUpdated DateTime @default(now()) @map("last_updated")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("policies")
+}
+
+model EmployeeDocument {
+  id          Int       @id @default(autoincrement())
+  userId      Int       @map("user_id")
+  name        String    @db.VarChar(255)
+  fileUrl     String    @map("file_url")
+  fileKey     String    @map("file_key") @db.VarChar(255)
+  category    String    @db.VarChar(100)
+  status      String    @default("pending") @db.VarChar(50) // pending, verified, rejected
+  verifiedBy  Int?      @map("verified_by")
+  verifiedAt  DateTime? @map("verified_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  user        User      @relation("EmployeeDocs", fields: [userId], references: [id], onDelete: Cascade)
+  verifier    User?     @relation("VerifiedDocs", fields: [verifiedBy], references: [id], onDelete: SetNull)
+
+  @@map("employee_documents")
 }
