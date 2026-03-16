@@ -40,7 +40,7 @@ export const employeesRouter = router({
           orderBy: { name: "asc" }
         });
 
-        return employees.map(emp => ({
+        return employees.map((emp: any) => ({
           id: emp.id,
           name: emp.name,
           email: emp.email,
@@ -126,8 +126,8 @@ export const employeesRouter = router({
           // @ts-ignore - resolve stale IDE Prisma type cache
           contractEnd: employee.contractEnd,
           leaveHistory: employee.requests
-            .filter(r => r.type === "leave" && r.leaveRequest)
-            .map(r => r.leaveRequest),
+            .filter((r: any) => r.type === "leave" && r.leaveRequest)
+            .map((r: any) => r.leaveRequest),
           requestsCount: employee.requests.length,
         };
       } catch (error) {
