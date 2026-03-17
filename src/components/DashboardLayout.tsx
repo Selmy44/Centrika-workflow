@@ -349,8 +349,6 @@ function DashboardLayoutContent({
           collapsible="icon"
           className="border-r border-blue-900/10 dark:border-blue-950/50 bg-[#3b6dae] dark:bg-[#0f172a] text-white"
           disableTransition={isResizing}
-          onMouseEnter={() => !isMobile && setOpen(true)}
-          onMouseLeave={() => !isMobile && setOpen(false)}
         >
           <SidebarHeader className="h-20 justify-center">
             <div className="flex items-center gap-3 px-3 transition-all w-full">
@@ -452,9 +450,9 @@ function DashboardLayoutContent({
             </SidebarMenu>
           </SidebarContent>
 
-          <SidebarFooter className="p-4 gap-4 mt-auto border-t border-blue-100 dark:border-slate-800">
+          <SidebarFooter className="p-4 gap-4 mt-auto relative before:absolute before:top-0 before:left-4 before:right-4 before:h-px before:bg-white/20 dark:before:bg-slate-700/50">
             <div className="space-y-3">
-              <div className="px-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest group-data-[collapsible=icon]:hidden">
+              <div className="px-2 text-[10px] font-bold text-white/50 uppercase tracking-widest group-data-[collapsible=icon]:hidden">
                 Profile & Settings
               </div>
 
@@ -467,9 +465,9 @@ function DashboardLayoutContent({
                     <button
                       key={item.path}
                       onClick={() => setLocation(item.path)}
-                      className={`flex items-center gap-3 w-full h-12 px-3 rounded-xl transition-all text-sm font-medium ${isActive
-                        ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 shadow-sm border border-blue-100 dark:border-blue-900/30"
-                        : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100"
+                      className={`flex items-center gap-3 w-full h-12 px-3 rounded-xl transition-all text-sm font-semibold ${isActive
+                        ? "bg-[#c79d2d] text-white shadow-lg shadow-[#c79d2d]/10 hover:bg-[#c79d2d]/90 group-data-[collapsible=icon]:shadow-[#c79d2d]/30"
+                        : "text-white/70 hover:bg-white/10 hover:text-white"
                         } group-data-[collapsible=icon]:size-12 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:rounded-2xl`}
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
@@ -483,7 +481,7 @@ function DashboardLayoutContent({
             <div className="space-y-3 pt-2">
               <button
                 onClick={logout}
-                className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:text-rose-600 transition-all w-full group-data-[collapsible=icon]:size-12 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:rounded-2xl"
+                className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-rose-300 hover:bg-rose-500/20 hover:text-rose-200 transition-all w-full group-data-[collapsible=icon]:size-12 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:rounded-2xl"
               >
                 <LogOut className="h-4 w-4 shrink-0" />
                 <span className="group-data-[collapsible=icon]:hidden">Sign Out</span>
