@@ -21,7 +21,7 @@ export const leaveTypeConfig = {
     entitlementDays: 5,
     maxDaysPerRequest: 5,
     icon: "🏥",
-    color: "red",
+    color: "yellow",
     requiresSupportingDoc: true, // MUST attach medical document
     requiresEmploymentDuration: false, // No employment requirement for sick leave
     reasonRequiredIfDaysExceed: 5, // If requesting > 5 days
@@ -32,7 +32,7 @@ export const leaveTypeConfig = {
     entitlementDays: 7,
     maxDaysPerRequest: 7,
     icon: "👨‍👶",
-    color: "cyan",
+    color: "yellow",
     requiresSupportingDoc: true, // Birth certificate or proof of birth
     requiresEmploymentDuration: false, // No employment requirement for paternity leave
   },
@@ -42,7 +42,7 @@ export const leaveTypeConfig = {
     entitlementDays: 84, // 12 weeks
     maxDaysPerRequest: 84, // 12 weeks (84 days)
     icon: "👩‍👶",
-    color: "pink",
+    color: "yellow",
     requiresSupportingDoc: true, // Medical certificate or proof of pregnancy
     requiresEmploymentDuration: false, // No employment requirement for maternity leave
   },
@@ -52,7 +52,7 @@ export const leaveTypeConfig = {
     entitlementDays: 0,
     maxDaysPerRequest: null, // No limit
     icon: "💼",
-    color: "gray",
+    color: "yellow",
     requiresSupportingDoc: false,
     requiresEmploymentDuration: false,
   },
@@ -62,7 +62,7 @@ export const leaveTypeConfig = {
     entitlementDays: 7, // Default, will be overridden by dropdown selection
     maxDaysPerRequest: 7, // Default, will be overridden by dropdown selection
     icon: "👨‍👩‍👧",
-    color: "green",
+    color: "yellow",
     requiresSupportingDoc: true, // Birth certificate or medical certificate
     requiresEmploymentDuration: false, // No employment requirement for parental leave
   },

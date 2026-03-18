@@ -11,6 +11,8 @@ import { useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/PasswordInput";
 import OtpVerification from "./OtpVerificationPage";
+import { useTheme } from "@/contexts/ThemeContext";
+import ThemeToggleIcon from "@/components/ui/ThemeToggleIcon";
 
 export default function Login() {
   const [, navigate] = useLocation();
@@ -22,6 +24,8 @@ export default function Login() {
     email: "",
     password: "",
   });
+  
+  const { theme, toggleTheme, switchable } = useTheme();
 
   const utils = trpc.useUtils();
   const login = trpc.auth.login.useMutation();
@@ -85,15 +89,28 @@ export default function Login() {
           }}
         />
       ) : (
-        <div className="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
-          <div className="w-full max-w-md">
-            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur hover:border-slate-700">
+        <div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-slate-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center p-4 transition-colors duration-300">
+          {/* Theme Toggle Top Right */}
+          {switchable && (
+            <div className="absolute top-6 right-6">
+              <button
+                onClick={() => toggleTheme?.()}
+                title={theme === "dark" ? "Light Mode" : "Dark Mode"}
+                className="h-10 w-10 flex items-center justify-center rounded-xl bg-white/50 dark:bg-slate-800/50 hover:bg-white dark:hover:bg-slate-700 shadow-sm border border-slate-200 dark:border-slate-700 transition-all backdrop-blur-sm"
+              >
+                <ThemeToggleIcon theme={theme} className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+              </button>
+            </div>
+          )}
+
+          <div className="w-full max-w-md relative z-10">
+            <Card className="bg-white/80 border-slate-200 dark:bg-slate-800/50 dark:border-slate-700 shadow-xl backdrop-blur hover:border-slate-300 dark:hover:border-slate-600 transition-all">
               <CardHeader className="space-y-2 text-center">
                 <div className="flex justify-center mb-4">
                   <img src="/logo/centrikaLogo.png" alt="Centrika" className="h-32 w-auto" />
                 </div>
-                <CardTitle className="text-2xl text-white">Welcome Back</CardTitle>
-                <CardDescription className="text-slate-400">
+                <CardTitle className="text-2xl text-slate-900 dark:text-white">Welcome Back</CardTitle>
+                <CardDescription className="text-slate-500 dark:text-slate-400">
                   Sign in to your Centrika OnePortal account
                 </CardDescription>
               </CardHeader>
@@ -101,7 +118,7 @@ export default function Login() {
               <CardContent>
                 <form onSubmit={handleEmailLogin} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="text-slate-200">
+                    <Label htmlFor="email" className="text-slate-700 dark:text-slate-200">
                       Email Address
                     </Label>
                     <Input
@@ -110,21 +127,23 @@ export default function Login() {
                       placeholder="username@centrika.rw"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="bg-slate-700/50 border-slate-600 text-white placeholder-slate-500 focus:border-blue-500 hover:bg-slate-700/70 transition-colors"
+                      className="bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 dark:bg-slate-700/50 dark:border-slate-600 dark:text-white dark:placeholder:text-slate-500 focus:border-blue-500 hover:bg-slate-50 dark:hover:bg-slate-700/70 transition-colors"
                       required
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="password" className="text-slate-200">
+                    <Label htmlFor="password" className="text-slate-700 dark:text-slate-200">
                       Password
                     </Label>
-                    <PasswordInput
-                      value={formData.password}
-                      onChange={(password) => setFormData({ ...formData, password })}
-                      placeholder="••••••••"
-                      id="password"
-                    />
+                    <div className="[&>div>input]:bg-white [&>div>input]:border-slate-300 [&>div>input]:text-slate-900 [&>div>input]:placeholder:text-slate-400 dark:[&>div>input]:bg-slate-700/50 dark:[&>div>input]:border-slate-600 dark:[&>div>input]:text-white dark:[&>div>input]:placeholder:text-slate-500 hover:[&>div>input]:bg-slate-50 dark:hover:[&>div>input]:bg-slate-700/70 [&>div>input]:transition-colors">
+                      <PasswordInput
+                        value={formData.password}
+                        onChange={(password) => setFormData({ ...formData, password })}
+                        placeholder="••••••••"
+                        id="password"
+                      />
+                    </div>
                     <button
                       type="button"
                       onClick={() => navigate("/forgot-password")}
@@ -149,9 +168,9 @@ export default function Login() {
                     )}
                   </Button>
 
-                  <p className="text-center text-slate-400 text-sm">
+                  <p className="text-center text-slate-600 dark:text-slate-400 text-sm">
                     Don't have an account?{" "}
-                    <span className="text-blue-400 font-semibold">
+                    <span className="text-blue-600 dark:text-blue-400 font-semibold cursor-pointer">
                       Contact HR to request access
                     </span>
                   </p>
@@ -220,7 +239,7 @@ export default function Login() {
               </CardContent>
             </Card>
 
-            <div className="mt-12 text-center text-slate-500 text-sm">
+            <div className="mt-12 text-center text-slate-500 dark:text-slate-500 text-sm">
               <p>Centrika OnePortal Management System</p>
               <p>© 2026 All rights reserved</p>
             </div>
