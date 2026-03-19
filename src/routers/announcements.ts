@@ -51,19 +51,29 @@ export const announcementsRouter = router({
         });
       }
 
-      // Admins and HR can post globally (departmentId = null)
-      // HODs must post to their own department
+      // Permissions logic:
+      // HR, Admin, CEO/MD can post globally (departmentId = null)
+      // Head of Department (HOD) can ONLY post to their own department
       let targetDepartmentId = input.departmentId;
 
-      if (ctx.user.role === "head_of_department" && !["admin", "hr", "ceo_md"].includes(ctx.user.role)) {
-         targetDepartmentId = typeof ctx.user.department === 'object' ? ctx.user.department?.id : undefined;
-         
-         if (!targetDepartmentId) {
-             throw new TRPCError({
-                 code: "BAD_REQUEST",
-                 message: "You are not assigned to a department.",
-             });
-         }
+      if (ctx.user.role === "head_of_department") {
+        const deptId = typeof ctx.user.department === 'object' ? ctx.user.department?.id : undefined;
+        if (!deptId) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "You must be assigned to a department to post a team announcement.",
+          });
+        }
+        targetDepartmentId = deptId;
+      } else if (["hr", "admin", "ceo_md"].includes(ctx.user.role)) {
+        // These roles can post to a specific department if provided, else it's global (null)
+        targetDepartmentId = input.departmentId || null;
+      } else {
+        // Fallback for unauthorized roles (though protectedProcedure and allowedRoles above should catch this)
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have permission to post announcements",
+        });
       }
 
       return prisma.announcement.create({
