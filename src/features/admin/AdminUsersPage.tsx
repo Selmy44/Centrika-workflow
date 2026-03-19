@@ -1,5 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
-import DashboardLayout from "@/components/DashboardLayout";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -425,7 +425,7 @@ export default function AdminUsers() {
               <div className="space-y-2">
                 <Label htmlFor="role">Role</Label>
                 <Select value={role} onValueChange={setRole}>
-                  <SelectTrigger>
+                  <SelectTrigger title="Select User Role" aria-label="Select User Role">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -442,7 +442,7 @@ export default function AdminUsers() {
               <div className="space-y-2">
                 <Label htmlFor="department">Department</Label>
                 <Select value={department} onValueChange={setDepartment}>
-                  <SelectTrigger>
+                  <SelectTrigger aria-label="Select department">
                     <SelectValue placeholder="Select department" />
                   </SelectTrigger>
                   <SelectContent>
@@ -487,7 +487,7 @@ export default function AdminUsers() {
                 <div className="space-y-2">
                   <Label>Contract Type</Label>
                   <Select value={editContractType} onValueChange={setEditContractType}>
-                    <SelectTrigger>
+                    <SelectTrigger aria-label="Select contract type">
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -706,7 +706,7 @@ export default function AdminUsers() {
                   if (validationErrors.department) setValidationErrors({...validationErrors, department: undefined});
                 }}
               >
-                <SelectTrigger className={validationErrors.department ? "border-red-500 focus:ring-red-500" : ""}>
+                <SelectTrigger className={validationErrors.department ? "border-red-500 focus:ring-red-500" : ""} aria-label="Select department">
                   <SelectValue placeholder="Select department" />
                 </SelectTrigger>
                 <SelectContent>
@@ -742,7 +742,7 @@ export default function AdminUsers() {
             <div className="space-y-2">
               <Label htmlFor="createRole">Role</Label>
               <Select value={createRole} onValueChange={setCreateRole}>
-                <SelectTrigger>
+                <SelectTrigger aria-label="Select role">
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
@@ -767,7 +767,7 @@ export default function AdminUsers() {
               <div className="space-y-2">
                 <Label>Contract Type</Label>
                 <Select value={createContractType} onValueChange={setCreateContractType}>
-                  <SelectTrigger>
+                  <SelectTrigger aria-label="Select contract type">
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
