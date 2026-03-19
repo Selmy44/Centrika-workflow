@@ -10,7 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { DollarSign, Shield, ArrowRight } from "lucide-react";
 import { Link } from "wouter";
-import DashboardLayout from "@/components/DashboardLayout";
+import DashboardLayout from "@/components/layout/DashboardLayout";
+import { HRDashboard } from "./HRDashboard";
+import { FinanceDashboard } from "./FinanceDashboard";
 
 interface RoleDashboardProps {
   user: any;
@@ -35,48 +37,28 @@ export const RoleDashboard = ({ user }: RoleDashboardProps) => {
       <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[calc(100vh-4rem)]">
         {/* Main Content Area */}
         <div className="lg:col-span-8 p-4 lg:p-6 space-y-4">
-          <StatsGrid stats={stats} loading={statsLoading} role={role} />
+          {role === "hr" ? (
+            <HRDashboard />
+          ) : role === "head_of_finance" ? (
+            <FinanceDashboard />
+          ) : (
+            <>
+              <StatsGrid stats={stats} loading={statsLoading} role={role} />
 
-          {/* Role-Specific Content */}
-          {isManager && (
-            <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 delay-150">
-              <PendingApprovalsWidget />
-            </div>
-          )}
-
-          {role === "head_of_finance" && (
-            <Card className="bg-white/50 backdrop-blur-sm border-border/50 rounded-2xl overflow-hidden">
-              <CardHeader className="bg-[#3b6dae]/5 border-b border-border/30 py-3">
-                <CardTitle className="flex items-center gap-2 text-[#3b6dae] text-base">
-                  <DollarSign size={18} />
-                  Financial Overview
-                </CardTitle>
-                <CardDescription className="text-[10px]">Consolidated approved expenditure tracking</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-4 pb-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  {[
-                    { label: "RWF Approved", value: expenditures?.rwf, color: "#3b6dae" },
-                    { label: "USD Approved", value: expenditures?.usd, color: "#8C89B4" },
-                    { label: "EUR Approved", value: expenditures?.eur, color: "#c79d2d" }
-                  ].map((item, idx) => (
-                    <div key={idx} className="p-3 bg-white border border-border/50 rounded-xl shadow-sm">
-                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">{item.label}</p>
-                      <p className="text-lg font-black" style={{ color: item.color }}>
-                        {expendLoading ? "..." : `${item.value?.toLocaleString() || 0} ${item.label.split(' ')[0]}`}
-                      </p>
-                    </div>
-                  ))}
+              {/* Role-Specific Content */}
+              {isManager && (
+                <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 delay-150">
+                  <PendingApprovalsWidget />
                 </div>
-              </CardContent>
-            </Card>
+              )}
+
+              <div className="space-y-3">
+                <NoticeBoard />
+              </div>
+
+              <RecentRequests />
+            </>
           )}
-
-          <div className="space-y-3">
-            <NoticeBoard />
-          </div>
-
-          <RecentRequests />
         </div>
 
         {/* Side Panel Area - Distinct Strip */}
