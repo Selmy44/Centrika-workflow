@@ -307,9 +307,8 @@ export default function AnnualLeaveForm({ onSuccess }: Props) {
             <h2 className="text-lg font-bold text-blue-600 mb-4">4. EMPLOYEE SIGNATURE</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Upload Your Signature</label>
-                <input
-                  type="file"
+                <label htmlFor="employee-signature-upload" className="block text-sm font-semibold text-gray-700 mb-1">Upload Your Signature</label>
+                <input id="employee-signature-upload" type="file"
                   accept=".png,.jpg,.jpeg,.pdf"
                   onChange={(e) => {
                     if (e.target.files?.[0]) {
@@ -340,11 +339,10 @@ export default function AnnualLeaveForm({ onSuccess }: Props) {
               )}
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Signature Date</label>
-                <SingleDatePicker
-                  value={form.signatureDate}
+                <label className="block text-sm font-semibold text-gray-700 mb-1" htmlFor="employee-signature-date">Signature Date</label>
+                <SingleDatePicker id="employee-signature-date" value={form.signatureDate}
                   onChange={(date) => setForm({ ...form, signatureDate: date })}
-                  label=""
+                  label="Signature Date"
                 />
               </div>
             </div>
@@ -380,3 +378,4 @@ export default function AnnualLeaveForm({ onSuccess }: Props) {
     </div>
   );
 }
+
