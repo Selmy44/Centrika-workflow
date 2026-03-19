@@ -74,7 +74,7 @@ export function CreateRequestDialog({
       {initialRequestType === "leave" && selectedLeaveType && (
         <Dialog open={showFormDialog} onOpenChange={handleCloseAll}>
           <DialogContent
-            className="!w-[70vw] !max-w-[900px] !max-h-[90vh] !overflow-y-auto !p-0 !flex !flex-col !gap-0"
+            className="w-[70vw]! max-w-[900px]! max-h-[90vh]! overflow-y-auto! p-0! flex! flex-col! gap-0!"
             style={{ width: "70vw", maxWidth: "900px" }}
 
             showCloseButton={false}
@@ -97,7 +97,7 @@ export function CreateRequestDialog({
       {initialRequestType === "car" && (
         <Dialog open={showFormDialog} onOpenChange={handleCloseAll}>
           <DialogContent
-            className="!w-[70vw] !max-w-[900px] !max-h-[90vh] !overflow-y-auto !p-0 !flex !flex-col !gap-0"
+            className="w-[70vw]! max-w-[900px]! max-h-[90vh]! overflow-y-auto! p-0! flex! flex-col! gap-0!"
             style={{ width: "70vw", maxWidth: "900px" }}
 
           >
@@ -115,7 +115,7 @@ export function CreateRequestDialog({
       {initialRequestType === "expenditure" && (
         <Dialog open={showFormDialog} onOpenChange={handleCloseAll}>
           <DialogContent
-            className="!w-[70vw] !max-w-[900px] !max-h-[90vh] !overflow-y-auto !p-0 !flex !flex-col !gap-0"
+            className="w-[70vw]! max-w-[900px]! max-h-[90vh]! overflow-y-auto! p-0! flex! flex-col! gap-0!"
             style={{ width: "70vw", maxWidth: "900px" }}
 
           >
@@ -132,7 +132,7 @@ export function CreateRequestDialog({
       {initialRequestType === "asset" && (
         <Dialog open={showFormDialog} onOpenChange={handleCloseAll}>
           <DialogContent
-            className="!w-[70vw] !max-w-[900px] !max-h-[90vh] !overflow-y-auto !p-0 !flex !flex-col !gap-0"
+            className="w-[70vw]! max-w-[900px]! max-h-[90vh]! overflow-y-auto! p-0! flex! flex-col! gap-0!"
             style={{ width: "70vw", maxWidth: "900px" }}
             onInteractOutside={(e) => e.preventDefault()}
           >
