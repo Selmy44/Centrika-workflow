@@ -357,8 +357,9 @@ export default function PersonalLeaveForm({ onSuccess }: Props) {
             <h2 className="text-lg font-bold text-purple-600 mb-4">6. EMPLOYEE SIGNATURE</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Upload Your Signature</label>
+                <label htmlFor="employee-signature" className="block text-sm font-semibold text-gray-700 mb-1">Upload Your Signature</label>
                 <input
+                  id="employee-signature"
                   type="file"
                   accept=".png,.jpg,.jpeg,.pdf"
                   onChange={(e) => {
