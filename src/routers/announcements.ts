@@ -9,7 +9,7 @@ export const announcementsRouter = router({
       where: {
         OR: [
           { departmentId: null },
-          { departmentId: typeof ctx.user.department === 'object' ? ctx.user.department?.id : undefined }
+          { departmentId: ctx.user.department?.id }
         ]
       },
       include: {
@@ -57,7 +57,7 @@ export const announcementsRouter = router({
       let targetDepartmentId = input.departmentId;
 
       if (ctx.user.role === "head_of_department") {
-        const deptId = typeof ctx.user.department === 'object' ? ctx.user.department?.id : undefined;
+        const deptId = ctx.user.department?.id;
         if (!deptId) {
           throw new TRPCError({
             code: "BAD_REQUEST",
@@ -83,6 +83,78 @@ export const announcementsRouter = router({
           departmentId: targetDepartmentId || null,
           authorId: ctx.user.id,
         },
+      });
+    }),
+
+  update: protectedProcedure
+    .input(
+      z.object({
+        id: z.number(),
+        title: z.string().min(1).optional(),
+        content: z.string().min(1).optional(),
+        departmentId: z.number().nullable().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const announcement = await prisma.announcement.findUnique({
+        where: { id: input.id },
+      });
+
+      if (!announcement) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Announcement not found",
+        });
+      }
+
+      // Permissions: Must be author or admin/hr/ceo_md
+      const isAuthor = announcement.authorId === ctx.user.id;
+      const isAdminFlag = ["admin", "hr", "ceo_md"].includes(ctx.user.role);
+
+      if (!isAuthor && !isAdminFlag) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have permission to update this announcement",
+        });
+      }
+
+      return prisma.announcement.update({
+        where: { id: input.id },
+        data: {
+          title: input.title,
+          content: input.content,
+          departmentId: input.departmentId,
+        },
+      });
+    }),
+
+  delete: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const announcement = await prisma.announcement.findUnique({
+        where: { id: input.id },
+      });
+
+      if (!announcement) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Announcement not found",
+        });
+      }
+
+      // Permissions: Must be author or admin/hr/ceo_md
+      const isAuthor = announcement.authorId === ctx.user.id;
+      const isAdminFlag = ["admin", "hr", "ceo_md"].includes(ctx.user.role);
+
+      if (!isAuthor && !isAdminFlag) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have permission to delete this announcement",
+        });
+      }
+
+      return prisma.announcement.delete({
+        where: { id: input.id },
       });
     }),
 });
