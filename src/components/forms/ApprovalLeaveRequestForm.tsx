@@ -211,10 +211,11 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
 
             {/* Signature Upload */}
             <div>
-              <label className="text-sm font-semibold text-gray-700">Your Signature</label>
+              <label htmlFor="signature-upload" className="text-sm font-semibold text-gray-700">Your Signature</label>
               <p className="text-xs text-gray-600 mb-2">Upload an image or PDF of your signature</p>
               <div className="border-2 border-dashed border-yellow-400 rounded-lg p-4 bg-white">
                 <input
+                  id="signature-upload"
                   type="file"
                   accept="image/*,.pdf"
                   onChange={handleSignatureChange}

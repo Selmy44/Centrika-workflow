@@ -330,6 +330,7 @@ export default function LeaveRequestForm({
                       }
                     }}
                     className="text-xs"
+                    title="Upload Supporting Document"
                   />
                 )}
                 {form.supportingDocument && <p className="text-xs text-green-600">✓ {form.supportingDocument.name}</p>}
@@ -354,6 +355,7 @@ export default function LeaveRequestForm({
                       }
                     }}
                     className="text-xs"
+                    title="Upload Signature"
                   />
                   {form.employeeSignatureUrl && <img src={form.employeeSignatureUrl} alt="sig" className="h-10 object-contain border" />}
                   <SingleDatePicker
@@ -515,6 +517,7 @@ function ApproverApprovalSection({
              type="file"
              onChange={(e) => onSignatureChange(e.target.files?.[0] || null)}
              className="text-xs"
+             title="Upload Approver Signature"
            />
           ) : (
             <p className="text-xs italic">Signature on file</p>
