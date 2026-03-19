@@ -26,6 +26,11 @@ import TeamStatisticsPage from "./features/approvals/TeamStatisticsPage";
 import DepartmentManagementPage from "./features/admin/DepartmentManagementPage";
 import { PolicyKnowledgeBasePage } from "@/features/resources/pages/PolicyKnowledgeBasePage";
 import { PersonalInsightsPage } from "@/features/resources/pages/PersonalInsightsPage";
+import EmployeeProfilePage from "./features/admin/EmployeeProfilePage";
+import LeaveManagementPage from "./features/hr/LeaveManagementPage";
+import DocumentCenterPage from "./features/hr/DocumentCenterPage";
+import BudgetManagementPage from "./features/finance/BudgetManagementPage";
+import ReportsPage from "./features/common/pages/ReportsPage";
 
 // Re-index trigger
 
@@ -67,14 +72,28 @@ function Router() {
       <Route path="/request-analytics" component={RequestAnalyticsPage} />
       <Route path="/team-statistics" component={TeamStatisticsPage} />
       <Route path="/employees" component={EmployeeDirectoryPage} />
+      <Route path="/employee-directory" component={EmployeeDirectoryPage} />
+      <Route path="/hr/employees" component={EmployeeDirectoryPage} />
       <Route path="/finance" component={FinancePage} />
       <Route path="/expenditure-history" component={ExpenditureHistoryPage} />
       <Route path="/leave-balance" component={LeaveBalancePage} />
       <Route path="/admin/users" component={AdminUsersPage} />
       <Route path="/admin/departments" component={DepartmentManagementPage} />
+      <Route path="/departments" component={DepartmentManagementPage} />
       <Route path="/settings" component={SettingsPage} />
       <Route path="/policies" component={PolicyKnowledgeBasePage} />
       <Route path="/insights" component={PersonalInsightsPage} />
+      <Route path="/admin/employees/:id" component={EmployeeProfilePage} />
+      <Route path="/hr/leave" component={LeaveManagementPage} />
+      <Route path="/hr/documents" component={DocumentCenterPage} />
+      <Route path="/hr/reports">
+        <ReportsPage type="hr" />
+      </Route>
+      <Route path="/finance/budgets" component={BudgetManagementPage} />
+      <Route path="/finance/reports">
+        <ReportsPage type="finance" />
+      </Route>
+      <Route path="/finance/history" component={ExpenditureHistoryPage} />
       <Route path="/404" component={NotFoundPage} />
       {/* Final fallback route */}
       <Route component={NotFoundPage} />
@@ -99,3 +118,5 @@ function App() {
 }
 
 export default App;
+
+
