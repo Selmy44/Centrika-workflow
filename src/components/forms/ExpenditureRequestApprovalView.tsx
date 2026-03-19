@@ -202,46 +202,46 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
                     {/* 1. EMPLOYEE INFORMATION */}
                     <Section title="1. EMPLOYEE INFORMATION">
                         <Row label="1.1 Employee Full Name">
-                            <Input value={employee?.name || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={employee?.name || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-medium" />
                         </Row>
                         <Row label="1.2 Staff ID">
-                            <Input value={employee?.staffId || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={employee?.staffId || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-medium" />
                         </Row>
                         <Row label="1.3 Department">
-                            <Input value={employee?.department || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={employee?.department || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-medium" />
                         </Row>
                         <Row label="1.4 Position / Title">
-                            <Input value={employee?.position || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={employee?.position || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-medium" />
                         </Row>
                     </Section>
 
                     {/* 2. EXPENDITURE DETAILS */}
                     <Section title="2. EXPENDITURE DETAILS">
                         <Row label="2.1 Request ID">
-                            <Input value={`#${requestData?.id}`} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={`#${requestData?.id}`} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-medium" />
                         </Row>
                         <Row label="2.2 Type of Expenditure">
-                            <Input value={exp?.category || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={exp?.category || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-medium" />
                         </Row>
                         <Row label="2.3 Amount">
                             <div className="flex gap-2 items-center">
-                                <Input value={formatAmount(exp?.amount, exp?.currency)} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                                <Input value={formatAmount(exp?.amount, exp?.currency)} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-medium" />
                             </div>
                         </Row>
                         <Row label="2.4 Currency">
-                            <Input value={exp?.currency || "RWF"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={exp?.currency || "RWF"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-medium" />
                         </Row>
                         <Row label="2.5 Department">
-                            <Input value={exp?.department || employee?.department || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={exp?.department || employee?.department || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-medium" />
                         </Row>
                         {requestData?.description && (
                             <Row label="2.6 Purpose / Justification">
-                                <Textarea value={requestData.description} disabled className="min-h-20 border-blue-300 text-xs bg-gray-100 cursor-not-allowed !text-black" />
+                                <Textarea value={requestData.description} disabled className="min-h-20 border-blue-300 text-xs bg-gray-100 cursor-not-allowed text-black!" />
                             </Row>
                         )}
                         {requestData?.title && (
                             <Row label="2.7 Request Title">
-                                <Input value={requestData.title} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                                <Input value={requestData.title} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-medium" />
                             </Row>
                         )}
                     </Section>
@@ -265,8 +265,9 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
                                     <div className="space-y-3">
                                         {!signaturePreview ? (
                                             <>
-                                                <p className="text-xs text-gray-600 mb-2">Upload an image or PDF of your signature</p>
+                                                <label htmlFor="signature-upload" className="text-xs text-gray-600 mb-2 block">Upload an image or PDF of your signature</label>
                                                 <input
+                                                    id="signature-upload"
                                                     type="file"
                                                     accept="image/*,.pdf"
                                                     onChange={handleSignatureChange}

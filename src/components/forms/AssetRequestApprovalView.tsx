@@ -205,29 +205,29 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
                     {/* 1. EMPLOYEE INFORMATION */}
                     <Section title="1. EMPLOYEE INFORMATION">
                         <Row label="1.1 Employee Full Name">
-                            <Input value={employee?.name || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={employee?.name || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-medium" />
                         </Row>
                         <Row label="1.2 Position / Title">
-                            <Input value={employee?.position || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={employee?.position || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-medium" />
                         </Row>
                         <Row label="1.3 Department">
-                            <Input value={employee?.department || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={employee?.department || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-medium" />
                         </Row>
                     </Section>
 
                     {/* 2. ASSET DETAILS */}
                     <Section title="2. ASSET / PROPERTY DETAILS">
                         <Row label="2.1 Item Name">
-                            <Input value={asset?.itemName || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-semibold" />
+                            <Input value={asset?.itemName || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-semibold" />
                         </Row>
                         <Row label="2.2 Estimated Cost">
-                            <Input value={formatAmount(asset?.estimatedCost, asset?.currency)} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-blue-700 font-bold" />
+                            <Input value={formatAmount(asset?.estimatedCost, asset?.currency)} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-blue-700! font-bold" />
                         </Row>
                         <Row label="2.3 Category">
-                            <Input value={asset?.category || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black uppercase" />
+                            <Input value={asset?.category || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! uppercase" />
                         </Row>
                         <Row label="2.4 Purpose / Description">
-                            <Textarea value={asset?.description || requestData?.description || "N/A"} disabled className="min-h-24 border-blue-300 text-xs bg-gray-100 cursor-not-allowed !text-black" />
+                            <Textarea value={asset?.description || requestData?.description || "N/A"} disabled className="min-h-24 border-blue-300 text-xs bg-gray-100 cursor-not-allowed text-black!" />
                         </Row>
                     </Section>
 
@@ -248,12 +248,13 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
                                         {!signaturePreview ? (
                                             <>
                                                 <p className="text-[10px] text-gray-500 mb-1 uppercase font-bold tracking-tighter">Upload your signature (Optional)</p>
-                                                <input
+                                                <label className="sr-only" htmlFor="asset-approver-signature">Upload signature</label>\n                                                <input id="asset-approver-signature"
                                                     type="file"
                                                     accept="image/*,.pdf"
                                                     onChange={handleSignatureChange}
                                                     disabled={isLoading}
                                                     className="block w-full text-xs text-gray-600 border border-dashed border-blue-300 rounded p-2 cursor-pointer bg-blue-50/30"
+                                                    title="Upload signature"
                                                 />
                                             </>
                                         ) : (
@@ -326,7 +327,7 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
 
                 {/* ===== REJECT DIALOG ===== */}
                 <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
-                    <DialogContent className="sm:max-w-[425px]">
+                    <DialogContent className="sm:max-w-106.25">
                         <DialogHeader>
                             <DialogTitle className="text-red-600 uppercase font-bold tracking-tight">Reject Asset Request</DialogTitle>
                             <DialogDescription>
@@ -387,3 +388,4 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
         </div>
     );
 }
+

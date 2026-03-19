@@ -197,58 +197,58 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                     {/* 1. EMPLOYEE INFORMATION */}
                     <Section title="1. EMPLOYEE INFORMATION">
                         <Row label="1.1 Employee Full Name">
-                            <Input value={employee?.name || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={employee?.name || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-medium" />
                         </Row>
                         <Row label="1.2 Staff ID">
-                            <Input value={employee?.staffId || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={employee?.staffId || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-medium" />
                         </Row>
                         <Row label="1.3 Department">
-                            <Input value={employee?.department || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={employee?.department || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-medium" />
                         </Row>
                         <Row label="1.4 Position / Title">
-                            <Input value={employee?.position || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={employee?.position || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-medium" />
                         </Row>
                     </Section>
 
                     {/* 2. CAR REQUEST DETAILS */}
                     <Section title="2. CAR REQUEST DETAILS">
                         <Row label="2.1 Request ID">
-                            <Input value={`#${requestData?.id}`} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={`#${requestData?.id}`} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-medium" />
                         </Row>
                         <Row label="2.2 Destination">
-                            <Input value={car?.destination || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={car?.destination || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-medium" />
                         </Row>
                         <Row label="2.3 Departure Date">
-                            <Input value={car?.departureDate || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={car?.departureDate || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-medium" />
                         </Row>
                         <Row label="2.4 Departure Time">
-                            <Input value={car?.departureTime || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={car?.departureTime || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-medium" />
                         </Row>
                         <Row label="2.5 Number of Passengers">
                             <div className="flex gap-2 items-center">
-                                <Input value={car?.passengers?.toString() || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                                <Input value={car?.passengers?.toString() || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-medium" />
                                 <span className="text-sm font-medium text-gray-600">Person(s)</span>
                             </div>
                         </Row>
                         <Row label="2.6 Driver">
-                            <Input value={car?.driverName || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={car?.driverName || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-medium" />
                         </Row>
                         <Row label="2.7 Vehicle">
-                            <Input value={car?.carInfo || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={car?.carInfo || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-medium" />
                         </Row>
                         {car?.purpose && (
                             <Row label="2.8 Purpose">
-                                <Textarea value={car.purpose} disabled className="min-h-20 border-blue-300 text-xs bg-gray-100 cursor-not-allowed !text-black" />
+                                <Textarea value={car.purpose} disabled className="min-h-20 border-blue-300 text-xs bg-gray-100 cursor-not-allowed text-black!" />
                             </Row>
                         )}
                         {requestData?.title && (
                             <Row label="2.9 Request Title">
-                                <Input value={requestData.title} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                                <Input value={requestData.title} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-medium" />
                             </Row>
                         )}
                         {requestData?.description && (
                             <Row label="2.10 Description">
-                                <Textarea value={requestData.description} disabled className="min-h-20 border-blue-300 text-xs bg-gray-100 cursor-not-allowed !text-black" />
+                                <Textarea value={requestData.description} disabled className="min-h-20 border-blue-300 text-xs bg-gray-100 cursor-not-allowed text-black!" />
                             </Row>
                         )}
                     </Section>
@@ -272,8 +272,9 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                                     <div className="space-y-3">
                                         {!signaturePreview ? (
                                             <>
-                                                <p className="text-xs text-gray-600 mb-2">Upload an image or PDF of your signature</p>
+                                                <label htmlFor="signature-upload" className="text-xs text-gray-600 mb-2 block">Upload an image or PDF of your signature</label>
                                                 <input
+                                                    id="signature-upload"
                                                     type="file"
                                                     accept="image/*,.pdf"
                                                     onChange={handleSignatureChange}
