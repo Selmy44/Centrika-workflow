@@ -50,4 +50,10 @@ ENV NODE_ENV=production
 EXPOSE 3000
 
 # Start app
-CMD ["node", "dist/index.js"]
+COPY docker-entrypoint.sh /app/
+RUN chmod +x /app/docker-entrypoint.sh
+
+# Install netcat for wait-for-db
+RUN apk add --no-cache netcat-openbsd
+
+ENTRYPOINT ["/app/docker-entrypoint.sh"]

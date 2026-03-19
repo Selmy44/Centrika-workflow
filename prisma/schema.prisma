@@ -90,7 +90,7 @@ model User {
   id                Int      @id @default(autoincrement())
   openId            String   @unique @map("open_id") @db.VarChar(64)
   name              String?
-  email             String?  @db.VarChar(320)
+  email             String?  @unique @db.VarChar(320)
   password          String?
   loginMethod       String?  @map("login_method") @db.VarChar(64)
   role              Role     @default(user)
@@ -150,6 +150,7 @@ model Department {
   hod           User?          @relation("DepartmentHOD", fields: [hodId], references: [id], onDelete: SetNull)
   users         User[]         @relation("DepartmentUsers")
   announcements Announcement[]
+  budgets       Budget[]
 
   @@map("departments")
 }
@@ -177,6 +178,8 @@ model Request {
   formSubmission       FormSubmission?
   approvalLogs         ApprovalLog[]
   comments             RequestComment[]
+  budgetUsages         BudgetUsage[]
+  voucher              Voucher?
 
   @@map("requests")
 }
@@ -560,4 +563,53 @@ model EmployeeDocument {
   verifier    User?     @relation("VerifiedDocs", fields: [verifiedBy], references: [id], onDelete: SetNull)
 
   @@map("employee_documents")
+}
+
+model Budget {
+  id              Int           @id @default(autoincrement())
+  departmentId    Int           @map("department_id")
+  year            Int
+  totalAmount     Decimal       @map("total_amount") @db.Decimal(18, 2)
+  currency        String        @default("RWF") @db.VarChar(3)
+  category        String?       @db.VarChar(100)
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @default(now()) @updatedAt @map("updated_at")
+
+  department      Department    @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  usages          BudgetUsage[]
+
+  @@unique([departmentId, year, category])
+  @@map("budgets")
+}
+
+model BudgetUsage {
+  id          Int      @id @default(autoincrement())
+  budgetId    Int      @map("budget_id")
+  amount      Decimal  @db.Decimal(18, 2)
+  requestId   Int?     @map("request_id")
+  type        String   @db.VarChar(20) // committed, actual
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  budget      Budget   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  request     Request? @relation(fields: [requestId], references: [id], onDelete: SetNull)
+
+  @@map("budget_usages")
+}
+
+model Voucher {
+  id            Int      @id @default(autoincrement())
+  requestId     Int      @unique @map("request_id")
+  voucherNumber String   @unique @map("voucher_number") @db.VarChar(50)
+  amount        Decimal  @db.Decimal(18, 2)
+  currency      String   @db.VarChar(3)
+  preparedBy    Int      @map("prepared_by")
+  approvedBy    Int?     @map("approved_by")
+  status        String   @default("pending") @db.VarChar(20) // pending, paid, cancelled
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at")
+
+  request       Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@map("vouchers")
 }
