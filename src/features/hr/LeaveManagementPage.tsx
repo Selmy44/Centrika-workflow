@@ -109,7 +109,7 @@ const LeaveManagementPage = () => {
               <TabsContent value="requests" className="space-y-4">
                 <Card className="rounded-2xl border-border/50 bg-white/50 backdrop-blur-sm">
                   <CardContent className="flex flex-wrap items-center gap-4 p-4">
-                    <div className="relative min-w-[220px] flex-1">
+                    <div className="relative min-w-55 flex-1">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                       <Input
                         placeholder="Search employee, department, or leave type..."
@@ -121,6 +121,7 @@ const LeaveManagementPage = () => {
                     <div className="flex items-center gap-2">
                       <Filter size={16} className="text-slate-400" />
                       <select
+                        aria-label="Filter leave requests by status"
                         className="cursor-pointer bg-transparent text-sm font-medium focus:outline-none"
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
@@ -289,7 +290,7 @@ const LeaveManagementPage = () => {
                             <div className="flex items-center justify-between gap-3">
                               <div>
                                 <p className="text-sm font-bold text-slate-900 dark:text-white">{req.user.name}</p>
-                                <p className="text-xs text-slate-500">{req.user.department?.name || "No department"} · {req.leaveRequest?.leaveType}</p>
+                                <p className="text-xs text-slate-500">{req.user.department?.name || "No department"} ï¿½ {req.leaveRequest?.leaveType}</p>
                               </div>
                               <Badge variant="outline">{req.leaveRequest?.endDate}</Badge>
                             </div>

@@ -376,8 +376,11 @@ export default function UnpaidLeaveForm({ onSuccess }: Props) {
             <h2 className="text-lg font-bold text-amber-600 mb-4">7. EMPLOYEE SIGNATURE</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Upload Your Signature</label>
+                <label htmlFor="employeeSignature" className="block text-sm font-semibold text-gray-700 mb-1">
+                  Upload Your Signature
+                </label>
                 <input
+                  id="employeeSignature"
                   type="file"
                   accept=".png,.jpg,.jpeg,.pdf"
                   onChange={(e) => {

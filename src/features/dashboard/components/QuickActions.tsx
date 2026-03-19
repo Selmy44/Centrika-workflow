@@ -31,34 +31,34 @@ export const QuickActions = () => {
   };
 
   return (
-    <div className="grid grid-cols-2 gap-2.5">
+    <div className="grid grid-cols-4 gap-2">
       {actions.map((action) => (
         <button
           key={action.type}
           onClick={() => handleCreate(action.type as any)}
-          className="group relative flex flex-col items-center justify-center p-4 bg-white/60 dark:bg-slate-900/40 border border-border/40 hover:border-[#3b6dae]/30 rounded-[1.5rem] transition-all duration-500 hover:-translate-y-1 hover:shadow-xl hover:shadow-[#3b6dae]/5 overflow-hidden"
+          className="group relative flex flex-col items-center justify-center p-2.5 bg-white/60 dark:bg-slate-900/40 border border-border/40 hover:border-[#3b6dae]/30 rounded-2xl transition-all duration-500 hover:-translate-y-1 hover:shadow-xl hover:shadow-[#3b6dae]/5 overflow-hidden"
         >
           {/* Subtle Ambient Glow */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#3b6dae]/5 to-[#c79d2d]/5 opacity-50 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl pointer-events-none" />
           
           <div className="relative z-10 flex flex-col items-center text-center space-y-2.5">
-            <div className={`p-3 rounded-2xl transition-all duration-500 shadow-inner group-hover:scale-110 group-hover:rotate-6 ${getIconColor(action.type)}`}>
-              <RequestIcon type={action.type} size={18} className={action.type === 'car' ? 'text-white' : ''} />
+            <div className={`p-2.5 rounded-xl transition-all duration-500 shadow-inner group-hover:scale-110 group-hover:rotate-6 ${getIconColor(action.type)}`}>
+              <RequestIcon type={action.type} size={16} className={action.type === 'car' ? 'text-white' : ''} />
             </div>
             
             <div className="space-y-0.5">
-              <p className="text-[11px] font-black text-[#3b6dae] dark:text-[#c79d2d] uppercase tracking-wider mb-0.5">
+              <p className="text-[10px] font-black text-[#3b6dae] dark:text-[#c79d2d] uppercase tracking-wide leading-none mb-1">
                 {action.title}
               </p>
-              <p className="text-[8px] font-bold text-slate-400 dark:text-slate-400/40 uppercase tracking-[0.15em] leading-none">
+              <p className="text-[7px] font-bold text-slate-400 dark:text-slate-400/40 uppercase tracking-wider leading-none">
                 {action.label}
               </p>
             </div>
           </div>
 
-          <div className="absolute top-2.5 right-2.5 p-1 transition-all duration-500 scale-100 group-hover:scale-110">
-            <div className="bg-[#c79d2d] rounded-full p-1 text-white shadow-md border-2 border-white dark:border-slate-900 group-hover:bg-[#d8ae3a]">
-              <Plus size={8} strokeWidth={5} />
+          <div className="absolute top-1.5 right-1.5 p-0.5 transition-all duration-500 scale-100 group-hover:scale-110">
+            <div className="bg-[#c79d2d] rounded-full p-0.5 text-white shadow-md border-2 border-white dark:border-slate-900 group-hover:bg-[#d8ae3a]">
+              <Plus size={6} strokeWidth={6} />
             </div>
           </div>
         </button>

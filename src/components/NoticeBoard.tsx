@@ -30,7 +30,7 @@ export function NoticeBoard() {
 
       <Card className="bg-white/50 dark:bg-slate-900/40 border-border/50 backdrop-blur-sm rounded-3xl overflow-hidden shadow-sm">
         <CardContent className="p-0">
-          <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
+          <div className="max-h-100 overflow-y-auto custom-scrollbar">
             {isLoading ? (
               <div className="flex justify-center py-16">
                 <Loader2 className="animate-spin text-[#3b6dae]/20" />
@@ -75,7 +75,7 @@ export function NoticeBoard() {
                           </span>
                         )}
                       </div>
-                      <button className="text-[10px] font-bold text-[#c79d2d] flex items-center gap-1 hover:text-[#3b6dae] transition-all">
+                      <button className="text-[10px] font-bold text-[#c79d2d] flex items-center gap-1 hover:text-[#3b6dae] transition-all" aria-label="Expand announcement">
                         EXPAND <ExternalLink size={10} strokeWidth={3} />
                       </button>
                     </div>

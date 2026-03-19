@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { trpc } from "@/lib/trpc";
 import {
   DropdownMenu,
@@ -70,6 +71,8 @@ export default function AdminUsers() {
   const [editContractStart, setEditContractStart] = useState("");
   const [editContractEnd, setEditContractEnd] = useState("");
   const [editPosition, setEditPosition] = useState("");
+  const [profileImage, setProfileImage] = useState("");
+  const [editProfileImage, setEditProfileImage] = useState("");
 
   const [validationErrors, setValidationErrors] = useState<{name?: string, email?: string, department?: string}>({});
 
@@ -154,6 +157,7 @@ export default function AdminUsers() {
       setCreateContractType("");
       setCreateContractStart("");
       setCreateContractEnd("");
+      setProfileImage("");
       setValidationErrors({});
       refetch();
     },
@@ -169,8 +173,8 @@ export default function AdminUsers() {
   if (user?.role !== "admin" && user?.role !== "hr") {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Card className="w-full max-w-md">
+        <div className="flex items-center justify-center min-h-135">
+          <Card className="w-full max-w-112">
             <CardHeader>
               <CardTitle>Access Denied</CardTitle>
               <CardDescription>You don't have permission to manage users</CardDescription>
@@ -202,6 +206,7 @@ export default function AdminUsers() {
     setEditContractType(userData.contractType || "");
     setEditContractStart(userData.contractStart || "");
     setEditContractEnd(userData.contractEnd || "");
+    setEditProfileImage(userData.profileImage || "");
     setShowDialog(true);
   };
 
@@ -221,6 +226,7 @@ export default function AdminUsers() {
         contractType: editContractType || undefined,
         contractStart: editContractStart || undefined,
         contractEnd: editContractEnd || undefined,
+        profileImage: editProfileImage || undefined,
       });
     } catch (error) {
       console.error(error);
@@ -263,7 +269,7 @@ export default function AdminUsers() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-48 h-10 pl-10 text-sm rounded-lg border border-border bg-muted/50 focus:bg-background transition-colors"
               />
-              <div className="absolute top-0 -right-4 w-96 h-96 bg-[#c79d2d]/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" style={{ animationDelay: '1s' }} />
+              <div className="absolute top-0 -right-4 w-96 h-96 bg-[#c79d2d]/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse delay-1000" />
               <svg className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
@@ -328,7 +334,17 @@ export default function AdminUsers() {
                   <tbody>
                     {filteredUsers.map((userData: any) => (
                       <tr key={userData.id} className="border-b border-border hover:bg-muted/50 transition-colors">
-                        <td className="py-3 px-4 text-foreground font-medium">{userData.name}</td>
+                        <td className="py-3 px-4 text-foreground font-medium">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8 rounded-lg shrink-0">
+                              <AvatarImage src={userData.profileImage ?? undefined} alt={userData.name ?? ""} className="object-cover" />
+                              <AvatarFallback className="bg-blue-100 text-blue-700 text-[10px] font-bold dark:bg-blue-900/30 dark:text-blue-300">
+                                {userData.name?.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="truncate max-w-[150px]" title={userData.name}>{userData.name}</span>
+                          </div>
+                        </td>
                         <td className="py-3 px-4 text-muted-foreground">{userData.email}</td>
                         <td className="py-3 px-4 text-muted-foreground font-mono text-xs">{userData.staffId || "-"}</td>
                         <td className="py-3 px-4">{getRoleBadge(userData.role)}</td>
@@ -389,7 +405,7 @@ export default function AdminUsers() {
 
       {/* Edit Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-112">
           <DialogHeader>
             <DialogTitle>Edit User: {editingUser?.name}</DialogTitle>
             <DialogDescription>
@@ -403,7 +419,7 @@ export default function AdminUsers() {
               <TabsTrigger value="documents">Documents</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="general" className="space-y-4 max-h-[60vh] overflow-y-auto px-1">
+            <TabsContent value="general" className="space-y-4 max-h-135 overflow-y-auto px-1">
               <div className="space-y-2">
                 <Label>User</Label>
                 <div className="p-3 bg-muted rounded-lg">
@@ -475,6 +491,16 @@ export default function AdminUsers() {
                 />
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="editProfileImage">Profile Image URL</Label>
+                <Input
+                  id="editProfileImage"
+                  placeholder="https://example.com/photo.jpg"
+                  value={editProfileImage}
+                  onChange={(e) => setEditProfileImage(e.target.value)}
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Date of Birth</Label>
@@ -522,14 +548,14 @@ export default function AdminUsers() {
                 <Textarea
                   id="editJobDesc"
                   placeholder="Enter key responsibilities..."
-                  className="min-h-[100px]"
+                  className="min-h-25"
                   value={editJobDescription}
                   onChange={(e) => setEditJobDescription(e.target.value)}
                 />
               </div>
             </TabsContent>
 
-            <TabsContent value="documents" className="space-y-4 min-h-[400px]">
+            <TabsContent value="documents" className="space-y-4 min-h-100">
               <div className="flex items-center justify-between mb-2">
                 <h4 className="text-sm font-semibold">User Documents</h4>
                 <div className="text-xs text-muted-foreground">Legal & ID verification</div>
@@ -555,7 +581,7 @@ export default function AdminUsers() {
 
       {/* Reset Password Dialog */}
       <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-112">
           <DialogHeader>
             <DialogTitle>Reset User Password</DialogTitle>
             <DialogDescription>
@@ -613,7 +639,7 @@ export default function AdminUsers() {
 
       {/* Delete User Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-112">
           <DialogHeader>
             <DialogTitle>Delete User</DialogTitle>
             <DialogDescription>
@@ -651,7 +677,7 @@ export default function AdminUsers() {
         setShowCreateDialog(open);
         if (!open) { setValidationErrors({}); }
       }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-112">
           <DialogHeader>
             <DialogTitle>Create New User</DialogTitle>
             <DialogDescription>
@@ -722,13 +748,25 @@ export default function AdminUsers() {
 
             <div className="space-y-2">
               <Label htmlFor="createPosition">Position</Label>
-              <Input
-                id="createPosition"
-                placeholder="e.g., Software Engineer"
-                value={createPosition}
-                onChange={(e) => setCreatePosition(e.target.value)}
-              />
-            </div>
+                <Input
+                  id="createPosition"
+                  placeholder="e.g., Software Engineer"
+                  value={createPosition}
+                  onChange={(e) => setCreatePosition(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="createProfileImage">Profile Image URL</Label>
+                <div className="relative">
+                  <Input
+                    id="createProfileImage"
+                    placeholder="https://example.com/photo.jpg"
+                    value={profileImage}
+                    onChange={(e) => setProfileImage(e.target.value)}
+                  />
+                </div>
+              </div>
 
             <div className="space-y-2">
               <Label htmlFor="createDate">Date of Employment</Label>
@@ -802,7 +840,7 @@ export default function AdminUsers() {
               <Textarea
                 id="createJobDesc"
                 placeholder="Key responsibilities..."
-                className="min-h-[80px]"
+                className="min-h-20"
                 value={createJobDescription}
                 onChange={(e) => setCreateJobDescription(e.target.value)}
               />
@@ -832,7 +870,7 @@ export default function AdminUsers() {
                   return;
                 }
 
-                try {
+               try {
                   await createUserMutation.mutateAsync({
                     name: createName,
                     email: createEmail,
@@ -852,7 +890,7 @@ export default function AdminUsers() {
                 }
               }}
               disabled={createUserMutation.isPending || (createUserMutation as any).isLoading}
-              className="bg-[#3b6dae] hover:bg-[#2d5385] text-white outline-none ring-offset-background transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 min-w-[140px]"
+              className="bg-[#3b6dae] hover:bg-[#2d5385] text-white outline-none ring-offset-background transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 min-w-35"
             >
               {createUserMutation.isPending || (createUserMutation as any).isLoading ? (
                 <>
@@ -975,8 +1013,8 @@ function UserDocumentList({ userId }: { userId: number }) {
               </div>
             </div>
             <div className="flex items-center gap-1">
-              <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer">
-                <Button size="icon" variant="ghost" className="h-8 w-8">
+              <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" title="View document">
+                <Button size="icon" variant="ghost" className="h-8 w-8" aria-label="View document">
                   <ExternalLink className="h-4 w-4" />
                 </Button>
               </a>

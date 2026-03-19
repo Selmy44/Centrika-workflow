@@ -53,7 +53,7 @@ export function AppSidebar({ isResizing, setIsResizing, onActionClick, sidebarRe
                 <div className="relative h-12 w-12 group transition-transform hover:scale-105">
                   <img
                     src={APP_LOGO}
-                    className="h-12 w-12 rounded-xl object-cover shadow-lg dark:shadow-blue-500/20 cursor-pointer border border-white/10"
+                    className="h-10 w-auto object-contain cursor-pointer drop-shadow-md brightness-110"
                     alt="Logo"
                     onClick={toggleSidebar}
                   />
@@ -64,7 +64,7 @@ export function AppSidebar({ isResizing, setIsResizing, onActionClick, sidebarRe
                 <div className="flex items-center gap-3 min-w-0">
                   <img
                     src={APP_LOGO}
-                    className="h-10 w-10 rounded-xl object-cover shadow-2xl ring-2 ring-white/10 shrink-0"
+                    className="h-8 w-auto object-contain shrink-0 brightness-110"
                     alt="Logo"
                   />
                   <div className="flex flex-col min-w-0">

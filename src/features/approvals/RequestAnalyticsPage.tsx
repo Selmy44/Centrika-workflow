@@ -114,7 +114,7 @@ export default function RequestAnalytics() {
                     <div
                       className="h-full bg-blue-500"
                       style={{
-                        width: `${((analyticsData?.leaveCount || 0) / (analyticsData?.totalRequests || 1)) * 100}%`,
+                        width: `${Math.round(((analyticsData?.leaveCount || 0) / (analyticsData?.totalRequests || 1)) * 100)}%`,
                       }}
                     ></div>
                   </div>
@@ -129,7 +129,7 @@ export default function RequestAnalytics() {
                     <div
                       className="h-full bg-purple-500"
                       style={{
-                        width: `${((analyticsData?.carCount || 0) / (analyticsData?.totalRequests || 1)) * 100}%`,
+                        width: `${Math.round(((analyticsData?.carCount || 0) / (analyticsData?.totalRequests || 1)) * 100)}%`,
                       }}
                     ></div>
                   </div>
@@ -144,7 +144,7 @@ export default function RequestAnalytics() {
                     <div
                       className="h-full bg-green-500"
                       style={{
-                        width: `${((analyticsData?.expenditureCount || 0) / (analyticsData?.totalRequests || 1)) * 100}%`,
+                        width: `${Math.round(((analyticsData?.expenditureCount || 0) / (analyticsData?.totalRequests || 1)) * 100)}%`,
                       }}
                     ></div>
                   </div>

@@ -162,6 +162,7 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                 onClick={() => onBack ? onBack() : (onClose ? onClose() : onSuccess?.())}
                 className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-lg transition"
                 title="Close form"
+                aria-label="Close form"
             >
                 <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -259,28 +260,28 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                         <Row label="1.1 Employee Full Name">
                             <Input
                                 value={form.employeeName}
-                                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium"
+                                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-medium"
                                 disabled
                             />
                         </Row>
                         <Row label="1.2 Employee / Staff ID">
                             <Input
                                 value={form.staffId}
-                                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium"
+                                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-medium"
                                 disabled
                             />
                         </Row>
                         <Row label="1.3 Department">
                             <Input
                                 value={form.department}
-                                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium"
+                                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-medium"
                                 disabled
                             />
                         </Row>
                         <Row label="1.4 Position / Title">
                             <Input
                                 value={form.position}
-                                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium"
+                                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-medium"
                                 disabled
                             />
                         </Row>

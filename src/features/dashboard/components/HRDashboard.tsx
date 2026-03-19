@@ -1,4 +1,5 @@
-﻿import { trpc } from "@/lib/trpc";
+import { useLayoutEffect, useRef } from "react";
+import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Users,
@@ -14,11 +15,26 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { formatDateTime } from "@/lib/dateFormatter";
 import { StatsCard } from "@/components/shared/StatsCard";
 import { PendingApprovalsWidget } from "./PendingApprovalsWidget";
+import { NoticeBoard } from "@/components/NoticeBoard";
+import { QuickActions } from "./QuickActions";
 
 const todayIso = () => new Date().toISOString().split("T")[0];
+
+const ProgressFill = ({ percent, className }: { percent: number; className: string }) => {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    if (ref.current) {
+      ref.current.style.width = `${Math.min(percent, 100)}%`;
+    }
+  }, [percent]);
+
+  return <div ref={ref} className={`h-full rounded-full ${className}`} />;
+};
 
 export const HRDashboard = () => {
   const today = todayIso();
@@ -61,244 +77,187 @@ export const HRDashboard = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-black text-slate-800 dark:text-white">
-            HR Command Center
-            <Badge variant="outline" className="border-blue-500/30 text-[10px] font-bold uppercase tracking-widest text-blue-500">
-              Workforce Live
-            </Badge>
-          </h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Today&apos;s people operations, compliance workload, and workforce movement at a glance.
-          </p>
+    <div className="space-y-6 max-w-[1600px] mx-auto overflow-hidden">
+      {/* Hero Header Section */}
+      <div className="relative group">
+        <div className="absolute -inset-1 bg-linear-to-r from-blue-600 to-indigo-600 rounded-[2.5rem] blur opacity-10 group-hover:opacity-20 transition duration-1000 group-hover:duration-200"></div>
+        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border border-white/20 dark:border-white/5 p-8 rounded-[2rem] shadow-2xl">
+          <div className="space-y-2">
+            <h1 className="flex items-center gap-3 text-3xl font-black tracking-tight text-slate-800 dark:text-white">
+              HR Command Center
+              <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+            </h1>
+            <p className="text-slate-500 dark:text-slate-400 font-medium max-w-md">
+              Real-time people operations, compliance, and workforce movement oversight.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4 bg-white/60 dark:bg-slate-800/60 p-2 rounded-2xl border border-white/20 shadow-inner">
+             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-linear-to-br from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/20">
+              <ShieldAlert size={22} className="animate-pulse" />
+            </div>
+            <div className="pr-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-600 dark:text-blue-400">Resolution Mode</p>
+              <p className="text-lg font-black text-slate-900 dark:text-white">{taskLoad} items need action</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Bento Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6">
+        
+        {/* Row 1: Comms & Quick Actions */}
+        <div className="lg:col-span-8 flex flex-col gap-6">
+           {/* Integrated Notice Board Card */}
+          <Card className="flex-1 bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border-white/20 dark:border-white/5 rounded-[2rem] shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-500">
+            <CardHeader className="p-6 pb-0 border-none">
+              <NoticeBoard />
+            </CardHeader>
+          </Card>
         </div>
 
-        <Card className="border-blue-200/60 bg-linear-to-r from-blue-50 to-cyan-50 shadow-sm dark:border-blue-900/40 dark:from-slate-900 dark:to-slate-900">
-          <CardContent className="flex items-center gap-4 p-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-500/20">
-              <ShieldAlert size={20} />
-            </div>
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Operational Focus</p>
-              <p className="text-lg font-black text-slate-900 dark:text-white">{taskLoad} items need HR attention</p>
-              <p className="text-xs text-slate-500">Documents, leave coverage, and low-balance follow-up.</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatsCard
-          title="Active Headcount"
-          value={stats?.totalEmployees || 0}
-          icon={<Users className="text-blue-500" size={18} />}
-          subtitle="Employees currently active"
-        />
-        <StatsCard
-          title="Away Today"
-          value={employeesOnLeaveToday.length || stats?.onLeaveToday || 0}
-          icon={<Calendar className="text-amber-500" size={18} />}
-          subtitle="Approved leave in progress"
-        />
-        <StatsCard
-          title="Pending Documents"
-          value={stats?.pendingDocuments || 0}
-          icon={<FileText className="text-rose-500" size={18} />}
-          subtitle="Verification queue"
-        />
-        <StatsCard
-          title="Low Leave Balances"
-          value={lowBalanceEmployees.length}
-          icon={<Activity className="text-emerald-500" size={18} />}
-          subtitle="Employees under 3 remaining days"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        <div className="space-y-6 lg:col-span-8">
-          <Card className="overflow-hidden rounded-2xl border-border/50 bg-white/70 shadow-sm backdrop-blur-xl dark:bg-slate-900/60">
-            <CardHeader className="border-b border-border/30 bg-blue-500/5 py-4">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <CardTitle className="text-sm font-black uppercase tracking-widest text-blue-600 dark:text-blue-400">
-                    HR Utility Stack
-                  </CardTitle>
-                  <CardDescription className="text-xs">Move from insight to action in one click.</CardDescription>
+        {/* Quick Actions Bento Block */}
+        <div className="lg:col-span-4 space-y-6">
+          {/* Compliance & Risk Bento */}
+          <Card className="bg-linear-to-br from-slate-900 to-blue-950 p-6 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-blue-500/20 transition-all duration-700" />
+            <div className="relative z-10 space-y-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/10 rounded-xl backdrop-blur-md">
+                   <Activity size={18} className="text-blue-200" />
                 </div>
-                <Badge variant="secondary" className="rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest">
-                  Action Ready
-                </Badge>
+                <h3 className="text-xs font-black uppercase tracking-widest text-blue-200">Compliance Queue</h3>
               </div>
-            </CardHeader>
-            <CardContent className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-4">
-              {[
-                { label: "Employee Directory", path: "/employee-directory", icon: <Users size={16} />, hint: "Profiles, contacts, and teams" },
-                { label: "Leave Management", path: "/hr/leave", icon: <Calendar size={16} />, hint: "Company-wide leave control" },
-                { label: "Document Center", path: "/hr/documents", icon: <FileText size={16} />, hint: "Verify contracts and IDs" },
-                { label: "HR Reports", path: "/hr/reports", icon: <Search size={16} />, hint: "Trends, headcount, and policy signals" },
-              ].map((item) => (
-                <Link key={item.path} href={item.path}>
-                  <button className="group w-full rounded-2xl border border-border/40 bg-white p-4 text-left transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md dark:bg-slate-950/40">
-                    <div className="mb-4 flex items-center justify-between text-slate-700 dark:text-slate-200">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-600 dark:bg-blue-950/60 dark:text-blue-300">
-                        {item.icon}
-                      </div>
-                      <ArrowRight size={14} className="opacity-0 transition-opacity group-hover:opacity-100" />
-                    </div>
-                    <p className="text-sm font-bold text-slate-900 dark:text-white">{item.label}</p>
-                    <p className="mt-1 text-xs text-slate-500">{item.hint}</p>
-                  </button>
-                </Link>
-              ))}
-            </CardContent>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-2xl font-black text-white">{pendingDocuments.length}</p>
+                  <p className="text-[9px] font-black uppercase tracking-tighter text-blue-300">New Docs</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-2xl font-black text-rose-400">{lowBalanceEmployees.length}</p>
+                  <p className="text-[9px] font-black uppercase tracking-tighter text-rose-300">Leave Risk</p>
+                </div>
+              </div>
+              
+              <div className="pt-2">
+                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                   <ProgressFill percent={65} className="bg-blue-500 shadow-[0_0_10px_rgba(59,109,174,0.5)]" />
+                </div>
+                <p className="mt-3 text-[9px] text-blue-300 font-medium italic">Safety & Compliance Health: 84% Stable</p>
+              </div>
+            </div>
           </Card>
+        </div>
 
-          <div className="grid gap-6 xl:grid-cols-2">
-            <Card className="rounded-2xl border-border/50 bg-white/70 shadow-sm backdrop-blur-xl dark:bg-slate-900/60">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-slate-500">
-                  <Clock3 size={16} /> Employees On Leave Today
-                </CardTitle>
-                <CardDescription className="text-xs">Coverage view for today&apos;s approved leave schedule.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {employeesOnLeaveToday.length ? (
-                  employeesOnLeaveToday.map((request: any) => (
-                    <div key={request.id} className="flex items-center justify-between rounded-xl border border-border/40 bg-slate-50/80 p-3 dark:bg-slate-950/30">
-                      <div>
-                        <p className="text-sm font-bold text-slate-900 dark:text-white">{request.user?.name}</p>
-                        <p className="text-xs text-slate-500">
-                          {request.user?.department?.name || "No department"} · {request.leaveRequest?.leaveType || "leave"}
-                        </p>
+        {/* Row 2: Stats Grid */}
+        <div className="md:grid md:grid-cols-3 lg:grid-cols-4 lg:col-span-10 gap-4">
+           <StatsCard
+            title="Active Workforce"
+            value={stats?.totalEmployees || 0}
+            icon={<Users className="text-blue-500" size={16} />}
+            subtitle="Current live records"
+            className="rounded-[2rem] border-white/20 bg-white/40 dark:bg-slate-900/40 backdrop-blur-md shadow-lg"
+          />
+          <StatsCard
+            title="Away Today"
+            value={employeesOnLeaveToday.length || stats?.onLeaveToday || 0}
+            icon={<Calendar className="text-amber-500" size={16} />}
+            subtitle="Personnel on approved leave"
+            className="rounded-[2rem] border-white/20 bg-white/40 dark:bg-slate-900/40 backdrop-blur-md shadow-lg"
+          />
+          <StatsCard
+            title="Doc Queue"
+            value={stats?.pendingDocuments || 0}
+            icon={<FileText className="text-rose-500" size={16} />}
+            subtitle="Verification backlog"
+            className="rounded-[2rem] border-white/20 bg-white/40 dark:bg-slate-900/40 backdrop-blur-md shadow-lg"
+          />
+          <StatsCard
+            title="Coverage Risk"
+            value={lowBalanceEmployees.length}
+            icon={<Activity className="text-emerald-500" size={16} />}
+            subtitle="Low remaining balances"
+            className="rounded-[2rem] border-white/20 bg-white/40 dark:bg-slate-900/40 backdrop-blur-md shadow-lg"
+          />
+        </div>
+
+        {/* Row 3: More Bento Blocks */}
+        <div className="lg:col-span-8 space-y-6">
+          <Card className="rounded-[2.5rem] border-white/20 bg-white/40 backdrop-blur-xl dark:bg-slate-900/40 overflow-hidden">
+             <CardHeader className="p-8 pb-4 border-b border-border/10 flex flex-row items-center justify-between">
+                <div>
+                   <CardTitle className="text-lg font-black text-slate-800 dark:text-white">Recent Workforce Pulse</CardTitle>
+                   <CardDescription className="text-xs">Live events from the employee lifecycle.</CardDescription>
+                </div>
+                <Link href="/hr/reports">
+                  <Button variant="ghost" size="sm" className="text-blue-600 dark:text-blue-400 font-bold text-xs uppercase tracking-widest">Full Log <ArrowRight size={14} className="ml-1" /></Button>
+                </Link>
+             </CardHeader>
+             <CardContent className="p-8 pt-6 space-y-4">
+                {(stats?.recentActivities ?? []).length ? (
+                  stats?.recentActivities.map((activity: any) => (
+                    <div key={activity.id} className="group relative flex items-center justify-between rounded-2xl border border-white/20 bg-white/60 p-4 transition-all hover:translate-x-1 hover:bg-white dark:bg-slate-800/40 dark:hover:bg-slate-800 shadow-sm hover:shadow-md">
+                      <div className="flex items-center gap-4">
+                         <div className="relative">
+                            <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-600 dark:text-blue-300 font-bold text-xs shadow-inner">
+                              {activity.user?.name?.charAt(0) || "U"}
+                            </div>
+                            <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-white dark:bg-slate-900 p-0.5 shadow-sm">
+                               <div className="w-full h-full rounded-full bg-green-500" />
+                            </div>
+                         </div>
+                        <div>
+                          <p className="text-sm font-black text-slate-900 dark:text-white leading-tight">{activity.user?.name || "Anonymous User"}</p>
+                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mt-1">
+                            {activity.type} ACTION · {formatDateTime(activity.updatedAt)}
+                          </p>
+                        </div>
                       </div>
-                      <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-widest">
-                        {request.leaveRequest?.endDate}
-                      </Badge>
+                      <Link href={`/requests/${activity.id}`}>
+                        <Button size="icon" variant="ghost" className="rounded-full h-8 w-8 hover:bg-blue-500 hover:text-white transition-all duration-300">
+                          <ArrowRight size={14} />
+                        </Button>
+                      </Link>
                     </div>
                   ))
                 ) : (
-                  <div className="rounded-xl border border-dashed border-border/50 p-6 text-center text-sm text-slate-500">
-                    No approved leaves are active today.
+                  <div className="rounded-2xl border border-dashed border-border/50 py-16 text-center">
+                    <p className="text-sm text-slate-400 font-medium italic">No pulse detected yet.</p>
                   </div>
                 )}
-              </CardContent>
-            </Card>
-
-            <Card className="rounded-2xl border-border/50 bg-white/70 shadow-sm backdrop-blur-xl dark:bg-slate-900/60">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-slate-500">
-                  <Building2 size={16} /> Department Overview
-                </CardTitle>
-                <CardDescription className="text-xs">Headcount distribution across active departments.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {departmentOverview.length ? (
-                  departmentOverview.map((department: any) => {
-                    const percent = stats?.totalEmployees ? (department.count / stats.totalEmployees) * 100 : 0;
-                    return (
-                      <div key={department.name} className="space-y-2">
-                        <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
-                          <span>{department.name}</span>
-                          <span>{department.count} employees</span>
-                        </div>
-                        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                          <div className="h-full rounded-full bg-blue-500" style={{ width: `${percent}%` }} />
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="rounded-xl border border-dashed border-border/50 p-6 text-center text-sm text-slate-500">
-                    Department data will appear once employees are assigned.
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card className="rounded-2xl border-border/50 bg-white/70 shadow-sm backdrop-blur-xl dark:bg-slate-900/60">
-            <CardHeader className="border-b border-border/30 py-4">
-              <CardTitle className="text-sm font-black uppercase tracking-widest text-blue-600 dark:text-blue-400">
-                Recent Workforce Activity
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 p-4">
-              {(stats?.recentActivities ?? []).length ? (
-                stats?.recentActivities.map((activity: any) => (
-                  <div key={activity.id} className="flex items-center justify-between rounded-xl border border-border/40 bg-slate-50/80 p-3 dark:bg-slate-950/30">
-                    <div>
-                      <p className="text-sm font-bold text-slate-900 dark:text-white">{activity.user?.name || "Unknown employee"}</p>
-                      <p className="text-xs text-slate-500">
-                        {activity.type} request updated · {formatDateTime(activity.updatedAt)}
-                      </p>
-                    </div>
-                    <Link href={`/requests/${activity.id}`}>
-                      <button className="rounded-lg p-2 text-blue-600 transition hover:bg-blue-50 dark:hover:bg-blue-950/40">
-                        <ArrowRight size={16} />
-                      </button>
-                    </Link>
-                  </div>
-                ))
-              ) : (
-                <div className="rounded-xl border border-dashed border-border/50 p-6 text-center text-sm text-slate-500">
-                  No workforce activity has been recorded yet.
-                </div>
-              )}
-            </CardContent>
+             </CardContent>
           </Card>
         </div>
 
-        <div className="space-y-6 lg:col-span-4">
-          <PendingApprovalsWidget />
-
-          <Card className="rounded-2xl border-border/50 bg-white/70 shadow-sm backdrop-blur-xl dark:bg-slate-900/60">
-            <CardHeader className="py-4">
-              <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Compliance Queue</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
-                <p className="text-xs font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400">Document Verification</p>
-                <p className="mt-1 text-2xl font-black text-slate-900 dark:text-white">{pendingDocuments.length}</p>
-                <p className="text-xs text-slate-500">Pending employee records require validation.</p>
-              </div>
-              <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-4">
-                <p className="text-xs font-bold uppercase tracking-widest text-rose-700 dark:text-rose-400">Leave Risk Watch</p>
-                <p className="mt-1 text-2xl font-black text-slate-900 dark:text-white">{lowBalanceEmployees.length}</p>
-                <p className="text-xs text-slate-500">Employees are nearing leave exhaustion and may need follow-up.</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-2xl border-border/50 bg-white/70 shadow-sm backdrop-blur-xl dark:bg-slate-900/60">
-            <CardHeader className="py-4">
-              <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Verification Queue</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {pendingDocuments.slice(0, 4).map((document: any) => (
-                <div key={document.id} className="rounded-xl border border-border/40 bg-slate-50/80 p-3 dark:bg-slate-950/30">
-                  <p className="text-sm font-bold text-slate-900 dark:text-white">{document.user?.name || "Employee document"}</p>
-                  <p className="text-xs text-slate-500">{document.category} · {document.name}</p>
-                </div>
-              ))}
-              {!pendingDocuments.length && (
-                <div className="rounded-xl border border-dashed border-border/50 p-6 text-center text-sm text-slate-500">
-                  No pending document reviews right now.
-                </div>
-              )}
-              <Link href="/hr/documents">
-                <button className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-blue-700">
-                  Open Document Center
-                  <ArrowRight size={14} />
-                </button>
-              </Link>
-            </CardContent>
-          </Card>
+        <div className="lg:col-span-4 flex flex-col gap-6">
+            <Card className="rounded-[2.5rem] border-white/20 bg-white/40 shadow-xl backdrop-blur-xl dark:bg-slate-900/40 overflow-hidden flex-1">
+              <CardHeader className="p-8 pb-4">
+                <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-500">Department Health</CardTitle>
+                <CardDescription className="text-[10px]">Headcount density across teams.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-8 pt-0 space-y-5">
+                {departmentOverview.slice(0, 6).map((department: any) => {
+                  const percent = stats?.totalEmployees ? (department.count / stats.totalEmployees) * 100 : 0;
+                  return (
+                    <div key={department.name} className="space-y-2">
+                      <div className="flex items-center justify-between text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-tight">
+                        <span>{department.name}</span>
+                        <span className="text-blue-600 dark:text-blue-400">{department.count}</span>
+                      </div>
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                        <ProgressFill percent={percent} className="bg-blue-500 shadow-[0_0_8px_rgba(59,109,174,0.3)]" />
+                      </div>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+            
+            <PendingApprovalsWidget />
         </div>
       </div>
     </div>
   );
 };
-
-

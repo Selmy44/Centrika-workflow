@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Wallet, TrendingUp, CheckCircle, Clock, ArrowRight, FileText, Receipt, AlertTriangle, Landmark } from "lucide-react";
@@ -5,11 +6,36 @@ import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { StatsCard } from "@/components/shared/StatsCard";
 import { PendingApprovalsWidget } from "./PendingApprovalsWidget";
+import { NoticeBoard } from "@/components/NoticeBoard";
 
 const monthKey = (value: string | Date) => new Date(value).toISOString().slice(0, 7);
 const monthLabel = (key: string) => {
   const [year, month] = key.split("-").map(Number);
   return new Date(year, month - 1, 1).toLocaleDateString(undefined, { month: "short" });
+};
+
+const ChartBar = ({ height }: { height: number }) => {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    if (ref.current) {
+      ref.current.style.height = `${height}%`;
+    }
+  }, [height]);
+
+  return <div ref={ref} className="w-full rounded-xl bg-linear-to-t from-blue-600 to-cyan-400" />;
+};
+
+const ProgressFill = ({ percent, className }: { percent: number; className: string }) => {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    if (ref.current) {
+      ref.current.style.width = `${Math.min(percent, 100)}%`;
+    }
+  }, [percent]);
+
+  return <div ref={ref} className={`h-full rounded-full ${className}`} />;
 };
 
 export const FinanceDashboard = () => {
@@ -121,6 +147,8 @@ export const FinanceDashboard = () => {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <div className="space-y-6 lg:col-span-8">
+          <NoticeBoard />
+          
           <Card className="rounded-2xl border-border/50 bg-white/70 shadow-sm backdrop-blur-xl dark:bg-slate-900/60">
             <CardHeader className="border-b border-border/30 py-4">
               <div className="flex items-center justify-between gap-4">
@@ -144,7 +172,7 @@ export const FinanceDashboard = () => {
                     return (
                       <div key={item.key} className="flex flex-1 flex-col items-center gap-3">
                         <div className="flex w-full flex-1 items-end rounded-2xl bg-slate-100 p-2 dark:bg-slate-800">
-                          <div className="w-full rounded-xl bg-linear-to-t from-blue-600 to-cyan-400" style={{ height: `${height}%` }} />
+                            <ChartBar height={height} />
                         </div>
                         <div className="text-center">
                           <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{monthLabel(item.key)}</p>
@@ -186,9 +214,15 @@ export const FinanceDashboard = () => {
                     </Badge>
                   </div>
                   <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                    <div
-                      className={`h-full rounded-full ${budget.percent >= 90 ? "bg-rose-500" : budget.percent >= 75 ? "bg-amber-500" : "bg-blue-500"}`}
-                      style={{ width: `${Math.min(budget.percent, 100)}%` }}
+                    <ProgressFill
+                      percent={budget.percent}
+                      className={
+                        budget.percent >= 90
+                          ? "bg-rose-500"
+                          : budget.percent >= 75
+                          ? "bg-amber-500"
+                          : "bg-blue-500"
+                      }
                     />
                   </div>
                   <div className="flex items-center justify-between text-xs text-slate-500">
@@ -266,7 +300,7 @@ export const FinanceDashboard = () => {
                 <div key={voucher.id} className="rounded-xl border border-border/40 bg-slate-50/80 p-3 dark:bg-slate-950/30">
                   <p className="text-sm font-bold text-slate-900 dark:text-white">{voucher.voucherNumber}</p>
                   <p className="text-xs text-slate-500">
-                    {voucher.request?.user?.name || "Unknown requester"} · {Number(voucher.amount).toLocaleString()} {voucher.currency}
+                    {voucher.request?.user?.name || "Unknown requester"} ï¿½ {Number(voucher.amount).toLocaleString()} {voucher.currency}
                   </p>
                 </div>
               ))}

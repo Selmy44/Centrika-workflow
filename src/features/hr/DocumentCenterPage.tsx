@@ -133,7 +133,7 @@ const DocumentCenterPage = () => {
           <div className="space-y-6 lg:col-span-8">
             <Card className="rounded-2xl border-border/50 bg-white/50 backdrop-blur-sm">
               <CardContent className="flex flex-wrap items-center gap-4 p-4">
-                <div className="relative min-w-[250px] flex-1">
+                <div className="relative min-w-62.5 flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                   <Input
                     placeholder="Search by employee, document, category, or department..."
@@ -144,14 +144,24 @@ const DocumentCenterPage = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <Filter size={16} className="text-slate-400" />
-                  <select className="cursor-pointer bg-transparent text-sm font-medium focus:outline-none" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                  <select
+                    aria-label="Filter documents by status"
+                    className="cursor-pointer bg-transparent text-sm font-medium focus:outline-none"
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                  >
                     <option value="all">All Documents</option>
                     <option value="pending">Pending Verification</option>
                     <option value="verified">Verified</option>
                     <option value="rejected">Rejected</option>
                   </select>
                 </div>
-                <select className="cursor-pointer rounded-xl border border-border/50 bg-white px-3 py-2 text-sm dark:bg-slate-900" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+                <select
+                  aria-label="Filter documents by category"
+                  className="cursor-pointer rounded-xl border border-border/50 bg-white px-3 py-2 text-sm dark:bg-slate-900"
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                >
                   <option value="all">All Categories</option>
                   {categories.map((category) => (
                     <option key={category} value={category}>{category}</option>
@@ -205,7 +215,13 @@ const DocumentCenterPage = () => {
                         <tr key={doc.id} className="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/20">
                           <td className="px-4 py-4">
                             {doc.status === "pending" ? (
-                              <input type="checkbox" checked={selectedIds.includes(doc.id)} onChange={() => toggleSelection(doc.id)} className="h-4 w-4 rounded border-slate-300" />
+                              <input
+                                type="checkbox"
+                                checked={selectedIds.includes(doc.id)}
+                                onChange={() => toggleSelection(doc.id)}
+                                className="h-4 w-4 rounded border-slate-300"
+                                aria-label={`Select "${doc.name}" for bulk actions`}
+                              />
                             ) : null}
                           </td>
                           <td className="px-6 py-4">
@@ -214,9 +230,9 @@ const DocumentCenterPage = () => {
                                 <FileText size={20} />
                               </div>
                               <div>
-                                <p className="max-w-[220px] truncate text-sm font-bold text-slate-800 dark:text-white">{doc.name}</p>
+                                <p className="max-w-55 truncate text-sm font-bold text-slate-800 dark:text-white">{doc.name}</p>
                                 <p className="text-[10px] font-medium text-slate-500">
-                                  Owner: {doc.user.name} · {doc.user.department?.name || "No department"}
+                                  Owner: {doc.user.name} ï¿½ {doc.user.department?.name || "No department"}
                                 </p>
                               </div>
                             </div>
@@ -239,27 +255,27 @@ const DocumentCenterPage = () => {
                           <td className="px-6 py-4 text-xs text-slate-500">{doc.verifier?.name || "N/A"}</td>
                           <td className="px-6 py-4">
                             <div className="flex items-center justify-end gap-2">
-                              <Link href={`/admin/employees/${doc.user.id}`}>
+                              <Link href={`/admin/employees/${doc.user.id}`} aria-label="Open employee profile">
                                 <Button variant="ghost" size="sm" title="Open Employee Profile" className="h-8 w-8 p-0">
                                   <Users size={16} className="text-slate-400" />
                                 </Button>
                               </Link>
-                              <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer">
+                              <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" aria-label="View document">
                                 <Button variant="ghost" size="sm" title="View Document" className="h-8 w-8 p-0">
                                   <Eye size={16} className="text-slate-400" />
                                 </Button>
                               </a>
                               {doc.status === "pending" && (
                                 <>
-                                  <Button variant="ghost" size="sm" title="Verify" className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50" onClick={() => handleVerify(doc.id, "verified")}>
+                                  <Button variant="ghost" size="sm" title="Verify" aria-label="Verify document" className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50" onClick={() => handleVerify(doc.id, "verified")}>
                                     <CheckCircle size={16} />
                                   </Button>
-                                  <Button variant="ghost" size="sm" title="Reject" className="h-8 w-8 p-0 text-rose-600 hover:bg-rose-50" onClick={() => handleVerify(doc.id, "rejected")}>
+                                  <Button variant="ghost" size="sm" title="Reject" aria-label="Reject document" className="h-8 w-8 p-0 text-rose-600 hover:bg-rose-50" onClick={() => handleVerify(doc.id, "rejected")}>
                                     <XCircle size={16} />
                                   </Button>
                                 </>
                               )}
-                              <a href={doc.fileUrl} download>
+                              <a href={doc.fileUrl} download aria-label="Download document">
                                 <Button variant="ghost" size="sm" title="Download" className="h-8 w-8 p-0">
                                   <Download size={16} className="text-slate-400" />
                                 </Button>

@@ -150,8 +150,8 @@ export function FileReviewComponent({
                           <Eye size={16} />
                         </button>
                       )}
-                      <a href={file.fileUrl} target="_blank" rel="noopener noreferrer">
-                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
+                      <a href={file.fileUrl} target="_blank" rel="noopener noreferrer" title="Download">
+                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" aria-label="Download document">
                           <Download size={14} />
                         </Button>
                       </a>

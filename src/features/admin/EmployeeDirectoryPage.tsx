@@ -10,6 +10,7 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Cake, Briefcase, Calendar, ScrollText } from "lucide-react";
 import { Link } from "wouter";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function EmployeeDirectory() {
   const { user } = useAuth();
@@ -140,12 +141,20 @@ export default function EmployeeDirectory() {
           {employees.map((employee: any) => (
             <Card key={employee.id} className="bg-white transition duration-200 hover:-translate-y-1 hover:shadow-lg dark:bg-slate-800">
               <CardContent className="p-6">
-                <div className="mb-4 flex items-start justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{employee.name}</h3>
-                    <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{employee.position || employee.role}</p>
+                <div className="mb-4 flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-4 min-w-0">
+                    <Avatar className="h-14 w-14 rounded-2xl border-2 border-white/10 shadow-lg shrink-0">
+                      <AvatarImage src={employee.profileImage ?? undefined} alt={employee.name ?? ""} className="object-cover" />
+                      <AvatarFallback className="bg-linear-to-br from-blue-600 to-indigo-600 text-white font-bold text-lg">
+                        {employee.name?.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white truncate" title={employee.name}>{employee.name}</h3>
+                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 truncate">{employee.position || employee.role}</p>
+                    </div>
                   </div>
-                  <Badge className={getStatusColor(employee.status)}>{employee.status || "Active"}</Badge>
+                  <Badge className={`${getStatusColor(employee.status)} shrink-0`}>{employee.status || "Active"}</Badge>
                 </div>
 
                 <Badge className={`${getDeptColor(employee.department)} mb-4`}>{employee.department || "No Department"}</Badge>
@@ -191,18 +200,6 @@ export default function EmployeeDirectory() {
             </CardContent>
           </Card>
         )}
-
-        <Card className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/20">
-          <CardHeader>
-            <CardTitle className="text-lg">Directory Information</CardTitle>
-            <CardDescription>Use Quick View for a fast check or Full Profile for the complete HR record.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
-            <p><strong>Search Tips:</strong> Search by employee name, email, staff ID, or department.</p>
-            <p><strong>Status Indicators:</strong> Green (Active), Yellow (On Leave), Gray (Inactive)</p>
-            <p><strong>Privacy:</strong> Contact details are for internal business use only.</p>
-          </CardContent>
-        </Card>
       </div>
 
       <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
@@ -222,9 +219,12 @@ export default function EmployeeDirectory() {
           ) : employeeDetail ? (
             <div className="space-y-8 pt-4">
               <div className="flex items-center gap-6">
-                <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-linear-to-br from-blue-600 to-indigo-600 text-3xl font-bold text-white shadow-lg shadow-blue-500/20">
-                  {employeeDetail.name?.split(" ").map((part: string) => part[0]).join("").toUpperCase().slice(0, 2) || "U"}
-                </div>
+                <Avatar className="h-24 w-24 rounded-2xl border-2 border-white/10 shadow-xl shadow-blue-500/10 shrink-0">
+                  <AvatarImage src={employeeDetail.profileImage ?? undefined} alt={employeeDetail.name ?? ""} className="object-cover" />
+                  <AvatarFallback className="bg-linear-to-br from-blue-600 to-indigo-600 text-white font-bold text-3xl">
+                    {employeeDetail.name?.split(" ").map((part: string) => part[0]).join("").toUpperCase().slice(0, 2) || "U"}
+                  </AvatarFallback>
+                </Avatar>
                 <div className="space-y-1">
                   <div className="flex items-center gap-3">
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{employeeDetail.name}</h2>

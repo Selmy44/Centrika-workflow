@@ -237,7 +237,7 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
             <Row label="1.1 Employee Full Name">
               <Input
                 value={form.employeeName}
-                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium"
+                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-medium"
                 disabled
               />
             </Row>
@@ -245,28 +245,28 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
               <Input
                 type="date"
                 value={form.dateOfEmployment}
-                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium"
+                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-medium"
                 disabled
               />
             </Row>
             <Row label="1.3 Staff ID">
               <Input
                 value={form.staffId}
-                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium"
+                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-medium"
                 disabled
               />
             </Row>
             <Row label="1.4 Department">
               <Input
                 value={form.department}
-                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium"
+                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-medium"
                 disabled
               />
             </Row>
             <Row label="1.5 Position / Title">
               <Input
                 value={form.position}
-                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium"
+                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-medium"
                 disabled
               />
             </Row>
@@ -358,7 +358,7 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
               <Row label="4.2 Assigned Vehicle">
                 <Input
                   value={form.carInfo}
-                  className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium"
+                  className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed text-black! font-medium"
                   disabled
                 />
               </Row>

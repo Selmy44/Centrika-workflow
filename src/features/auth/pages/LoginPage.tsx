@@ -88,8 +88,8 @@ export default function LoginPage() {
         <div className="min-h-screen bg-[#f8fcfb] relative overflow-hidden flex items-center justify-center p-4">
           {/* Background Mesh Gradients */}
           <div className="absolute top-0 -left-4 w-96 h-96 bg-[#3b6dae]/10 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" />
-          <div className="absolute top-0 -right-4 w-96 h-96 bg-[#c79d2d]/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" style={{ animationDelay: '1s' }} />
-          <div className="absolute -bottom-8 left-20 w-96 h-96 bg-[#3b6dae]/10 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" style={{ animationDelay: '2s' }} />
+          <div className="absolute top-0 -right-4 w-96 h-96 bg-[#c79d2d]/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse delay-[1s]" />
+          <div className="absolute -bottom-8 left-20 w-96 h-96 bg-[#3b6dae]/10 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse delay-[2s]" />
           <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px]" />
 
           <div className="w-full max-w-md relative z-10">

@@ -333,8 +333,11 @@ export default function SickLeaveForm({ onSuccess }: Props) {
               )}
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Medical Documentation (Medical Report, Prescription, etc.) *</label>
+                <label htmlFor="medicalDocuments" className="block text-sm font-semibold text-gray-700 mb-1">
+                  Medical Documentation (Medical Report, Prescription, etc.) *
+                </label>
                 <input
+                  id="medicalDocuments"
                   type="file"
                   multiple
                   accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
@@ -429,8 +432,11 @@ export default function SickLeaveForm({ onSuccess }: Props) {
             <h2 className="text-lg font-bold text-red-600 mb-4">6. EMPLOYEE SIGNATURE</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Upload Your Signature</label>
+                <label htmlFor="employeeSignature" className="block text-sm font-semibold text-gray-700 mb-1">
+                  Upload Your Signature
+                </label>
                 <input
+                  id="employeeSignature"
                   type="file"
                   accept=".png,.jpg,.jpeg,.pdf"
                   onChange={(e) => {

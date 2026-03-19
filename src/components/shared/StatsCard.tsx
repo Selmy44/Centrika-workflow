@@ -17,11 +17,11 @@ interface StatsCardProps {
 
 export const StatsCard = ({ title, value, icon, subtitle, loading, className, trend }: StatsCardProps) => {
   return (
-    <Card className={`group relative overflow-hidden bg-white/80 dark:bg-slate-900/40 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[1rem] hover:shadow-2xl hover:shadow-[#3b6dae]/5 transition-all duration-500 hover:-translate-y-1 ${className || ""}`}>
+    <Card className={`group relative overflow-hidden bg-white/80 dark:bg-slate-900/40 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-2xl hover:shadow-2xl hover:shadow-[#3b6dae]/5 transition-all duration-500 hover:-translate-y-1 ${className || ""}`}>
       <CardContent className="p-4 lg:p-5">
         <div className="flex items-center justify-between gap-4">
           <div className="space-y-0.5 min-w-0">
-            <p className="text-[10px] font-black text-slate-400 dark:text-blue-400/40 uppercase tracking-[0.2em] mb-1 truncate">
+            <p className="text-[12px] font-black text-slate-400 dark:text-blue-400/40 uppercase tracking-[0.2em] mb-1 truncate">
               {title}
             </p>
             <div className="flex items-baseline gap-2">
