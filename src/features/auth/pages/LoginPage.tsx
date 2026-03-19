@@ -97,11 +97,9 @@ export default function LoginPage() {
               {/* Subtle top accent line */}
               <div className="h-1 w-full bg-linear-to-r from-[#3b6dae] to-[#c79d2d]" />
               
-              <CardHeader className="space-y-6 pb-6 pt-10 px-8 text-left">
-                <div className="flex justify-between items-start">
-                  <div className="p-4 bg-white rounded-2xl shadow-sm border border-[#3b6dae]/5">
-                    <img src={APP_LOGO} alt={APP_TITLE} className="h-10 w-auto" />
-                  </div>
+              <CardHeader className="space-y-6 pb-6 pt-10 px-8 text-center">
+                <div className="flex justify-center items-center">
+                  <img src={APP_LOGO} alt={APP_TITLE} className="h-20 w-auto" />
                 </div>
                 <div className="space-y-1">
                   <CardTitle className="text-2xl font-black text-[#3b6dae] tracking-tight uppercase">Welcome Back</CardTitle>
@@ -161,7 +159,7 @@ export default function LoginPage() {
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
                         <>
-                          Authenticate Access
+                          Login Now
                           <ArrowRight className="ml-2 h-4 w-4" />
                         </>
                       )}
