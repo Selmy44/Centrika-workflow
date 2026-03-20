@@ -5,22 +5,19 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
-import { Users, Mail, Phone, MapPin, Search, Loader2, UserPlus, Plus } from "lucide-react";
+import { Users, Mail, Phone, MapPin, Search, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Cake, Briefcase, Calendar, ScrollText } from "lucide-react";
 import { Link } from "wouter";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { InviteUserModal } from "@/components/InviteUserModal";
 
 export default function EmployeeDirectory() {
-  const { user, hasRole } = useAuth();
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDeptId, setSelectedDeptId] = useState<number | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [showInviteModal, setShowInviteModal] = useState(false);
-  const canManageUsers = hasRole?.("admin") || hasRole?.("hr") || user?.role === "admin" || user?.role === "hr";
 
   const { data: employees = [], isLoading: isLoadingEmployees } = trpc.employees.list.useQuery(
     {
@@ -88,21 +85,7 @@ export default function EmployeeDirectory() {
             <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Employee Directory</h1>
             <p className="mt-2 text-gray-600 dark:text-gray-400">Contact information, team context, and direct access to full employee profiles.</p>
           </div>
-          <div className="flex items-center gap-3">
-            {(isLoadingEmployees || isLoadingDepts) && <Loader2 className="h-6 w-6 animate-spin text-blue-600" />}
-            {canManageUsers && (
-              <>
-                <Button variant="outline" className="rounded-xl" onClick={() => setShowInviteModal(true)}>
-                  <Mail size={16} className="mr-2" /> Invite User
-                </Button>
-                <Link href="/admin/users">
-                  <Button className="rounded-xl bg-[#3b6dae] hover:bg-[#315693]">
-                    <UserPlus size={16} className="mr-2" /> Create User
-                  </Button>
-                </Link>
-              </>
-            )}
-          </div>
+          {(isLoadingEmployees || isLoadingDepts) && <Loader2 className="h-6 w-6 animate-spin text-blue-600" />}
         </div>
 
         <div className="flex flex-col gap-4 md:flex-row">
@@ -285,14 +268,6 @@ export default function EmployeeDirectory() {
           ) : null}
         </DialogContent>
       </Dialog>
-
-      {canManageUsers && (
-        <InviteUserModal
-          open={showInviteModal}
-          onOpenChange={setShowInviteModal}
-          onSuccess={() => setShowInviteModal(false)}
-        />
-      )}
     </DashboardLayout>
   );
 }

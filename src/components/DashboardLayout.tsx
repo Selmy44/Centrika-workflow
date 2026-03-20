@@ -70,13 +70,13 @@ const adminMenuItems = [
   },
   { icon: FileText, label: "My Requests", path: "/requests" },
   { icon: Users, label: "User Management", path: "/admin/users" },
-  { icon: Building2, label: "Department Management", path: "/admin/departments" },
+  { icon: Building2, label: "Departments", path: "/departments" },
   { icon: CheckCircle, label: "Approvals", path: "/approvals" },
   { icon: BookOpen, label: "Knowledge Base", path: "/policies" },
 ];
 
 const financeMenuItems = [
-  { icon: LayoutDashboard, label: "Finance Dashboard", path: "/" },
+  { icon: LayoutDashboard, label: "Dashboard", path: "/" },
   { icon: CheckCircle, label: "Approvals", path: "/approvals" },
   { icon: Receipt, label: "Expenditure History", path: "/finance/history" },
   { icon: Wallet, label: "Budget Management", path: "/finance/budgets" },
@@ -96,8 +96,8 @@ const financeMenuItems = [
 ];
 
 const hrMenuItems = [
-  { icon: LayoutDashboard, label: "HR Dashboard", path: "/" },
-  { icon: Users, label: "Employees", path: "/employee-directory" },
+  { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+  { icon: Users, label: "Employee Directory", path: "/employee-directory" },
   { icon: UserPlus, label: "User Management", path: "/admin/users" },
   { icon: Calendar, label: "Leave Management", path: "/hr/leave" },
   { icon: FileText, label: "Document Center", path: "/hr/documents" },
@@ -120,8 +120,8 @@ const hrMenuItems = [
 
 const deptHeadMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
-  { icon: CheckCircle, label: "Pending Approvals", path: "/approvals" },
-  { icon: Users, label: "Department Team", path: "/employee-directory" },
+  { icon: CheckCircle, label: "Approvals", path: "/approvals" },
+  { icon: Users, label: "Employee Directory", path: "/employee-directory" },
   { icon: Calendar, label: "Team Status", path: "/team-status" },
   { icon: BarChart3, label: "Team Stats", path: "/team-statistics" },
   { icon: BookOpen, label: "Knowledge Base", path: "/policies" },

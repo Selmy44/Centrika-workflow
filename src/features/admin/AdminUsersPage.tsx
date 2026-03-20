@@ -40,7 +40,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, CheckCircle2, XCircle, Clock, ExternalLink } from "lucide-react";
 
 export default function AdminUsers() {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, hasRole } = useAuth();
+  const canManageUsers = hasRole?.("admin") || hasRole?.("hr") || user?.role === "admin" || user?.role === "hr";
   const [editingUser, setEditingUser] = useState<any>(null);
   const [showDialog, setShowDialog] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
@@ -79,11 +80,11 @@ export default function AdminUsers() {
   const [validationErrors, setValidationErrors] = useState<{name?: string, email?: string, department?: string, gender?: string}>({});
 
   const { data: users, isLoading, refetch } = (trpc as any).users.listAll.useQuery(undefined, {
-    enabled: isAuthenticated && (user?.role === "admin" || user?.role === "hr"),
+    enabled: isAuthenticated && canManageUsers,
   });
 
   const { data: pendingInvitations, refetch: refetchInvitations } = (trpc as any).invitations.getPendingInvitations.useQuery(undefined, {
-    enabled: isAuthenticated && (user?.role === "admin" || user?.role === "hr"),
+    enabled: isAuthenticated && canManageUsers,
   });
 
   const { data: departments } = (trpc as any).employees.getDepartments.useQuery();
@@ -173,7 +174,7 @@ export default function AdminUsers() {
     return null;
   }
 
-  if (user?.role !== "admin" && user?.role !== "hr") {
+  if (!canManageUsers) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-135">
@@ -695,7 +696,7 @@ export default function AdminUsers() {
         setShowCreateDialog(open);
         if (!open) { setValidationErrors({}); }
       }}>
-        <DialogContent className="max-w-112">
+        <DialogContent className="max-w-112 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Create New User</DialogTitle>
             <DialogDescription>

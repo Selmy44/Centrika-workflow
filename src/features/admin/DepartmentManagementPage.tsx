@@ -40,7 +40,7 @@ import {
 import { toast } from "sonner";
 
 export default function DepartmentManagement() {
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingDept, setEditingDept] = useState<any>(null);
@@ -109,7 +109,8 @@ export default function DepartmentManagement() {
     d.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (!user || !["admin", "hr", "ceo_md"].includes(user.role)) {
+  const isAuthorized = hasRole?.("admin") || hasRole?.("hr") || hasRole?.("ceo_md");
+  if (!user || !isAuthorized) {
     return <div className="p-8">Access Denied</div>;
   }
 
