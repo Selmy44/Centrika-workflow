@@ -11,6 +11,7 @@ import ForgotPasswordPage from "./features/auth/pages/ForgotPasswordPage";
 import ResetPasswordPage from "./features/auth/pages/ResetPasswordPage";
 import AcceptInvitePage from "./features/auth/pages/AcceptInvitePage";
 import DashboardPage from "./features/dashboard/DashboardPage";
+import TeamStatusPage from "./features/dashboard/TeamStatusPage";
 import RequestsPage from "./features/requests/RequestsPage";
 import RequestDetailPage from "./features/requests/RequestDetailPage";
 import ApprovalsPage from "./features/approvals/ApprovalsPage";
@@ -71,6 +72,7 @@ function Router() {
       <Route path="/approval-history" component={ApprovalHistoryPage} />
       <Route path="/request-analytics" component={RequestAnalyticsPage} />
       <Route path="/team-statistics" component={TeamStatisticsPage} />
+      <Route path="/team-status" component={TeamStatusPage} />
       <Route path="/employee-directory" component={EmployeeDirectoryPage} />
       <Route path="/employees" component={EmployeeDirectoryPage} />
       <Route path="/admin/employees/:id" component={EmployeeProfilePage} />

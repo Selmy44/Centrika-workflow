@@ -125,7 +125,7 @@ const deptHeadMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
   { icon: CheckCircle, label: "Pending Approvals", path: "/approvals" },
   { icon: Users, label: "Department Team", path: "/employee-directory" },
-  { icon: Calendar, label: "Team Status", path: "/employee-directory" },
+  { icon: Calendar, label: "Team Status", path: "/team-status" },
   { icon: BarChart3, label: "Team Stats", path: "/team-statistics" },
   { icon: BookOpen, label: "Knowledge Base", path: "/policies" },
   {
