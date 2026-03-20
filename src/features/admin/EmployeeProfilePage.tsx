@@ -1,13 +1,14 @@
 import { trpc } from "@/lib/trpc";
-import { useRoute } from "wouter";
+import { useRoute, Link } from "wouter";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { User, Briefcase, Calendar, FileText, Mail, MapPin, Phone, ArrowLeft, Download, CheckCircle, Clock3, ShieldCheck, Activity, Cake, ClipboardList } from "lucide-react";
+import { User, Briefcase, Calendar, FileText, Mail, MapPin, Phone, ArrowLeft, Download, CheckCircle, Clock3, ShieldCheck, Activity, ClipboardList, Car, DollarSign, Package, TrendingUp, XCircle, Building2 } from "lucide-react";
 import { formatDateTime } from "@/lib/dateFormatter";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useMemo } from "react";
 
 const EmployeeProfilePage = () => {
   const [, params] = useRoute("/admin/employees/:id");
@@ -45,6 +46,19 @@ const EmployeeProfilePage = () => {
   const pendingDocs = documents.filter((doc: any) => doc.status === "pending").length;
   const leaveRequests = leaveData?.leaveRequests ?? [];
   const leaveBalance = leaveData?.leaveBalance;
+  const allRequests = (employee as any).allRequests ?? [];
+  const approvedCount = (employee as any).approvedCount ?? 0;
+  const rejectedCount = (employee as any).rejectedCount ?? 0;
+  const pendingCount = (employee as any).pendingCount ?? 0;
+  const approvalRate = employee.requestsCount > 0 ? Math.round((approvedCount / employee.requestsCount) * 100) : 0;
+
+  const requestsByType = useMemo(() => {
+    const map: Record<string, number> = {};
+    allRequests.forEach((r: any) => {
+      map[r.type] = (map[r.type] || 0) + 1;
+    });
+    return map;
+  }, [allRequests]);
 
   const getStatusColor = (status?: string | null) => {
     switch ((status || "active").toLowerCase()) {
@@ -58,6 +72,27 @@ const EmployeeProfilePage = () => {
       default:
         return "border-slate-500/20 bg-slate-500/10 text-slate-600";
     }
+  };
+
+  const getRequestIcon = (type: string) => {
+    switch (type) {
+      case "leave": return <Calendar size={14} className="text-blue-500" />;
+      case "car": return <Car size={14} className="text-indigo-500" />;
+      case "expenditure": return <DollarSign size={14} className="text-emerald-500" />;
+      case "asset": return <Package size={14} className="text-amber-500" />;
+      default: return <FileText size={14} className="text-slate-400" />;
+    }
+  };
+
+  const getRequestStatusBadge = (status: string) => {
+    const cls = status === "approved"
+      ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600"
+      : status === "rejected"
+        ? "border-rose-500/20 bg-rose-500/10 text-rose-600"
+        : status === "draft"
+          ? "border-slate-500/20 bg-slate-500/10 text-slate-600"
+          : "border-amber-500/20 bg-amber-500/10 text-amber-600";
+    return <Badge className={cls}>{status}</Badge>;
   };
 
   const employmentWindow = employee.contractStart || employee.contractEnd
@@ -78,8 +113,9 @@ const EmployeeProfilePage = () => {
         </div>
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
+          {/* Left Panel — Profile Card */}
           <Card className="sticky top-24 h-fit overflow-hidden rounded-3xl border-border/50 bg-white/60 shadow-sm backdrop-blur-xl dark:bg-slate-900/60">
-            <div className="h-24 bg-linear-to-br from-blue-600 to-indigo-700" />
+            <div className="h-24 bg-gradient-to-br from-[#3b6dae] to-indigo-700" />
             <CardContent className="-mt-12 flex flex-col items-center pt-0">
               <div className="mb-4 flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-slate-100 text-3xl font-black text-[#315693] dark:border-slate-900 dark:bg-slate-800">
                 {employee.profileImage ? (
@@ -89,7 +125,7 @@ const EmployeeProfilePage = () => {
                 )}
               </div>
               <h2 className="mb-1 text-center text-lg font-black text-slate-800 dark:text-white">{employee.name}</h2>
-              <p className="mb-4 text-xs font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400">{employee.position || "Staff Member"}</p>
+              <p className="mb-4 text-xs font-bold uppercase tracking-widest text-[#3b6dae] dark:text-blue-400">{employee.position || "Staff Member"}</p>
               <Badge className={getStatusColor(employee.status)}>{employee.status || "Active"}</Badge>
 
               <div className="mt-8 w-full space-y-4 border-t border-border/30 pt-6">
@@ -111,8 +147,36 @@ const EmployeeProfilePage = () => {
                 </div>
               </div>
 
+              {/* Approval Rate Ring */}
+              <div className="mt-6 w-full rounded-2xl border border-border/40 bg-slate-50/80 p-5 dark:bg-slate-950/30">
+                <p className="mb-3 text-center text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Approval Rate</p>
+                <div className="relative mx-auto h-24 w-24">
+                  <svg className="h-24 w-24 -rotate-90" viewBox="0 0 36 36">
+                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#e2e8f0" strokeWidth="3" />
+                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke={approvalRate >= 70 ? "#10b981" : approvalRate >= 40 ? "#f59e0b" : "#ef4444"} strokeWidth="3" strokeDasharray={`${approvalRate}, 100`} strokeLinecap="round" />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-xl font-black text-slate-800 dark:text-white">{approvalRate}%</span>
+                  </div>
+                </div>
+                <div className="mt-3 grid grid-cols-3 gap-1 text-center">
+                  <div>
+                    <p className="text-sm font-black text-emerald-600">{approvedCount}</p>
+                    <p className="text-[9px] text-slate-400">Approved</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-amber-600">{pendingCount}</p>
+                    <p className="text-[9px] text-slate-400">Pending</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-rose-600">{rejectedCount}</p>
+                    <p className="text-[9px] text-slate-400">Rejected</p>
+                  </div>
+                </div>
+              </div>
+
               <div className="mt-6 grid w-full grid-cols-2 gap-3">
-                <Button className="rounded-xl bg-blue-600 hover:bg-blue-700" onClick={() => { window.location.href = `mailto:${employee.email}`; }}>
+                <Button className="rounded-xl bg-[#3b6dae] hover:bg-[#315693]" onClick={() => { window.location.href = `mailto:${employee.email}`; }}>
                   <Mail size={14} className="mr-2" /> Email
                 </Button>
                 <Button variant="outline" className="rounded-xl" onClick={() => { window.location.href = "/hr/documents"; }}>
@@ -122,45 +186,81 @@ const EmployeeProfilePage = () => {
             </CardContent>
           </Card>
 
+          {/* Right Panel — Content */}
           <div className="lg:col-span-3">
-            <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <Card className="rounded-2xl border-border/50 shadow-sm">
+            {/* Summary Stat Cards */}
+            <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <Card className="overflow-hidden rounded-2xl border-border/50 bg-gradient-to-br from-white to-blue-50/40 shadow-sm">
                 <CardContent className="p-5">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Request Volume</p>
-                  <p className="mt-2 text-2xl font-black text-slate-900 dark:text-white">{employee.requestsCount}</p>
-                  <p className="mt-1 text-xs text-slate-500">Total requests on record</p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
+                      <ClipboardList size={18} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Total Requests</p>
+                      <p className="text-2xl font-black text-slate-900 dark:text-white">{employee.requestsCount}</p>
+                    </div>
+                  </div>
+                  <p className="mt-2 text-[10px] font-bold text-blue-600">All types on record</p>
                 </CardContent>
               </Card>
-              <Card className="rounded-2xl border-border/50 shadow-sm">
+
+              <Card className="overflow-hidden rounded-2xl border-border/50 bg-gradient-to-br from-white to-emerald-50/40 shadow-sm">
                 <CardContent className="p-5">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Annual Leave Left</p>
-                  <p className="mt-2 text-2xl font-black text-slate-900 dark:text-white">{leaveBalance?.annualLeaveRemaining ?? "-"}</p>
-                  <p className="mt-1 text-xs text-slate-500">Current-year remaining balance</p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+                      <Calendar size={18} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Leave Balance</p>
+                      <p className="text-2xl font-black text-slate-900 dark:text-white">{leaveBalance?.annualLeaveRemaining ?? "–"}</p>
+                    </div>
+                  </div>
+                  <p className="mt-2 text-[10px] font-bold text-emerald-600">Days remaining this year</p>
                 </CardContent>
               </Card>
-              <Card className="rounded-2xl border-border/50 shadow-sm">
+
+              <Card className="overflow-hidden rounded-2xl border-border/50 bg-gradient-to-br from-white to-indigo-50/40 shadow-sm">
                 <CardContent className="p-5">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Verified Docs</p>
-                  <p className="mt-2 text-2xl font-black text-slate-900 dark:text-white">{verifiedDocs}</p>
-                  <p className="mt-1 text-xs text-slate-500">Documents cleared by HR</p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
+                      <ShieldCheck size={18} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Verified Docs</p>
+                      <p className="text-2xl font-black text-slate-900 dark:text-white">{verifiedDocs}</p>
+                    </div>
+                  </div>
+                  <p className="mt-2 text-[10px] font-bold text-indigo-600">Cleared by HR</p>
                 </CardContent>
               </Card>
-              <Card className="rounded-2xl border-border/50 shadow-sm">
+
+              <Card className="overflow-hidden rounded-2xl border-border/50 bg-gradient-to-br from-white to-amber-50/40 shadow-sm">
                 <CardContent className="p-5">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Pending Docs</p>
-                  <p className="mt-2 text-2xl font-black text-slate-900 dark:text-white">{pendingDocs}</p>
-                  <p className="mt-1 text-xs text-slate-500">Items still awaiting review</p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+                      <Clock3 size={18} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Pending Docs</p>
+                      <p className="text-2xl font-black text-slate-900 dark:text-white">{pendingDocs}</p>
+                    </div>
+                  </div>
+                  <p className="mt-2 text-[10px] font-bold text-amber-600">Awaiting review</p>
                 </CardContent>
               </Card>
             </div>
 
+            {/* Tabbed Content */}
             <Tabs defaultValue="overview" className="space-y-6">
               <TabsList className="rounded-2xl border border-border/30 bg-slate-100 p-1 dark:bg-slate-800/50">
-                <TabsTrigger value="overview" className="rounded-xl px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-900">Overview</TabsTrigger>
-                <TabsTrigger value="leave" className="rounded-xl px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-900">Leave Insights</TabsTrigger>
-                <TabsTrigger value="documents" className="rounded-xl px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-900">Documents</TabsTrigger>
+                <TabsTrigger value="overview" className="rounded-xl px-5 data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-900">Overview</TabsTrigger>
+                <TabsTrigger value="requests" className="rounded-xl px-5 data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-900">All Requests</TabsTrigger>
+                <TabsTrigger value="leave" className="rounded-xl px-5 data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-900">Leave Insights</TabsTrigger>
+                <TabsTrigger value="documents" className="rounded-xl px-5 data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-slate-900">Documents</TabsTrigger>
               </TabsList>
 
+              {/* Tab: Overview */}
               <TabsContent value="overview">
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   <Card className="rounded-2xl border-border/50">
@@ -204,9 +304,90 @@ const EmployeeProfilePage = () => {
                       </div>
                     </CardContent>
                   </Card>
+
+                  {/* Request Distribution Card */}
+                  <Card className="rounded-2xl border-border/50 md:col-span-2">
+                    <CardHeader className="border-b border-border/30 py-4">
+                      <CardTitle className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-400">
+                        <TrendingUp size={14} /> Request Activity Summary
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="py-6">
+                      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                        {[
+                          { type: "leave", label: "Leave Requests", icon: <Calendar size={18} className="text-blue-500" />, color: "bg-blue-100 text-blue-600" },
+                          { type: "car", label: "Car Requests", icon: <Car size={18} className="text-indigo-500" />, color: "bg-indigo-100 text-indigo-600" },
+                          { type: "expenditure", label: "Expenditure", icon: <DollarSign size={18} className="text-emerald-500" />, color: "bg-emerald-100 text-emerald-600" },
+                          { type: "asset", label: "Asset Requests", icon: <Package size={18} className="text-amber-500" />, color: "bg-amber-100 text-amber-600" },
+                        ].map(({ type, label, icon, color }) => (
+                          <div key={type} className="flex items-center gap-4 rounded-2xl border border-border/40 bg-slate-50/80 p-4 dark:bg-slate-950/30">
+                            <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${color}`}>{icon}</div>
+                            <div>
+                              <p className="text-xl font-black text-slate-900 dark:text-white">{requestsByType[type] || 0}</p>
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{label}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               </TabsContent>
 
+              {/* Tab: All Requests */}
+              <TabsContent value="requests">
+                <Card className="overflow-hidden rounded-2xl border-border/50 shadow-sm">
+                  <CardHeader className="border-b border-border/30 bg-white px-6 py-4 dark:bg-slate-900">
+                    <CardTitle className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-slate-400">
+                      <ClipboardList size={16} /> Complete Request History
+                    </CardTitle>
+                    <CardDescription className="text-xs">Every request ever submitted by this employee, across all categories.</CardDescription>
+                  </CardHeader>
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse text-left">
+                      <thead className="bg-slate-50 dark:bg-slate-800/50">
+                        <tr>
+                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Type</th>
+                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Details</th>
+                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Status</th>
+                          <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Submitted</th>
+                          <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-400">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/30">
+                        {allRequests.length ? allRequests.map((req: any) => (
+                          <tr key={req.id} className="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/20">
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-2">
+                                {getRequestIcon(req.type)}
+                                <span className="text-xs font-bold uppercase text-slate-700 dark:text-slate-300">{req.type}</span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <RequestDetailSummary type={req.type} details={req.details} />
+                            </td>
+                            <td className="px-6 py-4">{getRequestStatusBadge(req.status)}</td>
+                            <td className="px-6 py-4 text-[10px] font-medium text-slate-400">{formatDateTime(req.createdAt)}</td>
+                            <td className="px-6 py-4 text-right">
+                              <Link href={`/requests/${req.id}`}>
+                                <Button variant="ghost" size="sm" className="rounded-xl text-[#3b6dae]">View</Button>
+                              </Link>
+                            </td>
+                          </tr>
+                        )) : (
+                          <tr>
+                            <td colSpan={5} className="px-6 py-12 text-center text-sm italic text-slate-500">
+                              No requests on record for this employee.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
+              </TabsContent>
+
+              {/* Tab: Leave Insights */}
               <TabsContent value="leave">
                 <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
                   <Card className="rounded-2xl border-border/50 xl:col-span-1">
@@ -217,9 +398,9 @@ const EmployeeProfilePage = () => {
                       <CardDescription className="text-xs">Current-year balance and leave usage.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <MetricRow label="Entitled" value={leaveBalance?.annualLeaveEntitled ?? "-"} icon={<ShieldCheck size={14} className="text-blue-500" />} />
-                      <MetricRow label="Taken" value={leaveBalance?.annualLeaveTaken ?? "-"} icon={<Activity size={14} className="text-rose-500" />} />
-                      <MetricRow label="Remaining" value={leaveBalance?.annualLeaveRemaining ?? "-"} icon={<CheckCircle size={14} className="text-emerald-500" />} />
+                      <MetricRow label="Entitled" value={leaveBalance?.annualLeaveEntitled ?? "–"} icon={<ShieldCheck size={14} className="text-blue-500" />} />
+                      <MetricRow label="Taken" value={leaveBalance?.annualLeaveTaken ?? "–"} icon={<Activity size={14} className="text-rose-500" />} />
+                      <MetricRow label="Remaining" value={leaveBalance?.annualLeaveRemaining ?? "–"} icon={<CheckCircle size={14} className="text-emerald-500" />} />
                     </CardContent>
                   </Card>
 
@@ -238,12 +419,10 @@ const EmployeeProfilePage = () => {
                               <div>
                                 <p className="text-sm font-bold capitalize text-slate-900 dark:text-white">{request.details?.leaveType || "Leave"} leave</p>
                                 <p className="text-xs text-slate-500">
-                                  {request.details?.startDate} to {request.details?.endDate} � {request.details?.leaveDaysRequested || 0} day(s)
+                                  {request.details?.startDate} to {request.details?.endDate} · {request.details?.leaveDaysRequested || 0} day(s)
                                 </p>
                               </div>
-                              <Badge className={request.status === "approved" ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600" : request.status === "rejected" ? "border-rose-500/20 bg-rose-500/10 text-rose-600" : "border-amber-500/20 bg-amber-500/10 text-amber-600"}>
-                                {request.status}
-                              </Badge>
+                              {getRequestStatusBadge(request.status)}
                             </div>
                           </div>
                         ))
@@ -257,6 +436,7 @@ const EmployeeProfilePage = () => {
                 </div>
               </TabsContent>
 
+              {/* Tab: Documents */}
               <TabsContent value="documents">
                 <Card className="rounded-2xl border-border/50">
                   <CardHeader>
@@ -284,9 +464,7 @@ const EmployeeProfilePage = () => {
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
-                            <Badge className={doc.status === "verified" ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600" : doc.status === "rejected" ? "border-rose-500/20 bg-rose-500/10 text-rose-600" : "border-amber-500/20 bg-amber-500/10 text-amber-600"}>
-                              {doc.status}
-                            </Badge>
+                            {getRequestStatusBadge(doc.status)}
                             <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer">
                               <Button variant="outline" size="sm" className="rounded-xl">
                                 <Download size={14} className="mr-2" /> Open
@@ -310,6 +488,40 @@ const EmployeeProfilePage = () => {
       </div>
     </DashboardLayout>
   );
+};
+
+// Helper: Compact request detail summary for the table
+const RequestDetailSummary = ({ type, details }: { type: string; details: any }) => {
+  if (!details) return <span className="text-xs italic text-slate-400">No details</span>;
+
+  switch (type) {
+    case "leave":
+      return (
+        <div className="text-xs text-slate-600 dark:text-slate-400">
+          <span className="font-bold capitalize">{details.leaveType}</span> · {details.startDate} → {details.endDate} · {details.leaveDaysRequested || 0}d
+        </div>
+      );
+    case "car":
+      return (
+        <div className="text-xs text-slate-600 dark:text-slate-400">
+          <span className="font-bold">{details.destination || "Trip"}</span> · {details.departureDate || "N/A"}
+        </div>
+      );
+    case "expenditure":
+      return (
+        <div className="text-xs text-slate-600 dark:text-slate-400">
+          <span className="font-bold">{details.description || details.category || "Expense"}</span> · RWF {Number(details.amount || 0).toLocaleString()}
+        </div>
+      );
+    case "asset":
+      return (
+        <div className="text-xs text-slate-600 dark:text-slate-400">
+          <span className="font-bold">{details.assetName || details.type || "Asset"}</span> · {details.quantity || 1} unit(s)
+        </div>
+      );
+    default:
+      return <span className="text-xs italic text-slate-400">—</span>;
+  }
 };
 
 const InfoItem = ({ label, value }: { label: string; value: string | number }) => (
@@ -340,9 +552,9 @@ const ProfileSkeleton = () => (
         </div>
       </div>
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
-        <Skeleton className="h-[420px] rounded-3xl" />
+        <Skeleton className="h-[520px] rounded-3xl" />
         <div className="space-y-8 lg:col-span-3">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
             <Skeleton className="h-24 rounded-2xl" />
             <Skeleton className="h-24 rounded-2xl" />
             <Skeleton className="h-24 rounded-2xl" />
@@ -359,28 +571,4 @@ const ProfileSkeleton = () => (
   </DashboardLayout>
 );
 
-const Building2 = ({ size, className }: { size: number; className?: string }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z" />
-    <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2" />
-    <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2" />
-    <path d="M10 6h4" />
-    <path d="M10 10h4" />
-    <path d="M10 14h4" />
-    <path d="M10 18h4" />
-  </svg>
-);
-
 export default EmployeeProfilePage;
-
