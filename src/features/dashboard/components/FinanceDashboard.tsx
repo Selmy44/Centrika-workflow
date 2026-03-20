@@ -104,7 +104,7 @@ export const FinanceDashboard = () => {
           </p>
         </div>
 
-        <Card className="border-emerald-200/60 bg-linear-to-r from-emerald-50 to-teal-50 shadow-sm dark:border-emerald-900/40 dark:from-slate-900 dark:to-slate-900">
+        <Card className="border-emerald-200/60 bg-linear-to-r from-emerald-50 to-teal-50 shadow-sm dark:border-white/10 dark:from-slate-900/60 dark:to-slate-900/60">
           <CardContent className="flex items-center gap-4 p-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-lg shadow-emerald-500/20">
               <Landmark size={20} />
@@ -149,7 +149,7 @@ export const FinanceDashboard = () => {
         <div className="space-y-6 lg:col-span-8">
           <NoticeBoard />
           
-          <Card className="rounded-2xl border-border/50 bg-white/70 shadow-sm backdrop-blur-xl dark:bg-slate-900/60">
+          <Card className="rounded-2xl border-border/50 dark:border-white/10 bg-white/70 shadow-sm backdrop-blur-xl dark:bg-slate-900/60">
             <CardHeader className="border-b border-border/30 py-4">
               <div className="flex items-center justify-between gap-4">
                 <div>
@@ -190,7 +190,7 @@ export const FinanceDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl border-border/50 bg-white/70 shadow-sm backdrop-blur-xl dark:bg-slate-900/60">
+          <Card className="rounded-2xl border-border/50 dark:border-white/10 bg-white/70 shadow-sm backdrop-blur-xl dark:bg-slate-900/60">
             <CardHeader className="border-b border-border/30 py-4">
               <div className="flex items-center justify-between gap-4">
                 <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-600 dark:text-slate-300">
@@ -268,7 +268,7 @@ export const FinanceDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl border-border/50 bg-white/70 shadow-sm backdrop-blur-xl dark:bg-slate-900/60">
+          <Card className="rounded-2xl border-border/50 dark:border-white/10 bg-white/70 shadow-sm backdrop-blur-xl dark:bg-slate-900/60">
             <CardHeader className="py-4">
               <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Risk Alerts</CardTitle>
             </CardHeader>
@@ -291,7 +291,7 @@ export const FinanceDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl border-border/50 bg-white/70 shadow-sm backdrop-blur-xl dark:bg-slate-900/60">
+          <Card className="rounded-2xl border-border/50 dark:border-white/10 bg-white/70 shadow-sm backdrop-blur-xl dark:bg-slate-900/60">
             <CardHeader className="py-4">
               <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Latest Vouchers</CardTitle>
             </CardHeader>
@@ -312,7 +312,7 @@ export const FinanceDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="rounded-2xl border-border/50 bg-white/70 shadow-sm backdrop-blur-xl dark:bg-slate-900/60">
+          <Card className="rounded-2xl border-border/50 dark:border-white/10 bg-white/70 shadow-sm backdrop-blur-xl dark:bg-slate-900/60">
             <CardHeader className="py-4">
               <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Top Spending Areas</CardTitle>
             </CardHeader>
