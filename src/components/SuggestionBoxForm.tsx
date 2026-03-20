@@ -41,7 +41,7 @@ export function SuggestionBoxForm() {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="What should we improve? Your voice is anonymous..."
-            className="w-full bg-white/50 dark:bg-slate-900/40 border-border/40 focus:border-[#3b6dae]/30 focus:ring-0 rounded-3xl p-4 min-h-35 text-sm font-medium placeholder:text-slate-400 placeholder:font-bold placeholder:uppercase placeholder:tracking-widest placeholder:text-[10px] resize-none transition-all duration-300"
+            className="w-full bg-white/50 dark:bg-slate-800/40 border-border/40 dark:border-white/20 focus:border-[#3b6dae]/30 focus:ring-0 rounded-2xl p-3 min-h-24 text-sm font-medium placeholder:text-slate-400 placeholder:font-bold placeholder:uppercase placeholder:tracking-widest placeholder:text-[10px] resize-none transition-all duration-300 shadow-inner"
           />
           <div className="absolute top-4 right-4 text-[#3b6dae]/20 group-focus-within/feedback:text-[#3b6dae]/40 transition-colors">
              <ShieldCheck size={18} strokeWidth={2.5} />
