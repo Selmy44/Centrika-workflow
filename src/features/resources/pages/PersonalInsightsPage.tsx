@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, Clock, CheckCircle2, XCircle, FileText, ChevronRight } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, PieChart, Pie, Cell } from "recharts";
 import { useLocation } from "wouter";
+import DashboardLayout from "@/components/DashboardLayout";
 
 // Re-index trigger
 
@@ -27,6 +28,7 @@ export function PersonalInsightsPage() {
   ].filter(d => d.value > 0);
 
   return (
+    <DashboardLayout>
     <div className="container mx-auto py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-slate-900 tracking-tight">My Insights</h1>
@@ -119,7 +121,7 @@ export function PersonalInsightsPage() {
           </CardContent>
         </Card>
 
-        <Card border-slate-200>
+        <Card className="border-slate-200">
           <CardHeader>
             <CardTitle>Status Breakdown</CardTitle>
           </CardHeader>
@@ -165,5 +167,6 @@ export function PersonalInsightsPage() {
         </button>
       </div>
     </div>
+    </DashboardLayout>
   );
 }
