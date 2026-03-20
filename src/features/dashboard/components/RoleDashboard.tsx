@@ -62,21 +62,21 @@ export const RoleDashboard = ({ user }: RoleDashboardProps) => {
         </div>
 
         {/* Side Panel Area - Distinct Strip */}
-        <div className="lg:col-span-4 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border-l border-[#3b6dae]/5 p-2 lg:p-6 lg:pt-4 space-y-8 shadow-[inset_1px_0_0_0_rgba(255,255,255,0.5)]">
+        <div className="lg:col-span-4 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border-l border-[#3b6dae]/5 p-2 lg:px-6 lg:py-4 space-y-4 shadow-[inset_1px_0_0_0_rgba(255,255,255,0.5)]">
           <div className="animate-in fade-in slide-in-from-right duration-700">
             <ProfileSummary />
           </div>
 
-          <div className="space-y-4">
-            <h2 className="text-[10px] font-black text-[#3b6dae]/30 uppercase tracking-[0.4em] px-1 flex items-center gap-2">
+          <div className="space-y-3">
+            <h2 className="text-[9px] font-black text-[#3b6dae]/30 uppercase tracking-[0.4em] px-1 flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-[#c79d2d]" />
               Quick Commands
             </h2>
             <QuickActions />
           </div>
 
-          <div className="space-y-4 pt-4 border-t border-[#3b6dae]/5">
-            <h2 className="text-[10px] font-black text-[#3b6dae]/30 uppercase tracking-[0.4em] px-1 flex items-center gap-2">
+          <div className="space-y-3 pt-2 border-t border-[#3b6dae]/5">
+            <h2 className="text-[9px] font-black text-[#3b6dae]/30 uppercase tracking-[0.4em] px-1 flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-[#3b6dae]/20" />
               Pulse & Feedback
             </h2>
