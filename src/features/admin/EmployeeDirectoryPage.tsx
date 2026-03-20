@@ -14,13 +14,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { InviteUserModal } from "@/components/InviteUserModal";
 
 export default function EmployeeDirectory() {
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDeptId, setSelectedDeptId] = useState<number | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
-  const canManageUsers = user?.role === "admin" || user?.role === "hr";
+  const canManageUsers = hasRole?.("admin") || hasRole?.("hr") || user?.role === "admin" || user?.role === "hr";
 
   const { data: employees = [], isLoading: isLoadingEmployees } = trpc.employees.list.useQuery(
     {

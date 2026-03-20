@@ -53,7 +53,6 @@ const menuItems = [
   { icon: Calendar, label: "Leave Balance", path: "/leave-balance" },
   { icon: BookOpen, label: "Knowledge Base", path: "/policies" },
   { icon: TrendingUp, label: "My Insights", path: "/insights" },
-  { icon: Settings, label: "Settings", path: "/settings" },
 ];
 
 const adminMenuItems = [
@@ -74,7 +73,6 @@ const adminMenuItems = [
   { icon: Building2, label: "Department Management", path: "/admin/departments" },
   { icon: CheckCircle, label: "Approvals", path: "/approvals" },
   { icon: BookOpen, label: "Knowledge Base", path: "/policies" },
-  { icon: Settings, label: "System Settings", path: "/settings" },
 ];
 
 const financeMenuItems = [
@@ -95,7 +93,6 @@ const financeMenuItems = [
       { label: "Asset Request", action: "asset" },
     ],
   },
-  { icon: Settings, label: "System Settings", path: "/settings" },
 ];
 
 const hrMenuItems = [
@@ -119,7 +116,6 @@ const hrMenuItems = [
       { label: "Asset Request", action: "asset" },
     ],
   },
-  { icon: Settings, label: "Settings", path: "/settings" },
 ];
 
 const deptHeadMenuItems = [
@@ -141,7 +137,6 @@ const deptHeadMenuItems = [
     ],
   },
   { icon: FileText, label: "My Requests", path: "/requests" },
-  { icon: Settings, label: "Settings", path: "/settings" },
 ];
 
 const ceoMenuItems = [
