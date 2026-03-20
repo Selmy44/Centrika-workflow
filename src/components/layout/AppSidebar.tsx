@@ -17,6 +17,8 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { useNavigation } from "@/_core/hooks/useNavigation";
 import { useIsMobile } from "@/hooks/useMobile";
 import { PanelLeft, ChevronDown, LogOut } from "lucide-react";
+import { useTheme } from "@/contexts/ThemeContext";
+import { cn } from "@/lib/utils";
 
 interface AppSidebarProps {
   isResizing: boolean;
@@ -29,6 +31,7 @@ export function AppSidebar({ isResizing, setIsResizing, onActionClick, sidebarRe
   const { logout } = useAuth();
   const { menuItems, location, setLocation } = useNavigation();
   const { state, toggleSidebar, setOpen } = useSidebar();
+  const { theme } = useTheme();
   const isCollapsed = state === "collapsed";
   const isMobile = useIsMobile();
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
@@ -41,7 +44,14 @@ export function AppSidebar({ isResizing, setIsResizing, onActionClick, sidebarRe
     <div className="relative" ref={sidebarRef}>
       <Sidebar
         collapsible="icon"
-        className="border-r border-blue-900/10 dark:border-blue-950/50 bg-[#3b6dae] dark:bg-[#0f172a] text-white"
+        style={{ 
+          "--sidebar": theme === "dark" ? "#0f172a" : "#3b6dae", 
+          "--sidebar-foreground": "#ffffff" 
+        } as React.CSSProperties}
+        className={cn(
+          "border-r border-blue-900/10 dark:border-blue-950/50 text-white",
+          theme === "dark" ? "bg-[#0f172a]" : "bg-[#3b6dae]"
+        )}
         disableTransition={isResizing}
         onMouseEnter={() => !isMobile && setOpen(true)}
         onMouseLeave={() => !isMobile && setOpen(false)}
@@ -104,7 +114,7 @@ export function AppSidebar({ isResizing, setIsResizing, onActionClick, sidebarRe
                     tooltip={item.label}
                     className={`h-12 transition-all font-semibold rounded-xl group-data-[collapsible=icon]:rounded-2xl group-data-[collapsible=icon]:size-12 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center overflow-hidden ${isActive 
                       ? "bg-[#c79d2d] text-white shadow-lg shadow-black/10 hover:bg-[#c79d2d]/90 group-data-[collapsible=icon]:shadow-[#c79d2d]/30" 
-                      : "text-white/70 hover:bg-white/10 hover:text-white"
+                      : "text-blue-50/90 hover:bg-white/10 hover:text-white"
                     }`}
                   >
                     <item.icon 
@@ -132,7 +142,7 @@ export function AppSidebar({ isResizing, setIsResizing, onActionClick, sidebarRe
                               }}
                               className={`h-10 text-[14px] font-semibold rounded-lg transition-all duration-200 ${isSubitemActive
                                 ? "text-[#c79d2d] bg-white/10"
-                                : "text-teal-50/60 hover:text-white hover:bg-white/5"
+                                : "text-blue-50/50 hover:text-white hover:bg-white/5"
                                 }`}
                             >
                               {subitem.label}
