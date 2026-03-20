@@ -191,14 +191,19 @@ export const requestsRouter = router({
         carRequest: true,
         expenditureRequest: true,
         assetRequest: true,
+        approvals: { include: { signature: true } },
       },
       orderBy: { createdAt: "desc" },
     });
 
-    return userReqs.map((req: any) => ({
-      ...req,
-      typeDetails: req.leaveRequest || req.carRequest || req.expenditureRequest || req.assetRequest
-    }));
+    return userReqs.map((req: any) => {
+      const hodApproval = req.approvals?.find((a: any) => a.approvalLevel === "head_of_department");
+      return {
+        ...req,
+        managerSignatureUrl: hodApproval?.signature?.fileUrl || null,
+        typeDetails: req.leaveRequest || req.carRequest || req.expenditureRequest || req.assetRequest
+      };
+    });
   }),
 
   getRequest: protectedProcedure
@@ -211,7 +216,7 @@ export const requestsRouter = router({
           carRequest: true,
           expenditureRequest: true,
           assetRequest: true,
-          approvals: { include: { approver: true } },
+          approvals: { include: { approver: true, signature: true } },
           attachments: true,
         },
       });
@@ -221,8 +226,10 @@ export const requestsRouter = router({
         throw new TRPCError({ code: "FORBIDDEN" });
       }
 
+      const hodApproval = request.approvals?.find(a => a.approvalLevel === "head_of_department");
       return {
         ...request,
+        managerSignatureUrl: hodApproval?.signature?.fileUrl || null,
         typeDetails: request.leaveRequest || request.carRequest || request.expenditureRequest || request.assetRequest
       };
     }),
@@ -296,13 +303,43 @@ export const requestsRouter = router({
         })
       ]);
 
+      if (request.type === "leave") {
+        try {
+          const approver = await prisma.user.findUnique({ where: { id: approverId } });
+          const leaveReq = await prisma.leaveRequest.findUnique({ where: { requestId: request.id } });
+          const docId = `LR-${new Date(request.createdAt).getFullYear()}-${String(new Date(request.createdAt).getMonth() + 1).padStart(2, '0')}-${request.id.toString().padStart(5, '0')}`;
+          
+          if (approver?.email && leaveReq) {
+            const emailContent = emailTemplates.leaveRequestSubmittedEmail(
+              request.user.name || "Employee",
+              approver.name || "Manager",
+              docId,
+              leaveReq.startDate,
+              leaveReq.endDate
+            );
+            await sendEmail(approver.email, emailContent.subject, emailContent.html);
+          }
+        } catch (error) {
+          console.error("Failed to send submission email", error);
+        }
+      }
+
       return { success: true };
     }),
 
   listPendingApprovals: protectedProcedure.query(async ({ ctx }) => {
+    const requestIncludes = {
+      user: { include: { department: true } },
+      leaveRequest: true,
+      carRequest: true,
+      expenditureRequest: true,
+      assetRequest: true,
+      attachments: true,
+    };
+
     const approvals = await prisma.requestApproval.findMany({
       where: { approverId: ctx.user.id, status: "pending" },
-      include: { request: { include: { user: true } } }
+      include: { request: { include: requestIncludes } }
     });
 
     let results = approvals.map((a: any) => a.request);
@@ -310,7 +347,7 @@ export const requestsRouter = router({
     if (ctx.user.role === "admin") {
       const allPending = await prisma.request.findMany({
         where: { status: "pending" },
-        include: { user: true },
+        include: requestIncludes,
         orderBy: { createdAt: "desc" }
       });
       const map = new Map(results.map((r: any) => [r.id, r]));
@@ -355,6 +392,74 @@ export const requestsRouter = router({
             message: `Your request has been fully approved.`,
           }
         });
+
+        if (request.type === "leave") {
+          try {
+            const approver = await prisma.user.findUnique({ where: { id: ctx.user.id } });
+            const leaveReq = await prisma.leaveRequest.findUnique({ where: { requestId: request.id } });
+            const docId = `LR-${new Date(request.createdAt).getFullYear()}-${String(new Date(request.createdAt).getMonth() + 1).padStart(2, '0')}-${request.id.toString().padStart(5, '0')}`;
+            if (request.user.email && leaveReq && approver) {
+              const emailContent = emailTemplates.leaveRequestApprovedEmail(
+                request.user.name || "Employee",
+                approver.name || "Manager",
+                docId,
+                leaveReq.startDate,
+                leaveReq.endDate
+              );
+              await sendEmail(request.user.email, emailContent.subject, emailContent.html);
+            }
+          } catch (error) { console.error("Email error", error); }
+
+          // Notify HR and CEO/MD about the approved leave (they should see the record)
+          try {
+            const approver = await prisma.user.findUnique({ where: { id: ctx.user.id } });
+            const leaveReq = await prisma.leaveRequest.findUnique({ where: { requestId: request.id } });
+            const docId = `LR-${new Date(request.createdAt).getFullYear()}-${String(new Date(request.createdAt).getMonth() + 1).padStart(2, '0')}-${request.id.toString().padStart(5, '0')}`;
+
+            const hrAndCeoUsers = await prisma.user.findMany({
+              where: {
+                OR: [
+                  { role: "hr" },
+                  { role: "ceo_md" },
+                  { additionalRoles: { contains: "hr" } },
+                  { additionalRoles: { contains: "ceo_md" } },
+                ],
+                id: { not: ctx.user.id }, // Don't notify the approver themselves
+              },
+            });
+
+            for (const recipient of hrAndCeoUsers) {
+              // In-app notification
+              await prisma.notification.create({
+                data: {
+                  userId: recipient.id,
+                  requestId: input.requestId,
+                  triggeredByUserId: ctx.user.id,
+                  type: "request_approved",
+                  title: `Leave approved: ${request.user.name}'s ${request.type} request`,
+                  message: `${request.user.name}'s leave request was approved by ${approver?.name || "HOD"}.`,
+                },
+              });
+
+              // Email notification 
+              if (recipient.email && leaveReq && approver) {
+                const notifEmail = emailTemplates.leaveApprovedNotificationEmail(
+                  recipient.name || "Team",
+                  request.user.name || "Employee",
+                  approver.name || "HOD",
+                  leaveReq.leaveType || "Leave",
+                  leaveReq.startDate,
+                  leaveReq.endDate,
+                  leaveReq.leaveDaysRequested || 0,
+                  leaveReq.reason || "",
+                  docId,
+                  new Date().toISOString().split("T")[0]
+                );
+                await sendEmail(recipient.email, notifEmail.subject, notifEmail.html);
+              }
+            }
+          } catch (error) { console.error("HR/CEO notification error", error); }
+        }
       };
 
       const routeToNext = async (nextLevel: string, nextRole: string) => {
@@ -380,6 +485,23 @@ export const requestsRouter = router({
             message: `A request is waiting for your approval.`,
           }
         });
+
+        if (request.type === "leave") {
+          try {
+            const docId = `LR-${new Date(request.createdAt).getFullYear()}-${String(new Date(request.createdAt).getMonth() + 1).padStart(2, '0')}-${request.id.toString().padStart(5, '0')}`;
+            const leaveReq = await prisma.leaveRequest.findUnique({ where: { requestId: request.id } });
+            if (leaveReq && nextUser.email) {
+              const emailContent = emailTemplates.leaveRequestSubmittedEmail(
+                request.user.name || "Employee",
+                nextUser.name || "Manager",
+                docId,
+                leaveReq.startDate,
+                leaveReq.endDate
+              );
+              await sendEmail(nextUser.email, emailContent.subject, emailContent.html);
+            }
+          } catch (error) { console.error("Email error", error); }
+        }
       };
 
       // Current approval
@@ -445,7 +567,7 @@ export const requestsRouter = router({
   rejectRequest: protectedProcedure
     .input(z.object({ requestId: z.number(), comments: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const request = await prisma.request.findUnique({ where: { id: input.requestId } });
+      const request = await prisma.request.findUnique({ where: { id: input.requestId }, include: { user: true } });
       if (!request) throw new TRPCError({ code: "NOT_FOUND" });
 
       await prisma.requestApproval.updateMany({
@@ -468,6 +590,22 @@ export const requestsRouter = router({
           message: `Reason: ${input.comments}`,
         }
       });
+
+      if (request.type === "leave") {
+        try {
+          const approver = await prisma.user.findUnique({ where: { id: ctx.user.id } });
+          const docId = `LR-${new Date(request.createdAt).getFullYear()}-${String(new Date(request.createdAt).getMonth() + 1).padStart(2, '0')}-${request.id.toString().padStart(5, '0')}`;
+          if (request.user?.email && approver) {
+            const emailContent = emailTemplates.leaveRequestRejectedEmail(
+              request.user.name || "Employee",
+              approver.name || "Manager",
+              docId,
+              input.comments
+            );
+            await sendEmail(request.user.email, emailContent.subject, emailContent.html);
+          }
+        } catch (error) { console.error("Email error", error); }
+      }
 
       return { success: true };
     }),
@@ -678,6 +816,89 @@ export const requestsRouter = router({
         const parsed = JSON.parse(submission.formData);
         const hod = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "head_of_department" }, include: { signature: true } });
         if (hod?.signature) parsed.managerSignatureUrl = hod.signature.fileUrl;
+        parsed.requestId = input.requestId;
+        return parsed;
+      }
+      return null;
+    }),
+
+  storeCarFormData: protectedProcedure
+    .input(z.object({ requestId: z.number(), formData: z.any() }))
+    .mutation(async ({ input }) => {
+      await prisma.formSubmission.upsert({
+        where: { requestId: input.requestId },
+        create: { requestId: input.requestId, formData: JSON.stringify(input.formData) },
+        update: { formData: JSON.stringify(input.formData), updatedAt: new Date() }
+      });
+      return { success: true };
+    }),
+
+  getCarFormData: protectedProcedure
+    .input(z.object({ requestId: z.coerce.number() }))
+    .query(async ({ input }) => {
+      const submission = await prisma.formSubmission.findUnique({ where: { requestId: input.requestId } });
+      if (submission) {
+        const parsed = JSON.parse(submission.formData);
+        const hr = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "hr" }, include: { signature: true } });
+        if (hr?.signature) parsed.hrSignatureUrl = hr.signature.fileUrl;
+        parsed.requestId = input.requestId;
+        return parsed;
+      }
+      return null;
+    }),
+
+  storeExpenditureFormData: protectedProcedure
+    .input(z.object({ requestId: z.number(), formData: z.any() }))
+    .mutation(async ({ input }) => {
+      await prisma.formSubmission.upsert({
+        where: { requestId: input.requestId },
+        create: { requestId: input.requestId, formData: JSON.stringify(input.formData) },
+        update: { formData: JSON.stringify(input.formData), updatedAt: new Date() }
+      });
+      return { success: true };
+    }),
+
+  getExpenditureFormData: protectedProcedure
+    .input(z.object({ requestId: z.coerce.number() }))
+    .query(async ({ input }) => {
+      const submission = await prisma.formSubmission.findUnique({ where: { requestId: input.requestId } });
+      if (submission) {
+        const parsed = JSON.parse(submission.formData);
+        const hod = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "head_of_department" }, include: { signature: true } });
+        if (hod?.signature) parsed.managerSignatureUrl = hod.signature.fileUrl;
+        const finance = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "head_of_finance" }, include: { signature: true } });
+        if (finance?.signature) parsed.financeSignatureUrl = finance.signature.fileUrl;
+        const ceo = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "ceo_md" }, include: { signature: true } });
+        if (ceo?.signature) parsed.ceoSignatureUrl = ceo.signature.fileUrl;
+        parsed.requestId = input.requestId;
+        return parsed;
+      }
+      return null;
+    }),
+
+  storeAssetFormData: protectedProcedure
+    .input(z.object({ requestId: z.number(), formData: z.any() }))
+    .mutation(async ({ input }) => {
+      await prisma.formSubmission.upsert({
+        where: { requestId: input.requestId },
+        create: { requestId: input.requestId, formData: JSON.stringify(input.formData) },
+        update: { formData: JSON.stringify(input.formData), updatedAt: new Date() }
+      });
+      return { success: true };
+    }),
+
+  getAssetFormData: protectedProcedure
+    .input(z.object({ requestId: z.coerce.number() }))
+    .query(async ({ input }) => {
+      const submission = await prisma.formSubmission.findUnique({ where: { requestId: input.requestId } });
+      if (submission) {
+        const parsed = JSON.parse(submission.formData);
+        const hod = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "head_of_department" }, include: { signature: true } });
+        if (hod?.signature) parsed.managerSignatureUrl = hod.signature.fileUrl;
+        const finance = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "head_of_finance" }, include: { signature: true } });
+        if (finance?.signature) parsed.financeSignatureUrl = finance.signature.fileUrl;
+        const ceo = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "ceo_md" }, include: { signature: true } });
+        if (ceo?.signature) parsed.ceoSignatureUrl = ceo.signature.fileUrl;
         parsed.requestId = input.requestId;
         return parsed;
       }

@@ -46,6 +46,7 @@ export const appRouter = router({
         dateOfEmployment: z.string().min(1, "Date of employment is required"),
         managerId: z.number().optional(),
         role: z.enum(["user", "admin", "hr", "head_of_department", "head_of_finance", "ceo_md"]).default("user"),
+        gender: z.string().optional(),
         dateOfBirth: z.string().optional(),
         jobDescription: z.string().optional(),
         contractType: z.string().optional(),
@@ -102,6 +103,7 @@ export const appRouter = router({
             staffId: input.staffId || "",
             dateOfEmployment: input.dateOfEmployment,
             managerId: input.managerId,
+            gender: input.gender,
             // @ts-ignore - resolve stale IDE Prisma type cache
             dateOfBirth: input.dateOfBirth,
             jobDescription: input.jobDescription,
@@ -278,6 +280,7 @@ export const appRouter = router({
         dateOfEmployment: z.string().optional(),
         managerId: z.number().nullable().optional(),
         profileImage: z.string().optional(),
+        gender: z.string().optional(),
         dateOfBirth: z.string().optional(),
         jobDescription: z.string().optional(),
         contractType: z.string().optional(),
@@ -306,6 +309,7 @@ export const appRouter = router({
             dateOfEmployment: input.dateOfEmployment,
             managerId: input.managerId,
             profileImage: input.profileImage,
+            gender: input.gender,
             // @ts-ignore - resolve stale IDE Prisma type cache
             dateOfBirth: input.dateOfBirth,
             jobDescription: input.jobDescription,
@@ -505,6 +509,7 @@ export const appRouter = router({
           where: {
             OR: [
               { role: "head_of_department" },
+              { role: "head_of_finance" },
               { additionalRoles: { contains: "head_of_department" } }
             ]
           },
@@ -514,7 +519,8 @@ export const appRouter = router({
 
         const seen = new Set<string>();
         return heads.filter((h: any) => {
-          const deptKey = (h.department?.name || "__NO_DEPT__").trim().toLowerCase();
+          if (!h.department) return true; // Don't dedupe HODs that haven't been assigned a department yet
+          const deptKey = h.department.name.trim().toLowerCase();
           if (seen.has(deptKey)) return false;
           seen.add(deptKey);
           return true;
@@ -554,6 +560,7 @@ export const appRouter = router({
         position: z.string().optional(),
         role: z.enum(["user", "admin", "hr", "head_of_department", "head_of_finance", "ceo_md"]).default("user"),
         dateOfEmployment: z.string().optional(),
+        gender: z.string().optional(),
         dateOfBirth: z.string().optional(),
         jobDescription: z.string().optional(),
         contractType: z.string().optional(),
@@ -589,6 +596,7 @@ export const appRouter = router({
             departmentId: input.departmentId,
             position: input.position || "Staff",
             dateOfEmployment,
+            gender: input.gender,
             // @ts-ignore - resolve stale IDE Prisma type cache
             dateOfBirth: input.dateOfBirth,
             jobDescription: input.jobDescription,
@@ -620,6 +628,7 @@ export const appRouter = router({
         managerId: z.number().optional().nullable(),
         staffId: z.string().optional(),
         position: z.string().optional(),
+        gender: z.string().optional(),
         dateOfBirth: z.string().optional(),
         jobDescription: z.string().optional(),
         contractType: z.string().optional(),
@@ -639,6 +648,7 @@ export const appRouter = router({
             managerId: input.managerId,
             staffId: input.staffId,
             position: input.position,
+            gender: input.gender,
             // @ts-ignore - resolve stale IDE Prisma type cache
             dateOfBirth: input.dateOfBirth,
             jobDescription: input.jobDescription,

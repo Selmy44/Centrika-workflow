@@ -92,6 +92,7 @@ model User {
   name              String?
   email             String?  @db.VarChar(320)
   password          String?
+  gender            String?  @db.VarChar(10)
   loginMethod       String?  @map("login_method") @db.VarChar(64)
   role              Role     @default(user)
   additionalRoles   String?  @map("additional_roles")
