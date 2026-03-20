@@ -515,7 +515,12 @@ export default function LeaveRequestForm({
                   </div>
                 )}
                 <div className="mt-2 w-[240px]">
-                   <SingleDatePicker value={form.signatureDate} onChange={(d: string) => setForm({ ...form, signatureDate: d })} label="Signature Date" />
+                  <p className="text-xs font-semibold text-blue-900 mb-1">Signature Date</p>
+                  <Input 
+                    value={form.signatureDate || new Date().toISOString().split("T")[0]} 
+                    readOnly 
+                    className="h-8 bg-gray-100 text-gray-600 font-medium cursor-not-allowed w-full border-blue-200 text-xs"
+                  />
                 </div>
               </div>
             </Row>

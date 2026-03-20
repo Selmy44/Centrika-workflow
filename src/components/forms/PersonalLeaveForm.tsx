@@ -518,10 +518,10 @@ export default function PersonalLeaveForm({ onSuccess, onClose, onBack }: Props)
               </div>
             </Row>
             <Row label="7.2 Signature Date">
-              <SingleDatePicker
-                value={form.signatureDate}
-                onChange={(date) => setForm({ ...form, signatureDate: date })}
-                label=""
+              <Input
+                value={form.signatureDate || new Date().toISOString().split("T")[0]}
+                readOnly
+                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium w-40"
               />
             </Row>
           </Section>
