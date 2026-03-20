@@ -6,7 +6,7 @@ export const APP_TITLE = "Centrika OnePortal";
 
 // Use the logo placed in `frontend/public/logo/centrikaLogo.png`.
 // Files in `frontend/public` are served at the site root, so reference as `/logo/centrikaLogo.png`.
-export const APP_LOGO = "/logo/centrikaLogo.png";
+export const APP_LOGO = "/logo/logo1.png";
 
 // Generate login URL at runtime so redirect URI reflects the current origin.
 export const getLoginUrl = () => {
