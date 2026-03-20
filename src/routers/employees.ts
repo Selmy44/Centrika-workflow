@@ -89,7 +89,11 @@ export const employeesRouter = router({
             requests: {
               include: {
                 leaveRequest: true,
-              }
+                carRequest: true,
+                expenditureRequest: true,
+                assetRequest: true,
+              },
+              orderBy: { createdAt: "desc" },
             },
           }
         });
@@ -100,6 +104,11 @@ export const employeesRouter = router({
             message: "Employee not found",
           });
         }
+
+        const requests = employee.requests;
+        const approvedCount = requests.filter((r: any) => r.status === "approved").length;
+        const rejectedCount = requests.filter((r: any) => r.status === "rejected").length;
+        const pendingCount = requests.filter((r: any) => r.status === "pending").length;
 
         return {
           id: employee.id,
@@ -125,10 +134,21 @@ export const employeesRouter = router({
           contractStart: employee.contractStart,
           // @ts-ignore - resolve stale IDE Prisma type cache
           contractEnd: employee.contractEnd,
-          leaveHistory: employee.requests
+          leaveHistory: requests
             .filter((r: any) => r.type === "leave" && r.leaveRequest)
             .map((r: any) => r.leaveRequest),
-          requestsCount: employee.requests.length,
+          requestsCount: requests.length,
+          approvedCount,
+          rejectedCount,
+          pendingCount,
+          allRequests: requests.map((r: any) => ({
+            id: r.id,
+            type: r.type,
+            status: r.status,
+            createdAt: r.createdAt,
+            updatedAt: r.updatedAt,
+            details: r.leaveRequest || r.carRequest || r.expenditureRequest || r.assetRequest,
+          })),
         };
       } catch (error) {
         console.error("[employees.getDetail] Error fetching employee details:", error);
