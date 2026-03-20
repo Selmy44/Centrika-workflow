@@ -12,7 +12,7 @@ export function NoticeBoard() {
   const canPostAnnouncement = user && ["admin", "hr", "head_of_department", "ceo_md"].includes(user.role);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 m-4">
       <div className="flex items-center justify-between px-2">
         <div>
           <h2 className="text-sm font-bold text-[#3b6dae] dark:text-blue-100 uppercase tracking-widest opacity-80">
@@ -28,7 +28,7 @@ export function NoticeBoard() {
         </div>
       </div>
 
-      <Card className="bg-white/50 dark:bg-slate-900/40 border-border/50 backdrop-blur-sm rounded-3xl overflow-hidden shadow-sm">
+      <Card className="bg-white/50 dark:bg-slate-900/60 border-border/40 dark:border-white/10 backdrop-blur-sm rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-500">
         <CardContent className="p-0">
           <div className="max-h-100 overflow-y-auto custom-scrollbar">
             {isLoading ? (

@@ -27,11 +27,11 @@ export const PendingApprovalsWidget = () => {
   }
 
   return (
-    <Card className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border-border/50 rounded-2xl overflow-hidden shadow-sm relative group">
+    <Card className="bg-white/60 dark:bg-slate-800/40 backdrop-blur-xl border-border/50 dark:border-white/10 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)] transition-all duration-500 relative group">
       {/* Decorative gradient that glows subtly on hover */}
       <div className="absolute inset-0 bg-linear-to-br from-[#3b6dae]/5 to-[#c79d2d]/5 opacity-50 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl pointer-events-none" />
       
-      <CardHeader className="bg-[#3b6dae]/5 border-b border-border/30 py-3">
+      <CardHeader className="bg-[#3b6dae]/5 dark:bg-white/5 border-b border-border/30 dark:border-white/10 py-3">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-[#3b6dae] text-sm font-black uppercase tracking-widest">
             <span className="relative flex h-2 w-2">
@@ -50,7 +50,7 @@ export const PendingApprovalsWidget = () => {
         <div className="space-y-2 max-h-55 overflow-y-auto pr-1 custom-scrollbar">
           {approvals.slice(0, 4).map((request: any) => (
             <Link key={request.id} href={`/requests/${request.id}`}>
-              <div className="group/item flex items-center justify-between p-2.5 bg-white dark:bg-slate-800 border border-border/50 hover:border-[#3b6dae]/30 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer relative overflow-hidden">
+              <div className="group/item flex items-center justify-between p-2.5 bg-white dark:bg-slate-900/40 border border-border/50 dark:border-white/10 hover:border-[#3b6dae]/30 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer relative overflow-hidden">
                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#c79d2d] opacity-0 group-hover/item:opacity-100 transition-opacity duration-300" />
                 
                 <div className="flex items-center gap-3">

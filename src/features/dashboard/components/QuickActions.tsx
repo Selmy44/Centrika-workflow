@@ -36,14 +36,14 @@ export const QuickActions = () => {
         <button
           key={action.type}
           onClick={() => handleCreate(action.type as any)}
-          className="group relative flex flex-col items-center justify-center p-4 bg-white/60 dark:bg-slate-900/40 border border-border/40 hover:border-[#3b6dae]/30 rounded-[1.5rem] transition-all duration-500 hover:-translate-y-1 hover:shadow-xl hover:shadow-[#3b6dae]/5 overflow-hidden"
+          className="group relative flex flex-col items-center justify-center p-2 bg-white/60 dark:bg-slate-800/80 border border-border/40 dark:border-white/20 rounded-2xl transition-all duration-500 hover:-translate-y-1 hover:shadow-xl hover:shadow-[#3b6dae]/5 overflow-hidden shadow-sm"
         >
           {/* Subtle Ambient Glow */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#3b6dae]/5 to-[#c79d2d]/5 opacity-50 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl pointer-events-none" />
           
-          <div className="relative z-10 flex flex-col items-center text-center space-y-2.5">
-            <div className={`p-3 rounded-2xl transition-all duration-500 shadow-inner group-hover:scale-110 group-hover:rotate-6 ${getIconColor(action.type)}`}>
-              <RequestIcon type={action.type} size={18} className={action.type === 'car' ? 'text-white' : ''} />
+          <div className="relative z-10 flex flex-col items-center text-center space-y-1.5">
+            <div className={`p-1.5 rounded-xl transition-all duration-500 shadow-inner group-hover:scale-110 group-hover:rotate-6 ${getIconColor(action.type)}`}>
+              <RequestIcon type={action.type} size={14} className={action.type === 'car' ? 'text-white' : ''} />
             </div>
             
             <div className="space-y-0.5">
