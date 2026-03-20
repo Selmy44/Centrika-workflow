@@ -545,8 +545,8 @@ export const appRouter = router({
     }),
 
     listAll: protectedProcedure.query(async ({ ctx }) => {
-      if (ctx.user.role !== "admin") {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Only admins can view all users" });
+      if (ctx.user.role !== "admin" && ctx.user.role !== "hr") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Only admins and HR can view all users" });
       }
       return prisma.user.findMany({
         include: { department: true, manager: true } as any
@@ -637,8 +637,8 @@ export const appRouter = router({
         contractEnd: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== "admin") {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Only admins can update users" });
+        if (ctx.user.role !== "admin" && ctx.user.role !== "hr") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Only admins and HR can update users" });
         }
 
         await prisma.user.update({
