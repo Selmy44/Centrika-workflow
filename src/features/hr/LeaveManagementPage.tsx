@@ -1,5 +1,5 @@
 import { trpc } from "@/lib/trpc";
-import DashboardLayout from "@/components/layout/DashboardLayout";
+import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";

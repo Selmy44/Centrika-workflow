@@ -1,5 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
-import DashboardLayout from "@/components/layout/DashboardLayout";
+import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -73,7 +73,6 @@ export default function AdminUsers() {
   const [editContractEnd, setEditContractEnd] = useState("");
   const [editPosition, setEditPosition] = useState("");
   const [editGender, setEditGender] = useState("");
-  const [createGender, setCreateGender] = useState("");
   const [profileImage, setProfileImage] = useState("");
   const [editProfileImage, setEditProfileImage] = useState("");
 

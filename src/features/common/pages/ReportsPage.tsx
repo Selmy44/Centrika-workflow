@@ -1,5 +1,5 @@
 import { trpc } from "@/lib/trpc";
-import DashboardLayout from "@/components/layout/DashboardLayout";
+import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { BarChart, LineChart, PieChart as PieChartIcon, Download, Calendar, TrendingUp, Users, DollarSign, ShieldCheck, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";

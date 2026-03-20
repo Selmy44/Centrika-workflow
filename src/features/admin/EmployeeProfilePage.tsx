@@ -1,6 +1,6 @@
 import { trpc } from "@/lib/trpc";
 import { useRoute } from "wouter";
-import DashboardLayout from "@/components/layout/DashboardLayout";
+import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -171,7 +171,7 @@ const EmployeeProfilePage = () => {
                     </CardHeader>
                     <CardContent className="space-y-6 py-6">
                       <div className="grid grid-cols-2 gap-4">
-                        <InfoItem label="Full Name" value={employee.name} />
+                        <InfoItem label="Full Name" value={employee.name || "N/A"} />
                         <InfoItem label="Date of Birth" value={employee.dateOfBirth || "N/A"} />
                         <InfoItem label="Email" value={employee.email || "N/A"} />
                         <InfoItem label="Phone" value={employee.phoneNumber || "N/A"} />
@@ -238,7 +238,7 @@ const EmployeeProfilePage = () => {
                               <div>
                                 <p className="text-sm font-bold capitalize text-slate-900 dark:text-white">{request.details?.leaveType || "Leave"} leave</p>
                                 <p className="text-xs text-slate-500">
-                                  {request.details?.startDate} to {request.details?.endDate} · {request.details?.leaveDaysRequested || 0} day(s)
+                                  {request.details?.startDate} to {request.details?.endDate} ï¿½ {request.details?.leaveDaysRequested || 0} day(s)
                                 </p>
                               </div>
                               <Badge className={request.status === "approved" ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600" : request.status === "rejected" ? "border-rose-500/20 bg-rose-500/10 text-rose-600" : "border-amber-500/20 bg-amber-500/10 text-amber-600"}>

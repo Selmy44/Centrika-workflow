@@ -10,7 +10,7 @@ export const ProfileSummary = () => {
   if (!user) return null;
 
   return (
-    <Card className="bg-[#3b6dae] text-white border-none rounded-3xl overflow-hidden shadow-2xl relative h-87.5 group transition-all duration-700">
+    <Card className="bg-[#3b6dae] text-white border-none rounded-[1.5rem] overflow-hidden shadow-2xl relative h-[350px] group transition-all duration-700">
       {/* Decorative Brand Elements */}
       <div className="absolute top-0 right-0 w-10 h-10 bg-white/5 rounded-full -mr-20 -mt-20 blur-1xl" />
 
@@ -74,7 +74,7 @@ export const ProfileSummary = () => {
       </CardContent>
 
       {/* Gloss Effect */}
-      <div className="absolute inset-0 bg-linear-to-tr from-transparent via-white/5 to-white/10 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10 pointer-events-none" />
     </Card>
   );
 };

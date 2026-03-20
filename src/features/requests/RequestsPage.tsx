@@ -1,5 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
-import DashboardLayout from "@/components/layout/DashboardLayout";
+import DashboardLayout from "@/components/DashboardLayout";
 import { CreateRequestDialog } from "@/components/CreateRequestDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

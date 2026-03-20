@@ -115,11 +115,11 @@ export default function OtpLoginPage() {
     <div className="min-h-screen bg-[#f8fafc] relative overflow-hidden flex items-center justify-center p-4">
       {/* Background Mesh Gradients */}
       <div className="absolute top-0 -left-4 w-96 h-96 bg-[#3b6dae]/10 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" />
-      <div className="absolute top-0 -right-4 w-96 h-96 bg-[#c79d2d]/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse delay-1000" />
-      <div className="absolute -bottom-8 left-20 w-96 h-96 bg-[#3b6dae]/10 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse delay-2000" />
+      <div className="absolute top-0 -right-4 w-96 h-96 bg-[#c79d2d]/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" style={{ animationDelay: '1s' }} />
+      <div className="absolute -bottom-8 left-20 w-96 h-96 bg-[#3b6dae]/10 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" style={{ animationDelay: '2s' }} />
       <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px]" />
 
-      <div className="w-full max-w-112 relative z-10">
+      <div className="w-full max-w-md relative z-10">
         <Card className="bg-white/80 border-[#3b6dae]/10 backdrop-blur-xl shadow-2xl shadow-[#3b6dae]/10 overflow-hidden">
           {/* Subtle top accent line */}
           <div className="h-1 w-full bg-linear-to-r from-[#3b6dae] to-[#c79d2d]" />
@@ -133,7 +133,7 @@ export default function OtpLoginPage() {
                 {step === "email" ? "Login with OTP" : "Email verification with OTP"}
               </CardTitle>
             </div>
-            <CardDescription className="text-[#3b6dae]/60 font-medium text-sm leading-relaxed max-w-9/10">
+            <CardDescription className="text-[#3b6dae]/60 font-medium text-sm leading-relaxed max-w-[90%]">
               {step === "email" ? (
                 "Enter your company email to receive a one-time login code."
               ) : (
@@ -281,7 +281,6 @@ export default function OtpLoginPage() {
                             setTimeLeft(0);
                           }}
                           className="font-bold text-[#3b6dae] hover:text-[#2d5385] hover:underline transition-colors"
-                          aria-label="Resend verification code"
                         >
                           Resend the Code
                         </button>
