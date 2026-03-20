@@ -13,6 +13,7 @@ import { suggestionsRouter } from "./routers/suggestions";
 import { policiesRouter } from "./routers/policies";
 import { analyticsRouter } from "./routers/analytics";
 import { hrRouter } from "./routers/hr";
+import { financeRouter } from "./routers/finance";
 import { upsertUser, prisma } from "./db";
 import { SignJWT } from "jose";
 import { ENV } from "./core/env";
@@ -755,6 +756,7 @@ export const appRouter = router({
   policies: policiesRouter,
   analytics: analyticsRouter,
   hr: hrRouter,
+  finance: financeRouter,
 });
 
 export type AppRouter = typeof appRouter;

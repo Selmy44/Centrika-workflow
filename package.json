@@ -5,12 +5,15 @@
   "license": "MIT",
   "scripts": {
     "dev": "cross-env NODE_ENV=development tsx watch src/index.ts",
-    "build": "esbuild src/index.ts --bundle --platform=node --external:*.css --outdir=dist --format=esm",
+    "build": "esbuild src/index.ts --bundle --platform=node --packages=external --outdir=dist --format=esm",
     "start": "cross-env NODE_ENV=production node dist/index.js",
     "check": "tsc --noEmit",
     "seed": "tsx scripts/seedHeads.ts",
     "seed:users": "tsx scripts/seedUsers.ts",
     "seed:departments": "tsx scripts/seedDepartments.ts"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1000.0",

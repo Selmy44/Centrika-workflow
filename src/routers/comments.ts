@@ -11,7 +11,30 @@ export const commentsRouter = router({
       })
     )
     .query(async ({ ctx, input }) => {
-      // Basic permission check could be added here to ensure the user can see the request
+      const request = await prisma.request.findUnique({
+        where: { id: input.requestId },
+        select: { userId: true, approvals: { select: { approverId: true } } },
+      });
+
+      if (!request) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Request not found",
+        });
+      }
+
+      // Permission check: requester, approver, admin, or hr
+      const isOwner = request.userId === ctx.user.id;
+      const isApprover = request.approvals.some(a => a.approverId === ctx.user.id);
+      const isManagement = ["admin", "hr"].includes(ctx.user.role);
+
+      if (!isOwner && !isApprover && !isManagement) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have permission to view comments for this request",
+        });
+      }
+
       return prisma.requestComment.findMany({
         where: {
           requestId: input.requestId,

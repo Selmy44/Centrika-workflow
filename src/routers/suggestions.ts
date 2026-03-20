@@ -46,4 +46,21 @@ export const suggestionsRouter = router({
       },
     });
   }),
+
+  delete: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      // Only Admin or HR can delete suggestions
+      const allowedRoles = ["admin", "hr"];
+      if (!allowedRoles.includes(ctx.user.role)) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have permission to delete suggestions",
+        });
+      }
+
+      return prisma.suggestion.delete({
+        where: { id: input.id },
+      });
+    }),
 });

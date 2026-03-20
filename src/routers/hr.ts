@@ -115,4 +115,109 @@ export const hrRouter = router({
         });
       }
     }),
+
+  listAllDocuments: protectedProcedure
+    .input(z.object({
+      status: z.string().optional(),
+      category: z.string().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== "hr" && ctx.user.role !== "admin") {
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
+
+      try {
+        // @ts-ignore
+        return await prisma.employeeDocument.findMany({
+          where: {
+            ...(input.status ? { status: input.status } : {}),
+            ...(input.category ? { category: input.category } : {}),
+          },
+          include: {
+            user: {
+              select: { id: true, name: true, department: { select: { name: true } } }
+            },
+            verifier: {
+              select: { id: true, name: true }
+            }
+          },
+          orderBy: { createdAt: "desc" },
+        });
+      } catch (error) {
+        console.error("[hr.listAllDocuments] Error:", error);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      }
+    }),
+
+  getHRDashboardStats: protectedProcedure.query(async ({ ctx }) => {
+    if (ctx.user.role !== "hr" && ctx.user.role !== "admin") {
+      throw new TRPCError({ code: "FORBIDDEN" });
+    }
+
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      
+      const [totalEmployees, onLeaveToday, pendingDocuments, recentActivities] = await Promise.all([
+        prisma.user.count({ where: { status: "Active" } }),
+        prisma.leaveRequest.count({
+          where: {
+            startDate: { lte: today },
+            endDate: { gte: today },
+            request: { status: "approved" }
+          }
+        }),
+        // @ts-ignore
+        prisma.employeeDocument.count({ where: { status: "pending" } }),
+        prisma.request.findMany({
+          take: 5,
+          orderBy: { updatedAt: "desc" },
+          include: { user: true }
+        })
+      ]);
+
+      const departmentDistribution = await prisma.user.groupBy({
+        by: ["departmentId"],
+        _count: { id: true },
+        where: { status: "Active" }
+      });
+
+      return {
+        totalEmployees,
+        onLeaveToday,
+        pendingDocuments,
+        recentActivities,
+        departmentDistribution,
+      };
+    } catch (error) {
+      console.error("[hr.getHRDashboardStats] Error:", error);
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+    }
+  }),
+
+  getLeaveUsageReport: protectedProcedure.query(async ({ ctx }) => {
+    if (ctx.user.role !== "hr" && ctx.user.role !== "admin") {
+      throw new TRPCError({ code: "FORBIDDEN" });
+    }
+
+    const usage = await prisma.leaveRequest.groupBy({
+      by: ["leaveType"],
+      _count: { id: true },
+      where: { request: { status: "approved" } }
+    });
+
+    return usage;
+  }),
+
+  getHeadcountTrends: protectedProcedure.query(async ({ ctx }) => {
+    if (ctx.user.role !== "hr" && ctx.user.role !== "admin") {
+      throw new TRPCError({ code: "FORBIDDEN" });
+    }
+
+    // Simplified headcount trend for now
+    return [
+      { month: "Jan", count: 45 },
+      { month: "Feb", count: 48 },
+      { month: "Mar", count: 52 },
+    ];
+  }),
 });

@@ -9,7 +9,7 @@ export const announcementsRouter = router({
       where: {
         OR: [
           { departmentId: null },
-          { departmentId: typeof ctx.user.department === 'object' ? ctx.user.department?.id : undefined }
+          { departmentId: ctx.user.department?.id }
         ]
       },
       include: {
@@ -51,19 +51,29 @@ export const announcementsRouter = router({
         });
       }
 
-      // Admins and HR can post globally (departmentId = null)
-      // HODs must post to their own department
+      // Permissions logic:
+      // HR, Admin, CEO/MD can post globally (departmentId = null)
+      // Head of Department (HOD) can ONLY post to their own department
       let targetDepartmentId = input.departmentId;
 
-      if (ctx.user.role === "head_of_department" && !["admin", "hr", "ceo_md"].includes(ctx.user.role)) {
-         targetDepartmentId = typeof ctx.user.department === 'object' ? ctx.user.department?.id : undefined;
-         
-         if (!targetDepartmentId) {
-             throw new TRPCError({
-                 code: "BAD_REQUEST",
-                 message: "You are not assigned to a department.",
-             });
-         }
+      if (ctx.user.role === "head_of_department") {
+        const deptId = ctx.user.department?.id;
+        if (!deptId) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "You must be assigned to a department to post a team announcement.",
+          });
+        }
+        targetDepartmentId = deptId;
+      } else if (["hr", "admin", "ceo_md"].includes(ctx.user.role)) {
+        // These roles can post to a specific department if provided, else it's global (null)
+        targetDepartmentId = input.departmentId || null;
+      } else {
+        // Fallback for unauthorized roles (though protectedProcedure and allowedRoles above should catch this)
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have permission to post announcements",
+        });
       }
 
       return prisma.announcement.create({
@@ -73,6 +83,78 @@ export const announcementsRouter = router({
           departmentId: targetDepartmentId || null,
           authorId: ctx.user.id,
         },
+      });
+    }),
+
+  update: protectedProcedure
+    .input(
+      z.object({
+        id: z.number(),
+        title: z.string().min(1).optional(),
+        content: z.string().min(1).optional(),
+        departmentId: z.number().nullable().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const announcement = await prisma.announcement.findUnique({
+        where: { id: input.id },
+      });
+
+      if (!announcement) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Announcement not found",
+        });
+      }
+
+      // Permissions: Must be author or admin/hr/ceo_md
+      const isAuthor = announcement.authorId === ctx.user.id;
+      const isAdminFlag = ["admin", "hr", "ceo_md"].includes(ctx.user.role);
+
+      if (!isAuthor && !isAdminFlag) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have permission to update this announcement",
+        });
+      }
+
+      return prisma.announcement.update({
+        where: { id: input.id },
+        data: {
+          title: input.title,
+          content: input.content,
+          departmentId: input.departmentId,
+        },
+      });
+    }),
+
+  delete: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const announcement = await prisma.announcement.findUnique({
+        where: { id: input.id },
+      });
+
+      if (!announcement) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Announcement not found",
+        });
+      }
+
+      // Permissions: Must be author or admin/hr/ceo_md
+      const isAuthor = announcement.authorId === ctx.user.id;
+      const isAdminFlag = ["admin", "hr", "ceo_md"].includes(ctx.user.role);
+
+      if (!isAuthor && !isAdminFlag) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have permission to delete this announcement",
+        });
+      }
+
+      return prisma.announcement.delete({
+        where: { id: input.id },
       });
     }),
 });

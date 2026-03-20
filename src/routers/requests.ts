@@ -1028,4 +1028,45 @@ export const requestsRouter = router({
       teamMembers,
     };
   }),
+
+  listAllLeaveRequests: protectedProcedure
+    .input(z.object({
+      status: z.string().optional(),
+      leaveType: z.string().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== "hr" && ctx.user.role !== "admin" && ctx.user.role !== "ceo_md") {
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
+
+      return prisma.request.findMany({
+        where: {
+          type: "leave",
+          ...(input.status ? { status: input.status as any } : {}),
+          leaveRequest: {
+            ...(input.leaveType ? { leaveType: input.leaveType as any } : {}),
+          }
+        },
+        include: {
+          user: { include: { department: true } },
+          leaveRequest: true,
+          approvals: { include: { approver: true } }
+        },
+        orderBy: { createdAt: "desc" }
+      });
+    }),
+
+  getAllLeaveBalances: protectedProcedure.query(async ({ ctx }) => {
+    if (ctx.user.role !== "hr" && ctx.user.role !== "admin" && ctx.user.role !== "ceo_md") {
+      throw new TRPCError({ code: "FORBIDDEN" });
+    }
+
+    return prisma.leaveBalance.findMany({
+      where: { year: new Date().getFullYear() },
+      include: {
+        user: { include: { department: true } }
+      },
+      orderBy: { user: { name: "asc" } }
+    });
+  }),
 });
