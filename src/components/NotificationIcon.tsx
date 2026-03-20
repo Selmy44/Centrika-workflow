@@ -88,7 +88,7 @@ export default function NotificationIcon() {
 
       {/* Notification Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 top-12 w-96 z-50 animate-in fade-in slide-in-from-top-2">
+        <div className="absolute right-0 top-12 w-96 z-[9999] animate-in fade-in slide-in-from-top-2">
           <Card className="bg-card border border-border shadow-2xl rounded-lg overflow-hidden">
             {/* Header */}
             <div className="px-4 py-3 border-b border-border flex items-center justify-between bg-card">
@@ -177,7 +177,7 @@ export default function NotificationIcon() {
       )}
 
       {/* Click outside to close */}
-      {isOpen && <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />}
+      {isOpen && <div className="fixed inset-0 z-[9998]" onClick={() => setIsOpen(false)} />}
     </div>
   );
 }

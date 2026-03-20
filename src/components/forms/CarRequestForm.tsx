@@ -45,6 +45,9 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
     dateOfEmployment: "",
     staffId: "",
     position: "",
+    employeeSignatureUrl: "",
+    signaturePreview: "",
+    signatureFile: null as File | null,
   });
 
   const { data: drivers = [] } = trpc.requests.getAvailableDrivers.useQuery(undefined, {
@@ -58,6 +61,7 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
 
   const createCar = trpc.requests.createCarRequest.useMutation();
   const submitRequest = trpc.requests.submitRequest.useMutation();
+  const storeFormData = trpc.requests.storeCarFormData.useMutation();
 
   useEffect(() => {
     if (user && autoFillData) {
@@ -94,6 +98,10 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
       toast.error("Passengers must be between 1 and 10");
       return false;
     }
+    if (!form.employeeSignatureUrl) {
+      toast.error("Please upload your signature");
+      return false;
+    }
     return true;
   };
 
@@ -116,6 +124,14 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
       if (submit) {
         // Car requests auto-route to HR — no initialApproverId needed
         await submitRequest.mutateAsync({ id: request.id });
+        await storeFormData.mutateAsync({
+          requestId: request.id,
+          formData: {
+            ...form,
+            requestDetails: request,
+            signatureFile: undefined, // Non-serializable
+          }
+        });
       }
 
       toast.success(
@@ -134,16 +150,7 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
   return (
     <div className="w-full bg-white text-black px-4 leave-form-container relative">
 
-      {/* CLOSE/BACK BUTTON */}
-      <button
-        onClick={() => onBack ? onBack() : (onClose ? onClose() : onSuccess())}
-        className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-lg transition"
-        title="Close form"
-      >
-        <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
+
 
       <div>
         {/* ===== HEADER WITH LOGO AND CONTACT INFO ===== */}
@@ -229,8 +236,8 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
         </div>
 
         {/* ===== REQUEST DETAILS ===== */}
-        <div className="border-t border-blue-400">
-          <div className="bg-blue-600 text-white font-bold px-4 py-2 text-sm">REQUEST DETAILS</div>
+        <div className="border-t border-[#3b6dae]">
+          <div className="bg-[#3b6dae] text-white font-bold px-4 py-2 text-sm">REQUEST DETAILS</div>
 
           {/* 1. EMPLOYEE INFORMATION */}
           <Section title="1. EMPLOYEE INFORMATION">
@@ -364,6 +371,46 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
               </Row>
             )}
           </Section>
+
+          {/* 5. EMPLOYEE SIGNATURE */}
+          <Section title="5. EMPLOYEE SIGNATURE">
+            <Row label="5.1 Your Signature">
+              <div className="space-y-3">
+                <input
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (ev) => {
+                        setForm((prev) => ({ 
+                          ...prev, 
+                          signatureFile: file, 
+                          signaturePreview: URL.createObjectURL(file),
+                          employeeSignatureUrl: ev.target?.result as string 
+                        }));
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  className="text-xs"
+                />
+                {form.employeeSignatureUrl && <img src={form.employeeSignatureUrl} alt="sig" className="h-10 object-contain border border-blue-300 p-1" />}
+              </div>
+            </Row>
+          </Section>
+
+          {/* 6. APPROVAL WORKFLOW */}
+          <Section title="6. APPROVAL WORKFLOW">
+            <Row label="6.1 HR Approval">
+              <Input
+                value="Doreen MBABAZI"
+                className="w-full h-8 border-blue-300 bg-gray-100 text-black font-medium cursor-not-allowed max-w-[400px] mt-1 mb-1"
+                disabled
+              />
+            </Row>
+          </Section>
         </div>
 
         {/* ===== ACTIONS ===== */}
@@ -421,28 +468,24 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
 
 /* ========= Helper Components ========= */
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children, className = "" }: { title: string, children: React.ReactNode, className?: string }) {
   return (
-    <div className="border-t border-blue-400">
-      <div className="bg-blue-500 text-white font-bold px-4 py-2 text-sm">{title}</div>
+    <div className={`border-t border-blue-400 ${className}`}>
+      <div className="bg-[#3b6dae] text-white font-bold px-4 py-2 text-sm">{title}</div>
       {children}
     </div>
   );
 }
 
-function Row({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function Row({ label, children, colSpan = false }: { label: React.ReactNode, children: React.ReactNode, colSpan?: boolean }) {
   return (
-    <div className="grid grid-cols-[220px_1fr] border-b border-blue-400">
-      <div className="px-3 py-2 font-medium border-r border-blue-400 bg-blue-100 text-blue-700 text-xs">
-        {label}
-      </div>
-      <div className="px-3 py-1">{children}</div>
+    <div className={`grid ${colSpan ? 'grid-cols-1' : 'grid-cols-[220px_1fr]'} border-b border-blue-400`}>
+      {!colSpan && (
+        <div className="px-3 py-2 font-medium border-r border-blue-400 bg-blue-100 text-[#3b6dae] text-xs flex items-center">
+          {label}
+        </div>
+      )}
+      <div className="px-3 py-1 flex items-center">{children}</div>
     </div>
   );
 }

@@ -508,12 +508,26 @@ export default function Approvals() {
                                   reader.readAsDataURL(data.signatureFile);
                                 });
                               }
+                              const level = selectedRequest?.currentApprovalLevel;
+                              const signatureUpdate: any = {};
+                              if (signatureDataUrl) {
+                                // Default fallback used by legacy leave forms
+                                signatureUpdate.approverSignatureUrl = signatureDataUrl;
+                                // Dynamically assign based on approval level
+                                if (level === "head_of_department") {
+                                  signatureUpdate.managerSignatureUrl = signatureDataUrl;
+                                } else if (level === "hr") {
+                                  signatureUpdate.hrSignatureUrl = signatureDataUrl;
+                                } else if (level === "head_of_finance") {
+                                  signatureUpdate.financeSignatureUrl = signatureDataUrl;
+                                } else if (level === "ceo_md" || level === "md") {
+                                  signatureUpdate.ceoSignatureUrl = signatureDataUrl;
+                                }
+                              }
+
                               const updatedFormData = {
                                 ...currentFormData,
-                                ...(signatureDataUrl && {
-                                  approverSignatureUrl: signatureDataUrl,
-                                  managerSignatureUrl: signatureDataUrl,
-                                }),
+                                ...signatureUpdate,
                                 ...(data.comments && { approvalComments: data.comments }),
                               };
                               if (signatureDataUrl || data.comments) {

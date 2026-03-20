@@ -63,6 +63,7 @@ export default function AdminUsers() {
   const [createContractType, setCreateContractType] = useState("");
   const [createContractStart, setCreateContractStart] = useState("");
   const [createContractEnd, setCreateContractEnd] = useState("");
+  const [createGender, setCreateGender] = useState("");
   
   const [editDateOfBirth, setEditDateOfBirth] = useState("");
   const [editJobDescription, setEditJobDescription] = useState("");
@@ -70,8 +71,9 @@ export default function AdminUsers() {
   const [editContractStart, setEditContractStart] = useState("");
   const [editContractEnd, setEditContractEnd] = useState("");
   const [editPosition, setEditPosition] = useState("");
+  const [editGender, setEditGender] = useState("");
 
-  const [validationErrors, setValidationErrors] = useState<{name?: string, email?: string, department?: string}>({});
+  const [validationErrors, setValidationErrors] = useState<{name?: string, email?: string, department?: string, gender?: string}>({});
 
   const { data: users, isLoading, refetch } = (trpc as any).users.listAll.useQuery(undefined, {
     enabled: isAuthenticated && user?.role === "admin",
@@ -154,6 +156,7 @@ export default function AdminUsers() {
       setCreateContractType("");
       setCreateContractStart("");
       setCreateContractEnd("");
+      setCreateGender("");
       setValidationErrors({});
       refetch();
     },
@@ -202,6 +205,7 @@ export default function AdminUsers() {
     setEditContractType(userData.contractType || "");
     setEditContractStart(userData.contractStart || "");
     setEditContractEnd(userData.contractEnd || "");
+    setEditGender(userData.gender || "");
     setShowDialog(true);
   };
 
@@ -221,6 +225,7 @@ export default function AdminUsers() {
         contractType: editContractType || undefined,
         contractStart: editContractStart || undefined,
         contractEnd: editContractEnd || undefined,
+        gender: editGender || undefined,
       });
     } catch (error) {
       console.error(error);
@@ -435,6 +440,19 @@ export default function AdminUsers() {
                     <SelectItem value="head_of_finance">Head of Finance</SelectItem>
                     <SelectItem value="ceo_md">CEO/MD</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="editGender">Gender</Label>
+                <Select value={editGender} onValueChange={setEditGender}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -756,6 +774,23 @@ export default function AdminUsers() {
               </Select>
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="createGender" className={validationErrors.gender ? "text-red-500" : ""}>Gender <span className="text-red-500">*</span></Label>
+              <Select value={createGender} onValueChange={(val) => {
+                setCreateGender(val);
+                if (validationErrors.gender) setValidationErrors({...validationErrors, gender: undefined});
+              }}>
+                <SelectTrigger className={validationErrors.gender ? "border-red-500 focus:ring-red-500" : ""}>
+                  <SelectValue placeholder="Select gender" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="male">Male</SelectItem>
+                  <SelectItem value="female">Female</SelectItem>
+                </SelectContent>
+              </Select>
+              {validationErrors.gender && <p className="text-xs text-red-500">{validationErrors.gender}</p>}
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Date of Birth</Label>
@@ -821,11 +856,12 @@ export default function AdminUsers() {
             </Button>
             <Button
               onClick={async () => {
-                const errors: {name?: string, email?: string, department?: string} = {};
+                const errors: {name?: string, email?: string, department?: string, gender?: string} = {};
                 if (!createName.trim()) errors.name = "Full name is required";
                 if (!createEmail.trim()) errors.email = "Email address is required";
                 else if (!/\S+@\S+\.\S+/.test(createEmail)) errors.email = "Invalid email format";
                 if (!createDepartmentId) errors.department = "Department must be selected";
+                if (!createGender) errors.gender = "Gender must be selected";
 
                 if (Object.keys(errors).length > 0) {
                   setValidationErrors(errors);
@@ -845,6 +881,7 @@ export default function AdminUsers() {
                     contractType: createContractType,
                     contractStart: createContractStart,
                     contractEnd: createContractEnd,
+                    gender: createGender,
                   });
                 } catch (error: any) {
                   console.error("Mutation failed:", error);

@@ -76,8 +76,6 @@ export function CreateRequestDialog({
           <DialogContent
             className="!w-[70vw] !max-w-[900px] !max-h-[90vh] !overflow-y-auto !p-0 !flex !flex-col !gap-0"
             style={{ width: "70vw", maxWidth: "900px" }}
-
-            showCloseButton={false}
           >
             <DialogHeader className="sr-only">
               <DialogTitle>Create Leave Request</DialogTitle>

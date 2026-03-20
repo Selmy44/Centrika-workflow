@@ -48,6 +48,7 @@ export default function Settings() {
   const [editStaffId, setEditStaffId] = useState(user?.staffId || "");
   const [editDateOfEmployment, setEditDateOfEmployment] = useState(user?.dateOfEmployment || "");
   const [editManagerId, setEditManagerId] = useState(user?.managerId?.toString() || "");
+  const [editGender, setEditGender] = useState((user as any)?.gender || "");
 
   // --- Password State ---
   const [currentPassword, setCurrentPassword] = useState("");
@@ -80,6 +81,7 @@ export default function Settings() {
         dateOfEmployment: editDateOfEmployment,
         managerId: editManagerId ? parseInt(editManagerId) : null,
         profileImage: profileImage,
+        gender: editGender || undefined,
       });
       await utils.auth.me.invalidate();
       toast.success("Profile updated successfully!");
@@ -210,6 +212,39 @@ export default function Settings() {
                           <SelectContent className="rounded-xl border-[#3b6dae]/10 shadow-2xl">
                             {departments?.map((d: any) => (
                               <SelectItem key={d.id} value={d.id.toString()} className="font-bold text-[11px] py-2 px-3 focus:bg-[#3b6dae] focus:text-white rounded-lg mx-1.5 my-0.5">{d.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-[9px] font-black text-[#3b6dae]/40 uppercase tracking-widest pl-0.5">Staff ID</Label>
+                        <Input value={editStaffId} onChange={(e) => setEditStaffId(e.target.value)} className="h-9 bg-white/60 border-[#3b6dae]/10 focus:border-[#3b6dae]/30 rounded-lg font-bold text-xs shadow-none transition-all focus:bg-white" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-[9px] font-black text-[#3b6dae]/40 uppercase tracking-widest pl-0.5">Gender</Label>
+                        <Select onValueChange={setEditGender} value={editGender}>
+                          <SelectTrigger className="h-9 bg-white/60 border-[#3b6dae]/10 focus:ring-0 rounded-lg font-bold text-xs shadow-none">
+                            <SelectValue placeholder="Select Gender" />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border-[#3b6dae]/10 shadow-2xl">
+                            <SelectItem value="male" className="font-bold text-[11px] py-2 px-3 focus:bg-[#3b6dae] focus:text-white rounded-lg mx-1.5 my-0.5">Male</SelectItem>
+                            <SelectItem value="female" className="font-bold text-[11px] py-2 px-3 focus:bg-[#3b6dae] focus:text-white rounded-lg mx-1.5 my-0.5">Female</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-[9px] font-black text-[#3b6dae]/40 uppercase tracking-widest pl-0.5">Date of Employment</Label>
+                        <Input type="date" value={editDateOfEmployment} onChange={(e) => setEditDateOfEmployment(e.target.value)} className="h-9 bg-white/60 border-[#3b6dae]/10 focus:border-[#3b6dae]/30 rounded-lg font-bold text-xs shadow-none transition-all focus:bg-white" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-[9px] font-black text-[#3b6dae]/40 uppercase tracking-widest pl-0.5">Line Manager / HOD</Label>
+                        <Select onValueChange={setEditManagerId} value={editManagerId?.toString()}>
+                          <SelectTrigger className="h-9 bg-white/60 border-[#3b6dae]/10 focus:ring-0 rounded-lg font-bold text-xs shadow-none">
+                            <SelectValue placeholder="Select Manager" />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border-[#3b6dae]/10 shadow-2xl">
+                            {managers?.map((m: any) => (
+                              <SelectItem key={m.id} value={m.id.toString()} className="font-bold text-[11px] py-2 px-3 focus:bg-[#3b6dae] focus:text-white rounded-lg mx-1.5 my-0.5">{m.name}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>

@@ -47,6 +47,11 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
         { enabled: !!requestData?.id }
     );
 
+    const { data: formDataDynamic } = trpc.requests.getCarFormData.useQuery(
+        { requestId: requestData?.id || 0 },
+        { enabled: !!requestData?.id }
+    );
+
     const handleSignatureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
@@ -191,8 +196,8 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                 </div>
 
                 {/* ===== REQUEST DETAILS ===== */}
-                <div className="border-t border-blue-400">
-                    <div className="bg-blue-600 text-white font-bold px-4 py-2 text-sm">REQUEST DETAILS</div>
+                <div className="border-t border-[#3b6dae]">
+                    <div className="bg-[#3b6dae] text-white font-bold px-4 py-2 text-sm">REQUEST DETAILS</div>
 
                     {/* 1. EMPLOYEE INFORMATION */}
                     <Section title="1. EMPLOYEE INFORMATION">
@@ -309,6 +314,12 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                                     <div className={`px-3 py-1.5 rounded text-xs font-bold ${isRequestApproved ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                                         {isRequestApproved ? "✓ APPROVED" : "✗ REJECTED"}
                                     </div>
+                                    {formDataDynamic?.hrSignatureUrl && (
+                                        <div className="mt-4">
+                                            <p className="text-xs text-gray-500 mb-1">HR Signature:</p>
+                                            <img src={formDataDynamic.hrSignatureUrl} alt="HR Signature" className="h-10 object-contain border border-blue-200 rounded p-1 bg-white" />
+                                        </div>
+                                    )}
                                 </Row>
                             </>
                         )}
@@ -408,8 +419,8 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
     return (
-        <div className="border-t border-blue-400">
-            <div className="bg-blue-500 text-white font-bold px-4 py-2 text-sm">{title}</div>
+        <div className="border-t border-[#3b6dae]">
+            <div className="bg-[#3b6dae] text-white font-bold px-4 py-2 text-sm">{title}</div>
             {children}
         </div>
     );
@@ -423,8 +434,8 @@ function Row({
     children: React.ReactNode;
 }) {
     return (
-        <div className="grid grid-cols-[220px_1fr] border-b border-blue-400">
-            <div className="px-3 py-2 font-medium border-r border-blue-400 bg-blue-100 text-blue-700 text-xs">
+        <div className="grid grid-cols-[220px_1fr] border-b border-[#3b6dae]">
+            <div className="px-3 py-2 font-medium border-r border-[#3b6dae] bg-blue-100 text-[#3b6dae] text-xs">
                 {label}
             </div>
             <div className="px-3 py-1">{children}</div>

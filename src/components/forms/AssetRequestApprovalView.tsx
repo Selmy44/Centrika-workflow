@@ -47,6 +47,11 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
         { enabled: !!requestData?.id }
     );
 
+    const { data: formDataDynamic } = trpc.requests.getAssetFormData.useQuery(
+        { requestId: requestData?.id || 0 },
+        { enabled: !!requestData?.id }
+    );
+
     const handleSignatureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
@@ -197,8 +202,8 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
                 </div>
 
                 {/* ===== REQUEST DETAILS ===== */}
-                <div className="border-t border-blue-400">
-                    <div className="bg-blue-600 text-white font-bold px-4 py-2 text-sm flex items-center gap-2">
+                <div className="border-t border-[#3b6dae]">
+                    <div className="bg-[#3b6dae] text-white font-bold px-4 py-2 text-sm flex items-center gap-2">
                         <Package size={16} /> ASSET REQUEST DETAILS: #{requestData?.id}
                     </div>
 
@@ -231,11 +236,55 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
                         </Row>
                     </Section>
 
-                    {/* 3. APPROVAL WORKFLOW */}
-                    <Section title={`3. ${getApprovalLevelLabel().toUpperCase()}`}>
+                    {/* 3. EMPLOYEE SIGNATURE */}
+                    <Section title="3. EMPLOYEE SIGNATURE">
+                        <Row label="3.1 Employee Signature">
+                            <div className="mt-1 mb-2">
+                                {formDataDynamic?.employeeSignatureUrl ? (
+                                    <div className="p-2 border border-blue-200 rounded inline-block bg-white">
+                                        <img src={formDataDynamic.employeeSignatureUrl} alt="Employee Signature" className="h-12 object-contain" />
+                                    </div>
+                                ) : (
+                                    <p className="text-xs italic text-gray-500 mt-2">No signature provided</p>
+                                )}
+                            </div>
+                        </Row>
+                    </Section>
+
+                    {/* 4. APPROVAL WORKFLOW */}
+                    <Section title="4. APPROVAL WORKFLOW">
+                        {/* Always show previous approvals if they exist */}
+                        {formDataDynamic?.managerSignatureUrl && (
+                            <Row label="4.1 Line Manager / HOD">
+                                <div className="mt-2">
+                                    <p className="text-xs text-gray-500 mb-1">Approved by HOD:</p>
+                                    <img src={formDataDynamic.managerSignatureUrl} alt="HOD Signature" className="h-10 object-contain border border-blue-200 rounded p-1 bg-white" />
+                                </div>
+                            </Row>
+                        )}
+                        {formDataDynamic?.financeSignatureUrl && (
+                            <Row label="4.2 Head of Finance">
+                                <div className="mt-2">
+                                    <p className="text-xs text-gray-500 mb-1">Approved by Head of Finance:</p>
+                                    <img src={formDataDynamic.financeSignatureUrl} alt="Finance Signature" className="h-10 object-contain border border-blue-200 rounded p-1 bg-white" />
+                                </div>
+                            </Row>
+                        )}
+                        {formDataDynamic?.ceoSignatureUrl && (
+                            <Row label="4.3 CEO / MD">
+                                <div className="mt-2">
+                                    <p className="text-xs text-gray-500 mb-1">Final Approval by CEO/MD:</p>
+                                    <img src={formDataDynamic.ceoSignatureUrl} alt="CEO Signature" className="h-10 object-contain border border-blue-200 rounded p-1 bg-white" />
+                                </div>
+                            </Row>
+                        )}
+
                         {!approvalSectionIsReadOnly ? (
-                            <>
-                                <Row label="3.1 Comments">
+                            <div className="p-4 bg-blue-50/50 mt-2">
+                                <h3 className="text-sm font-bold text-blue-700 mb-3 text-center border-b border-blue-200 pb-2">
+                                    Wait for Your Approval: {getApprovalLevelLabel().toUpperCase()}
+                                </h3>
+                                <Row label="Your Comments">
                                     <Textarea
                                         placeholder="Add your comments or observations..."
                                         value={approvalComments}
@@ -243,7 +292,9 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
                                         className="border-blue-300 min-h-20 text-xs"
                                     />
                                 </Row>
-                                <Row label="3.2 Your Signature">
+
+                                {/* Signature Upload */}
+                                <Row label="Your Signature">
                                     <div className="space-y-3">
                                         {!signaturePreview ? (
                                             <>
@@ -276,11 +327,11 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
                                         )}
                                     </div>
                                 </Row>
-                            </>
+                            </div>
                         ) : (
-                            <Row label="3.1 Status">
+                            <Row label="Status">
                                 <div className={`px-4 py-2 rounded text-sm font-bold inline-block ${isRequestApproved ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200'}`}>
-                                    {isRequestApproved ? "✓ APPROVED" : "✗ REJECTED"}
+                                    {isRequestApproved ? "✓ FULLY APPROVED" : "✗ REJECTED"}
                                 </div>
                             </Row>
                         )}
@@ -370,8 +421,8 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
     return (
-        <div className="border-t border-blue-400">
-            <div className="bg-blue-500 text-white font-bold px-4 py-1.5 text-xs uppercase tracking-wider">{title}</div>
+        <div className="border-t border-[#3b6dae]">
+            <div className="bg-[#3b6dae] text-white font-bold px-4 py-1.5 text-xs uppercase tracking-wider">{title}</div>
             {children}
         </div>
     );
@@ -379,8 +430,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
     return (
-        <div className="grid grid-cols-[240px_1fr] border-b border-blue-400 items-stretch">
-            <div className="px-3 py-2 font-semibold border-r border-blue-400 bg-blue-50/50 text-blue-800 text-[11px] flex items-center">
+        <div className="grid grid-cols-[240px_1fr] border-b border-[#3b6dae] items-stretch">
+            <div className="px-3 py-2 font-semibold border-r border-[#3b6dae] bg-blue-50/50 text-[#3b6dae] text-[11px] flex items-center">
                 {label}
             </div>
             <div className="px-3 py-1.5 flex items-center">{children}</div>

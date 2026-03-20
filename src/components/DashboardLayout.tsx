@@ -503,7 +503,7 @@ function DashboardLayoutContent({
         <header className="sticky top-0 z-40 w-full bg-slate-50/80 dark:bg-slate-900/70 backdrop-blur-md h-16 border-b border-[#3b6dae]/5 no-print">
           <div className="flex h-full w-full">
             {/* Left Header Area */}
-            <div className="flex-1 flex items-center justify-between px-4 lg:px-8 overflow-hidden">
+            <div className="flex-1 flex items-center justify-between px-4 lg:px-8">
               <div className="flex items-center gap-2 md:gap-4">
                 <SidebarTrigger className="md:hidden h-8 w-8 border shadow-xs shrink-0" />
                 <div className="flex items-center gap-2 min-w-0">

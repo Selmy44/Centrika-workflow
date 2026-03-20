@@ -47,6 +47,9 @@ export default function ExpenditureRequestForm({ onSuccess, onClose, onBack }: P
     currency: "RWF",
     purpose: "",
     reportingManager: "",
+    employeeSignatureUrl: "",
+    signaturePreview: "",
+    signatureFile: null as File | null,
   });
 
   useEffect(() => {
@@ -83,6 +86,7 @@ export default function ExpenditureRequestForm({ onSuccess, onClose, onBack }: P
 
   const createExpenditure = trpc.requests.createExpenditureRequest.useMutation();
   const submitRequest = trpc.requests.submitRequest.useMutation();
+  const storeFormData = trpc.requests.storeExpenditureFormData.useMutation();
 
   const handleSubmit = async (submit: boolean) => {
     if (submit) {
@@ -96,6 +100,10 @@ export default function ExpenditureRequestForm({ onSuccess, onClose, onBack }: P
       }
       if (!form.amount || Number(form.amount) <= 0) {
         toast.error("Amount must be greater than 0");
+        return;
+      }
+      if (!form.employeeSignatureUrl) {
+        toast.error("Please upload your signature");
         return;
       }
     }
@@ -115,6 +123,14 @@ export default function ExpenditureRequestForm({ onSuccess, onClose, onBack }: P
           id: created.id,
           initialApproverId: Number(form.reportingManager),
         });
+        await storeFormData.mutateAsync({
+          requestId: created.id,
+          formData: {
+            ...form,
+            requestDetails: created,
+            signatureFile: undefined, // Non-serializable
+          }
+        });
       }
 
       toast.success(submit ? "Expenditure request submitted" : "Draft saved");
@@ -131,16 +147,7 @@ export default function ExpenditureRequestForm({ onSuccess, onClose, onBack }: P
   return (
     <div className="w-full bg-white text-black px-4 leave-form-container relative">
 
-      {/* CLOSE/BACK BUTTON */}
-      <button
-        onClick={() => onBack ? onBack() : (onClose ? onClose() : onSuccess?.())}
-        className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-lg transition"
-        title="Close form"
-      >
-        <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
+
 
       <div>
         {/* ===== HEADER WITH LOGO AND CONTACT INFO ===== */}
@@ -223,8 +230,8 @@ export default function ExpenditureRequestForm({ onSuccess, onClose, onBack }: P
         </div>
 
         {/* ===== REQUEST DETAILS ===== */}
-        <div className="border-t border-blue-400">
-          <div className="bg-blue-600 text-white font-bold px-4 py-2 text-sm">REQUEST DETAILS</div>
+        <div className="border-t border-[#3b6dae]">
+          <div className="bg-[#3b6dae] text-white font-bold px-4 py-2 text-sm">REQUEST DETAILS</div>
 
           {/* 1. EMPLOYEE INFORMATION */}
           <Section title="1. EMPLOYEE INFORMATION">
@@ -306,24 +313,49 @@ export default function ExpenditureRequestForm({ onSuccess, onClose, onBack }: P
             </Row>
           </Section>
 
-          {/* 3. APPROVAL WORKFLOW */}
-          <Section title="3. APPROVAL WORKFLOW">
-            <Row label="3.1 Reporting Manager / HOD">
-              <Select
-                value={form.reportingManager}
-                onValueChange={v => setForm({ ...form, reportingManager: v })}
-              >
-                <SelectTrigger className="w-full h-10 border-blue-300 bg-white text-black font-medium focus:ring-blue-500">
-                  <SelectValue placeholder="-- Select Department Head --" />
-                </SelectTrigger>
-                <SelectContent className="bg-white border-blue-200">
-                  {uniqueHeads.map((head: any) => (
-                    <SelectItem key={head.id} value={String(head.id)} className="focus:bg-blue-500 focus:text-white">
-                      {head.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          {/* 3. EMPLOYEE SIGNATURE */}
+          <Section title="3. EMPLOYEE SIGNATURE">
+            <Row label="3.1 Your Signature">
+              <div className="space-y-3">
+                <input
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (ev) => {
+                        setForm({ 
+                          ...form, 
+                          signatureFile: file, 
+                          signaturePreview: URL.createObjectURL(file),
+                          employeeSignatureUrl: ev.target?.result as string 
+                        });
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  className="text-xs"
+                />
+                {form.employeeSignatureUrl && <img src={form.employeeSignatureUrl} alt="sig" className="h-10 object-contain border border-blue-300 p-1" />}
+              </div>
+            </Row>
+          </Section>
+
+          {/* 4. APPROVAL WORKFLOW */}
+          <Section title="4. APPROVAL WORKFLOW">
+            <Row label="4.1 Line Manager / HOD">
+              <Input
+                value={uniqueHeads.find((h: any) => h.id === parseInt(form.reportingManager))?.name || "Not assigned"}
+                className="w-full h-8 border-blue-300 bg-gray-100 text-black font-medium cursor-not-allowed mt-1 mb-1 max-w-[400px]"
+                disabled
+              />
+            </Row>
+            <Row label="4.2 Head of Finance">
+              <p className="text-xs text-gray-500 font-medium">Pending Finance Approval</p>
+            </Row>
+            <Row label="4.3 Final Approval (CEO/MD)">
+              <p className="text-xs text-gray-500 font-medium">Pending Final Approval</p>
             </Row>
           </Section>
         </div>
@@ -383,22 +415,24 @@ export default function ExpenditureRequestForm({ onSuccess, onClose, onBack }: P
 
 /* ========= Helper Components ========= */
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children, className = "" }: { title: string, children: React.ReactNode, className?: string }) {
   return (
-    <div className="border-t border-blue-400">
-      <div className="bg-blue-500 text-white font-bold px-4 py-2 text-sm">{title}</div>
+    <div className={`border-t border-blue-400 ${className}`}>
+      <div className="bg-[#3b6dae] text-white font-bold px-4 py-2 text-sm">{title}</div>
       {children}
     </div>
   );
 }
 
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
+function Row({ label, children, colSpan = false }: { label: React.ReactNode, children: React.ReactNode, colSpan?: boolean }) {
   return (
-    <div className="grid grid-cols-[220px_1fr] border-b border-blue-400">
-      <div className="px-3 py-2 font-medium border-r border-blue-400 bg-blue-100 text-blue-700 text-xs">
-        {label}
-      </div>
-      <div className="px-3 py-1">{children}</div>
+    <div className={`grid ${colSpan ? 'grid-cols-1' : 'grid-cols-[220px_1fr]'} border-b border-blue-400`}>
+      {!colSpan && (
+        <div className="px-3 py-2 font-medium border-r border-blue-400 bg-blue-100 text-[#3b6dae] text-xs flex items-center">
+          {label}
+        </div>
+      )}
+      <div className="px-3 py-1 flex items-center">{children}</div>
     </div>
   );
 }

@@ -18,6 +18,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { LeaveBalanceCalculator } from "./shared/LeaveBalanceCalculator";
 
 interface Props {
   onSuccess?: () => void;
@@ -81,6 +82,7 @@ export default function SickLeaveForm({ onSuccess, onClose, onBack }: Props) {
 
   const createLeave = trpc.requests.createLeaveRequest.useMutation();
   const submitRequest = trpc.requests.submitRequest.useMutation();
+  const storeFormData = (trpc as any).requests.storeLeaveFormData.useMutation();
 
   useEffect(() => {
     if (user && autoFillData) {
@@ -101,13 +103,7 @@ export default function SickLeaveForm({ onSuccess, onClose, onBack }: Props) {
     }
   }, [user, autoFillData]);
 
-  useEffect(() => {
-    const entitled = parseInt(form.leaveDaysEntitled) || 0;
-    const taken = parseInt(form.leaveDaysTaken) || 0;
-    const requested = parseInt(form.leaveDaysRequested) || 0;
-    const remaining = entitled - taken - requested;
-    setForm((prev) => ({ ...prev, leaveDaysRemaining: remaining.toString() }));
-  }, [form.leaveDaysEntitled, form.leaveDaysTaken, form.leaveDaysRequested]);
+  // Leave balance calculated by LeaveBalanceCalculator component
 
   const validate = () => {
     if (!form.reportingManager) {
@@ -123,7 +119,12 @@ export default function SickLeaveForm({ onSuccess, onClose, onBack }: Props) {
       return false;
     }
     if (!form.leaveDaysRequested || parseInt(form.leaveDaysRequested) <= 0) {
-      toast.error("Number of leave days must be greater than 0");
+      toast.error("Requested days must be greater than 0. Please check your dates.");
+      return false;
+    }
+    const remaining = parseInt(form.leaveDaysRemaining);
+    if (!isNaN(remaining) && remaining < 0) {
+      toast.error("You do not have enough leave balance for this request");
       return false;
     }
     if (!form.illnessDescription.trim()) {
@@ -136,6 +137,10 @@ export default function SickLeaveForm({ onSuccess, onClose, onBack }: Props) {
     }
     if (form.medicalDocuments.length === 0) {
       toast.error("Medical documentation is required for sick leave");
+      return false;
+    }
+    if (!form.contactDuringLeave.trim()) {
+      toast.error("Contact details during leave are required");
       return false;
     }
     return true;
@@ -166,6 +171,13 @@ export default function SickLeaveForm({ onSuccess, onClose, onBack }: Props) {
           id: requestId,
           initialApproverId: parseInt(form.reportingManager),
         });
+
+        try {
+          await storeFormData.mutateAsync({
+            requestId: requestId,
+            formData: { ...form, employeeSignature: undefined, leaveType: "sick" },
+          });
+        } catch (e) { console.error("Failed to store form data", e); }
       }
 
       toast.success(submit ? "Sick leave request submitted successfully!" : "Draft saved");
@@ -282,7 +294,7 @@ export default function SickLeaveForm({ onSuccess, onClose, onBack }: Props) {
 
         {/* ===== REQUEST DETAILS ===== */}
         <div className="border-t border-blue-400">
-          <div className="bg-blue-600 text-white font-bold px-4 py-2 text-sm">REQUEST DETAILS</div>
+          <div className="bg-[#3b6dae] text-white font-bold px-4 py-2 text-sm">REQUEST DETAILS</div>
 
           {/* 1. EMPLOYEE INFORMATION */}
           <Section title="1. EMPLOYEE INFORMATION">
@@ -339,20 +351,42 @@ export default function SickLeaveForm({ onSuccess, onClose, onBack }: Props) {
                 endDate={form.endDate}
                 onStartDateChange={(date) => setForm({ ...form, startDate: date })}
                 onEndDateChange={(date) => setForm({ ...form, endDate: date })}
+                maxDays={365}
               />
             </Row>
+
+            <div className="px-4 pb-4">
+              <LeaveBalanceCalculator 
+                leaveType="sick"
+                startDate={form.startDate}
+                endDate={form.endDate}
+                alreadyTaken={parseInt(form.leaveDaysTaken) || 0}
+                onTakenChange={(val) => setForm(prev => ({ ...prev, leaveDaysTaken: val.toString() }))}
+                onCalculated={(data: any) => {
+                  if (
+                    form.leaveDaysRequested !== data.requested.toString() ||
+                    form.leaveDaysRemaining !== data.remaining.toString() ||
+                    form.leaveDaysEntitled !== data.entitled.toString() ||
+                    form.leaveDaysTaken !== data.taken.toString()
+                  ) {
+                    setForm(prev => ({
+                      ...prev,
+                      leaveDaysRequested: data.requested.toString(),
+                      leaveDaysRemaining: data.remaining.toString(),
+                      leaveDaysEntitled: data.entitled.toString(),
+                      leaveDaysTaken: data.taken.toString()
+                    }));
+                  }
+                }}
+              />
+            </div>
+
             <Row label="2.2 Number of Leave Days Requested">
-              <div className="flex gap-2 items-center">
-                <Input
-                  type="number"
-                  min="1"
-                  value={form.leaveDaysRequested}
-                  onChange={(e) => setForm({ ...form, leaveDaysRequested: e.target.value })}
-                  placeholder="0"
-                  className="border-blue-300 h-7 text-xs w-24"
-                />
-                <span className="text-xs font-medium text-gray-600">Day(s)</span>
-              </div>
+              <Input
+                value={form.leaveDaysRequested}
+                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium w-24"
+                disabled
+              />
             </Row>
             <Row label="2.3 Will You Be Outside the Country?">
               <div className="flex gap-4">
@@ -481,62 +515,14 @@ export default function SickLeaveForm({ onSuccess, onClose, onBack }: Props) {
             </Row>
           </Section>
 
-          {/* 5. LEAVE BALANCE */}
-          <Section title="5. LEAVE BALANCE (TO BE FILLED BY HR)">
-            <Row label="5.1 Sick Leave Days Entitled">
+          {/* 5. INITIAL APPROVAL */}
+          <Section title="5. INITIAL APPROVAL">
+            <Row label="5.1 Reporting Manager / HOD">
               <Input
-                type="number"
-                value={form.leaveDaysEntitled}
-                onChange={(e) => setForm({ ...form, leaveDaysEntitled: e.target.value })}
-                className="border-blue-300 h-7 text-xs"
-                placeholder="Days"
-              />
-            </Row>
-            <Row label="5.2 Leave Days Already Taken">
-              <Input
-                type="number"
-                value={form.leaveDaysTaken}
-                onChange={(e) => setForm({ ...form, leaveDaysTaken: e.target.value })}
-                className="border-blue-300 h-7 text-xs"
-                placeholder="Days"
-              />
-            </Row>
-            <Row label="5.3 Leave Days Under Request">
-              <Input
-                type="number"
-                value={form.leaveDaysRequested}
-                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium"
+                value={uniqueHeads.find((h: any) => h.id === parseInt(form.reportingManager))?.name || "Not assigned"}
+                className="w-full h-8 border-blue-300 bg-gray-100 text-black font-medium cursor-not-allowed mt-1 mb-1 max-w-[400px]"
                 disabled
               />
-            </Row>
-            <Row label="5.4 Remaining Leave Days">
-              <Input
-                type="number"
-                value={form.leaveDaysRemaining}
-                disabled
-                className="border-blue-300 h-7 text-xs bg-blue-50 cursor-not-allowed !text-black font-bold"
-              />
-            </Row>
-          </Section>
-
-          {/* 6. INITIAL APPROVAL */}
-          <Section title="6. INITIAL APPROVAL">
-            <Row label="6.1 Reporting Manager / HOD">
-              <Select
-                value={form.reportingManager}
-                onValueChange={(v) => setForm({ ...form, reportingManager: v })}
-              >
-                <SelectTrigger className="w-full h-10 border-blue-300 bg-white text-black font-medium focus:ring-blue-500 mt-1 mb-1">
-                  <SelectValue placeholder="-- Select Department Head --" />
-                </SelectTrigger>
-                <SelectContent className="bg-white border-blue-200">
-                  {uniqueHeads.map((head: any) => (
-                    <SelectItem key={head.id} value={String(head.id)} className="focus:bg-blue-500 focus:text-white">
-                      {head.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </Row>
           </Section>
 
@@ -641,7 +627,7 @@ export default function SickLeaveForm({ onSuccess, onClose, onBack }: Props) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="border-t border-blue-400">
-      <div className="bg-blue-500 text-white font-bold px-4 py-2 text-sm">{title}</div>
+      <div className="bg-[#3b6dae] text-white font-bold px-4 py-2 text-sm">{title}</div>
       {children}
     </div>
   );

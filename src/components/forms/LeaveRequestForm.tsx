@@ -14,6 +14,7 @@ import { useFormAutoFill } from "@/_core/hooks/useFormAutoFill";
 import DateRangePicker from "@/components/DateRangePicker";
 import SingleDatePicker from "@/components/SingleDatePicker";
 import { getLeaveTypeConfig } from "@/lib/leaveTypeConfig";
+import { LeaveBalanceCalculator } from "./shared/LeaveBalanceCalculator";
 
 interface LeaveRequestFormProps {
   requestId?: number;
@@ -47,6 +48,8 @@ export default function LeaveRequestForm({
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
 
+  const autoFillData = useFormAutoFill();
+  
   const [form, setForm] = useState({
     employeeName: "",
     staffId: "",
@@ -72,6 +75,7 @@ export default function LeaveRequestForm({
     year: new Date().getFullYear().toString(),
     month: (new Date().getMonth() + 1).toString(),
     documentId: "",
+    managerSignatureUrl: "",
   });
 
   const [approvalComments, setApprovalComments] = useState("");
@@ -82,18 +86,35 @@ export default function LeaveRequestForm({
   const headsOfDept = trpc.users.listHeads.useQuery();
   const hrUsers = trpc.users.getHRUsers.useQuery();
 
+  // Fetch the saved form JSON blob for approver/read-only views
+  const savedFormData = (trpc as any).requests.getLeaveFormData.useQuery(
+    { requestId: requestData?.id || requestId || 0 },
+    { enabled: !!(requestData?.id || requestId) && (isReadOnly || !!onApprove || !!onReject) }
+  );
+
   const isApprover = propsIsApprover !== undefined ? propsIsApprover : (!!onApprove || !!onReject);
   const effectiveIsReadOnly = isReadOnly || isApprover;
 
   useEffect(() => {
     if (requestData) {
+      const lr = requestData.leaveRequest;
       setForm((prev: any) => ({
         ...prev,
         employeeName: requestData.user?.name || requestData.employee?.name || prev.employeeName,
         staffId: requestData.user?.staffId || requestData.employee?.staffId || prev.staffId,
         department: requestData.user?.department?.name || requestData.employee?.department || prev.department,
         position: requestData.user?.position || requestData.employee?.position || prev.position,
-        leaveType: requestData.type === "leave" ? (requestData.leaveType || prev.leaveType) : prev.leaveType,
+        leaveType: lr?.leaveType || (requestData.type === "leave" ? (requestData.leaveType || prev.leaveType) : prev.leaveType),
+        managerSignatureUrl: requestData.managerSignatureUrl || prev.managerSignatureUrl,
+        startDate: lr?.startDate || prev.startDate,
+        endDate: lr?.endDate || prev.endDate,
+        leaveDaysRequested: lr?.leaveDaysRequested || prev.leaveDaysRequested,
+        leaveDaysEntitled: lr?.leaveDaysEntitled || prev.leaveDaysEntitled,
+        leaveDaysTaken: lr?.leaveDaysTaken || prev.leaveDaysTaken,
+        leaveDaysRemaining: lr?.leaveDaysRemaining || prev.leaveDaysRemaining,
+        contactDuringLeave: lr?.reason || prev.contactDuringLeave,
+        reportingManager: requestData.initialApproverId ? String(requestData.initialApproverId) : prev.reportingManager,
+        dateOfEmployment: requestData.user?.dateOfEmployment || prev.dateOfEmployment,
       }));
     } else if (user && !requestId) {
       const deptName = typeof user.department === 'object' ? user.department?.name : (user.department || "");
@@ -109,10 +130,65 @@ export default function LeaveRequestForm({
         department: deptName || "",
         position: user.position || "",
         dateOfEmployment: user.dateOfEmployment || "",
+        reportingManager: autoFillData.managerId ? String(autoFillData.managerId) : "",
         leaveType: initialLeaveType || prev.leaveType,
       }));
     }
-  }, [user, requestId, initialLeaveType, requestData]);
+  }, [user, requestId, initialLeaveType, requestData, autoFillData.managerId]);
+
+  // Merge saved form JSON (employee signature, contact details, etc.) when available
+  useEffect(() => {
+    if (savedFormData?.data) {
+      const d = savedFormData.data;
+      setForm((prev: any) => ({
+        ...prev,
+        employeeName: d.employeeName || prev.employeeName,
+        staffId: d.staffId || prev.staffId,
+        department: d.department || prev.department,
+        position: d.position || prev.position,
+        leaveType: d.leaveType || prev.leaveType,
+        startDate: d.startDate || prev.startDate,
+        endDate: d.endDate || prev.endDate,
+        leaveDaysRequested: d.leaveDaysRequested || prev.leaveDaysRequested,
+        leaveDaysEntitled: d.leaveDaysEntitled || prev.leaveDaysEntitled,
+        leaveDaysTaken: d.leaveDaysTaken || prev.leaveDaysTaken,
+        leaveDaysRemaining: d.leaveDaysRemaining || prev.leaveDaysRemaining,
+        contactDuringLeave: d.contactDuringLeave || prev.contactDuringLeave,
+        employeeSignatureUrl: d.employeeSignatureUrl || prev.employeeSignatureUrl,
+        signatureDate: d.signatureDate || prev.signatureDate,
+        documentId: d.documentId || prev.documentId,
+        dateOfEmployment: d.dateOfEmployment || prev.dateOfEmployment,
+        outsideCountry: d.outsideCountry || prev.outsideCountry,
+        reportingManager: d.reportingManager || prev.reportingManager,
+        managerSignatureUrl: d.managerSignatureUrl || prev.managerSignatureUrl,
+      }));
+    }
+  }, [savedFormData?.data]);
+
+  const validate = () => {
+    if (!form.startDate || !form.endDate) {
+      toast.error("Start and end dates are required");
+      return false;
+    }
+    if (form.endDate < form.startDate) {
+      toast.error("End date must be after start date");
+      return false;
+    }
+    if (!form.leaveDaysRequested || form.leaveDaysRequested <= 0) {
+      toast.error("Requested days must be greater than 0. Please check dates.");
+      return false;
+    }
+    if (!form.contactDuringLeave.trim()) {
+      toast.error("Contact details during leave are required");
+      return false;
+    }
+    const remaining = Number(form.leaveDaysRemaining);
+    if (!isNaN(remaining) && remaining < 0 && form.leaveType !== "unpaid") {
+      toast.error("You do not have enough leave balance for this request");
+      return false;
+    }
+    return true;
+  };
 
   const uniqueHeads = headsOfDept.data || [];
   const uniqueHR = hrUsers.data || [];
@@ -144,17 +220,78 @@ export default function LeaveRequestForm({
 
   const calculatedBusinessDays = calculateBusinessDays(form.startDate, form.endDate);
 
+  const createLeave = trpc.requests.createLeaveRequest.useMutation();
+  const submitRequestMutation = trpc.requests.submitRequest.useMutation();
+  const storeFormData = (trpc as any).requests.storeLeaveFormData.useMutation();
+
   const handleSaveAsDraft = async () => {
-    toast.success("Draft saved successfully");
+    setIsSubmitting(true);
+    try {
+      await createLeave.mutateAsync({
+        title: `${config.title || "Leave"} Request - ${form.documentId}`,
+        leaveType: form.leaveType as any,
+        startDate: form.startDate,
+        endDate: form.endDate,
+        reason: form.contactDuringLeave,
+        leaveDaysEntitled: Number(form.leaveDaysEntitled) || 0,
+        leaveDaysTaken: Number(form.leaveDaysTaken) || 0,
+        leaveDaysRequested: Number(form.leaveDaysRequested) || 0,
+      });
+      toast.success("Draft saved successfully");
+      onSuccess?.();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to save draft");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleSubmit = async () => {
+    if (!validate()) return;
+    if (!form.reportingManager) {
+      toast.error("Please select a Line Manager / HOD");
+      return;
+    }
     setIsSubmitting(true);
     try {
-      toast.success("Request submitted successfully");
+      const created = await createLeave.mutateAsync({
+        title: `${config.title || "Leave"} Request - ${form.documentId}`,
+        leaveType: form.leaveType as any,
+        startDate: form.startDate,
+        endDate: form.endDate,
+        reason: form.contactDuringLeave,
+        leaveDaysEntitled: Number(form.leaveDaysEntitled) || 0,
+        leaveDaysTaken: Number(form.leaveDaysTaken) || 0,
+        leaveDaysRequested: Number(form.leaveDaysRequested) || 0,
+      });
+
+      const requestId = (created as any)?.id as number;
+
+      if (requestId) {
+        await submitRequestMutation.mutateAsync({
+          id: requestId,
+          initialApproverId: parseInt(form.reportingManager),
+        });
+
+        // Store the full form data JSON so the approver can see the complete form
+        try {
+          await storeFormData.mutateAsync({
+            requestId: requestId,
+            formData: {
+              ...form,
+              employeeSignature: undefined, // Can't serialize File objects
+              supportingDocument: undefined,
+            },
+          });
+        } catch (e) {
+          console.error("Failed to store form data", e);
+        }
+      }
+
+      toast.success("Request submitted successfully!");
       onSuccess?.();
-    } catch (error) {
-      toast.error("Failed to submit request");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to submit request");
     } finally {
       setIsSubmitting(false);
     }
@@ -164,16 +301,6 @@ export default function LeaveRequestForm({
 
   return (
     <div className="w-full bg-white text-black px-4 leave-form-container relative">
-      <button
-        onClick={() => onBack ? onBack() : (onClose ? onClose() : onSuccess?.())}
-        className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-lg transition"
-        title="Close form"
-      >
-        <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-
       <div>
         {/* HEADER WITH LOGO AND CONTACT INFO */}
         <div className="flex justify-between items-start px-6 py-3 gap-8">
@@ -205,8 +332,8 @@ export default function LeaveRequestForm({
           </div>
         </div>
 
-        {/* TITLE BAR (DYNAMIC COLOR) */}
-        <div className={`${titleBarColor} text-white text-center font-bold py-2 text-lg tracking-wide uppercase`}>
+        {/* TITLE BAR (YELLOW AS REQUESTED) */}
+        <div className="bg-yellow-500 text-white text-center font-bold py-2 text-lg tracking-wide uppercase">
           {config.title || "LEAVE REQUEST FORM"}
         </div>
 
@@ -235,7 +362,7 @@ export default function LeaveRequestForm({
 
         {/* REQUEST DETAILS */}
         <div className="border-t border-blue-400">
-          <div className="bg-blue-600 text-white font-bold px-4 py-2 text-sm">REQUEST DETAILS</div>
+          <div className="bg-[#3b6dae] text-white font-bold px-4 py-2 text-sm">REQUEST DETAILS</div>
 
           {/* 1. EMPLOYEE INFORMATION */}
           <Section title="1. EMPLOYEE INFORMATION">
@@ -259,18 +386,11 @@ export default function LeaveRequestForm({
           {/* 2. LEAVE DETAILS */}
           <Section title="2. LEAVE DETAILS">
             <Row label="2.1 Nature of Leave">
-              <Select value={form.leaveType} onValueChange={(v: any) => setForm({ ...form, leaveType: v })} disabled={effectiveIsReadOnly}>
-                <SelectTrigger className="w-[300px] h-8 border-blue-300 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="annual">Annual Leave</SelectItem>
-                  <SelectItem value="sick">Sick Leave</SelectItem>
-                  <SelectItem value="parental">Parental Leave</SelectItem>
-                  <SelectItem value="personal">Personal Leave</SelectItem>
-                  <SelectItem value="unpaid">Unpaid Leave</SelectItem>
-                </SelectContent>
-              </Select>
+              <Input
+                value={config.title || "Annual Leave"}
+                className="w-[300px] h-8 border-blue-300 bg-gray-100 text-black font-medium cursor-not-allowed"
+                disabled
+              />
             </Row>
             <Row label="2.2 Leave Duration (Start – End)">
               <DateRangePicker
@@ -282,6 +402,33 @@ export default function LeaveRequestForm({
                 maxDays={200}
               />
             </Row>
+            
+            <div className="px-4 pb-4">
+              <LeaveBalanceCalculator 
+                leaveType={form.leaveType}
+                startDate={form.startDate}
+                endDate={form.endDate}
+                alreadyTaken={parseInt(form.leaveDaysTaken) || 0}
+                onTakenChange={(val) => setForm(prev => ({ ...prev, leaveDaysTaken: val.toString() }))}
+                onCalculated={(data: any) => {
+                  if (
+                    form.leaveDaysRequested !== data.requested ||
+                    form.leaveDaysRemaining !== data.remaining ||
+                    form.leaveDaysEntitled !== data.entitled ||
+                    form.leaveDaysTaken !== data.taken.toString()
+                  ) {
+                    setForm(prev => ({
+                      ...prev,
+                      leaveDaysRequested: data.requested,
+                      leaveDaysRemaining: typeof data.remaining === "number" ? data.remaining : 999,
+                      leaveDaysEntitled: typeof data.entitled === "number" ? data.entitled : 999,
+                      leaveDaysTaken: data.taken.toString()
+                    }));
+                  }
+                }}
+              />
+            </div>
+
             <Row label="2.3 Business Days Requested">
               <div className="flex items-center gap-2">
                 <Input value={calculatedBusinessDays} disabled className="border-blue-300 h-7 text-xs w-24 bg-gray-100 cursor-not-allowed !text-black font-medium text-center" />
@@ -321,12 +468,8 @@ export default function LeaveRequestForm({
             </Row>
           </Section>
 
-          {/* 3. LEAVE BALANCE & SUPPORTING DOCS */}
-          <Section title="3. LEAVE BALANCE & SIGNATURE">
-            <Row label="3.1 Annual Entitlement">
-              <Input value={config.entitlementDays} disabled className="border-blue-300 h-7 text-xs w-24 bg-gray-100 cursor-not-allowed !text-black font-medium text-center" />
-            </Row>
-
+          {/* 3. SIGNATURE & SUPPORTING DOCS */}
+          <Section title="3. SIGNATURE & SUPPORTING DOCS">
             {config.requiresSupportingDoc && (
               <Row label="3.2 Supporting Document">
                 <div className="space-y-2">
@@ -380,53 +523,23 @@ export default function LeaveRequestForm({
 
           {/* 4. APPROVAL WORKFLOW */}
           <Section title="4. APPROVAL WORKFLOW">
-            {isApprover ? (
-              <div className="p-4 border-b border-blue-400 bg-blue-50/30">
-                <h3 className="text-sm font-bold text-blue-700 mb-3">Your Approval ({user?.role || "Approver"})</h3>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-xs font-semibold block mb-1">Comments</label>
-                    <Textarea value={approvalComments} onChange={(e) => setApprovalComments(e.target.value)} disabled={isReadOnly} placeholder="Add comments..." className="text-xs border-blue-300" />
-                  </div>
-                  {user?.role === "head_of_department" && !isReadOnly && (
-                    <div>
-                      <label className="text-xs font-semibold block mb-1">Forward to HR</label>
-                      <Select value={selectedHR} onValueChange={setSelectedHR}>
-                        <SelectTrigger className="h-8 text-xs border-blue-300 w-[300px]">
-                          <SelectValue placeholder="Select HR officer" />
-                        </SelectTrigger>
-                        <SelectContent className="border-blue-200">
-                          {uniqueHR.map((hr: any) => (
-                            <SelectItem key={hr.id} value={String(hr.id)}>{hr.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                  <div>
-                    <label className="text-xs font-semibold block mb-1">Signature</label>
-                    {!isReadOnly ? (
-                       <input type="file" onChange={(e) => setApproverSignature(e.target.files?.[0] || null)} className="text-xs" />
-                    ) : (
-                      <p className="text-xs italic text-gray-500">Signature on file</p>
-                    )}
-                  </div>
+            {/* Always show 4.1 Line Manager/HOD section so the HOD signature is visible to everyone */}
+            <Row label="4.1 Line Manager / HOD">
+              <Input
+                value={uniqueHeads.find((h: any) => h.id === parseInt(form.reportingManager))?.name || "Not assigned"}
+                className="w-full h-8 border-blue-300 bg-gray-100 text-black font-medium cursor-not-allowed mt-1 mb-1 max-w-[400px]"
+                disabled
+              />
+              {form.managerSignatureUrl && (
+                <div className="mt-2">
+                  <p className="text-xs text-gray-500 mb-1">Approved by Manager:</p>
+                  <img src={form.managerSignatureUrl} alt="Manager Signature" className="h-10 object-contain border border-blue-200 rounded p-1 bg-white" />
                 </div>
-              </div>
-            ) : (
+              )}
+            </Row>
+
+            {!isApprover && (
               <>
-                <Row label="4.1 Line Manager / HOD">
-                  <Select value={form.reportingManager} onValueChange={(v) => !effectiveIsReadOnly && setForm({ ...form, reportingManager: v })} disabled={effectiveIsReadOnly}>
-                    <SelectTrigger className="w-full h-10 border-blue-300 bg-white text-black font-medium focus:ring-blue-500 mt-1 mb-1 max-w-[400px]">
-                      <SelectValue placeholder="-- Select Department Head --" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white border-blue-200">
-                      {uniqueHeads.map((head: any) => (
-                        <SelectItem key={head.id} value={String(head.id)} className="focus:bg-blue-500 focus:text-white">{head.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Row>
                 <Row label="4.2 HR Review">
                   <p className="text-xs text-gray-500 font-medium">Pending HR Approval</p>
                 </Row>
@@ -434,6 +547,36 @@ export default function LeaveRequestForm({
                   <p className="text-xs text-gray-500 font-medium">Pending Final Approval</p>
                 </Row>
               </>
+            )}
+
+            {isApprover && (
+              <div className="p-4 border-b border-blue-400 bg-blue-50/30">
+                <h3 className="text-sm font-bold text-blue-700 mb-3">Your Approval ({user?.role || "Approver"})</h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-semibold block mb-1">Comments</label>
+                    <Textarea value={approvalComments} onChange={(e) => setApprovalComments(e.target.value)} disabled={isReadOnly} placeholder="Add comments..." className="text-xs border-blue-300" />
+                  </div>
+                  {/* Removed Forward to HR field since it's handled automatically via workflows */}
+                  <div>
+                    <label className="text-xs font-semibold block mb-1">Signature</label>
+                    {!isReadOnly ? (
+                      <>
+                        <input type="file" accept="image/*" onChange={(e) => setApproverSignature(e.target.files?.[0] || null)} className="text-xs mb-2 block" />
+                        {approverSignature && (
+                          <img 
+                            src={URL.createObjectURL(approverSignature)} 
+                            alt="HOD Signature Preview" 
+                            className="h-10 object-contain border border-blue-300 p-1" 
+                          />
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-xs italic text-gray-500">Signature on file</p>
+                    )}
+                  </div>
+                </div>
+              </div>
             )}
           </Section>
         </div>
@@ -449,6 +592,7 @@ export default function LeaveRequestForm({
             </Button>
           </div>
           <div className="flex gap-2">
+            <Button variant="outline" disabled={isSubmitting} onClick={() => onBack ? onBack() : (onClose ? onClose() : onSuccess?.())}>Close</Button>
             {isApprover && !isReadOnly && (
                <Button variant="destructive" onClick={() => setShowRejectDialog(true)}>Reject</Button>
             )}
@@ -492,8 +636,8 @@ export default function LeaveRequestForm({
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="border-t border-blue-400">
-      <div className="bg-blue-500 text-white font-bold px-4 py-2 text-sm">{title}</div>
+    <div className="border-t border-[#3b6dae]">
+      <div className="bg-[#3b6dae] text-white font-bold px-4 py-2 text-sm">{title}</div>
       {children}
     </div>
   );
@@ -501,8 +645,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-[220px_1fr] border-b border-blue-400">
-      <div className="px-3 py-2 font-medium border-r border-blue-400 bg-blue-100 text-blue-700 text-xs">{label}</div>
+    <div className="grid grid-cols-[220px_1fr] border-b border-[#3b6dae]">
+      <div className="px-3 py-2 font-medium border-r border-[#3b6dae] bg-blue-100 text-[#3b6dae] text-xs">{label}</div>
       <div className="px-3 py-1">{children}</div>
     </div>
   );
