@@ -2,7 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Briefcase, Building2, MapPin } from "lucide-react";
+import { Mail, Building2, Phone, Hash } from "lucide-react";
 
 export const ProfileSummary = () => {
   const { user } = useAuth();
@@ -10,66 +10,59 @@ export const ProfileSummary = () => {
   if (!user) return null;
 
   return (
-    <Card className="bg-[#3b6dae] text-white border-none rounded-3xl overflow-hidden shadow-2xl relative h-87.5 group transition-all duration-700">
-      {/* Decorative Brand Elements */}
-      <div className="absolute top-0 right-0 w-10 h-10 bg-white/5 rounded-full -mr-20 -mt-20 blur-1xl" />
+    <Card className="bg-[#3b6dae] text-white border-none rounded-xl overflow-hidden shadow-xl relative group transition-all duration-700">
+      <CardContent className="pt-2 px-3 relative flex flex-col gap-3">
+        <div className="flex items-center gap-3">
+          <Avatar className="h-10 w-10 rounded-full shadow-lg border-2 border-white/10 shrink-0">
+            <AvatarImage src={user.profileImage ?? undefined} alt={user.name ?? ""} className="object-cover" />
+            <AvatarFallback className="text-xs font-black bg-[#c79d2d] text-white">
+              {user.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
 
-      <CardContent className="p-4 relative h-full flex flex-col justify-between">
-        <div className="flex items-start justify-between w-full">
-          <div className="flex items-center gap-6">
-            <div className="relative">
-              {/* Radial Glow */}
-              <div className="absolute inset-0 bg-[#c79d2d] rounded-full blur-[20px] opacity-40 animate-pulse" />
-
-              <Avatar className="h-16 w-16 rounded-full shadow-2xl relative z-10 border-2 border-white/10">
-                <AvatarImage src={user.profileImage ?? undefined} alt={user.name ?? ""} className="object-cover" />
-                <AvatarFallback className="text-lg font-black bg-[#c79d2d] text-white">
-                  {user.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-
-              <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-[#c79d2d] rounded-full flex items-center justify-center shadow-lg z-20 border-2 border-[#3b6dae]">
-                <span className="text-[7px] font-black text-white uppercase tracking-tighter">
-                  {user.role === 'admin' ? 'ADMIN' : 'MEMBER'}
-                </span>
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <h3 className="text-1xl font-black tracking-tight leading-none text-white drop-shadow-sm">
-                {user.name || "Guest User"}
-              </h3>
-              <p className="text-[9px] font-bold text-[#c79d2d] uppercase tracking-[0.2em]">
-                {user.email || "centrika.rw"}
-              </p>
+          <div className="min-w-0">
+            <h3 className="text-xs font-black truncate text-white uppercase tracking-tight">
+              {user.name || "Guest User"}
+            </h3>
+            <div className="flex items-center gap-2 mt-0.5">
+               <span className="text-[7px] font-black bg-[#c79d2d] px-1 rounded-sm">
+                {user.role === 'admin' ? 'ADMIN' : (user.role || 'MEMBER').toUpperCase()}
+              </span>
+              <span className="text-[7px] font-black bg-white/10 px-1 rounded-sm text-white/80 border border-white/5 flex items-center gap-0.5">
+                <Hash size={7} /> {user.staffId || "----"}
+              </span>
             </div>
           </div>
-          
         </div>
 
         <div className="grid grid-cols-1 gap-2">
-          <div className="flex items-center gap-5 px-6 py-4 bg-[#2d5385] rounded-full border border-white/5 shadow-[inset_0_2px_10px_rgba(0,0,0,0.2)]">
-            <div className="shrink-0 p-3 bg-[#c79d2d] rounded-full text-white shadow-inner">
-              <Mail size={16} strokeWidth={3} />
-            </div>
+          <div className="flex items-center gap-3 px-3 py-2 bg-white/10 rounded-lg border border-white/20">
+            <Mail size={12} className="text-[#c79d2d] shrink-0" />
             <div className="min-w-0">
-              <p className="text-[10px] font-light text-teal-100/30 uppercase tracking-[0.5em] leading-none mb-1.5">Email Address</p>
-              <p className="text-sm font-black truncate tracking-tight text-white/90">{user.email}</p>
+               <p className="text-[7px] font-light text-white/40 uppercase tracking-widest leading-none mb-0.5">Email Address</p>
+               <p className="text-[11px] font-black truncate text-white/90">{user.email}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-5 px-8 py-5 bg-[#2d5385] rounded-full border border-white/5 shadow-[inset_0_2px_10px_rgba(0,0,0,0.2)]">
-            <div className="shrink-0 p-3 bg-white/10 rounded-full text-[#c79d2d] shadow-inner">
-              <Building2 size={16} strokeWidth={3} />
-            </div>
+          <div className="flex items-center gap-3 px-3 py-2 bg-white/10 rounded-lg border border-white/20">
+            <Phone size={12} className="text-[#c79d2d] shrink-0" />
             <div className="min-w-0">
-              <p className="text-[10px] font-light text-teal-100/30 uppercase tracking-[0.5em] leading-none mb-1.5">Department</p>
-              <p className="text-sm font-black truncate tracking-tight text-white/90">
-                {typeof user.department === 'string' ? user.department : user.department?.name || "Corporate"} 
-                <span className="text-white/60 font-medium ml-1">({user.position || "Member"})</span>
-              </p>
+               <p className="text-[7px] font-light text-white/40 uppercase tracking-widest leading-none mb-0.5">Phone Number</p>
+               <p className="text-[11px] font-black truncate text-white/90">{user.phoneNumber || "Not Set"}</p>
             </div>
           </div>
+
+          <div className="flex items-center gap-3 px-3 py-2 bg-white/10 rounded-lg border border-white/20">
+            <Building2 size={12} className="text-[#c79d2d] shrink-0" />
+            <div className="min-w-0">
+               <p className="text-[7px] font-light text-white/40 uppercase tracking-widest leading-none mb-0.5">Department</p>
+               <p className="text-[11px] font-black truncate text-white/90">
+                 {typeof user.department === 'string' ? user.department : user.department?.name || "Corporate"}
+                 <span className="text-white/40 ml-1 font-medium text-[9px]">({user.position || "Staff"})</span>
+               </p>
+            </div>
+          </div>
+
         </div>
       </CardContent>
 
