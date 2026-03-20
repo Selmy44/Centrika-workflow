@@ -87,7 +87,7 @@ export function RequestMessaging({ requestId }: RequestMessagingProps) {
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Type your message here..."
-              className="resize-none min-h-[40px] text-sm"
+              className="resize-none min-h-10 text-sm"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
@@ -100,6 +100,7 @@ export function RequestMessaging({ requestId }: RequestMessagingProps) {
               size="icon" 
               className="shrink-0 bg-blue-600 hover:bg-blue-700"
               disabled={!content.trim() || addCommentMutation.isPending}
+              title="Send message"
             >
               {addCommentMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

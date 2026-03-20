@@ -69,7 +69,10 @@ export const RecentRequests = () => {
                     </div>
                     <div className="flex items-center gap-3">
                       <StatusBadge status={request.status} size="sm" />
-                      <button className="h-6 w-6 rounded-full text-[#3b6dae] hover:bg-[#3b6dae]/10 group-hover:translate-x-0.5 transition-all duration-300 bg-transparent border-none">
+                      <button
+                        aria-label="View request details"
+                        className="h-6 w-6 rounded-full text-[#3b6dae] hover:bg-[#3b6dae]/10 group-hover:translate-x-0.5 transition-all duration-300 bg-transparent border-none"
+                      >
                         <ChevronRight size={12} className="text-slate-300 group-hover:text-[#3b6dae] transition-all duration-300" />
                       </button>
                     </div>

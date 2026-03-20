@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 
 interface SingleDatePickerProps {
+  id?: string;
   value: string;
   onChange: (date: string) => void;
   disabled?: boolean;
@@ -12,6 +13,7 @@ interface SingleDatePickerProps {
 }
 
 export default function SingleDatePicker({
+  id,
   value,
   onChange,
   disabled = false,
@@ -123,12 +125,22 @@ export default function SingleDatePicker({
     <div ref={containerRef} className="relative w-full">
       {/* Display Field */}
       <div
+        id={id}
         onClick={() => !disabled && setIsOpen(!isOpen)}
         className={`
           px-3 py-2 border border-gray-300 rounded-md cursor-pointer
           bg-white hover:bg-gray-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:border-transparent
           ${disabled ? "opacity-50 cursor-not-allowed bg-gray-100" : ""}
         `}
+        role="button"
+        tabIndex={0}
+        aria-label={label}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            !disabled && setIsOpen(!isOpen);
+          }
+        }}
       >
         <div className="text-sm font-medium text-gray-900">
           {formatDisplayDate(value)}
@@ -146,12 +158,16 @@ export default function SingleDatePicker({
                 <button
                   onClick={handlePrevMonth}
                   className="p-1.5 hover:bg-blue-50 rounded transition-colors"
+                  title="Previous Month"
+                  aria-label="Previous Month"
                 >
                   <ChevronLeft size={16} className="text-blue-600" />
                 </button>
                 <button
                   onClick={handleNextMonth}
                   className="p-1.5 hover:bg-blue-50 rounded transition-colors"
+                  title="Next Month"
+                  aria-label="Next Month"
                 >
                   <ChevronRight size={16} className="text-blue-600" />
                 </button>
@@ -182,3 +198,4 @@ export default function SingleDatePicker({
     </div>
   );
 }
+

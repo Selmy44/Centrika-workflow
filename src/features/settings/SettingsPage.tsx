@@ -1,5 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
-import DashboardLayout from "@/components/DashboardLayout";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -172,7 +172,8 @@ export default function Settings() {
                       </Avatar>
                       <label htmlFor="avatar-upload" className="absolute -bottom-1.5 -right-1.5 p-1.5 bg-[#c79d2d] text-white rounded-xl cursor-pointer hover:bg-[#c79d2d]/90 transition-all shadow-xl z-20 hover:scale-110 border-2 border-white">
                         <Upload size={12} className="font-bold" />
-                        <input id="avatar-upload" type="file" className="hidden" onChange={handleProfileImageUpload} />
+                        <span className="sr-only">Upload profile picture</span>
+                        <input id="avatar-upload" type="file" className="hidden" onChange={handleProfileImageUpload} aria-label="Upload profile picture" />
                       </label>
                     </div>
                     <div className="space-y-0.5">
@@ -269,14 +270,14 @@ export default function Settings() {
                       <p className="font-black text-[#3b6dae] text-sm">System Alerts via Email</p>
                       <p className="text-[11px] font-bold text-slate-400 mt-0.5">Receive document approval updates</p>
                     </div>
-                    <input type="checkbox" checked={emailNotifications} onChange={(e) => setEmailNotifications(e.target.checked)} className="h-5 w-5 rounded-lg border-[#3b6dae]/20 text-[#3b6dae] focus:ring-[#3b6dae]" />
+                    <input type="checkbox" id="email-notifications" checked={emailNotifications} onChange={(e) => setEmailNotifications(e.target.checked)} className="h-5 w-5 rounded-lg border-[#3b6dae]/20 text-[#3b6dae] focus:ring-[#3b6dae]" aria-label="System Alerts via Email" />
                   </div>
                   <div className="flex items-center justify-between p-4 bg-white/40 rounded-2xl border border-[#3b6dae]/5 transition-all hover:bg-white/60">
                     <div>
                       <p className="font-black text-[#3b6dae] text-sm">In-App Live Stream</p>
                       <p className="text-[11px] font-bold text-slate-400 mt-0.5">Real-time alerts in center stage</p>
                     </div>
-                    <input type="checkbox" checked={pushNotifications} onChange={(e) => setPushNotifications(e.target.checked)} className="h-5 w-5 rounded-lg border-[#3b6dae]/20 text-[#3b6dae] focus:ring-[#3b6dae]" />
+                    <input type="checkbox" id="push-notifications" checked={pushNotifications} onChange={(e) => setPushNotifications(e.target.checked)} className="h-5 w-5 rounded-lg border-[#3b6dae]/20 text-[#3b6dae] focus:ring-[#3b6dae]" aria-label="In-App Live Stream" />
                   </div>
                 </CardContent>
               </Card>
@@ -571,9 +572,10 @@ function UserDocumentsTable() {
                 <Badge className="bg-amber-500 font-black text-[8px] rounded-lg border-none hover:bg-amber-600">PENDING</Badge>
               )}
             </div>
-            <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer">
+            <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" aria-label="View document">
               <Button size="icon" variant="ghost" className="h-8 w-8 text-[#3b6dae] hover:bg-[#3b6dae]/10 rounded-lg">
                 <Eye size={16} />
+                <span className="sr-only">View</span>
               </Button>
             </a>
           </div>

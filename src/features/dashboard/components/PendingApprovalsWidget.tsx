@@ -29,7 +29,7 @@ export const PendingApprovalsWidget = () => {
   return (
     <Card className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border-border/50 rounded-2xl overflow-hidden shadow-sm relative group">
       {/* Decorative gradient that glows subtly on hover */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#3b6dae]/5 to-[#c79d2d]/5 opacity-50 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl pointer-events-none" />
+      <div className="absolute inset-0 bg-linear-to-br from-[#3b6dae]/5 to-[#c79d2d]/5 opacity-50 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl pointer-events-none" />
       
       <CardHeader className="bg-[#3b6dae]/5 border-b border-border/30 py-3">
         <div className="flex items-center justify-between">
@@ -47,7 +47,7 @@ export const PendingApprovalsWidget = () => {
       </CardHeader>
       
       <CardContent className="p-3 relative z-10">
-        <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
+        <div className="space-y-2 max-h-55 overflow-y-auto pr-1 custom-scrollbar">
           {approvals.slice(0, 4).map((request: any) => (
             <Link key={request.id} href={`/requests/${request.id}`}>
               <div className="group/item flex items-center justify-between p-2.5 bg-white dark:bg-slate-800 border border-border/50 hover:border-[#3b6dae]/30 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer relative overflow-hidden">
@@ -63,13 +63,13 @@ export const PendingApprovalsWidget = () => {
                     </p>
                     <div className="flex items-center gap-1.5 text-[9px] font-medium text-slate-400">
                       {request.user && (
-                         <span className="flex items-center gap-1 text-slate-500 dark:text-slate-300 font-bold max-w-[80px] truncate">
+                         <span className="flex items-center gap-1 text-slate-500 dark:text-slate-300 font-bold max-w-20 truncate">
                             <UserCircle size={10} />
                             {request.user.name?.split(' ')[0]}
                          </span>
                       )}
                       {request.user && <span className="w-0.5 h-0.5 rounded-full bg-slate-300" />}
-                      <span className="uppercase tracking-tight truncate max-w-[70px]">{request.type}</span>
+                      <span className="uppercase tracking-tight truncate max-w-17.5">{request.type}</span>
                       <span className="w-0.5 h-0.5 rounded-full bg-slate-300" />
                       <span className="tracking-tight">{formatDateTime(request.createdAt).split(',')[0]}</span>
                     </div>

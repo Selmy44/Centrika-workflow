@@ -79,7 +79,7 @@ export function LeaveTypeSelector({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="!w-96 !max-h-[500px] !p-0 !gap-0 !overflow-hidden" style={{ height: "auto" }}>
+      <DialogContent className="w-96! max-h-125! p-0! gap-0! overflow-hidden!" style={{ height: "auto" }}>
         <Button
           onClick={() => onOpenChange(false)}
           className="absolute right-4 top-4 rounded-full w-9 h-9 p-0 flex items-center justify-center bg-[#3b6dae] hover:bg-[#2d5385] text-white z-10 transition-all shadow-lg"

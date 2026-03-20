@@ -41,7 +41,7 @@ export function SuggestionBoxForm() {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="What should we improve? Your voice is anonymous..."
-            className="w-full bg-white/50 dark:bg-slate-900/40 border-border/40 focus:border-[#3b6dae]/30 focus:ring-0 rounded-[1.5rem] p-4 min-h-[140px] text-sm font-medium placeholder:text-slate-400 placeholder:font-bold placeholder:uppercase placeholder:tracking-widest placeholder:text-[10px] resize-none transition-all duration-300"
+            className="w-full bg-white/50 dark:bg-slate-900/40 border-border/40 focus:border-[#3b6dae]/30 focus:ring-0 rounded-3xl p-4 min-h-35 text-sm font-medium placeholder:text-slate-400 placeholder:font-bold placeholder:uppercase placeholder:tracking-widest placeholder:text-[10px] resize-none transition-all duration-300"
           />
           <div className="absolute top-4 right-4 text-[#3b6dae]/20 group-focus-within/feedback:text-[#3b6dae]/40 transition-colors">
              <ShieldCheck size={18} strokeWidth={2.5} />
@@ -53,7 +53,7 @@ export function SuggestionBoxForm() {
             <div className={`w-8 h-4 rounded-full relative transition-colors duration-300 ${isAnonymous ? 'bg-[#3b6dae]' : 'bg-slate-200'}`}>
                <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all duration-300 ${isAnonymous ? 'left-4.5' : 'left-0.5'}`} />
             </div>
-            <button className="text-[10px] font-bold text-[#c79d2d] flex items-center gap-1 hover:text-[#3b6dae] transition-all bg-transparent border-none">
+            <button className="text-[10px] font-bold text-[#c79d2d] flex items-center gap-1 hover:text-[#3b6dae] transition-all bg-transparent border-none" aria-label="Anonymity status">
               Identity Hidden
             </button>
           </div>
