@@ -25,7 +25,7 @@ import {
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, FileText, CheckCircle, Settings, Users, Bell, TrendingUp, DollarSign, Search, ChevronDown, Car, Calendar, BarChart3, User, Lock, AlertCircle, Building2, BookOpen , Wallet, Receipt } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, FileText, CheckCircle, Settings, Users, Bell, TrendingUp, DollarSign, Search, ChevronDown, Car, Calendar, BarChart3, User, Lock, AlertCircle, Building2, BookOpen , Wallet, Receipt, UserPlus } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import ThemeToggleIcon from "@/components/ui/ThemeToggleIcon";
 import NotificationIcon from "@/components/NotificationIcon";
@@ -101,6 +101,7 @@ const financeMenuItems = [
 const hrMenuItems = [
   { icon: LayoutDashboard, label: "HR Dashboard", path: "/" },
   { icon: Users, label: "Employees", path: "/employee-directory" },
+  { icon: UserPlus, label: "User Management", path: "/admin/users" },
   { icon: Calendar, label: "Leave Management", path: "/hr/leave" },
   { icon: FileText, label: "Document Center", path: "/hr/documents" },
   { icon: BarChart3, label: "HR Reports", path: "/hr/reports" },

@@ -79,11 +79,11 @@ export default function AdminUsers() {
   const [validationErrors, setValidationErrors] = useState<{name?: string, email?: string, department?: string, gender?: string}>({});
 
   const { data: users, isLoading, refetch } = (trpc as any).users.listAll.useQuery(undefined, {
-    enabled: isAuthenticated && user?.role === "admin",
+    enabled: isAuthenticated && (user?.role === "admin" || user?.role === "hr"),
   });
 
   const { data: pendingInvitations, refetch: refetchInvitations } = (trpc as any).invitations.getPendingInvitations.useQuery(undefined, {
-    enabled: isAuthenticated && user?.role === "admin",
+    enabled: isAuthenticated && (user?.role === "admin" || user?.role === "hr"),
   });
 
   const { data: departments } = (trpc as any).employees.getDepartments.useQuery();
