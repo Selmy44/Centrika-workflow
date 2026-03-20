@@ -17,17 +17,17 @@ interface StatsCardProps {
 
 export const StatsCard = ({ title, value, icon, subtitle, loading, className, trend }: StatsCardProps) => {
   return (
-    <Card className={`group relative overflow-hidden bg-white/80 dark:bg-slate-900/40 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-2xl hover:shadow-2xl hover:shadow-[#3b6dae]/5 transition-all duration-500 hover:-translate-y-1 ${className || ""}`}>
+    <Card className={`group relative overflow-hidden bg-white dark:bg-slate-900/80 border border-slate-100 dark:border-white/10 rounded-xl hover:shadow-2xl hover:shadow-[#3b6dae]/5 transition-all duration-500 hover:-translate-y-1 dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)] ${className || ""}`}>
       <CardContent className="p-4 lg:p-5">
         <div className="flex items-center justify-between gap-4">
           <div className="space-y-0.5 min-w-0">
-            <p className="text-[12px] font-black text-slate-400 dark:text-blue-400/40 uppercase tracking-[0.2em] mb-1 truncate">
+            <p className="text-[9px] font-black text-slate-400 dark:text-blue-400/40 uppercase tracking-[0.2em] mb-1">
               {title}
             </p>
             <div className="flex items-baseline gap-2">
               <h3 className="text-2xl font-black text-slate-900 dark:text-blue-50 tracking-tight leading-none">
                 {loading ? (
-                  <div className="h-8 w-16 bg-muted-foreground/10 animate-pulse rounded-lg" />
+                  <div className="h-10 w-20 bg-muted-foreground/10 animate-pulse rounded-xl" />
                 ) : (
                   value
                 )}
