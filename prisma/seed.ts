@@ -43,20 +43,12 @@ async function main() {
       departmentName: "Engineering",
     },
     {
-      email: "aberahozan@gmail.com",
-      name: "Hozan Abera",
-      password: userPassword,
+      email: "snshuti@centrika.rw",
+      name: "",
+      password: adminPassword,
       role: "ceo_md",
       status: "Active",
       departmentName: "Operations",
-    },
-    {
-      email: "uweradivine485@gmail.com",
-      name: "Divine Uwera",
-      password: userPassword,
-      role: "user",
-      status: "Active",
-      departmentName: "Engineering",
     },
     {
       email: "sebagabomoses25@gmail.com",
