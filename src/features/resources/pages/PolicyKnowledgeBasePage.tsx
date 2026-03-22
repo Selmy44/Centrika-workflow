@@ -22,7 +22,7 @@ export function PolicyKnowledgeBasePage() {
       <div className="space-y-8 p-4 lg:p-8 animate-in fade-in duration-500">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-slate-800 dark:text-white flex items-center gap-2">
+            <h1 className="text-2xl font-black tracking-tight text-[#3b6dae] dark:text-[#c79d2d] flex items-center gap-2">
               <BookOpen className="h-6 w-6 text-[#3b6dae]" />
               Policy Knowledge Base
             </h1>

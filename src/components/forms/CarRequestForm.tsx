@@ -148,9 +148,7 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
   if (!isAuthenticated) return null;
 
   return (
-    <div className="w-full bg-white text-black px-4 leave-form-container relative">
-
-
+    <div className="w-full bg-white dark:bg-[#1f426b] text-black dark:text-slate-100 px-4 leave-form-container relative dark:border-[#2b6cb0]/30">
 
       <div>
         {/* ===== HEADER WITH LOGO AND CONTACT INFO ===== */}
@@ -203,7 +201,7 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
               <span className="text-blue-600 font-bold text-xs whitespace-nowrap">CTK - </span>
               <Input
                 value={form.department}
-                className="w-full h-7 border-blue-400 text-xs bg-gray-100 cursor-not-allowed border-l-0"
+                className="w-full h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed border-l-0"
                 disabled
               />
             </div>
@@ -213,7 +211,7 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
             <Input
               type="text"
               value={new Date().toISOString().split('T')[0]}
-              className="h-7 border-blue-400 text-xs bg-gray-100 cursor-not-allowed"
+              className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
               disabled
             />
           </div>
@@ -221,7 +219,7 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
             <p className="font-semibold text-blue-600 text-xs mb-1">Staff ID</p>
             <Input
               value={form.staffId}
-              className="h-7 border-blue-400 text-xs bg-gray-100 cursor-not-allowed"
+              className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
               disabled
             />
           </div>
@@ -229,7 +227,7 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
             <p className="font-semibold text-blue-600 text-xs mb-1">Employee Name</p>
             <Input
               value={form.employeeName}
-              className="h-7 border-blue-400 text-xs bg-gray-100 cursor-not-allowed"
+              className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
               disabled
             />
           </div>
@@ -244,7 +242,7 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
             <Row label="1.1 Employee Full Name">
               <Input
                 value={form.employeeName}
-                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium"
+                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
                 disabled
               />
             </Row>
@@ -252,28 +250,28 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
               <Input
                 type="date"
                 value={form.dateOfEmployment}
-                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium"
+                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
                 disabled
               />
             </Row>
             <Row label="1.3 Staff ID">
               <Input
                 value={form.staffId}
-                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium"
+                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
                 disabled
               />
             </Row>
             <Row label="1.4 Department">
               <Input
                 value={form.department}
-                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium"
+                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
                 disabled
               />
             </Row>
             <Row label="1.5 Position / Title">
               <Input
                 value={form.position}
-                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium"
+                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
                 disabled
               />
             </Row>
@@ -286,7 +284,7 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
                 placeholder="e.g., Kigali Downtown, Airport"
                 value={form.destination}
                 onChange={(e) => setForm({ ...form, destination: e.target.value })}
-                className="border-blue-300 h-7 text-xs"
+                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs"
               />
             </Row>
             <Row label="2.2 Request Title (Optional)">
@@ -294,7 +292,7 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
                 placeholder="e.g., Client Meeting, Office Supply Run"
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
-                className="border-blue-300 h-7 text-xs"
+                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs"
               />
             </Row>
             <Row label="2.3 Purpose (Optional)">
@@ -302,7 +300,7 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
                 placeholder="Describe the purpose of the trip..."
                 value={form.purpose}
                 onChange={(e) => setForm({ ...form, purpose: e.target.value })}
-                className="min-h-20 border-blue-300 text-xs"
+                className="min-h-20 border-blue-300 dark:border-[#3b6dae]/40 text-xs"
               />
             </Row>
           </Section>
@@ -321,7 +319,7 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
                 type="time"
                 value={form.departureTime}
                 onChange={(e) => setForm({ ...form, departureTime: e.target.value })}
-                className="border-blue-300 h-7 text-xs"
+                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs"
               />
             </Row>
             <Row label="3.3 Number of Passengers">
@@ -332,9 +330,9 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
                   max="10"
                   value={form.passengers}
                   onChange={(e) => setForm({ ...form, passengers: e.target.value })}
-                  className="border-blue-300 h-7 text-xs"
+                  className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs"
                 />
-                <span className="text-sm font-medium text-gray-600">Person(s)</span>
+                <span className="text-sm font-medium text-gray-600 dark:text-slate-400">Person(s)</span>
               </div>
             </Row>
           </Section>
@@ -349,10 +347,10 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
                   setForm({ ...form, driverName: v, carInfo: driver?.car || "" });
                 }}
               >
-                <SelectTrigger className="w-full h-10 border-blue-300 bg-white text-black font-medium focus:ring-blue-500">
+                <SelectTrigger className="w-full h-10 border-blue-300 dark:border-[#3b6dae]/40 bg-white dark:bg-[#1f426b] text-black dark:text-slate-100 font-medium focus:ring-blue-500">
                   <SelectValue placeholder="-- Select a Driver --" />
                 </SelectTrigger>
-                <SelectContent className="bg-white border-blue-200">
+                <SelectContent className="bg-white dark:bg-[#1f426b] border-blue-200 dark:border-[#3b6dae]/30">
                   {drivers.map((driver: any) => (
                     <SelectItem key={driver.name} value={driver.name} className="focus:bg-blue-500 focus:text-white">
                       {driver.name} — {driver.car}
@@ -365,7 +363,7 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
               <Row label="4.2 Assigned Vehicle">
                 <Input
                   value={form.carInfo}
-                  className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium"
+                  className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
                   disabled
                 />
               </Row>
@@ -396,7 +394,7 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
                   }}
                   className="text-xs"
                 />
-                {form.employeeSignatureUrl && <img src={form.employeeSignatureUrl} alt="sig" className="h-10 object-contain border border-blue-300 p-1" />}
+                {form.employeeSignatureUrl && <img src={form.employeeSignatureUrl} alt="sig" className="h-10 object-contain border border-blue-300 dark:border-[#3b6dae]/40 p-1" />}
               </div>
             </Row>
           </Section>
@@ -406,7 +404,7 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
             <Row label="6.1 HR Approval">
               <Input
                 value="Doreen MBABAZI"
-                className="w-full h-8 border-blue-300 bg-gray-100 text-black font-medium cursor-not-allowed max-w-[400px] mt-1 mb-1"
+                className="w-full h-8 border-blue-300 dark:border-[#3b6dae]/40 bg-gray-100 dark:bg-[#295482] text-black dark:text-slate-100 font-medium cursor-not-allowed max-w-[400px] mt-1 mb-1"
                 disabled
               />
             </Row>
@@ -414,13 +412,13 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
         </div>
 
         {/* ===== ACTIONS ===== */}
-        <div className="flex justify-between items-center px-6 py-4 border-t border-blue-400 bg-gray-50 gap-4">
+        <div className="flex justify-between items-center px-6 py-4 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c] gap-4">
           <div className="flex gap-2">
             <Button
               variant="outline"
               disabled={isSubmitting}
               onClick={() => window.print()}
-              className="border-blue-400 text-blue-600"
+              className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600"
             >
               <Printer size={16} className="mr-1" /> Print
             </Button>
@@ -430,7 +428,7 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
               onClick={() => {
                 toast.info("Download functionality requires backend PDF generation");
               }}
-              className="border-blue-400 text-blue-600"
+              className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600"
             >
               <Download size={16} className="mr-1" /> Download
             </Button>
@@ -440,7 +438,7 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
               variant="outline"
               disabled={isSubmitting}
               onClick={() => handleSubmit(false)}
-              className="border-blue-400"
+              className="border-blue-400 dark:border-[#3b6dae]/50"
             >
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save Draft
@@ -457,7 +455,7 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
         </div>
 
         {/* ===== FOOTER ===== */}
-        <div className="text-center text-xs text-gray-600 py-3 border-t border-gray-200 space-y-1">
+        <div className="text-center text-xs text-gray-600 dark:text-slate-400 py-3 border-t border-gray-200 space-y-1">
           <p>www.centrika.rw</p>
           <p>1 | Centrika Ltd | Motto: Delivering Tomorrow's Solutions Today</p>
         </div>
@@ -470,7 +468,7 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
 
 function Section({ title, children, className = "" }: { title: string, children: React.ReactNode, className?: string }) {
   return (
-    <div className={`border-t border-blue-400 ${className}`}>
+    <div className={`border-t border-blue-400 dark:border-[#3b6dae]/50 ${className}`}>
       <div className="bg-[#3b6dae] text-white font-bold px-4 py-2 text-sm">{title}</div>
       {children}
     </div>
@@ -479,9 +477,9 @@ function Section({ title, children, className = "" }: { title: string, children:
 
 function Row({ label, children, colSpan = false }: { label: React.ReactNode, children: React.ReactNode, colSpan?: boolean }) {
   return (
-    <div className={`grid ${colSpan ? 'grid-cols-1' : 'grid-cols-[220px_1fr]'} border-b border-blue-400`}>
+    <div className={`grid ${colSpan ? 'grid-cols-1' : 'grid-cols-[220px_1fr]'} border-b border-blue-400 dark:border-[#3b6dae]/50`}>
       {!colSpan && (
-        <div className="px-3 py-2 font-medium border-r border-blue-400 bg-blue-100 text-[#3b6dae] text-xs flex items-center">
+        <div className="px-3 py-2 font-medium border-r border-blue-400 dark:border-[#3b6dae]/50 bg-blue-100 text-[#3b6dae] text-xs flex items-center">
           {label}
         </div>
       )}

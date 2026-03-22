@@ -93,7 +93,7 @@ export const FinanceDashboard = () => {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-black text-slate-800 dark:text-white">
+          <h1 className="flex items-center gap-2 text-2xl font-black text-[#3b6dae] dark:text-[#c79d2d]">
             Finance Command Center
             <Badge variant="outline" className="border-emerald-500/30 text-[10px] font-bold uppercase tracking-widest text-emerald-500">
               Fiscal Pulse

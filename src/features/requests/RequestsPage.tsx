@@ -73,7 +73,7 @@ export default function Requests() {
       <div className="space-y-6 p-4 lg:p-6">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-[#3b6dae] dark:text-blue-400">My Requests</h1>
+            <h1 className="text-3xl font-bold text-[#3b6dae] dark:text-[#c79d2d]">My Requests</h1>
             <p className="text-muted-foreground mt-2">View and manage all your requests</p>
           </div>
           <div className="flex items-center gap-3">

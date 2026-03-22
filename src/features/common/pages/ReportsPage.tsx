@@ -51,7 +51,7 @@ const ReportsPage = ({ type }: { type: "hr" | "finance" }) => {
       <div className="space-y-8 p-4 lg:p-8 animate-in fade-in duration-500">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-2xl font-black capitalize tracking-tight text-slate-800 dark:text-white">{type} Analytics & Reports</h1>
+            <h1 className="text-2xl font-black capitalize tracking-tight text-[#3b6dae] dark:text-[#c79d2d]">{type} Analytics & Reports</h1>
             <p className="text-sm text-slate-500 dark:text-slate-400">
               Decision support for {type} operations with action-ready signals and operational trends.
             </p>

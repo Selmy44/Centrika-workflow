@@ -200,7 +200,7 @@ export default function LeaveRequestForm({
     pink: "bg-pink-500",
     cyan: "bg-cyan-500",
     green: "bg-green-500",
-    gray: "bg-gray-500"
+    gray: "bg-gray-50 dark:bg-[#1a385c]"
   };
   const titleBarColor = colorMap[config.color] || "bg-yellow-500";
 
@@ -300,7 +300,7 @@ export default function LeaveRequestForm({
   if (!isAuthenticated) return null;
 
   return (
-    <div className="w-full bg-white text-black px-4 leave-form-container relative">
+    <div className="w-full bg-white dark:bg-[#1f426b] text-black dark:text-slate-100 px-4 leave-form-container relative dark:border-[#2b6cb0]/30">
       <div>
         {/* HEADER WITH LOGO AND CONTACT INFO */}
         <div className="flex justify-between items-start px-6 py-3 gap-8">
@@ -343,43 +343,43 @@ export default function LeaveRequestForm({
             <p className="font-semibold text-blue-600 mb-1 text-xs">Department</p>
             <div className="flex gap-0 items-center">
               <span className="text-blue-600 font-bold text-xs whitespace-nowrap">CTK - </span>
-              <Input value={form.department} className="w-full h-7 border-blue-400 text-xs bg-gray-100 cursor-not-allowed border-l-0" disabled />
+              <Input value={form.department} className="w-full h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed border-l-0" disabled />
             </div>
           </div>
           <div>
             <p className="font-semibold text-blue-600 mb-1 text-xs">Date of Request</p>
-            <Input type="text" value={new Date().toISOString().split('T')[0]} className="h-7 border-blue-400 text-xs bg-gray-100 cursor-not-allowed" disabled />
+            <Input type="text" value={new Date().toISOString().split('T')[0]} className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed" disabled />
           </div>
           <div>
             <p className="font-semibold text-blue-600 text-xs mb-1">Staff ID</p>
-            <Input value={form.staffId} className="h-7 border-blue-400 text-xs bg-gray-100 cursor-not-allowed" disabled />
+            <Input value={form.staffId} className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed" disabled />
           </div>
           <div>
             <p className="font-semibold text-blue-600 text-xs mb-1">Employee Name</p>
-            <Input value={form.employeeName} className="h-7 border-blue-400 text-xs bg-gray-100 cursor-not-allowed" disabled />
+            <Input value={form.employeeName} className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed" disabled />
           </div>
         </div>
 
         {/* REQUEST DETAILS */}
-        <div className="border-t border-blue-400">
+        <div className="border-t border-blue-400 dark:border-[#3b6dae]/50">
           <div className="bg-[#3b6dae] text-white font-bold px-4 py-2 text-sm">REQUEST DETAILS</div>
 
           {/* 1. EMPLOYEE INFORMATION */}
           <Section title="1. EMPLOYEE INFORMATION">
             <Row label="1.1 Employee Full Name">
-              <Input value={form.employeeName} className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" disabled />
+              <Input value={form.employeeName} className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" disabled />
             </Row>
             <Row label="1.2 Date of Employment">
-              <Input type="date" value={form.dateOfEmployment} className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" disabled />
+              <Input type="date" value={form.dateOfEmployment} className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" disabled />
             </Row>
             <Row label="1.3 Staff ID">
-              <Input value={form.staffId} className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" disabled />
+              <Input value={form.staffId} className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" disabled />
             </Row>
             <Row label="1.4 Department">
-              <Input value={form.department} className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" disabled />
+              <Input value={form.department} className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" disabled />
             </Row>
             <Row label="1.5 Position / Title">
-              <Input value={form.position} className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" disabled />
+              <Input value={form.position} className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" disabled />
             </Row>
           </Section>
 
@@ -388,7 +388,7 @@ export default function LeaveRequestForm({
             <Row label="2.1 Nature of Leave">
               <Input
                 value={config.title || "Annual Leave"}
-                className="w-[300px] h-8 border-blue-300 bg-gray-100 text-black font-medium cursor-not-allowed"
+                className="w-[300px] h-8 border-blue-300 dark:border-[#3b6dae]/40 bg-gray-100 dark:bg-[#295482] text-black dark:text-slate-100 font-medium cursor-not-allowed"
                 disabled
               />
             </Row>
@@ -431,8 +431,8 @@ export default function LeaveRequestForm({
 
             <Row label="2.3 Business Days Requested">
               <div className="flex items-center gap-2">
-                <Input value={calculatedBusinessDays} disabled className="border-blue-300 h-7 text-xs w-24 bg-gray-100 cursor-not-allowed !text-black font-medium text-center" />
-                <span className="text-xs font-medium text-gray-600">Day(s)</span>
+                <Input value={calculatedBusinessDays} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs w-24 bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium text-center" />
+                <span className="text-xs font-medium text-gray-600 dark:text-slate-400">Day(s)</span>
               </div>
             </Row>
             <Row label="2.4 Contact Details / Backup Person">
@@ -441,7 +441,7 @@ export default function LeaveRequestForm({
                 onChange={(e) => setForm({ ...form, contactDuringLeave: e.target.value })}
                 disabled={effectiveIsReadOnly}
                 placeholder="Provide details about who will cover your duties and how to reach you..."
-                className="min-h-16 border-blue-300 text-xs"
+                className="min-h-16 border-blue-300 dark:border-[#3b6dae]/40 text-xs"
               />
             </Row>
             <Row label="2.5 Will you be outside the country?">
@@ -507,7 +507,7 @@ export default function LeaveRequestForm({
                       }}
                       className="text-xs"
                     />
-                    {form.employeeSignatureUrl && <img src={form.employeeSignatureUrl} alt="sig" className="h-10 object-contain border border-blue-300 p-1" />}
+                    {form.employeeSignatureUrl && <img src={form.employeeSignatureUrl} alt="sig" className="h-10 object-contain border border-blue-300 dark:border-[#3b6dae]/40 p-1" />}
                   </>
                 ) : (
                   <div className="space-y-1">
@@ -519,7 +519,7 @@ export default function LeaveRequestForm({
                   <Input 
                     value={form.signatureDate || new Date().toISOString().split("T")[0]} 
                     readOnly 
-                    className="h-8 bg-gray-100 text-gray-600 font-medium cursor-not-allowed w-full border-blue-200 text-xs"
+                    className="h-8 bg-gray-100 dark:bg-[#295482] text-gray-600 dark:text-slate-400 font-medium cursor-not-allowed w-full border-blue-200 dark:border-[#3b6dae]/30 text-xs"
                   />
                 </div>
               </div>
@@ -532,13 +532,13 @@ export default function LeaveRequestForm({
             <Row label="4.1 Line Manager / HOD">
               <Input
                 value={uniqueHeads.find((h: any) => h.id === parseInt(form.reportingManager))?.name || "Not assigned"}
-                className="w-full h-8 border-blue-300 bg-gray-100 text-black font-medium cursor-not-allowed mt-1 mb-1 max-w-[400px]"
+                className="w-full h-8 border-blue-300 dark:border-[#3b6dae]/40 bg-gray-100 dark:bg-[#295482] text-black dark:text-slate-100 font-medium cursor-not-allowed mt-1 mb-1 max-w-[400px]"
                 disabled
               />
               {form.managerSignatureUrl && (
                 <div className="mt-2">
                   <p className="text-xs text-gray-500 mb-1">Approved by Manager:</p>
-                  <img src={form.managerSignatureUrl} alt="Manager Signature" className="h-10 object-contain border border-blue-200 rounded p-1 bg-white" />
+                  <img src={form.managerSignatureUrl} alt="Manager Signature" className="h-10 object-contain border border-blue-200 dark:border-[#3b6dae]/30 rounded p-1 bg-white dark:bg-[#1f426b]" />
                 </div>
               )}
             </Row>
@@ -555,12 +555,12 @@ export default function LeaveRequestForm({
             )}
 
             {isApprover && (
-              <div className="p-4 border-b border-blue-400 bg-blue-50/30">
+              <div className="p-4 border-b border-blue-400 dark:border-[#3b6dae]/50 bg-blue-50/30">
                 <h3 className="text-sm font-bold text-blue-700 mb-3">Your Approval ({user?.role || "Approver"})</h3>
                 <div className="space-y-3">
                   <div>
                     <label className="text-xs font-semibold block mb-1">Comments</label>
-                    <Textarea value={approvalComments} onChange={(e) => setApprovalComments(e.target.value)} disabled={isReadOnly} placeholder="Add comments..." className="text-xs border-blue-300" />
+                    <Textarea value={approvalComments} onChange={(e) => setApprovalComments(e.target.value)} disabled={isReadOnly} placeholder="Add comments..." className="text-xs border-blue-300 dark:border-[#3b6dae]/40" />
                   </div>
                   {/* Removed Forward to HR field since it's handled automatically via workflows */}
                   <div>
@@ -572,7 +572,7 @@ export default function LeaveRequestForm({
                           <img 
                             src={URL.createObjectURL(approverSignature)} 
                             alt="HOD Signature Preview" 
-                            className="h-10 object-contain border border-blue-300 p-1" 
+                            className="h-10 object-contain border border-blue-300 dark:border-[#3b6dae]/40 p-1" 
                           />
                         )}
                       </>
@@ -587,17 +587,16 @@ export default function LeaveRequestForm({
         </div>
 
         {/* ACTIONS & FOOTER */}
-        <div className="flex justify-between items-center px-6 py-4 border-t border-blue-400 bg-gray-50 gap-4 mt-4">
+        <div className="flex justify-between items-center px-6 py-4 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c] gap-4 mt-4">
           <div className="flex gap-2">
-            <Button variant="outline" disabled={isSubmitting} onClick={() => window.print()} className="border-blue-400 text-blue-600">
+            <Button variant="outline" disabled={isSubmitting} onClick={() => window.print()} className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600">
               <Printer size={16} className="mr-1" /> Print
             </Button>
-            <Button variant="outline" disabled={isSubmitting} onClick={() => toast.info("Requires PDF generation")} className="border-blue-400 text-blue-600">
+            <Button variant="outline" disabled={isSubmitting} onClick={() => toast.info("Requires PDF generation")} className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600">
               <Download size={16} className="mr-1" /> Download
             </Button>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" disabled={isSubmitting} onClick={() => onBack ? onBack() : (onClose ? onClose() : onSuccess?.())}>Close</Button>
             {isApprover && !isReadOnly && (
                <Button variant="destructive" onClick={() => setShowRejectDialog(true)}>Reject</Button>
             )}
@@ -607,7 +606,7 @@ export default function LeaveRequestForm({
 
             {!isApprover && !isReadOnly && (
               <>
-                <Button variant="outline" disabled={isSubmitting} onClick={handleSaveAsDraft} className="border-blue-400">Save Draft</Button>
+                <Button variant="outline" disabled={isSubmitting} onClick={handleSaveAsDraft} className="border-blue-400 dark:border-[#3b6dae]/50">Save Draft</Button>
                 <Button disabled={isSubmitting} onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700">
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Submit Request
@@ -617,7 +616,7 @@ export default function LeaveRequestForm({
           </div>
         </div>
 
-        <div className="text-center text-xs text-gray-600 py-3 border-t border-gray-200 space-y-1">
+        <div className="text-center text-xs text-gray-600 dark:text-slate-400 py-3 border-t border-gray-200 space-y-1">
           <p>www.centrika.rw</p>
           <p>1 | Centrika Ltd | Motto: Delivering Tomorrow's Solutions Today</p>
         </div>

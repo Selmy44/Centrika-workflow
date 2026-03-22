@@ -82,7 +82,7 @@ export default function EmployeeDirectory() {
       <div className="space-y-8 p-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Employee Directory</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-[#3b6dae] dark:text-[#c79d2d]">Employee Directory</h1>
             <p className="mt-2 text-gray-600 dark:text-gray-400">Contact information, team context, and direct access to full employee profiles.</p>
           </div>
           {(isLoadingEmployees || isLoadingDepts) && <Loader2 className="h-6 w-6 animate-spin text-blue-600" />}

@@ -31,7 +31,7 @@ export function PersonalInsightsPage() {
     <DashboardLayout>
     <div className="container mx-auto py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">My Insights</h1>
+        <h1 className="text-3xl font-bold text-[#3b6dae] dark:text-[#c79d2d] tracking-tight">My Insights</h1>
         <p className="text-slate-500 mt-1">Personal analytics and request history overview.</p>
       </div>
 

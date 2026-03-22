@@ -25,8 +25,8 @@ function CalendarDayButton({
       ref={ref}
       className={cn(
         "h-10 w-10 text-sm rounded-md font-medium text-gray-700 hover:bg-indigo-100 hover:text-indigo-700 transition-colors",
-        isSelected && "bg-indigo-600 text-white font-bold shadow-lg",
-        isToday && !isSelected && "bg-yellow-100 border-2 border-yellow-400 text-yellow-800 font-bold",
+        isSelected && "bg-indigo-600 text-white font-bold shadow-md transform scale-105",
+        isToday && !isSelected && "bg-blue-600 text-white font-bold",
         isOutside && "text-gray-300 cursor-default",
         isDisabled && "text-gray-300 cursor-not-allowed bg-gray-100",
         className

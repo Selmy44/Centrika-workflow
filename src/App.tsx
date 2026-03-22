@@ -32,6 +32,7 @@ import BudgetManagementPage from "./features/finance/BudgetManagementPage";
 import ReportsPage from "./features/common/pages/ReportsPage";
 import { PolicyKnowledgeBasePage } from "@/features/resources/pages/PolicyKnowledgeBasePage";
 import { PersonalInsightsPage } from "@/features/resources/pages/PersonalInsightsPage";
+import OrganizationViewPage from "./features/users/OrganizationViewPage";
 
 // Re-index trigger
 
@@ -75,6 +76,7 @@ function Router() {
       <Route path="/team-status" component={TeamStatusPage} />
       <Route path="/employee-directory" component={EmployeeDirectoryPage} />
       <Route path="/employees" component={EmployeeDirectoryPage} />
+      <Route path="/organization-view" component={OrganizationViewPage} />
       <Route path="/admin/employees/:id" component={EmployeeProfilePage} />
       <Route path="/finance" component={FinancePage} />
       <Route path="/finance/history" component={ExpenditureHistoryPage} />

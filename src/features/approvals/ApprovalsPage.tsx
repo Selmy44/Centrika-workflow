@@ -43,19 +43,45 @@ export default function Approvals() {
   const [signatureFile, setSignatureFile] = useState<File | null>(null);
   const [approverSignatureUrl, setApproverSignatureUrl] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState<"all" | "pending" | "approved" | "rejected">("all");
 
-  const { data: pendingRequests, isLoading, refetch } = (trpc as any).requests.listPendingApprovals.useQuery(undefined, {
-    // Only fetch if they're logged in and have an approver role (or additional roles that imply approval access)
+  const { data: pendingRequests, isLoading: pendingLoading, refetch } = (trpc as any).requests.listPendingApprovals.useQuery(undefined, {
     enabled: isAuthenticated && (user?.role !== "user" || !!user?.additionalRoles),
   });
 
-  // Filter requests based on search term
-  const filteredRequests = pendingRequests?.filter((request: any) =>
+  const { data: historyRequests, isLoading: historyLoading, refetch: refetchHistory } = (trpc as any).requests.listApprovalHistory.useQuery(undefined, {
+    enabled: isAuthenticated && (user?.role !== "user" || !!user?.additionalRoles),
+  });
+
+  const isLoading = pendingLoading || historyLoading;
+
+  // Combine and deduplicate: pending from listPendingApprovals + history from listApprovalHistory
+  const allRequests = (() => {
+    const map = new Map<number, any>();
+    (pendingRequests || []).forEach((r: any) => map.set(r.id, r));
+    (historyRequests || []).forEach((r: any) => { if (!map.has(r.id)) map.set(r.id, r); });
+    return Array.from(map.values()).sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  })();
+
+  // Filter by tab
+  const tabFilteredRequests = activeTab === "all" ? allRequests
+    : allRequests.filter((r: any) => r.status === activeTab);
+
+  // Then apply search filter
+  const filteredRequests = tabFilteredRequests.filter((request: any) =>
     request.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     request.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     request.type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     request.userId?.toString().includes(searchTerm)
-  ) || [];
+  );
+
+  // Tab counts
+  const tabCounts = {
+    all: allRequests.length,
+    pending: allRequests.filter((r: any) => r.status === "pending").length,
+    approved: allRequests.filter((r: any) => r.status === "approved").length,
+    rejected: allRequests.filter((r: any) => r.status === "rejected").length,
+  };
 
   // Auto-open request if coming from notification link - only try once per URL
   useEffect(() => {
@@ -83,6 +109,7 @@ export default function Approvals() {
       setSelectedRequest(null);
       // Refresh the list to remove the approved request
       refetch();
+      refetchHistory();
       // Invalidate dashboard stats so counts update in real-time
       queryClient.invalidateQueries({ queryKey: ["requests", "getDashboardStats"] });
       queryClient.invalidateQueries({ queryKey: ["requests", "getRecentRequests"] });
@@ -99,6 +126,7 @@ export default function Approvals() {
       setComments("");
       setSelectedRequest(null);
       refetch();
+      refetchHistory();
       // Invalidate dashboard stats so counts update in real-time
       queryClient.invalidateQueries({ queryKey: ["requests", "getDashboardStats"] });
       queryClient.invalidateQueries({ queryKey: ["requests", "getRecentRequests"] });
@@ -205,16 +233,16 @@ export default function Approvals() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 p-4 lg:p-6">
         {/* Header section */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Pending Approvals</h1>
-            <p className="text-muted-foreground mt-2">Review and approve employee requests</p>
+            <h1 className="text-3xl font-bold text-[#3b6dae] dark:text-[#c79d2d]">Approvals</h1>
+            <p className="text-muted-foreground mt-2">Review and manage employee requests</p>
           </div>
 
           {/* Modern compact search bar on the right */}
-          {!isLoading && pendingRequests && pendingRequests.length > 0 && (
+          {!isLoading && allRequests.length > 0 && (
             <div className="relative">
               <Input
                 placeholder="Search requests..."
@@ -229,22 +257,43 @@ export default function Approvals() {
           )}
         </div>
 
+        {/* Status filter tabs */}
+        <div className="flex gap-2 border-b border-border pb-0">
+          {(["all", "pending", "approved", "rejected"] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors border-b-2 -mb-px ${
+                activeTab === tab
+                  ? "border-blue-600 text-blue-600 bg-blue-50/50"
+                  : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              }`}
+            >
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              <span className={`ml-2 text-xs px-1.5 py-0.5 rounded-full ${
+                activeTab === tab ? "bg-blue-100 text-blue-700" : "bg-muted text-muted-foreground"
+              }`}>
+                {tabCounts[tab]}
+              </span>
+            </button>
+          ))}
+        </div>
+
         {isLoading ? (
           <Card className="bg-card border-border">
             <CardContent className="pt-6">
               <div className="flex items-center justify-center py-8">
-                {/* Loading spinner while fetching data */}
                 <Loader2 className="animate-spin text-accent" size={32} />
               </div>
             </CardContent>
           </Card>
-        ) : !pendingRequests || pendingRequests.length === 0 ? (
+        ) : allRequests.length === 0 ? (
           <Card className="bg-card border-border">
             <CardContent className="pt-6">
               <div className="text-center py-8">
                 <CheckCircle className="mx-auto text-green-400 mb-4" size={48} />
-                <p className="text-foreground font-medium mb-2">All caught up!</p>
-                <p className="text-sm text-muted-foreground">There are no pending requests at the moment.</p>
+                <p className="text-foreground font-medium mb-2">No requests found</p>
+                <p className="text-sm text-muted-foreground">There are no requests to display at the moment.</p>
               </div>
             </CardContent>
           </Card>
@@ -252,7 +301,7 @@ export default function Approvals() {
           <Card className="bg-card border-border">
             <CardContent className="pt-6">
               <div className="text-center py-8">
-                <p className="text-muted-foreground">No requests match your search</p>
+                <p className="text-muted-foreground">No requests match your search or filter</p>
               </div>
             </CardContent>
           </Card>
@@ -294,19 +343,19 @@ export default function Approvals() {
                           </p>
                         </div>
 
-                        {/* Approval action button - only View & Sign Form */}
+                        {/* Approval action button */}
                         <div className="flex items-center gap-3 mt-4 flex-wrap">
                           <Button
                             variant="default"
                             size="sm"
-                            className="bg-blue-600 hover:bg-blue-700"
+                            className={request.status === "pending" ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-600 hover:bg-gray-700"}
                             onClick={() => {
                               setSelectedRequest(request);
                               setShowFullFormDialog(true);
                             }}
                           >
                             <FileText size={16} className="mr-2" />
-                            View & Sign Form
+                            {request.status === "pending" ? "View & Sign Form" : "View Form"}
                           </Button>
                         </div>
                       </div>

@@ -211,26 +211,51 @@ export default function OtpLoginPage() {
                 {step === "otp" && (
                   <form onSubmit={handleVerifyOtp} className="space-y-5">
                     <div className="flex justify-center pt-2 relative">
-                      <InputOTP
-                        maxLength={6}
-                        value={otp}
-                        onChange={(value) => {
-                          setOtp(value);
-                          setError("");
-                        }}
-                        disabled={loading || isOtpExpired}
-                        autoFocus
-                      >
-                        <InputOTPGroup className="gap-3">
-                          {[0, 1, 2, 3, 4, 5].map((index) => (
-                            <InputOTPSlot
-                              key={index}
-                              index={index}
-                              className="w-14 h-14 text-2xl font-black text-[#3b6dae] border-[#3b6dae]/20 rounded-xl bg-white shadow-sm transition-all focus-within:border-[#3b6dae] focus-within:ring-2 focus-within:ring-[#3b6dae]/20"
-                            />
-                          ))}
-                        </InputOTPGroup>
-                      </InputOTP>
+                      <div className="relative group max-w-[340px] mx-auto">
+                        <Input
+                          id="otp"
+                          type="text"
+                          inputMode="numeric"
+                          value={otp}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, "").slice(0, 6);
+                            setOtp(value);
+                            setError("");
+                          }}
+                          className="absolute inset-0 w-full h-full opacity-0 z-20 cursor-text text-transparent selection:bg-transparent"
+                          required
+                          disabled={loading || isOtpExpired}
+                          maxLength={6}
+                          autoFocus
+                          ref={otpInputRef as any}
+                        />
+                        
+                        <div className="flex justify-between gap-2 max-w-full pointer-events-none pb-2">
+                          {[0, 1, 2, 3, 4, 5].map((index) => {
+                            const isActive = otp.length === index && !(loading || isOtpExpired);
+                            const hasValue = otp.length > index;
+                            return (
+                              <div
+                                key={index}
+                                className={`relative flex h-14 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-xl border-2 text-2xl font-black transition-all duration-300 ${
+                                  isActive
+                                    ? "border-[#3b6dae] shadow-[0_0_15px_rgba(59,109,174,0.3)] bg-white scale-105 z-10"
+                                    : hasValue
+                                      ? "border-[#3b6dae]/40 bg-[#3b6dae]/5 text-[#3b6dae]"
+                                      : "border-[#3b6dae]/10 bg-white/50 text-transparent group-focus-within:border-[#3b6dae]/30"
+                                }`}
+                              >
+                                {otp[index] || ""}
+                                {isActive && (
+                                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <div className="w-[2px] h-6 bg-[#3b6dae] animate-pulse duration-1000" />
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
                       
                       {timeLeft > 0 && (
                         <div className="absolute -top-6 right-0 bg-white/80 px-2 py-1 rounded-md shadow-sm border border-[#3b6dae]/5">

@@ -88,7 +88,7 @@ const DocumentCenterPage = () => {
       <div className="space-y-6 p-4 lg:p-8 animate-in fade-in duration-500">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-slate-800 dark:text-white">HR Document Center</h1>
+            <h1 className="text-2xl font-black tracking-tight text-[#3b6dae] dark:text-[#c79d2d]">HR Document Center</h1>
             <p className="text-sm text-slate-500 dark:text-slate-400">Review employee records, verify documentation, and clear the compliance queue faster.</p>
           </div>
           <div className="flex items-center gap-2">

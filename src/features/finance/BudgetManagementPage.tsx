@@ -58,7 +58,7 @@ const BudgetManagementPage = () => {
       <div className="space-y-8 p-4 lg:p-8 animate-in fade-in duration-500">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-slate-800 dark:text-white">Budget Management</h1>
+            <h1 className="text-2xl font-black tracking-tight text-[#3b6dae] dark:text-[#c79d2d]">Budget Management</h1>
             <p className="text-sm text-slate-500 dark:text-slate-400">
               Allocate departmental budgets, monitor utilization, and surface overspend risk early.
             </p>

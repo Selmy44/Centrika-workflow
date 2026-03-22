@@ -30,13 +30,13 @@ const FormActions: React.FC<FormActionsProps> = ({
   isRequestRejected
 }) => {
   return (
-    <div className="flex justify-between items-center px-8 py-5 border-t border-[#3b6dae]/10 bg-[#c79d2d]/10 gap-4 no-print backdrop-blur-md">
+    <div className="flex justify-between items-center px-8 py-5 border-t border-[#3b6dae]/10 dark:border-[#3b6dae]/30 bg-[#c79d2d]/10 dark:bg-[#2a4365] gap-4 no-print backdrop-blur-md rounded-b-lg">
       <div className="flex gap-2">
         <Button
           variant="outline"
           disabled={isSubmitting}
           onClick={() => window.print()}
-          className="border-[#3b6dae]/20 text-[#3b6dae] font-black text-[10px] tracking-widest uppercase hover:bg-[#3b6dae] hover:text-white transition-all h-9"
+          className="border-[#3b6dae]/20 text-[#3b6dae] dark:border-[#c79d2d]/20 dark:text-[#c79d2d] dark:hover:bg-[#c79d2d] dark:hover:text-slate-950 font-black text-[10px] tracking-widest uppercase hover:bg-[#3b6dae] hover:text-white transition-all h-9"
         >
           <Printer size={14} className="mr-2" /> Print Doc
         </Button>
@@ -46,7 +46,7 @@ const FormActions: React.FC<FormActionsProps> = ({
           onClick={() => {
             toast.info("Download functionality requires backend PDF generation");
           }}
-          className="border-[#3b6dae]/20 text-[#3b6dae] font-black text-[10px] tracking-widest uppercase hover:bg-[#3b6dae] hover:text-white transition-all h-9"
+          className="border-[#3b6dae]/20 text-[#3b6dae] dark:border-[#c79d2d]/20 dark:text-[#c79d2d] dark:hover:bg-[#c79d2d] dark:hover:text-slate-950 font-black text-[10px] tracking-widest uppercase hover:bg-[#3b6dae] hover:text-white transition-all h-9"
         >
           <Download size={14} className="mr-2" /> Export PDF
         </Button>
@@ -59,7 +59,7 @@ const FormActions: React.FC<FormActionsProps> = ({
               variant="outline"
               disabled={isSubmitting}
               onClick={onReject}
-              className="border-rose-400 text-rose-600 hover:bg-rose-50 font-black text-[10px] tracking-widest uppercase h-9"
+              className="border-rose-400 text-rose-600 dark:border-rose-900 dark:text-rose-400 dark:hover:bg-rose-950/50 hover:bg-rose-50 font-black text-[10px] tracking-widest uppercase h-9 shadow-none"
             >
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Reject
@@ -67,7 +67,7 @@ const FormActions: React.FC<FormActionsProps> = ({
             <Button
               disabled={isSubmitting}
               onClick={onApprove}
-              className="bg-[#3b6dae] hover:bg-[#2d5385] font-black text-[10px] tracking-widest uppercase h-9 shadow-lg"
+              className="bg-[#3b6dae] hover:bg-[#2d5385] dark:bg-[#c79d2d] dark:hover:bg-[#e6c55e] dark:text-slate-950 font-black text-[10px] tracking-widest uppercase h-9 shadow-lg dark:shadow-none"
             >
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Approve Request
@@ -80,7 +80,7 @@ const FormActions: React.FC<FormActionsProps> = ({
                 variant="outline"
                 disabled={isSubmitting}
                 onClick={onSave}
-                className="border-[#3b6dae]/20 text-[#3b6dae] font-black text-[10px] tracking-widest uppercase h-9"
+                className="border-[#3b6dae]/20 text-[#3b6dae] dark:border-[#c79d2d]/20 dark:text-[#c79d2d] dark:hover:bg-[#c79d2d] dark:hover:text-slate-950 font-black text-[10px] tracking-widest uppercase h-9 shadow-none hover:bg-white dark:bg-[#1f426b]"
               >
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save Draft
@@ -90,7 +90,7 @@ const FormActions: React.FC<FormActionsProps> = ({
               <Button
                 disabled={isSubmitting}
                 onClick={onSubmit}
-                className="bg-[#3b6dae] hover:bg-[#2d5385] font-black text-[10px] tracking-widest uppercase h-9 shadow-lg"
+                className="bg-[#3b6dae] hover:bg-[#2d5385] dark:bg-[#c79d2d] dark:hover:bg-[#e6c55e] dark:text-slate-950 font-black text-[10px] tracking-widest uppercase h-9 shadow-lg dark:shadow-none"
               >
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Submit Request

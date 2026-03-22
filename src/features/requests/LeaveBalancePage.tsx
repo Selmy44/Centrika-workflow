@@ -60,7 +60,7 @@ export default function LeaveBalance() {
       <div className="space-y-8 p-8">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+          <h1 className="text-3xl font-bold tracking-tight text-[#3b6dae] dark:text-[#c79d2d]">
             Leave Balance
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">

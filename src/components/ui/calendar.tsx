@@ -68,7 +68,7 @@ function CalendarDayButton({
       className={cn(
         "h-7 w-7 text-xs rounded font-medium text-gray-700 hover:bg-indigo-100",
         isSelected && "bg-indigo-600 text-white font-bold",
-        isToday && !isSelected && "bg-yellow-100 border border-yellow-400 text-yellow-800",
+        isToday && !isSelected && "bg-blue-600 text-white font-bold",
         isOutside && "text-gray-300 cursor-default",
         isDisabled && "text-gray-300 cursor-not-allowed bg-gray-100",
         className

@@ -113,21 +113,21 @@ export function LeaveBalanceCalculator({
     <div className="mt-6 mb-4 flex flex-col gap-6">
       
       {/* ----------------- PART 1: LEAVE SUMMARY ----------------- */}
-      <div className="rounded-xl border border-blue-100 dark:border-blue-900 bg-white dark:bg-slate-900 overflow-hidden shadow-sm">
+      <div className="rounded-xl border border-blue-100 dark:border-blue-900 bg-white dark:bg-[#1f426b] overflow-hidden shadow-sm">
         <div className="bg-blue-600 px-4 py-2.5 flex items-center gap-2 text-white">
           <History className="w-4 h-4 opacity-90" />
           <h3 className="text-sm font-semibold tracking-wide">Your Leave Summary</h3>
-          <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full ml-auto uppercase tracking-wide">
+          <span className="text-[10px] bg-white dark:bg-[#1f426b] px-2 py-0.5 rounded-full ml-auto uppercase tracking-wide">
             Auto-Synced
           </span>
         </div>
         
-        <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50/50 dark:bg-slate-900/50">
-          <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border shadow-sm text-center">
+        <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50/50 dark:bg-[#2a4365]/50">
+          <div className="bg-white dark:bg-[#1f426b] rounded-lg p-3 border shadow-sm text-center">
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Entitlement</p>
             <p className="text-2xl font-bold text-slate-700 dark:text-slate-200">{entitledDays}</p>
           </div>
-          <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border shadow-sm text-center">
+          <div className="bg-white dark:bg-[#1f426b] rounded-lg p-3 border shadow-sm text-center">
             <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-1">Already Taken</p>
             {userRequests.isPending ? (
                <p className="text-sm text-slate-400 mt-2 animate-pulse">Loading...</p>
@@ -135,7 +135,7 @@ export function LeaveBalanceCalculator({
                <p className="text-2xl font-bold text-amber-600 dark:text-amber-500">{historyTaken}</p>
             )}
           </div>
-          <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border shadow-sm text-center">
+          <div className="bg-white dark:bg-[#1f426b] rounded-lg p-3 border shadow-sm text-center">
             <p className="text-[10px] font-bold text-green-600 uppercase tracking-wider mb-1">Current Balance</p>
             <p className="text-2xl font-bold text-green-600 dark:text-green-500">{currentBalance}</p>
           </div>
@@ -156,7 +156,7 @@ export function LeaveBalanceCalculator({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             
             {/* Card: Requested */}
-            <div className="bg-white dark:bg-slate-900 rounded-lg p-3 md:p-4 border border-border shadow-sm flex items-center gap-4">
+            <div className="bg-white dark:bg-[#1f426b] rounded-lg p-3 md:p-4 border border-border shadow-sm flex items-center gap-4">
               <div className="bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 p-2.5 rounded-full shrink-0">
                 <Calendar className="w-5 h-5" />
               </div>
@@ -200,7 +200,7 @@ export function LeaveBalanceCalculator({
                 <span>0% Utilized</span>
                 <span>{entitledDays} Days Entitlement</span>
               </div>
-              <div className="h-2 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden flex">
+              <div className="h-2 w-full bg-slate-200 dark:bg-[#2c5282] rounded-full overflow-hidden flex">
                 <div 
                   className="h-full bg-amber-400 transition-all duration-500"
                   style={{ width: `${Math.min(100, (historyTaken / entitledDays) * 100)}%` }}

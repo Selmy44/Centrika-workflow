@@ -87,13 +87,13 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
   // Show loading state while form data is being fetched
   if (formLoading) {
     return (
-      <div className="w-full bg-white text-black px-8 py-6 space-y-6">
+      <div className="w-full bg-white dark:bg-[#1f426b] text-black dark:text-slate-100 px-8 py-6 space-y-6">
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
             <div className="inline-block mb-4">
               <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
             </div>
-            <p className="text-gray-600">Loading employee's submitted form...</p>
+            <p className="text-gray-600 dark:text-slate-400">Loading employee's submitted form...</p>
           </div>
         </div>
       </div>
@@ -101,12 +101,12 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
   }
 
   return (
-    <div className="w-full bg-white text-black px-8 py-6 space-y-6">
+    <div className="w-full bg-white dark:bg-[#1f426b] text-black dark:text-slate-100 px-8 py-6 space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-start pb-6 border-b-2 border-blue-300">
+      <div className="flex justify-between items-start pb-6 border-b-2 border-blue-300 dark:border-[#3b6dae]/40">
         <div>
           <h1 className="text-2xl font-bold text-blue-600">Leave Request Approval Form</h1>
-          <p className="text-sm text-gray-600 mt-1">{getApprovalLevelLabel()}</p>
+          <p className="text-sm text-gray-600 dark:text-slate-400 mt-1">{getApprovalLevelLabel()}</p>
           {submittedFormData && <p className="text-xs text-green-600 mt-1">✓ Form loaded from employee submission</p>}
         </div>
         <div className="text-right">
@@ -116,32 +116,32 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
       </div>
 
       {/* Employee Information Section - From Submitted Form */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="bg-blue-50 border border-blue-200 dark:border-[#3b6dae]/30 rounded-lg p-4">
         <h2 className="font-bold text-blue-700 mb-3">EMPLOYEE INFORMATION</h2>
         <p className="text-xs text-blue-600 mb-3">From employee's submitted form</p>
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
-            <label className="text-xs text-gray-600 font-semibold">Employee Name</label>
+            <label className="text-xs text-gray-600 dark:text-slate-400 font-semibold">Employee Name</label>
             <p className="text-foreground font-medium">{submittedFormData?.employeeName || request?.user?.name || "N/A"}</p>
           </div>
           <div>
-            <label className="text-xs text-gray-600 font-semibold">Email</label>
+            <label className="text-xs text-gray-600 dark:text-slate-400 font-semibold">Email</label>
             <p className="text-foreground font-medium">{request?.user?.email || "N/A"}</p>
           </div>
           <div>
-            <label className="text-xs text-gray-600 font-semibold">Department</label>
+            <label className="text-xs text-gray-600 dark:text-slate-400 font-semibold">Department</label>
             <p className="text-foreground font-medium">{submittedFormData?.department || request?.user?.department || "N/A"}</p>
           </div>
           <div>
-            <label className="text-xs text-gray-600 font-semibold">Staff ID</label>
+            <label className="text-xs text-gray-600 dark:text-slate-400 font-semibold">Staff ID</label>
             <p className="text-foreground font-medium">{submittedFormData?.staffId || "N/A"}</p>
           </div>
           <div>
-            <label className="text-xs text-gray-600 font-semibold">Position</label>
+            <label className="text-xs text-gray-600 dark:text-slate-400 font-semibold">Position</label>
             <p className="text-foreground font-medium">{submittedFormData?.position || "N/A"}</p>
           </div>
           <div>
-            <label className="text-xs text-gray-600 font-semibold">Request ID</label>
+            <label className="text-xs text-gray-600 dark:text-slate-400 font-semibold">Request ID</label>
             <p className="text-foreground font-medium">#{request?.id}</p>
           </div>
         </div>
@@ -150,42 +150,42 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
       {/* Leave Request Details - From Submitted Form */}
       <div className="border border-gray-300 rounded-lg p-4">
         <h2 className="font-bold text-blue-700 mb-3">LEAVE REQUEST DETAILS</h2>
-        <p className="text-xs text-gray-600 mb-3">Exact data from employee's submission</p>
+        <p className="text-xs text-gray-600 dark:text-slate-400 mb-3">Exact data from employee's submission</p>
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
-            <label className="text-xs text-gray-600 font-semibold">Leave Type</label>
+            <label className="text-xs text-gray-600 dark:text-slate-400 font-semibold">Leave Type</label>
             <p className="text-foreground font-medium capitalize">{submittedFormData?.leaveType || "N/A"}</p>
           </div>
           <div>
-            <label className="text-xs text-gray-600 font-semibold">Start Date</label>
+            <label className="text-xs text-gray-600 dark:text-slate-400 font-semibold">Start Date</label>
             <p className="text-foreground font-medium">{submittedFormData?.startDate || "N/A"}</p>
           </div>
           <div>
-            <label className="text-xs text-gray-600 font-semibold">End Date</label>
+            <label className="text-xs text-gray-600 dark:text-slate-400 font-semibold">End Date</label>
             <p className="text-foreground font-medium">{submittedFormData?.endDate || "N/A"}</p>
           </div>
           <div>
-            <label className="text-xs text-gray-600 font-semibold">Leave Days Requested</label>
+            <label className="text-xs text-gray-600 dark:text-slate-400 font-semibold">Leave Days Requested</label>
             <p className="text-foreground font-medium">{submittedFormData?.leaveDaysRequested || "N/A"}</p>
           </div>
           <div className="col-span-2">
-            <label className="text-xs text-gray-600 font-semibold">Reason/Description</label>
+            <label className="text-xs text-gray-600 dark:text-slate-400 font-semibold">Reason/Description</label>
             <p className="text-foreground font-medium">{submittedFormData?.reason || request?.description || "N/A"}</p>
           </div>
           <div>
-            <label className="text-xs text-gray-600 font-semibold">Leave Days Entitled</label>
+            <label className="text-xs text-gray-600 dark:text-slate-400 font-semibold">Leave Days Entitled</label>
             <p className="text-foreground font-medium">{submittedFormData?.leaveDaysEntitled || "N/A"}</p>
           </div>
           <div>
-            <label className="text-xs text-gray-600 font-semibold">Leave Days Taken</label>
+            <label className="text-xs text-gray-600 dark:text-slate-400 font-semibold">Leave Days Taken</label>
             <p className="text-foreground font-medium">{submittedFormData?.leaveDaysTaken || "N/A"}</p>
           </div>
           <div>
-            <label className="text-xs text-gray-600 font-semibold">Leave Days Remaining</label>
+            <label className="text-xs text-gray-600 dark:text-slate-400 font-semibold">Leave Days Remaining</label>
             <p className="text-foreground font-medium">{submittedFormData?.leaveDaysRemaining || "N/A"}</p>
           </div>
           <div>
-            <label className="text-xs text-gray-600 font-semibold">Backup Contact</label>
+            <label className="text-xs text-gray-600 dark:text-slate-400 font-semibold">Backup Contact</label>
             <p className="text-foreground font-medium">{submittedFormData?.backupName || "N/A"}</p>
           </div>
         </div>
@@ -212,20 +212,20 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
             {/* Signature Upload */}
             <div>
               <label className="text-sm font-semibold text-gray-700">Your Signature</label>
-              <p className="text-xs text-gray-600 mb-2">Upload an image or PDF of your signature</p>
-              <div className="border-2 border-dashed border-yellow-400 rounded-lg p-4 bg-white">
+              <p className="text-xs text-gray-600 dark:text-slate-400 mb-2">Upload an image or PDF of your signature</p>
+              <div className="border-2 border-dashed border-yellow-400 rounded-lg p-4 bg-white dark:bg-[#1f426b]">
                 <input
                   type="file"
                   accept="image/*,.pdf"
                   onChange={handleSignatureChange}
-                  className="block w-full text-sm text-gray-600"
+                  className="block w-full text-sm text-gray-600 dark:text-slate-400"
                 />
                 {signaturePreview && (
-                  <div className="mt-3 p-2 bg-gray-50 rounded border border-gray-200">
+                  <div className="mt-3 p-2 bg-gray-50 dark:bg-[#1a385c] rounded border border-gray-200">
                     {signatureFile?.type.includes("image") ? (
                       <img src={signaturePreview} alt="signature" className="h-24 object-contain mx-auto" />
                     ) : (
-                      <p className="text-xs text-center text-gray-600">PDF signature uploaded: {signatureFile?.name}</p>
+                      <p className="text-xs text-center text-gray-600 dark:text-slate-400">PDF signature uploaded: {signatureFile?.name}</p>
                     )}
                   </div>
                 )}
@@ -236,7 +236,7 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
             {shouldShowHRSelector && (
               <div>
                 <label className="text-sm font-semibold text-gray-700">Select HR to Route This Request</label>
-                <p className="text-xs text-gray-600 mb-2">Choose who will review this request at the HR stage</p>
+                <p className="text-xs text-gray-600 dark:text-slate-400 mb-2">Choose who will review this request at the HR stage</p>
                 <Select value={selectedHR} onValueChange={setSelectedHR}>
                   <SelectTrigger className="border-gray-300">
                     <SelectValue placeholder="Select HR approver" />
@@ -309,7 +309,7 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
       </div>
 
       {/* Footer Info */}
-      <div className="bg-gray-50 border border-gray-200 rounded p-3 text-xs text-gray-600">
+      <div className="bg-gray-50 dark:bg-[#1a385c] border border-gray-200 rounded p-3 text-xs text-gray-600 dark:text-slate-400">
         <p className="font-semibold mb-1">Approval Process</p>
         <p>By approving this request, you acknowledge that you have reviewed all details and approve proceeding to the next stage.</p>
       </div>

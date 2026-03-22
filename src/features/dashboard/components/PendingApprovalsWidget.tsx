@@ -49,7 +49,7 @@ export const PendingApprovalsWidget = () => {
       <CardContent className="p-3 relative z-10">
         <div className="space-y-2 max-h-55 overflow-y-auto pr-1 custom-scrollbar">
           {approvals.slice(0, 4).map((request: any) => (
-            <Link key={request.id} href={`/requests/${request.id}`}>
+            <Link key={request.id} href={`/approvals?requestId=${request.id}`}>
               <div className="group/item flex items-center justify-between p-2.5 bg-white dark:bg-slate-900/40 border border-border/50 dark:border-white/10 hover:border-[#3b6dae]/30 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer relative overflow-hidden">
                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#c79d2d] opacity-0 group-hover/item:opacity-100 transition-opacity duration-300" />
                 

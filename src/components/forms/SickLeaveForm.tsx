@@ -192,18 +192,7 @@ export default function SickLeaveForm({ onSuccess, onClose, onBack }: Props) {
   if (!isAuthenticated) return null;
 
   return (
-    <div className="w-full bg-white text-black px-4 leave-form-container relative">
-
-      {/* CLOSE/BACK BUTTON */}
-      <button
-        onClick={() => onBack ? onBack() : (onClose ? onClose() : onSuccess?.())}
-        className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-lg transition"
-        title="Close form"
-      >
-        <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
+    <div className="w-full bg-white dark:bg-[#1f426b] text-black dark:text-slate-100 px-4 leave-form-container relative dark:border-[#2b6cb0]/30">
 
       <div>
         {/* ===== HEADER WITH LOGO AND CONTACT INFO ===== */}
@@ -253,7 +242,7 @@ export default function SickLeaveForm({ onSuccess, onClose, onBack }: Props) {
               <span className="text-blue-600 font-bold text-xs whitespace-nowrap">CTK - </span>
               <Input
                 value={form.department}
-                className="w-full h-7 border-blue-400 text-xs bg-gray-100 cursor-not-allowed border-l-0"
+                className="w-full h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed border-l-0"
                 disabled
               />
             </div>
@@ -262,7 +251,7 @@ export default function SickLeaveForm({ onSuccess, onClose, onBack }: Props) {
             <p className="font-semibold text-blue-600 mb-1 text-xs">Nature of Leave</p>
             <Input
               value="Sick Leave"
-              className="h-7 border-blue-400 text-xs bg-gray-100 cursor-not-allowed"
+              className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
               disabled
             />
           </div>
@@ -270,7 +259,7 @@ export default function SickLeaveForm({ onSuccess, onClose, onBack }: Props) {
             <p className="font-semibold text-blue-600 text-xs mb-1">Year</p>
             <Input
               value={form.year}
-              className="h-7 border-blue-400 text-xs bg-gray-100 cursor-not-allowed"
+              className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
               disabled
             />
           </div>
@@ -278,7 +267,7 @@ export default function SickLeaveForm({ onSuccess, onClose, onBack }: Props) {
             <p className="font-semibold text-blue-600 text-xs mb-1">Month</p>
             <Input
               value={form.month}
-              className="h-7 border-blue-400 text-xs bg-gray-100 cursor-not-allowed"
+              className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
               disabled
             />
           </div>
@@ -286,14 +275,14 @@ export default function SickLeaveForm({ onSuccess, onClose, onBack }: Props) {
             <p className="font-semibold text-blue-600 text-xs mb-1">Document ID</p>
             <Input
               value={form.documentId}
-              className="h-7 border-blue-400 text-xs bg-gray-100 cursor-not-allowed"
+              className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
               disabled
             />
           </div>
         </div>
 
         {/* ===== REQUEST DETAILS ===== */}
-        <div className="border-t border-blue-400">
+        <div className="border-t border-blue-400 dark:border-[#3b6dae]/50">
           <div className="bg-[#3b6dae] text-white font-bold px-4 py-2 text-sm">REQUEST DETAILS</div>
 
           {/* 1. EMPLOYEE INFORMATION */}
@@ -301,14 +290,14 @@ export default function SickLeaveForm({ onSuccess, onClose, onBack }: Props) {
             <Row label="1.1 Request Number">
               <Input
                 value={form.documentId}
-                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium"
+                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
                 disabled
               />
             </Row>
             <Row label="1.2 Employee Full Name">
               <Input
                 value={form.employeeName}
-                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium"
+                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
                 disabled
               />
             </Row>
@@ -316,28 +305,28 @@ export default function SickLeaveForm({ onSuccess, onClose, onBack }: Props) {
               <Input
                 type="date"
                 value={form.dateOfEmployment}
-                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium"
+                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
                 disabled
               />
             </Row>
             <Row label="1.4 Employee / Staff ID">
               <Input
                 value={form.staffId}
-                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium"
+                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
                 disabled
               />
             </Row>
             <Row label="1.5 Department">
               <Input
                 value={form.department}
-                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium"
+                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
                 disabled
               />
             </Row>
             <Row label="1.6 Position / Title">
               <Input
                 value={form.position}
-                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium"
+                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
                 disabled
               />
             </Row>
@@ -384,7 +373,7 @@ export default function SickLeaveForm({ onSuccess, onClose, onBack }: Props) {
             <Row label="2.2 Number of Leave Days Requested">
               <Input
                 value={form.leaveDaysRequested}
-                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium w-24"
+                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium w-24"
                 disabled
               />
             </Row>
@@ -417,7 +406,7 @@ export default function SickLeaveForm({ onSuccess, onClose, onBack }: Props) {
           {/* 3. MEDICAL INFORMATION */}
           <Section title="3. MEDICAL INFORMATION">
             {/* Important notice banner */}
-            <div className="bg-yellow-50 px-4 py-2 border-b border-blue-400 flex items-center gap-2">
+            <div className="bg-yellow-50 px-4 py-2 border-b border-blue-400 dark:border-[#3b6dae]/50 flex items-center gap-2">
               <AlertCircle size={14} className="text-yellow-600 shrink-0" />
               <span className="text-[10px] text-yellow-700 font-semibold">Medical documentation is required for all sick leave requests</span>
             </div>
@@ -426,7 +415,7 @@ export default function SickLeaveForm({ onSuccess, onClose, onBack }: Props) {
                 value={form.illnessDescription}
                 onChange={(e) => setForm({ ...form, illnessDescription: e.target.value })}
                 placeholder="Describe your illness or medical condition..."
-                className="min-h-20 border-blue-300 text-xs"
+                className="min-h-20 border-blue-300 dark:border-[#3b6dae]/40 text-xs"
                 required
               />
             </Row>
@@ -461,7 +450,7 @@ export default function SickLeaveForm({ onSuccess, onClose, onBack }: Props) {
                     value={form.hospitalName}
                     onChange={(e) => setForm({ ...form, hospitalName: e.target.value })}
                     placeholder="Name of hospital or healthcare facility"
-                    className="border-blue-300 h-7 text-xs"
+                    className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs"
                     required
                   />
                 </Row>
@@ -470,7 +459,7 @@ export default function SickLeaveForm({ onSuccess, onClose, onBack }: Props) {
                     value={form.doctorName}
                     onChange={(e) => setForm({ ...form, doctorName: e.target.value })}
                     placeholder="Name of attending doctor"
-                    className="border-blue-300 h-7 text-xs"
+                    className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs"
                   />
                 </Row>
               </>
@@ -492,7 +481,7 @@ export default function SickLeaveForm({ onSuccess, onClose, onBack }: Props) {
                 {form.medicalDocuments.length > 0 && (
                   <div className="space-y-1">
                     <p className="text-xs text-green-600 font-semibold">✓ {form.medicalDocuments.length} file(s) uploaded:</p>
-                    <ul className="text-xs text-gray-600 space-y-0.5">
+                    <ul className="text-xs text-gray-600 dark:text-slate-400 space-y-0.5">
                       {form.medicalDocuments.map((doc, idx) => (
                         <li key={idx} className="ml-3">• {doc.name}</li>
                       ))}
@@ -510,7 +499,7 @@ export default function SickLeaveForm({ onSuccess, onClose, onBack }: Props) {
                 value={form.contactDuringLeave}
                 onChange={(e) => setForm({ ...form, contactDuringLeave: e.target.value })}
                 placeholder="How can you be contacted during your absence?"
-                className="min-h-20 border-blue-300 text-xs"
+                className="min-h-20 border-blue-300 dark:border-[#3b6dae]/40 text-xs"
               />
             </Row>
           </Section>
@@ -520,7 +509,7 @@ export default function SickLeaveForm({ onSuccess, onClose, onBack }: Props) {
             <Row label="5.1 Reporting Manager / HOD">
               <Input
                 value={uniqueHeads.find((h: any) => h.id === parseInt(form.reportingManager))?.name || "Not assigned"}
-                className="w-full h-8 border-blue-300 bg-gray-100 text-black font-medium cursor-not-allowed mt-1 mb-1 max-w-[400px]"
+                className="w-full h-8 border-blue-300 dark:border-[#3b6dae]/40 bg-gray-100 dark:bg-[#295482] text-black dark:text-slate-100 font-medium cursor-not-allowed mt-1 mb-1 max-w-[400px]"
                 disabled
               />
             </Row>
@@ -553,7 +542,7 @@ export default function SickLeaveForm({ onSuccess, onClose, onBack }: Props) {
                   <p className="text-xs text-green-600">✓ {form.employeeSignature.name} selected</p>
                 )}
                 {form.employeeSignatureUrl && (
-                  <div className="p-2 border border-dashed border-blue-300 rounded bg-blue-50 inline-block">
+                  <div className="p-2 border border-dashed border-blue-300 dark:border-[#3b6dae]/40 rounded bg-blue-50 inline-block">
                     <img src={form.employeeSignatureUrl} alt="signature" className="h-16 object-contain" />
                   </div>
                 )}
@@ -563,20 +552,20 @@ export default function SickLeaveForm({ onSuccess, onClose, onBack }: Props) {
               <Input
                 value={form.signatureDate || new Date().toISOString().split("T")[0]}
                 readOnly
-                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium w-40"
+                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium w-40"
               />
             </Row>
           </Section>
         </div>
 
         {/* ===== ACTIONS ===== */}
-        <div className="flex justify-between items-center px-6 py-4 border-t border-blue-400 bg-gray-50 gap-4">
+        <div className="flex justify-between items-center px-6 py-4 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c] gap-4">
           <div className="flex gap-2">
             <Button
               variant="outline"
               disabled={isSubmitting}
               onClick={() => window.print()}
-              className="border-blue-400 text-blue-600"
+              className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600"
             >
               <Printer size={16} className="mr-1" /> Print
             </Button>
@@ -586,7 +575,7 @@ export default function SickLeaveForm({ onSuccess, onClose, onBack }: Props) {
               onClick={() => {
                 toast.info("Download functionality requires backend PDF generation");
               }}
-              className="border-blue-400 text-blue-600"
+              className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600"
             >
               <Download size={16} className="mr-1" /> Download
             </Button>
@@ -596,7 +585,7 @@ export default function SickLeaveForm({ onSuccess, onClose, onBack }: Props) {
               variant="outline"
               disabled={isSubmitting}
               onClick={() => handleSubmit(false)}
-              className="border-blue-400"
+              className="border-blue-400 dark:border-[#3b6dae]/50"
             >
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save Draft
@@ -626,7 +615,7 @@ export default function SickLeaveForm({ onSuccess, onClose, onBack }: Props) {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="border-t border-blue-400">
+    <div className="border-t border-blue-400 dark:border-[#3b6dae]/50">
       <div className="bg-[#3b6dae] text-white font-bold px-4 py-2 text-sm">{title}</div>
       {children}
     </div>
@@ -635,8 +624,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-[220px_1fr] border-b border-blue-400">
-      <div className="px-3 py-2 font-medium border-r border-blue-400 bg-blue-100 text-blue-700 text-xs">
+    <div className="grid grid-cols-[220px_1fr] border-b border-blue-400 dark:border-[#3b6dae]/50">
+      <div className="px-3 py-2 font-medium border-r border-blue-400 dark:border-[#3b6dae]/50 bg-blue-100 text-blue-700 text-xs">
         {label}
       </div>
       <div className="px-3 py-1">{children}</div>

@@ -119,7 +119,7 @@ export default function DepartmentManagement() {
       <div className="p-8 space-y-8 max-w-7xl mx-auto">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Department Management</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-[#3b6dae] dark:text-[#c79d2d]">Department Management</h1>
             <p className="text-gray-500 mt-1">Configure company organization and assign heads</p>
           </div>
           <Dialog open={isCreateOpen || !!editingDept} onOpenChange={(open) => {

@@ -25,7 +25,7 @@ import {
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, FileText, CheckCircle, Settings, Users, Bell, TrendingUp, DollarSign, Search, ChevronDown, Car, Calendar, BarChart3, User, Lock, AlertCircle, Building2, BookOpen , Wallet, Receipt, UserPlus } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, FileText, CheckCircle, Settings, Users, Bell, TrendingUp, DollarSign, Search, ChevronDown, Car, Calendar, BarChart3, User, Lock, AlertCircle, Building2, BookOpen, Wallet, Receipt, UserPlus } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import ThemeToggleIcon from "@/components/ui/ThemeToggleIcon";
 import NotificationIcon from "@/components/NotificationIcon";
@@ -140,10 +140,10 @@ const deptHeadMenuItems = [
 ];
 
 const ceoMenuItems = [
-  { icon: LayoutDashboard, label: "Executive Dashboard", path: "/" },
+  { icon: LayoutDashboard, label: "Dashboard", path: "/" },
   { icon: CheckCircle, label: "Approvals", path: "/approvals" },
   { icon: BarChart3, label: "Reports", path: "/finance/reports" },
-  { icon: Users, label: "Organization View", path: "/employee-directory" },
+  { icon: Users, label: "Organization View", path: "/organization-view" },
   { icon: Building2, label: "Department Management", path: "/departments" },
   { icon: Search, label: "Employee Directory", path: "/employee-directory" },
   { icon: TrendingUp, label: "Strategic Overview", path: "/request-analytics" },
@@ -159,7 +159,6 @@ const ceoMenuItems = [
       { label: "Asset Request", action: "asset" },
     ],
   },
-  { icon: Settings, label: "Settings", path: "/settings" },
 ];
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
 const DEFAULT_WIDTH = 240;
@@ -337,7 +336,7 @@ function DashboardLayoutContent({
       <div className="relative" ref={sidebarRef}>
         <Sidebar
           collapsible="icon"
-          className="border-r border-blue-900/10 dark:border-blue-950/50 bg-[#3b6dae] dark:bg-[#0f172a] text-white"
+          className="border-r-0 shadow-[2px_0_8px_-3px_rgba(0,0,0,0.1)] dark:shadow-none bg-linear-to-b from-[#3b6dae] via-[#325d96] to-[#264b77] dark:bg-none dark:bg-[#0f172a] text-white overflow-hidden"
           disableTransition={isResizing}
         >
           <SidebarHeader className="h-20 justify-center">
@@ -394,13 +393,16 @@ function DashboardLayoutContent({
                       isActive={isActive}
                       onClick={() => hasSubmenu ? setExpandedItem(expandedItem === item.label ? null : item.label) : (item.path !== "#" && setLocation(item.path))}
                       tooltip={item.label}
-                      className={`h-12 transition-all font-semibold rounded-xl group-data-[collapsible=icon]:rounded-2xl group-data-[collapsible=icon]:size-12 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center overflow-hidden ${isActive 
-                        ? "bg-[#c79d2d] text-white shadow-lg shadow-black/10 hover:bg-[#c79d2d]/90 group-data-[collapsible=icon]:shadow-[#c79d2d]/30" 
-                        : "text-white/70 hover:bg-white/10 hover:text-white"
-                      }`}
+                      className={`relative h-11 md:h-12 transition-all duration-300 rounded-xl group-data-[collapsible=icon]:rounded-2xl group-data-[collapsible=icon]:size-11 group-data-[collapsible=icon]:md:size-12 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center border ${isActive
+                        ? "bg-transparent text-[#c79d2d] font-black uppercase tracking-[0.2em] shadow-none border-transparent"
+                        : "font-semibold border-transparent text-white/70 hover:bg-white/10 hover:text-white hover:translate-x-1 group-data-[collapsible=icon]:hover:translate-x-0 group-data-[collapsible=icon]:overflow-hidden"
+                        }`}
                     >
-                      <item.icon 
-                        className={`h-5 w-5 shrink-0 ${isActive ? "text-white" : ""}`}
+                      {isActive && (
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-[#c79d2d] rounded-r-full shadow-sm shadow-[#c79d2d]/30" />
+                      )}
+                      <item.icon
+                        className={`h-5 w-5 shrink-0 ${isActive ? "text-[#c79d2d]" : ""}`}
                       />
                       <span className="ml-2 group-data-[collapsible=icon]:hidden whitespace-nowrap">{item.label}</span>
                       {hasSubmenu && (
@@ -409,7 +411,7 @@ function DashboardLayoutContent({
                     </SidebarMenuButton>
 
                     {hasSubmenu && shouldExpand && (
-                      <SidebarMenuSub className="ml-5 border-l border-blue-200 dark:border-slate-800 pl-4 py-2 mt-1 space-y-1 group-data-[collapsible=icon]:hidden">
+                      <SidebarMenuSub className="ml-6 border-l-2 border-white/20 dark:border-slate-800/80 pl-4 py-2 mt-1 space-y-1 group-data-[collapsible=icon]:hidden">
                         {item.submenu?.map((subitem: any) => {
                           const isSubitemActive = subitem.path === location;
                           return (
@@ -422,9 +424,9 @@ function DashboardLayoutContent({
                                     setLocation(subitem.path);
                                   }
                                 }}
-                                className={`h-10 text-[14px] font-semibold rounded-lg transition-all duration-200 ${isSubitemActive
+                                className={`h-10 text-[13px] md:text-[14px] font-semibold rounded-lg transition-all duration-300 ${isSubitemActive
                                   ? "text-[#c79d2d] bg-white/10"
-                                  : "text-teal-50/60 hover:text-white hover:bg-white/5"
+                                  : "text-white/60 hover:text-white hover:bg-white/10 hover:translate-x-1"
                                   }`}
                               >
                                 {subitem.label}
@@ -489,13 +491,13 @@ function DashboardLayoutContent({
         />
       </div>
 
-      <SidebarInset className="bg-[#FFFAE8] dark:bg-slate-950/50">
-        <header className="sticky top-0 z-40 w-full bg-slate-50/80 dark:bg-slate-900/70 backdrop-blur-md h-16 border-b border-[#3b6dae]/5 no-print">
+      <SidebarInset className="bg-[#FFFAE8] dark:bg-slate-950 transition-colors duration-300">
+        <header className="sticky top-0 z-40 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md h-16 border-b border-slate-200/60 dark:border-slate-800/80 shadow-xs dark:shadow-none no-print transition-colors duration-300">
           <div className="flex h-full w-full">
             {/* Left Header Area */}
             <div className="flex-1 flex items-center justify-between px-4 lg:px-8">
               <div className="flex items-center gap-2 md:gap-4">
-                <SidebarTrigger className="md:hidden h-8 w-8 border shadow-xs shrink-0" />
+                <SidebarTrigger className="md:hidden h-8 w-8 border shadow-xs shrink-0 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200" />
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="h-5 w-1 bg-[#3b6dae] dark:bg-[#c79d2d] rounded-full shrink-0" />
                   <h2 className="text-xs md:text-sm font-black text-[#3b6dae] dark:text-[#c79d2d] uppercase tracking-[0.2em] opacity-80 truncate">
@@ -504,37 +506,44 @@ function DashboardLayoutContent({
                 </div>
               </div>
 
-              {/* Minimalist Search Bar */}
-              <div className="hidden lg:flex items-center flex-1 max-w-sm mx-4">
+              {/* High Contrast Modern Search Bar */}
+              <div className="hidden lg:flex items-center flex-1 max-w-md mx-6">
                 <div className="relative w-full group">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#3b6dae]/30 group-focus-within:text-[#3b6dae] transition-colors" />
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                    <Search className="h-4 w-4 text-slate-500 dark:text-slate-400 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-colors duration-200" />
+                  </div>
                   <Input
-                    placeholder="Search records, requests..."
-                    className="pl-10 h-10 bg-white/40 border-[#3b6dae]/5 focus:border-[#3b6dae]/20 focus:ring-0 rounded-xl text-xs font-medium placeholder:text-[#3b6dae]/20 transition-all w-full"
+                    placeholder="Search across the portal..."
+                    className="pl-11 pr-16 h-11 bg-slate-100/70 border-slate-200/60 hover:bg-slate-100 hover:border-slate-300 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:bg-slate-950 dark:border-slate-800 dark:hover:bg-slate-900 dark:focus:bg-slate-950 dark:focus:border-blue-500/50 rounded-full text-sm font-semibold text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-500 transition-all shadow-inner dark:shadow-none w-full"
                   />
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <div className="hidden sm:flex h-6 items-center rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 font-mono text-[10px] font-bold text-slate-500 dark:text-slate-400 shadow-sm dark:shadow-none">
+                      ⌘K
+                    </div>
+                  </div>
                 </div>
               </div>
 
               {/* Utilities */}
-              <div className="flex items-center gap-1 md:gap-2 ml-auto shrink-0">
+              <div className="flex items-center gap-2 md:gap-4 ml-auto shrink-0">
                 {switchable && (
-                  <>
+                  <div className="flex items-center gap-1">
                     <NotificationIcon />
                     <button
                       onClick={() => toggleTheme?.()}
                       title={theme === "dark" ? "Light Mode" : "Dark Mode"}
-                      className="h-9 w-9 md:h-10 md:w-10 flex items-center justify-center rounded-xl bg-transparent hover:bg-white/50 transition-all dark:hover:bg-slate-800"
+                      className="h-10 w-10 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 transition-colors"
                     >
-                      <ThemeToggleIcon theme={theme} className="h-4 w-4 md:h-5 md:w-5 text-[#3b6dae]/60 dark:text-slate-400" />
+                      <ThemeToggleIcon theme={theme} className="h-5 w-5 text-slate-600 dark:text-slate-300" />
                     </button>
-                  </>
+                  </div>
                 )}
-              </div>
-            </div>
-
-            {/* Right Header Area (Profile) */}
-            <div className="flex items-center justify-end px-4 lg:px-8 bg-white/40 dark:bg-slate-900/40 border-l border-[#3b6dae]/5 shrink-0">
-              <div className="flex items-center gap-2 py-1.5 rounded-2xl cursor-pointer hover:bg-white/50 dark:hover:bg-slate-800/50 transition-colors">
+                
+                {/* Vertical Divider */}
+                <div className="hidden sm:block h-8 w-px bg-slate-200 dark:bg-slate-800 mx-2" />
+                
+                {/* Profile Section */}
+                <div className="flex items-center gap-3 py-1.5 px-2 rounded-full cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors">
                 <Avatar className="h-8 w-8 md:h-9 md:w-9 border-2 border-[#3b6dae]/10 dark:border-blue-500/20 shadow-sm shrink-0">
                   <AvatarImage src={user?.profileImage || ""} alt={user?.name || "User"} className="object-cover" />
                   <AvatarFallback className="text-[10px] font-black bg-linear-to-br from-[#3b6dae] to-[#2d5385] text-white">
@@ -557,6 +566,7 @@ function DashboardLayoutContent({
                   <p className="text-[9px] font-medium text-slate-400 truncate lowercase tracking-tighter leading-none mt-0.5">
                     {user?.email || "-"}
                   </p>
+                </div>
                 </div>
               </div>
             </div>

@@ -117,37 +117,50 @@ export default function OtpVerification({ email, onBack }: OtpVerificationProps)
                 <Label className="text-slate-700 dark:text-slate-200 block text-center text-sm">Enter Verification Code</Label>
 
                 {/* Single input field */}
-                <div className="relative">
+                {/* Modern OTP Boxes */}
+                <div className="relative group max-w-[340px] mx-auto">
                   <Input
                     id="otp"
                     type="text"
                     inputMode="numeric"
-                    placeholder="000000"
                     value={otpCode}
                     onChange={(e) => {
                       const value = e.target.value.replace(/\D/g, "").slice(0, 6);
                       setOtpCode(value);
                     }}
-                    className="bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 dark:bg-slate-700/50 dark:border-slate-600 dark:text-white dark:placeholder-slate-500 focus:border-orange-500 focus:ring-orange-500/20 hover:bg-slate-50 dark:hover:bg-slate-700/70 transition-colors text-center text-3xl tracking-[0.5em] font-semibold py-6"
+                    className="absolute inset-0 w-full h-full opacity-0 z-20 cursor-text text-transparent selection:bg-transparent"
                     required
                     disabled={isLoading}
                     maxLength={6}
                     autoFocus
                   />
-                </div>
-
-                {/* Visual OTP dots display */}
-                <div className="flex justify-center gap-2 mt-4">
-                  {[0, 1, 2, 3, 4, 5].map((index) => (
-                    <div
-                      key={index}
-                      className={`h-3 w-3 rounded-full transition-all ${
-                        otpCode.length > index
-                          ? "bg-orange-500 scale-100"
-                          : "bg-slate-600/50 scale-75"
-                      }`}
-                    />
-                  ))}
+                  
+                  {/* Visual separated boxes */}
+                  <div className="flex justify-between gap-2 max-w-full pointer-events-none pb-2">
+                    {[0, 1, 2, 3, 4, 5].map((index) => {
+                      const isActive = otpCode.length === index;
+                      const hasValue = otpCode.length > index;
+                      return (
+                        <div
+                          key={index}
+                          className={`relative flex h-14 w-12 sm:h-16 sm:w-14 items-center justify-center rounded-xl border-2 text-2xl font-bold transition-all duration-300 ${
+                            isActive 
+                              ? "border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.2)] bg-white dark:bg-slate-800 scale-105 z-10"
+                              : hasValue 
+                                ? "border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
+                                : "border-slate-200 dark:border-slate-700/50 bg-white/50 dark:bg-slate-800/30 text-transparent group-focus-within:border-slate-300 dark:group-focus-within:border-slate-600"
+                          }`}
+                        >
+                          {otpCode[index] || ""}
+                          {isActive && (
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                              <div className="w-[1.5px] h-6 bg-orange-500 animate-pulse duration-1000" />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
 

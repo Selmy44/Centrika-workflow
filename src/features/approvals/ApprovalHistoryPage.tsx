@@ -46,10 +46,10 @@ export default function ApprovalHistory() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 p-4 lg:p-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Approval History</h1>
+          <h1 className="text-3xl font-bold text-[#3b6dae] dark:text-[#c79d2d]">Approval History</h1>
           <p className="text-muted-foreground mt-2">View complete approval history of all requests</p>
         </div>
 

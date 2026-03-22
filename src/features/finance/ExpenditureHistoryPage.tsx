@@ -116,7 +116,7 @@ export default function ExpenditureHistoryPage() {
       <div className="space-y-6 p-4 lg:p-8">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Expenditure History</h1>
+            <h1 className="text-3xl font-bold text-[#3b6dae] dark:text-[#c79d2d]">Expenditure History</h1>
             <p className="mt-2 text-muted-foreground">Audit approved expenses, generate vouchers, and monitor where spending is concentrated.</p>
           </div>
         </div>

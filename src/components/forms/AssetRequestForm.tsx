@@ -123,7 +123,7 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                 toast.error("Item name is required");
                 return;
             }
-            if (!form.estimatedCost || Number(form.estimatedCost) <= 0) {
+            if (!form.estimatedCost || Number(form.estimatedCost.replace(/,/g, "")) <= 0) {
                 toast.error("Estimated cost must be greater than 0");
                 return;
             }
@@ -139,7 +139,7 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                 title: form.title || `Asset Request: ${form.itemName}`,
                 itemName: form.itemName,
                 description: form.description,
-                estimatedCost: Number(form.estimatedCost),
+                estimatedCost: Number(form.estimatedCost.replace(/,/g, "")),
                 currency: form.currency,
                 category: form.category,
             });
@@ -171,9 +171,7 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
     if (!isAuthenticated) return null;
 
     return (
-        <div className="w-full bg-white text-black px-4 leave-form-container relative">
-
-
+        <div className="w-full bg-white dark:bg-[#1f426b] text-black dark:text-slate-100 px-4 leave-form-container relative dark:border-[#2b6cb0]/30">
 
             <div>
                 {/* ===== HEADER WITH LOGO AND CONTACT INFO ===== */}
@@ -223,7 +221,7 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                             <span className="text-blue-600 font-bold text-xs whitespace-nowrap">CTK - </span>
                             <Input
                                 value={form.department}
-                                className="w-full h-7 border-blue-400 text-xs bg-gray-100 cursor-not-allowed border-l-0"
+                                className="w-full h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed border-l-0"
                                 disabled
                             />
                         </div>
@@ -233,7 +231,7 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                         <Input
                             type="text"
                             value={new Date().toISOString().split('T')[0]}
-                            className="h-7 border-blue-400 text-xs bg-gray-100 cursor-not-allowed"
+                            className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
                             disabled
                         />
                     </div>
@@ -241,7 +239,7 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                         <p className="font-semibold text-blue-600 text-xs mb-1 uppercase tracking-tighter">Request Number</p>
                         <Input
                             value={form.requestNumber}
-                            className="h-7 border-blue-400 text-xs bg-gray-100 cursor-not-allowed"
+                            className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
                             disabled
                         />
                     </div>
@@ -249,7 +247,7 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                         <p className="font-semibold text-blue-600 text-xs mb-1 uppercase tracking-tighter">Employee Name</p>
                         <Input
                             value={form.employeeName}
-                            className="h-7 border-blue-400 text-xs bg-gray-100 cursor-not-allowed"
+                            className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
                             disabled
                         />
                     </div>
@@ -266,28 +264,28 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                         <Row label="1.1 Employee Full Name">
                             <Input
                                 value={form.employeeName}
-                                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium"
+                                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
                                 disabled
                             />
                         </Row>
                         <Row label="1.2 Employee / Staff ID">
                             <Input
                                 value={form.staffId}
-                                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium"
+                                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
                                 disabled
                             />
                         </Row>
                         <Row label="1.3 Department">
                             <Input
                                 value={form.department}
-                                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium"
+                                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
                                 disabled
                             />
                         </Row>
                         <Row label="1.4 Position / Title">
                             <Input
                                 value={form.position}
-                                className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium"
+                                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
                                 disabled
                             />
                         </Row>
@@ -300,7 +298,7 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                                 value={form.title}
                                 onChange={e => setForm({ ...form, title: e.target.value })}
                                 placeholder="e.g., Replacement Laptop for IT Dept"
-                                className="border-blue-300 h-8 text-xs font-medium"
+                                className="border-blue-300 dark:border-[#3b6dae]/40 h-8 text-xs font-medium"
                                 disabled={isReadOnly}
                             />
                         </Row>
@@ -309,7 +307,7 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                                 value={form.itemName}
                                 onChange={e => setForm({ ...form, itemName: e.target.value })}
                                 placeholder="e.g., MacBook Pro M3, Office Desk, etc."
-                                className="border-blue-300 h-8 text-xs"
+                                className="border-blue-300 dark:border-[#3b6dae]/40 h-8 text-xs"
                                 disabled={isReadOnly}
                             />
                         </Row>
@@ -319,10 +317,10 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                                 onValueChange={v => setForm({ ...form, category: v })}
                                 disabled={isReadOnly}
                             >
-                                <SelectTrigger className="w-full h-8 border-blue-300 text-xs">
+                                <SelectTrigger className="w-full h-8 border-blue-300 dark:border-[#3b6dae]/40 text-xs">
                                     <SelectValue placeholder="-- Select Category --" />
                                 </SelectTrigger>
-                                <SelectContent className="bg-white border-blue-200">
+                                <SelectContent className="bg-white dark:bg-[#1f426b] border-blue-200 dark:border-[#3b6dae]/30">
                                     <SelectItem value="it_equipment" className="focus:bg-blue-500 focus:text-white">IT Equipment</SelectItem>
                                     <SelectItem value="furniture" className="focus:bg-blue-500 focus:text-white">Furniture</SelectItem>
                                     <SelectItem value="office_supplies" className="focus:bg-blue-500 focus:text-white">Office Supplies</SelectItem>
@@ -333,11 +331,16 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                         <Row label="2.4 Estimated Cost">
                             <div className="flex gap-2 items-center">
                                 <Input
-                                    type="number"
+                                    type="text"
                                     value={form.estimatedCost}
-                                    onChange={e => setForm({ ...form, estimatedCost: e.target.value })}
-                                    placeholder="0.00"
-                                    className="border-blue-300 h-8 text-xs font-bold text-blue-800"
+                                    onChange={e => {
+                                        const rawValue = e.target.value.replace(/[^\d.]/g, "");
+                                        const parts = rawValue.split(".");
+                                        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                                        setForm({ ...form, estimatedCost: parts.join(".") });
+                                    }}
+                                    placeholder="0"
+                                    className="border-blue-300 dark:border-[#3b6dae]/40 h-8 text-xs font-bold text-blue-800"
                                     disabled={isReadOnly}
                                 />
                                 <Select 
@@ -345,10 +348,10 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                                     onValueChange={v => setForm({ ...form, currency: v })}
                                     disabled={isReadOnly}
                                 >
-                                    <SelectTrigger className="w-28 h-8 border-blue-300 text-xs">
+                                    <SelectTrigger className="w-28 h-8 border-blue-300 dark:border-[#3b6dae]/40 text-xs">
                                         <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent className="bg-white border-blue-200">
+                                    <SelectContent className="bg-white dark:bg-[#1f426b] border-blue-200 dark:border-[#3b6dae]/30">
                                         <SelectItem value="RWF" className="focus:bg-blue-500 focus:text-white">RWF</SelectItem>
                                         <SelectItem value="USD" className="focus:bg-blue-500 focus:text-white">USD</SelectItem>
                                         <SelectItem value="EUR" className="focus:bg-blue-500 focus:text-white">EUR</SelectItem>
@@ -361,7 +364,7 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                                 value={form.description}
                                 onChange={e => setForm({ ...form, description: e.target.value })}
                                 placeholder="Provide detailed specifications, reason for request, and any other relevant information..."
-                                className="min-h-24 border-blue-300 text-xs"
+                                className="min-h-24 border-blue-300 dark:border-[#3b6dae]/40 text-xs"
                                 disabled={isReadOnly}
                             />
                         </Row>
@@ -398,7 +401,7 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                                             }}
                                             className="text-xs"
                                         />
-                                        {form.employeeSignatureUrl && <img src={form.employeeSignatureUrl} alt="sig" className="h-10 object-contain border border-blue-300 p-1" />}
+                                        {form.employeeSignatureUrl && <img src={form.employeeSignatureUrl} alt="sig" className="h-10 object-contain border border-blue-300 dark:border-[#3b6dae]/40 p-1" />}
                                     </>
                                 )}
                             </div>
@@ -410,7 +413,7 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                         <Row label="4.1 Line Manager / HOD">
                             <Input
                                 value={uniqueHeads.find((h: any) => h.id === parseInt(form.reportingManager))?.name || "Not assigned"}
-                                className="w-full h-8 border-blue-300 bg-gray-100 text-black font-medium cursor-not-allowed mt-1 mb-1 max-w-[400px]"
+                                className="w-full h-8 border-blue-300 dark:border-[#3b6dae]/40 bg-gray-100 dark:bg-[#295482] text-black dark:text-slate-100 font-medium cursor-not-allowed mt-1 mb-1 max-w-[400px]"
                                 disabled
                             />
                         </Row>
@@ -425,14 +428,14 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
 
                 {/* ===== ACTIONS ===== */}
                 {!isReadOnly && (
-                    <div className="flex justify-between items-center px-6 py-4 border-t border-blue-400 bg-gray-50 gap-4 mb-4">
+                    <div className="flex justify-between items-center px-6 py-4 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c] gap-4 mb-4">
                         <div className="flex gap-2">
                             <Button
                                 variant="outline"
                                 disabled={isSubmitting}
                                 type="button"
                                 onClick={() => window.print()}
-                                className="border-blue-400 text-blue-600 h-9"
+                                className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600 h-9"
                             >
                                 <Printer size={16} className="mr-1" /> Print
                             </Button>
@@ -443,7 +446,7 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                                 disabled={isSubmitting}
                                 type="button"
                                 onClick={() => handleSubmit(false)}
-                                className="border-blue-400 h-9"
+                                className="border-blue-400 dark:border-[#3b6dae]/50 h-9"
                             >
                                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Save Draft
@@ -475,7 +478,7 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
 
 function Section({ title, children, className = "" }: { title: string, children: React.ReactNode, className?: string }) {
     return (
-        <div className={`border-t border-blue-400 ${className}`}>
+        <div className={`border-t border-blue-400 dark:border-[#3b6dae]/50 ${className}`}>
             <div className="bg-[#3b6dae] text-white font-bold px-4 py-2 text-sm">{title}</div>
             {children}
         </div>
@@ -484,9 +487,9 @@ function Section({ title, children, className = "" }: { title: string, children:
 
 function Row({ label, children, colSpan = false }: { label: React.ReactNode, children: React.ReactNode, colSpan?: boolean }) {
     return (
-        <div className={`grid ${colSpan ? 'grid-cols-1' : 'grid-cols-[220px_1fr]'} border-b border-blue-400`}>
+        <div className={`grid ${colSpan ? 'grid-cols-1' : 'grid-cols-[220px_1fr]'} border-b border-blue-400 dark:border-[#3b6dae]/50`}>
             {!colSpan && (
-                <div className="px-3 py-2 font-medium border-r border-blue-400 bg-blue-100 text-[#3b6dae] text-xs flex items-center">
+                <div className="px-3 py-2 font-medium border-r border-blue-400 dark:border-[#3b6dae]/50 bg-blue-100 text-[#3b6dae] text-xs flex items-center">
                     {label}
                 </div>
             )}

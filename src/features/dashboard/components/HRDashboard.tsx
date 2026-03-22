@@ -80,7 +80,7 @@ export const HRDashboard = () => {
     <div className="space-y-6 max-w-[1600px] mx-auto overflow-hidden">
       {/* Hero Header Section */}
       <div>
-        <h1 className="text-2xl font-black tracking-tight text-slate-800 dark:text-white">HR Dashboard</h1>
+        <h1 className="text-2xl font-black tracking-tight text-[#3b6dae] dark:text-[#c79d2d]">HR Dashboard</h1>
       </div>
 
       {/* Main Bento Grid */}

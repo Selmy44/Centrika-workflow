@@ -107,7 +107,7 @@ const EmployeeProfilePage = () => {
             <ArrowLeft size={18} />
           </Button>
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-slate-800 dark:text-white">Employee Profile</h1>
+            <h1 className="text-2xl font-black tracking-tight text-[#3b6dae] dark:text-[#c79d2d]">Employee Profile</h1>
             <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Record ID: {employee.staffId || "CTK-NEW"}</p>
           </div>
         </div>

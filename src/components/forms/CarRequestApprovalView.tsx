@@ -75,7 +75,7 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
             <div className="flex items-center justify-center py-12">
                 <div className="text-center">
                     <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
-                    <p className="text-gray-600">Loading car request details...</p>
+                    <p className="text-gray-600 dark:text-slate-400">Loading car request details...</p>
                 </div>
             </div>
         );
@@ -85,15 +85,15 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
     const employee = data?.employee as any;
 
     return (
-        <div className="w-full bg-white text-black px-10 leave-form-container relative">
+        <div className="w-full bg-white dark:bg-[#1f426b] text-black dark:text-slate-100 px-10 leave-form-container relative dark:border-[#2b6cb0]/30">
 
             {/* CLOSE/BACK BUTTON */}
             <button
                 onClick={() => onBack ? onBack() : (onClose ? onClose() : window.history.back())}
-                className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-lg transition"
+                className="absolute top-4 right-4 p-2 hover:bg-gray-100 dark:bg-[#295482] rounded-lg transition"
                 title="Close form"
             >
-                <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6 text-gray-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
@@ -163,7 +163,7 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                             <span className="text-blue-600 font-bold text-xs whitespace-nowrap">CTK - </span>
                             <Input
                                 value={employee?.department || "N/A"}
-                                className="w-full h-7 border-blue-400 text-xs bg-gray-100 cursor-not-allowed border-l-0"
+                                className="w-full h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed border-l-0"
                                 disabled
                             />
                         </div>
@@ -173,7 +173,7 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                         <Input
                             type="text"
                             value={requestData?.createdAt ? new Date(requestData.createdAt).toLocaleDateString() : "N/A"}
-                            className="h-7 border-blue-400 text-xs bg-gray-100 cursor-not-allowed"
+                            className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
                             disabled
                         />
                     </div>
@@ -181,7 +181,7 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                         <p className="font-semibold text-blue-600 text-xs mb-1">Staff ID</p>
                         <Input
                             value={employee?.staffId || "N/A"}
-                            className="h-7 border-blue-400 text-xs bg-gray-100 cursor-not-allowed"
+                            className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
                             disabled
                         />
                     </div>
@@ -189,7 +189,7 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                         <p className="font-semibold text-blue-600 text-xs mb-1">Employee Name</p>
                         <Input
                             value={employee?.name || "N/A"}
-                            className="h-7 border-blue-400 text-xs bg-gray-100 cursor-not-allowed"
+                            className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
                             disabled
                         />
                     </div>
@@ -202,138 +202,157 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                     {/* 1. EMPLOYEE INFORMATION */}
                     <Section title="1. EMPLOYEE INFORMATION">
                         <Row label="1.1 Employee Full Name">
-                            <Input value={employee?.name || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={employee?.name || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" />
                         </Row>
                         <Row label="1.2 Staff ID">
-                            <Input value={employee?.staffId || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={employee?.staffId || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" />
                         </Row>
                         <Row label="1.3 Department">
-                            <Input value={employee?.department || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={employee?.department || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" />
                         </Row>
                         <Row label="1.4 Position / Title">
-                            <Input value={employee?.position || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={employee?.position || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" />
                         </Row>
                     </Section>
 
                     {/* 2. CAR REQUEST DETAILS */}
                     <Section title="2. CAR REQUEST DETAILS">
                         <Row label="2.1 Request ID">
-                            <Input value={`#${requestData?.id}`} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={`#${requestData?.id}`} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" />
                         </Row>
                         <Row label="2.2 Destination">
-                            <Input value={car?.destination || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={car?.destination || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" />
                         </Row>
                         <Row label="2.3 Departure Date">
-                            <Input value={car?.departureDate || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={car?.departureDate || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" />
                         </Row>
                         <Row label="2.4 Departure Time">
-                            <Input value={car?.departureTime || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={car?.departureTime || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" />
                         </Row>
                         <Row label="2.5 Number of Passengers">
                             <div className="flex gap-2 items-center">
-                                <Input value={car?.passengers?.toString() || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
-                                <span className="text-sm font-medium text-gray-600">Person(s)</span>
+                                <Input value={car?.passengers?.toString() || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" />
+                                <span className="text-sm font-medium text-gray-600 dark:text-slate-400">Person(s)</span>
                             </div>
                         </Row>
                         <Row label="2.6 Driver">
-                            <Input value={car?.driverName || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={car?.driverName || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" />
                         </Row>
                         <Row label="2.7 Vehicle">
-                            <Input value={car?.carInfo || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={car?.carInfo || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" />
                         </Row>
                         {car?.purpose && (
                             <Row label="2.8 Purpose">
-                                <Textarea value={car.purpose} disabled className="min-h-20 border-blue-300 text-xs bg-gray-100 cursor-not-allowed !text-black" />
+                                <Textarea value={car.purpose} disabled className="min-h-20 border-blue-300 dark:border-[#3b6dae]/40 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100" />
                             </Row>
                         )}
                         {requestData?.title && (
                             <Row label="2.9 Request Title">
-                                <Input value={requestData.title} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                                <Input value={requestData.title} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" />
                             </Row>
                         )}
                         {requestData?.description && (
                             <Row label="2.10 Description">
-                                <Textarea value={requestData.description} disabled className="min-h-20 border-blue-300 text-xs bg-gray-100 cursor-not-allowed !text-black" />
+                                <Textarea value={requestData.description} disabled className="min-h-20 border-blue-300 dark:border-[#3b6dae]/40 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100" />
                             </Row>
                         )}
                     </Section>
 
-                    {/* 3. APPROVAL WORKFLOW */}
-                    <Section title={`3. ${getApprovalLevelLabel().toUpperCase()}`}>
-                        {!approvalSectionIsReadOnly ? (
-                            <>
-                                {/* Comments */}
-                                <Row label="3.1 Comments">
-                                    <Textarea
-                                        placeholder="Add your comments or observations..."
-                                        value={approvalComments}
-                                        onChange={(e) => setApprovalComments(e.target.value)}
-                                        className="border-blue-300 min-h-20 text-xs"
-                                    />
-                                </Row>
+                    {/* 3. EMPLOYEE SIGNATURE */}
+                    <Section title="3. EMPLOYEE SIGNATURE">
+                        <Row label="3.1 Employee Signature">
+                            {formDataDynamic?.employeeSignatureUrl ? (
+                                <img src={formDataDynamic.employeeSignatureUrl} alt="Employee Signature" className="h-10 object-contain border border-blue-200 dark:border-[#3b6dae]/30 rounded p-1 bg-white dark:bg-[#1f426b]" />
+                            ) : (
+                                <p className="text-xs italic text-gray-500">No signature provided</p>
+                            )}
+                        </Row>
+                        <Row label="3.2 Submission Date">
+                            <Input value={requestData?.createdAt ? new Date(requestData.createdAt).toLocaleDateString() : "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" />
+                        </Row>
+                    </Section>
 
-                                {/* Signature Upload */}
-                                <Row label="3.2 Your Signature">
-                                    <div className="space-y-3">
-                                        {!signaturePreview ? (
-                                            <>
-                                                <p className="text-xs text-gray-600 mb-2">Upload an image or PDF of your signature</p>
-                                                <input
-                                                    type="file"
-                                                    accept="image/*,.pdf"
-                                                    onChange={handleSignatureChange}
-                                                    disabled={isLoading}
-                                                    className="block w-full text-xs text-gray-600 border border-dashed border-blue-300 rounded p-2 cursor-pointer"
-                                                />
-                                            </>
-                                        ) : (
-                                            <div className="space-y-2">
-                                                <div className="p-3 border-2 border-dashed border-green-300 rounded bg-green-50">
-                                                    <p className="text-xs font-semibold text-green-700 mb-2">Signature Uploaded:</p>
-                                                    <img src={signaturePreview} alt="approver-signature" className="h-14 object-contain" />
+                    {/* 4. APPROVAL WORKFLOW */}
+                    <Section title="4. APPROVAL WORKFLOW">
+                        <Row label="4.1 HR Approval">
+                            <Input
+                                value="Doreen MBABAZI"
+                                className="w-full h-8 border-blue-300 dark:border-[#3b6dae]/40 bg-gray-100 dark:bg-[#295482] text-black dark:text-slate-100 font-medium cursor-not-allowed max-w-[400px] mt-1 mb-1"
+                                disabled
+                            />
+                            {formDataDynamic?.hrSignatureUrl && (
+                                <div className="mt-2">
+                                    <p className="text-xs font-semibold text-gray-500 mb-2">Approved by HR:</p>
+                                    <img src={formDataDynamic.hrSignatureUrl} alt="HR Signature" className="h-10 object-contain border border-blue-200 dark:border-[#3b6dae]/30 rounded p-1 bg-white dark:bg-[#1f426b]" />
+                                </div>
+                            )}
+                            {isRequestRejected && (
+                               <div className="mt-2 bg-red-100 text-red-700 px-3 py-1.5 rounded text-xs font-bold inline-block">
+                                   ✗ REJECTED
+                               </div>
+                            )}
+                        </Row>
+
+                        {!approvalSectionIsReadOnly && (
+                            <div className="p-4 border-b border-blue-400 dark:border-[#3b6dae]/50 bg-blue-50/30">
+                                <h3 className="text-sm font-bold text-blue-700 mb-3">Your Approval ({user?.role || "Approver"})</h3>
+                                <div className="space-y-3">
+                                    <div>
+                                        <label className="text-xs font-semibold block mb-1">Comments</label>
+                                        <Textarea
+                                            placeholder="Add your comments or observations..."
+                                            value={approvalComments}
+                                            onChange={(e) => setApprovalComments(e.target.value)}
+                                            className="border-blue-300 dark:border-[#3b6dae]/40 min-h-20 text-xs bg-white dark:bg-[#1f426b]"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="text-xs font-semibold block mb-1">Your Signature</label>
+                                        <div className="space-y-3">
+                                            {!signaturePreview ? (
+                                                <>
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*,.pdf"
+                                                        onChange={handleSignatureChange}
+                                                        disabled={isLoading}
+                                                        className="block w-full text-xs text-gray-600 dark:text-slate-400 border border-dashed border-blue-300 dark:border-[#3b6dae]/40 rounded p-2 cursor-pointer bg-white dark:bg-[#1f426b]"
+                                                    />
+                                                </>
+                                            ) : (
+                                                <div className="space-y-2">
+                                                    <div className="p-3 border border-blue-200 dark:border-[#3b6dae]/30 rounded bg-white dark:bg-[#1f426b]">
+                                                        <img src={signaturePreview} alt="approver-signature" className="h-12 object-contain" />
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setSignaturePreview("");
+                                                            setSignatureFile(null);
+                                                        }}
+                                                        className="text-xs text-red-600 hover:text-red-800 font-semibold"
+                                                    >
+                                                        Remove Signature
+                                                    </button>
                                                 </div>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setSignaturePreview("");
-                                                        setSignatureFile(null);
-                                                    }}
-                                                    className="text-xs text-red-600 hover:text-red-800 text-left"
-                                                >
-                                                    Remove
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                </Row>
-                            </>
-                        ) : (
-                            <>
-                                {/* Read-only approval info */}
-                                <Row label="3.1 Status">
-                                    <div className={`px-3 py-1.5 rounded text-xs font-bold ${isRequestApproved ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                        {isRequestApproved ? "✓ APPROVED" : "✗ REJECTED"}
-                                    </div>
-                                    {formDataDynamic?.hrSignatureUrl && (
-                                        <div className="mt-4">
-                                            <p className="text-xs text-gray-500 mb-1">HR Signature:</p>
-                                            <img src={formDataDynamic.hrSignatureUrl} alt="HR Signature" className="h-10 object-contain border border-blue-200 rounded p-1 bg-white" />
+                                            )}
                                         </div>
-                                    )}
-                                </Row>
-                            </>
+                                    </div>
+                                </div>
+                            </div>
                         )}
                     </Section>
                 </div>
 
                 {/* ===== ACTIONS ===== */}
-                <div className="flex justify-between items-center px-6 py-4 border-t border-blue-400 bg-gray-50 gap-4">
+                <div className="flex justify-between items-center px-6 py-4 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c] gap-4">
                     <div className="flex gap-2">
                         <Button
                             variant="outline"
                             disabled={isLoading}
                             onClick={() => window.print()}
-                            className="border-blue-400 text-blue-600"
+                            className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600"
                         >
                             <Printer size={16} className="mr-1" /> Print
                         </Button>
@@ -343,7 +362,7 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                             onClick={() => {
                                 toast.info("Download functionality requires backend PDF generation");
                             }}
-                            className="border-blue-400 text-blue-600"
+                            className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600"
                         >
                             <Download size={16} className="mr-1" /> Download
                         </Button>
@@ -406,7 +425,7 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                 </Dialog>
 
                 {/* ===== FOOTER ===== */}
-                <div className="text-center text-xs text-gray-600 py-3 border-t border-gray-200 space-y-1">
+                <div className="text-center text-xs text-gray-600 dark:text-slate-400 py-3 border-t border-gray-200 space-y-1">
                     <p>www.centrika.rw</p>
                     <p>1 | Centrika Ltd | Motto: Delivering Tomorrow's Solutions Today</p>
                 </div>

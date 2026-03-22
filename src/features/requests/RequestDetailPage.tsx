@@ -46,7 +46,7 @@ export default function RequestDetail() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold text-foreground">View Request</h1>
+            <h1 className="text-3xl font-bold text-[#3b6dae] dark:text-[#c79d2d]">View Request</h1>
             <p className="text-muted-foreground mt-1">Request Form</p>
           </div>
         </div>

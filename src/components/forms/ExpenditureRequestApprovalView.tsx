@@ -75,7 +75,7 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
             <div className="flex items-center justify-center py-12">
                 <div className="text-center">
                     <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
-                    <p className="text-gray-600">Loading expenditure request details...</p>
+                    <p className="text-gray-600 dark:text-slate-400">Loading expenditure request details...</p>
                 </div>
             </div>
         );
@@ -90,15 +90,15 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
     };
 
     return (
-        <div className="w-full bg-white text-black px-10 leave-form-container relative">
+        <div className="w-full bg-white dark:bg-[#1f426b] text-black dark:text-slate-100 px-10 leave-form-container relative dark:border-[#2b6cb0]/30">
 
             {/* CLOSE/BACK BUTTON */}
             <button
                 onClick={() => onBack ? onBack() : (onClose ? onClose() : window.history.back())}
-                className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-lg transition"
+                className="absolute top-4 right-4 p-2 hover:bg-gray-100 dark:bg-[#295482] rounded-lg transition"
                 title="Close form"
             >
-                <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6 text-gray-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
@@ -168,7 +168,7 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
                             <span className="text-blue-600 font-bold text-xs whitespace-nowrap">CTK - </span>
                             <Input
                                 value={employee?.department || exp?.department || "N/A"}
-                                className="w-full h-7 border-blue-400 text-xs bg-gray-100 cursor-not-allowed border-l-0"
+                                className="w-full h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed border-l-0"
                                 disabled
                             />
                         </div>
@@ -178,7 +178,7 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
                         <Input
                             type="text"
                             value={requestData?.createdAt ? new Date(requestData.createdAt).toLocaleDateString() : "N/A"}
-                            className="h-7 border-blue-400 text-xs bg-gray-100 cursor-not-allowed"
+                            className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
                             disabled
                         />
                     </div>
@@ -186,7 +186,7 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
                         <p className="font-semibold text-blue-600 text-xs mb-1">Staff ID</p>
                         <Input
                             value={employee?.staffId || "N/A"}
-                            className="h-7 border-blue-400 text-xs bg-gray-100 cursor-not-allowed"
+                            className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
                             disabled
                         />
                     </div>
@@ -194,7 +194,7 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
                         <p className="font-semibold text-blue-600 text-xs mb-1">Employee Name</p>
                         <Input
                             value={employee?.name || "N/A"}
-                            className="h-7 border-blue-400 text-xs bg-gray-100 cursor-not-allowed"
+                            className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
                             disabled
                         />
                     </div>
@@ -207,46 +207,46 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
                     {/* 1. EMPLOYEE INFORMATION */}
                     <Section title="1. EMPLOYEE INFORMATION">
                         <Row label="1.1 Employee Full Name">
-                            <Input value={employee?.name || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={employee?.name || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" />
                         </Row>
                         <Row label="1.2 Staff ID">
-                            <Input value={employee?.staffId || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={employee?.staffId || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" />
                         </Row>
                         <Row label="1.3 Department">
-                            <Input value={employee?.department || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={employee?.department || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" />
                         </Row>
                         <Row label="1.4 Position / Title">
-                            <Input value={employee?.position || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={employee?.position || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" />
                         </Row>
                     </Section>
 
                     {/* 2. EXPENDITURE DETAILS */}
                     <Section title="2. EXPENDITURE DETAILS">
                         <Row label="2.1 Request ID">
-                            <Input value={`#${requestData?.id}`} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={`#${requestData?.id}`} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" />
                         </Row>
                         <Row label="2.2 Type of Expenditure">
-                            <Input value={exp?.category || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={exp?.category || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" />
                         </Row>
                         <Row label="2.3 Amount">
                             <div className="flex gap-2 items-center">
-                                <Input value={formatAmount(exp?.amount, exp?.currency)} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                                <Input value={formatAmount(exp?.amount, exp?.currency)} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" />
                             </div>
                         </Row>
                         <Row label="2.4 Currency">
-                            <Input value={exp?.currency || "RWF"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={exp?.currency || "RWF"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" />
                         </Row>
                         <Row label="2.5 Department">
-                            <Input value={exp?.department || employee?.department || "N/A"} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                            <Input value={exp?.department || employee?.department || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" />
                         </Row>
                         {requestData?.description && (
                             <Row label="2.6 Purpose / Justification">
-                                <Textarea value={requestData.description} disabled className="min-h-20 border-blue-300 text-xs bg-gray-100 cursor-not-allowed !text-black" />
+                                <Textarea value={requestData.description} disabled className="min-h-20 border-blue-300 dark:border-[#3b6dae]/40 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100" />
                             </Row>
                         )}
                         {requestData?.title && (
                             <Row label="2.7 Request Title">
-                                <Input value={requestData.title} disabled className="border-blue-300 h-7 text-xs bg-gray-100 cursor-not-allowed !text-black font-medium" />
+                                <Input value={requestData.title} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" />
                             </Row>
                         )}
                     </Section>
@@ -256,7 +256,7 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
                         <Row label="3.1 Employee Signature">
                             <div className="mt-1 mb-2">
                                 {formDataDynamic?.employeeSignatureUrl ? (
-                                    <div className="p-2 border border-blue-200 rounded inline-block bg-white">
+                                    <div className="p-2 border border-blue-200 dark:border-[#3b6dae]/30 rounded inline-block bg-white dark:bg-[#1f426b]">
                                         <img src={formDataDynamic.employeeSignatureUrl} alt="Employee Signature" className="h-12 object-contain" />
                                     </div>
                                 ) : (
@@ -273,15 +273,23 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
                             <Row label="4.1 Line Manager / HOD">
                                 <div className="mt-2">
                                     <p className="text-xs text-gray-500 mb-1">Approved by HOD:</p>
-                                    <img src={formDataDynamic.managerSignatureUrl} alt="HOD Signature" className="h-10 object-contain border border-blue-200 rounded p-1 bg-white" />
+                                    <img src={formDataDynamic.managerSignatureUrl} alt="HOD Signature" className="h-10 object-contain border border-blue-200 dark:border-[#3b6dae]/30 rounded p-1 bg-white dark:bg-[#1f426b]" />
+                                </div>
+                            </Row>
+                        )}
+                        {formDataDynamic?.hrSignatureUrl && (
+                            <Row label="4.2 HR Review">
+                                <div className="mt-2">
+                                    <p className="text-xs text-gray-500 mb-1">Approved by HR:</p>
+                                    <img src={formDataDynamic.hrSignatureUrl} alt="HR Signature" className="h-10 object-contain border border-blue-200 dark:border-[#3b6dae]/30 rounded p-1 bg-white dark:bg-[#1f426b]" />
                                 </div>
                             </Row>
                         )}
                         {formDataDynamic?.financeSignatureUrl && (
-                            <Row label="4.2 Head of Finance">
+                            <Row label="4.3 Head of Finance">
                                 <div className="mt-2">
                                     <p className="text-xs text-gray-500 mb-1">Approved by Head of Finance:</p>
-                                    <img src={formDataDynamic.financeSignatureUrl} alt="Finance Signature" className="h-10 object-contain border border-blue-200 rounded p-1 bg-white" />
+                                    <img src={formDataDynamic.financeSignatureUrl} alt="Finance Signature" className="h-10 object-contain border border-blue-200 dark:border-[#3b6dae]/30 rounded p-1 bg-white dark:bg-[#1f426b]" />
                                 </div>
                             </Row>
                         )}
@@ -289,7 +297,7 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
                             <Row label="4.3 CEO / MD">
                                 <div className="mt-2">
                                     <p className="text-xs text-gray-500 mb-1">Final Approval by CEO/MD:</p>
-                                    <img src={formDataDynamic.ceoSignatureUrl} alt="CEO Signature" className="h-10 object-contain border border-blue-200 rounded p-1 bg-white" />
+                                    <img src={formDataDynamic.ceoSignatureUrl} alt="CEO Signature" className="h-10 object-contain border border-blue-200 dark:border-[#3b6dae]/30 rounded p-1 bg-white dark:bg-[#1f426b]" />
                                 </div>
                             </Row>
                         )}
@@ -297,7 +305,7 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
                         {/* Current active approval step */}
                         {!approvalSectionIsReadOnly ? (
                             <div className="p-4 bg-blue-50/50 mt-2">
-                                <h3 className="text-sm font-bold text-blue-700 mb-3 text-center border-b border-blue-200 pb-2">
+                                <h3 className="text-sm font-bold text-blue-700 mb-3 text-center border-b border-blue-200 dark:border-[#3b6dae]/30 pb-2">
                                     Wait for Your Approval: {getApprovalLevelLabel().toUpperCase()}
                                 </h3>
                                 <Row label="Your Comments">
@@ -305,7 +313,7 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
                                         placeholder="Add your comments or observations..."
                                         value={approvalComments}
                                         onChange={(e) => setApprovalComments(e.target.value)}
-                                        className="border-blue-300 min-h-20 text-xs"
+                                        className="border-blue-300 dark:border-[#3b6dae]/40 min-h-20 text-xs"
                                     />
                                 </Row>
 
@@ -314,13 +322,13 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
                                     <div className="space-y-3">
                                         {!signaturePreview ? (
                                             <>
-                                                <p className="text-xs text-gray-600 mb-2">Upload an image or PDF of your signature</p>
+                                                <p className="text-xs text-gray-600 dark:text-slate-400 mb-2">Upload an image or PDF of your signature</p>
                                                 <input
                                                     type="file"
                                                     accept="image/*,.pdf"
                                                     onChange={handleSignatureChange}
                                                     disabled={isLoading}
-                                                    className="block w-full text-xs text-gray-600 border border-dashed border-blue-300 rounded p-2 cursor-pointer"
+                                                    className="block w-full text-xs text-gray-600 dark:text-slate-400 border border-dashed border-blue-300 dark:border-[#3b6dae]/40 rounded p-2 cursor-pointer"
                                                 />
                                             </>
                                         ) : (
@@ -355,13 +363,13 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
                 </div>
 
                 {/* ===== ACTIONS ===== */}
-                <div className="flex justify-between items-center px-6 py-4 border-t border-blue-400 bg-gray-50 gap-4">
+                <div className="flex justify-between items-center px-6 py-4 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c] gap-4">
                     <div className="flex gap-2">
                         <Button
                             variant="outline"
                             disabled={isLoading}
                             onClick={() => window.print()}
-                            className="border-blue-400 text-blue-600"
+                            className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600"
                         >
                             <Printer size={16} className="mr-1" /> Print
                         </Button>
@@ -371,7 +379,7 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
                             onClick={() => {
                                 toast.info("Download functionality requires backend PDF generation");
                             }}
-                            className="border-blue-400 text-blue-600"
+                            className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600"
                         >
                             <Download size={16} className="mr-1" /> Download
                         </Button>
@@ -455,7 +463,7 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
                 </Dialog>
 
                 {/* ===== FOOTER ===== */}
-                <div className="text-center text-xs text-gray-600 py-3 border-t border-gray-200 space-y-1">
+                <div className="text-center text-xs text-gray-600 dark:text-slate-400 py-3 border-t border-gray-200 space-y-1">
                     <p>www.centrika.rw</p>
                     <p>1 | Centrika Ltd | Motto: Delivering Tomorrow's Solutions Today</p>
                 </div>

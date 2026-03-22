@@ -42,11 +42,11 @@ export default function FinancePage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 p-4 lg:p-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Finance Overview</h1>
+            <h1 className="text-3xl font-bold text-[#3b6dae] dark:text-[#c79d2d]">Finance Overview</h1>
             <p className="text-muted-foreground mt-2">
               Monitor expenditures and track financial operations
             </p>
