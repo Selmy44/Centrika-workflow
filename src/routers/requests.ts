@@ -362,6 +362,38 @@ export const requestsRouter = router({
     return (results as any[]).sort((a: any, b: any) => b.createdAt.getTime() - a.createdAt.getTime());
   }),
 
+  listApprovalHistory: protectedProcedure.query(async ({ ctx }) => {
+    const requestIncludes = {
+      user: { include: { department: true } },
+      leaveRequest: true,
+      carRequest: true,
+      expenditureRequest: true,
+      assetRequest: true,
+      attachments: true,
+    };
+
+    // Only admin sees ALL requests
+    if (ctx.user.role === "admin") {
+      const allRequests = await prisma.request.findMany({
+        where: { status: { in: ["approved", "rejected", "pending"] } },
+        include: requestIncludes,
+        orderBy: { createdAt: "desc" },
+      });
+      return allRequests;
+    }
+
+    // Everyone else (HR, HOD, Finance, CEO/MD) only sees requests assigned to them
+    const approvals = await prisma.requestApproval.findMany({
+      where: { approverId: ctx.user.id },
+      include: { request: { include: requestIncludes } },
+    });
+
+    const results = approvals.map((a: any) => a.request);
+    // Deduplicate
+    const map = new Map(results.map((r: any) => [r.id, r]));
+    return Array.from(map.values()).sort((a: any, b: any) => b.createdAt.getTime() - a.createdAt.getTime());
+  }),
+
   approveRequest: protectedProcedure
     .input(z.object({
       requestId: z.number(),

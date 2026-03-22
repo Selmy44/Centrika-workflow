@@ -539,8 +539,8 @@ export const appRouter = router({
     }),
 
     listAll: protectedProcedure.query(async ({ ctx }) => {
-      if (ctx.user.role !== "admin") {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Only admins can view all users" });
+      if (ctx.user.role !== "admin" && ctx.user.role !== "hr") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Only admins and HR can view all users" });
       }
       return prisma.user.findMany({
         include: { department: true, manager: true } as any
@@ -628,8 +628,8 @@ export const appRouter = router({
         contractEnd: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== "admin") {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Only admins can update users" });
+        if (ctx.user.role !== "admin" && ctx.user.role !== "hr") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Only admins and HR can update users" });
         }
 
         await prisma.user.update({
@@ -659,8 +659,8 @@ export const appRouter = router({
         role: z.enum(["user", "admin", "hr", "head_of_department", "head_of_finance", "ceo_md"]),
       }))
       .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== "admin") {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Only superadmin can assign roles" });
+        if (ctx.user.role !== "admin" && ctx.user.role !== "hr") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Only administrators and HR can assign roles" });
         }
 
         const user = await prisma.user.update({
@@ -709,8 +709,8 @@ export const appRouter = router({
     deleteUser: protectedProcedure
       .input(z.object({ userId: z.number() }))
       .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== "admin") {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Only admins can delete users" });
+        if (ctx.user.role !== "admin" && ctx.user.role !== "hr") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Only admins and HR can delete users" });
         }
 
         if (ctx.user.id === input.userId) {
