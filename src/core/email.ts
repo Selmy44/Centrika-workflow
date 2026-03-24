@@ -534,4 +534,124 @@ export const emailTemplates = {
       </div>
     `,
   }),
+
+  requestSubmittedEmail: (approverName: string, employeeName: string, requestType: string, requestNumber: string, detailsHtml: string) => ({
+    subject: `Action Required: New ${requestType.charAt(0).toUpperCase() + requestType.slice(1)} Request #${requestNumber}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; color: white; text-align: center;">
+          <h1>New Request Awaiting Approval</h1>
+        </div>
+        <div style="padding: 40px; background: #f9f9f9;">
+          <p style="font-size: 16px; color: #333;">Hello <strong>${approverName}</strong>,</p>
+          
+          <p style="font-size: 14px; color: #666; line-height: 1.6;">
+            <strong>${employeeName}</strong> has submitted a new <strong>${requestType}</strong> request that requires your approval.
+          </p>
+
+          <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea;">
+            <h3 style="color: #667eea; margin-top: 0;">Request Summary (#${requestNumber})</h3>
+            ${detailsHtml}
+          </div>
+
+          <p style="font-size: 14px; color: #666; margin-top: 20px; line-height: 1.6;">
+            Please log in to Centrika OnePortal to review and approve or reject this request.
+          </p>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://centrika.rw/approvals" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+              Review Request
+            </a>
+          </div>
+
+          <p style="font-size: 12px; color: #999; margin-top: 30px;">This is an automated message. Please do not reply to this email.</p>
+        </div>
+      </div>
+    `,
+  }),
+
+  requestApprovedEmail: (employeeName: string, approverName: string, requestType: string, requestNumber: string, detailsHtml: string) => ({
+    subject: `Approved: Your ${requestType.charAt(0).toUpperCase() + requestType.slice(1)} Request #${requestNumber}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); padding: 40px; color: white; text-align: center;">
+          <h1>✓ Request Approved</h1>
+        </div>
+        <div style="padding: 40px; background: #f9f9f9;">
+          <p style="font-size: 16px; color: #333;">Hello <strong>${employeeName}</strong>,</p>
+          <p style="font-size: 14px; color: #666; line-height: 1.6;">
+            Your ${requestType} request has been <strong style="color: #28a745;">APPROVED</strong> by <strong>${approverName}</strong>.
+          </p>
+          <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #28a745;">
+            <h3 style="color: #28a745; margin-top: 0;">Approved Details (#${requestNumber})</h3>
+            ${detailsHtml}
+          </div>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://centrika.rw/requests" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+              View Request
+            </a>
+          </div>
+          <p style="font-size: 12px; color: #999; margin-top: 30px;">This is an automated message. Please do not reply to this email.</p>
+        </div>
+      </div>
+    `,
+  }),
+
+  requestRejectedEmail: (employeeName: string, approverName: string, requestType: string, requestNumber: string, reason: string) => ({
+    subject: `Update: Your ${requestType.charAt(0).toUpperCase() + requestType.slice(1)} Request #${requestNumber} was Rejected`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); padding: 40px; color: white; text-align: center;">
+          <h1>Request Rejected</h1>
+        </div>
+        <div style="padding: 40px; background: #f9f9f9;">
+          <p style="font-size: 16px; color: #333;">Hello <strong>${employeeName}</strong>,</p>
+          <p style="font-size: 14px; color: #666; line-height: 1.6;">
+            Your ${requestType} request was unfortunately rejected by <strong>${approverName}</strong>.
+          </p>
+          <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #dc3545;">
+            <h3 style="color: #dc3545; margin-top: 0;">Rejection Details (#${requestNumber})</h3>
+            <p style="margin: 8px 0;"><strong>Reason provided:</strong> ${reason || "No specific reason provided."}</p>
+          </div>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://centrika.rw/requests" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+              View Request
+            </a>
+          </div>
+          <p style="font-size: 12px; color: #999; margin-top: 30px;">This is an automated message. Please do not reply to this email.</p>
+        </div>
+      </div>
+    `,
+  }),
+
+  observerNotificationEmail: (recipientName: string, employeeName: string, approverName: string, actionType: "APPROVED" | "REJECTED", requestType: string, requestNumber: string, detailsHtml: string) => ({
+    subject: `FYI: ${employeeName}'s ${requestType} Request #${requestNumber} was ${actionType}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, ${actionType === "APPROVED" ? "#28a745 0%, #20c997 100%" : "#dc3545 0%, #c82333 100%"}); padding: 40px; color: white; text-align: center;">
+          <h1>Request ${actionType}</h1>
+          <p style="margin: 10px 0 0 0; font-size: 14px; opacity: 0.9;">For your records and reporting</p>
+        </div>
+        <div style="padding: 40px; background: #f9f9f9;">
+          <p style="font-size: 16px; color: #333;">Hello <strong>${recipientName}</strong>,</p>
+          
+          <p style="font-size: 14px; color: #666; line-height: 1.6;">
+            This is an automated notification that <strong>${employeeName}'s</strong> ${requestType} request was <strong>${actionType.toLowerCase()}</strong> by ${approverName}.
+          </p>
+
+          <div style="background: ${actionType === "APPROVED" ? "#e8f5e9" : "#fff3cd"}; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid ${actionType === "APPROVED" ? "#28a745" : "#dc3545"};">
+            <h3 style="color: ${actionType === "APPROVED" ? "#28a745" : "#dc3545"}; margin-top: 0;">Request Record (#${requestNumber})</h3>
+            ${detailsHtml}
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://centrika.rw/approval-history" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+              View Request Details
+            </a>
+          </div>
+          <p style="font-size: 12px; color: #999; margin-top: 30px;">This is an automated message. Please do not reply to this email.</p>
+        </div>
+      </div>
+    `,
+  }),
 };

@@ -11,6 +11,52 @@ import {
 } from "../lib/spaces";
 import { calculateAnnualLeaveBalance } from "../lib/leaveBalanceCalculator";
 
+function getDocId(request: any): string {
+  const prefix = request.type === "leave" ? "LR" : request.type === "car" ? "CR" : request.type === "expenditure" ? "ER" : "AR";
+  const d = new Date(request.createdAt);
+  return `${prefix}-${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(request.id).padStart(5, '0')}`;
+}
+
+async function generateRequestDetailsHtml(prisma: any, request: any): Promise<string> {
+  let detailsHtml = `<table style="width: 100%; font-size: 14px; color: #333;">`;
+  detailsHtml += `<tr><td style="padding: 6px 0; font-weight: bold; width: 160px;">Title:</td><td>${request.title}</td></tr>`;
+
+  if (request.type === "leave") {
+    const data = await prisma.leaveRequest.findUnique({ where: { requestId: request.id } });
+    if (data) {
+      detailsHtml += `<tr><td style="padding: 6px 0; font-weight: bold;">Leave Type:</td><td>${data.leaveType}</td></tr>`;
+      detailsHtml += `<tr><td style="padding: 6px 0; font-weight: bold;">Dates:</td><td>${data.startDate} to ${data.endDate}</td></tr>`;
+      detailsHtml += `<tr><td style="padding: 6px 0; font-weight: bold;">Days Requested:</td><td>${data.leaveDaysRequested || 0}</td></tr>`;
+    }
+  } else if (request.type === "car") {
+    const data = await prisma.carRequest.findUnique({ where: { requestId: request.id } });
+    if (data) {
+      detailsHtml += `<tr><td style="padding: 6px 0; font-weight: bold;">Destination:</td><td>${data.destination}</td></tr>`;
+      detailsHtml += `<tr><td style="padding: 6px 0; font-weight: bold;">Departure:</td><td>${data.departureDate} ${data.departureTime || ""}</td></tr>`;
+      detailsHtml += `<tr><td style="padding: 6px 0; font-weight: bold;">Passengers:</td><td>${data.passengers}</td></tr>`;
+    }
+  } else if (request.type === "expenditure") {
+    const data = await prisma.expenditureRequest.findUnique({ where: { requestId: request.id } });
+    if (data) {
+      detailsHtml += `<tr><td style="padding: 6px 0; font-weight: bold;">Amount:</td><td>${data.amount} ${data.currency}</td></tr>`;
+      if (data.category) detailsHtml += `<tr><td style="padding: 6px 0; font-weight: bold;">Category:</td><td>${data.category}</td></tr>`;
+    }
+  } else if (request.type === "asset") {
+    const data = await prisma.assetRequest.findUnique({ where: { requestId: request.id } });
+    if (data) {
+      detailsHtml += `<tr><td style="padding: 6px 0; font-weight: bold;">Item Name:</td><td>${data.itemName}</td></tr>`;
+      detailsHtml += `<tr><td style="padding: 6px 0; font-weight: bold;">Est. Cost:</td><td>${data.estimatedCost} ${data.currency}</td></tr>`;
+    }
+  }
+  
+  if (request.description) {
+    detailsHtml += `<tr><td style="padding: 6px 0; font-weight: bold;">Description/Reason:</td><td>${request.description}</td></tr>`;
+  }
+  
+  detailsHtml += `</table>`;
+  return detailsHtml;
+}
+
 export const requestsRouter = router({
   createLeaveRequest: protectedProcedure
     .input(
@@ -303,25 +349,22 @@ export const requestsRouter = router({
         })
       ]);
 
-      if (request.type === "leave") {
-        try {
-          const approver = await prisma.user.findUnique({ where: { id: approverId } });
-          const leaveReq = await prisma.leaveRequest.findUnique({ where: { requestId: request.id } });
-          const docId = `LR-${new Date(request.createdAt).getFullYear()}-${String(new Date(request.createdAt).getMonth() + 1).padStart(2, '0')}-${request.id.toString().padStart(5, '0')}`;
-          
-          if (approver?.email && leaveReq) {
-            const emailContent = emailTemplates.leaveRequestSubmittedEmail(
-              request.user.name || "Employee",
-              approver.name || "Manager",
-              docId,
-              leaveReq.startDate,
-              leaveReq.endDate
-            );
-            await sendEmail(approver.email, emailContent.subject, emailContent.html);
-          }
-        } catch (error) {
-          console.error("Failed to send submission email", error);
+      try {
+        const approver = await prisma.user.findUnique({ where: { id: approverId } });
+        if (approver?.email) {
+          const docId = getDocId(request);
+          const detailsHtml = await generateRequestDetailsHtml(prisma, request);
+          const emailContent = emailTemplates.requestSubmittedEmail(
+            approver.name || "Manager",
+            request.user.name || "Employee",
+            request.type,
+            docId,
+            detailsHtml
+          );
+          await sendEmail(approver.email, emailContent.subject, emailContent.html);
         }
+      } catch (error) {
+        console.error("Failed to send submission email", error);
       }
 
       return { success: true };
@@ -425,73 +468,67 @@ export const requestsRouter = router({
           }
         });
 
-        if (request.type === "leave") {
-          try {
-            const approver = await prisma.user.findUnique({ where: { id: ctx.user.id } });
-            const leaveReq = await prisma.leaveRequest.findUnique({ where: { requestId: request.id } });
-            const docId = `LR-${new Date(request.createdAt).getFullYear()}-${String(new Date(request.createdAt).getMonth() + 1).padStart(2, '0')}-${request.id.toString().padStart(5, '0')}`;
-            if (request.user.email && leaveReq && approver) {
-              const emailContent = emailTemplates.leaveRequestApprovedEmail(
-                request.user.name || "Employee",
-                approver.name || "Manager",
-                docId,
-                leaveReq.startDate,
-                leaveReq.endDate
-              );
-              await sendEmail(request.user.email, emailContent.subject, emailContent.html);
+        try {
+          const approver = await prisma.user.findUnique({ where: { id: ctx.user.id } });
+          const docId = getDocId(request);
+          const detailsHtml = await generateRequestDetailsHtml(prisma, request);
+
+          // Email Requester
+          if (request.user.email && approver) {
+            const emailContent = emailTemplates.requestApprovedEmail(
+              request.user.name || "Employee",
+              approver.name || "Manager",
+              request.type,
+              docId,
+              detailsHtml
+            );
+            await sendEmail(request.user.email, emailContent.subject, emailContent.html);
+          }
+
+          // Email Observers (HR, CEO/MD, and Finance if expenditure/asset)
+          const rolesToNotify = ["hr", "ceo_md"];
+          if (request.type === "expenditure" || request.type === "asset") {
+            rolesToNotify.push("head_of_finance");
+          }
+
+          const observers = await prisma.user.findMany({
+            where: {
+              OR: rolesToNotify.flatMap(role => [
+                { role: role as any },
+                { additionalRoles: { contains: role } }
+              ]),
+              id: { not: ctx.user.id } // Don't email the approver themselves
             }
-          } catch (error) { console.error("Email error", error); }
+          });
 
-          // Notify HR and CEO/MD about the approved leave (they should see the record)
-          try {
-            const approver = await prisma.user.findUnique({ where: { id: ctx.user.id } });
-            const leaveReq = await prisma.leaveRequest.findUnique({ where: { requestId: request.id } });
-            const docId = `LR-${new Date(request.createdAt).getFullYear()}-${String(new Date(request.createdAt).getMonth() + 1).padStart(2, '0')}-${request.id.toString().padStart(5, '0')}`;
-
-            const hrAndCeoUsers = await prisma.user.findMany({
-              where: {
-                OR: [
-                  { role: "hr" },
-                  { role: "ceo_md" },
-                  { additionalRoles: { contains: "hr" } },
-                  { additionalRoles: { contains: "ceo_md" } },
-                ],
-                id: { not: ctx.user.id }, // Don't notify the approver themselves
+          for (const recipient of observers) {
+            // In-app notification for observers
+            await prisma.notification.create({
+              data: {
+                userId: recipient.id,
+                requestId: input.requestId,
+                triggeredByUserId: ctx.user.id,
+                type: "request_approved",
+                title: `${request.type} req. approved for ${request.user.name}`,
+                message: `${request.user.name}'s request was approved by ${approver?.name || "HOD"}.`,
               },
             });
 
-            for (const recipient of hrAndCeoUsers) {
-              // In-app notification
-              await prisma.notification.create({
-                data: {
-                  userId: recipient.id,
-                  requestId: input.requestId,
-                  triggeredByUserId: ctx.user.id,
-                  type: "request_approved",
-                  title: `Leave approved: ${request.user.name}'s ${request.type} request`,
-                  message: `${request.user.name}'s leave request was approved by ${approver?.name || "HOD"}.`,
-                },
-              });
-
-              // Email notification 
-              if (recipient.email && leaveReq && approver) {
-                const notifEmail = emailTemplates.leaveApprovedNotificationEmail(
-                  recipient.name || "Team",
-                  request.user.name || "Employee",
-                  approver.name || "HOD",
-                  leaveReq.leaveType || "Leave",
-                  leaveReq.startDate,
-                  leaveReq.endDate,
-                  leaveReq.leaveDaysRequested || 0,
-                  leaveReq.reason || "",
-                  docId,
-                  new Date().toISOString().split("T")[0]
-                );
-                await sendEmail(recipient.email, notifEmail.subject, notifEmail.html);
-              }
+            // Email for observers
+            if (recipient.email && approver) {
+              const notifEmail = emailTemplates.observerNotificationEmail(
+                recipient.name || "Team",
+                request.user.name || "Employee",
+                approver.name || "Manager",
+                "APPROVED",
+                request.type,
+                docId,
+                detailsHtml
+              );
+              await sendEmail(recipient.email, notifEmail.subject, notifEmail.html);
             }
-          } catch (error) { console.error("HR/CEO notification error", error); }
-        }
+          }
+        } catch (error) { console.error("Email/Observer notification error", error); }
       };
 
       const routeToNext = async (nextLevel: string, nextRole: string) => {
@@ -518,22 +555,20 @@ export const requestsRouter = router({
           }
         });
 
-        if (request.type === "leave") {
-          try {
-            const docId = `LR-${new Date(request.createdAt).getFullYear()}-${String(new Date(request.createdAt).getMonth() + 1).padStart(2, '0')}-${request.id.toString().padStart(5, '0')}`;
-            const leaveReq = await prisma.leaveRequest.findUnique({ where: { requestId: request.id } });
-            if (leaveReq && nextUser.email) {
-              const emailContent = emailTemplates.leaveRequestSubmittedEmail(
-                request.user.name || "Employee",
-                nextUser.name || "Manager",
-                docId,
-                leaveReq.startDate,
-                leaveReq.endDate
-              );
-              await sendEmail(nextUser.email, emailContent.subject, emailContent.html);
-            }
-          } catch (error) { console.error("Email error", error); }
-        }
+        try {
+          if (nextUser.email) {
+            const docId = getDocId(request);
+            const detailsHtml = await generateRequestDetailsHtml(prisma, request);
+            const emailContent = emailTemplates.requestSubmittedEmail(
+              nextUser.name || "Manager",
+              request.user.name || "Employee",
+              request.type,
+              docId,
+              detailsHtml
+            );
+            await sendEmail(nextUser.email, emailContent.subject, emailContent.html);
+          }
+        } catch (error) { console.error("Email error", error); }
       };
 
       // Current approval
@@ -623,21 +658,49 @@ export const requestsRouter = router({
         }
       });
 
-      if (request.type === "leave") {
-        try {
-          const approver = await prisma.user.findUnique({ where: { id: ctx.user.id } });
-          const docId = `LR-${new Date(request.createdAt).getFullYear()}-${String(new Date(request.createdAt).getMonth() + 1).padStart(2, '0')}-${request.id.toString().padStart(5, '0')}`;
-          if (request.user?.email && approver) {
-            const emailContent = emailTemplates.leaveRequestRejectedEmail(
+      try {
+        const approver = await prisma.user.findUnique({ where: { id: ctx.user.id } });
+        const docId = getDocId(request);
+        
+        // Notify Requester
+        if (request.user?.email && approver) {
+          const emailContent = emailTemplates.requestRejectedEmail(
+            request.user.name || "Employee",
+            approver.name || "Manager",
+            request.type,
+            docId,
+            input.comments
+          );
+          await sendEmail(request.user.email, emailContent.subject, emailContent.html);
+        }
+
+        // Notify Observers (HR/CEO)
+        const observers = await prisma.user.findMany({
+          where: {
+            OR: [
+              { role: "hr" }, { role: "ceo_md" },
+              { additionalRoles: { contains: "hr" } }, { additionalRoles: { contains: "ceo_md" } }
+            ],
+            id: { not: ctx.user.id }
+          }
+        });
+
+        for (const recipient of observers) {
+          if (recipient.email && approver) {
+            const detailsHtml = await generateRequestDetailsHtml(prisma, request);
+            const notifEmail = emailTemplates.observerNotificationEmail(
+              recipient.name || "Team",
               request.user.name || "Employee",
               approver.name || "Manager",
+              "REJECTED",
+              request.type,
               docId,
-              input.comments
+              detailsHtml + `<br/><p style="color:#d32f2f"><strong>Rejection Reason:</strong> ${input.comments}</p>`
             );
-            await sendEmail(request.user.email, emailContent.subject, emailContent.html);
+            await sendEmail(recipient.email, notifEmail.subject, notifEmail.html);
           }
-        } catch (error) { console.error("Email error", error); }
-      }
+        }
+      } catch (error) { console.error("Email error", error); }
 
       return { success: true };
     }),
