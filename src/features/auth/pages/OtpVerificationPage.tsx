@@ -87,12 +87,27 @@ export default function OtpVerification({ email, onBack }: OtpVerificationProps)
               <img src="/logo/centrikaLogo.png" alt="Centrika" className="h-32 w-auto drop-shadow-xl" />
             </div>
           </div>
-          <h1 className="text-4xl font-bold text-white mb-3 leading-tight" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif", letterSpacing: "-0.02em" }}>
-            Email Verification
+          <h1
+            className="text-4xl font-bold text-white mb-3 leading-tight"
+            style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif", letterSpacing: "-0.02em" }}
+          >
+            Centrika OnePortal
           </h1>
-          <p className="text-blue-100/90 text-lg mb-8 max-w-sm leading-relaxed">
-            One more step to securely access your Centrika OnePortal account.
+          <p className="text-blue-100/90 text-lg mb-10 max-w-sm leading-relaxed">
+            Your unified workspace for managing requests, approvals and team collaboration.
           </p>
+          <div className="space-y-3">
+            {[
+              "Streamlined leave & expense management",
+              "Real-time approval tracking",
+              "Secure role-based access",
+            ].map((text, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <div className="w-2 h-2 rounded-full" style={{ background: "#60b5f5" }} />
+                <span className="text-blue-50/80 text-sm">{text}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
