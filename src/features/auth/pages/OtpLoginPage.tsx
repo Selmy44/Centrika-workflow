@@ -16,6 +16,7 @@ type LoginStep = "email" | "otp";
 
 export default function OtpLoginPage() {
   const [, setLocation] = useLocation();
+  const utils = trpc.useUtils();
   const [step, setStep] = useState<LoginStep>("email");
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
@@ -45,9 +46,11 @@ export default function OtpLoginPage() {
   });
 
   const verifyOtpMutation = trpc.mfa.verifyOtpLogin.useMutation({
-    onSuccess: (data: any) => {
+    onSuccess: async (data: any) => {
       setSuccess(true);
       setError("");
+      // Ensure user info is refetched and persisted to local storage
+      await utils.auth.me.invalidate();
       // Show success message, then redirect
       setTimeout(() => {
         setLocation("/dashboard");
