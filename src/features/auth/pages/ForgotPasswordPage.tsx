@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, ArrowLeft, CheckCircle, Mail } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
@@ -17,31 +16,23 @@ export default function ForgotPasswordPage() {
   const forgotPasswordMutation = trpc.auth.forgotPassword.useMutation();
 
   const validateEmail = (email: string): boolean => {
-    // Company email format: username@centrika.rw
     const centrikaEmailRegex = /^[a-zA-Z0-9._%+-]+@centrika\.rw$/;
     return centrikaEmailRegex.test(email);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!email.trim()) {
       toast.error("Please enter your email address");
       return;
     }
-
     if (!validateEmail(email)) {
       toast.error("Please use your company email (username@centrika.rw)");
       return;
     }
-
     setIsLoading(true);
-
     try {
-      await forgotPasswordMutation.mutateAsync({
-        email,
-      });
-
+      await forgotPasswordMutation.mutateAsync({ email });
       setIsSubmitted(true);
       toast.success("Reset instructions sent to your email!");
     } catch (error: any) {
@@ -52,48 +43,90 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <Card className="bg-slate-800/50 border-slate-700 backdrop-blur">
-          <CardHeader className="space-y-2 text-center">
-            <div className="flex justify-center mb-4">
-              <img 
-                src="/logo/centrikaLogo.png" 
-                alt="Centrika Logo" 
-                className="h-32 w-auto object-contain"
-              />
-            </div>
-            <CardTitle className="text-2xl text-white">Forgot Password?</CardTitle>
-            <CardDescription>
-              {isSubmitted
-                ? "Check your email for reset instructions"
-                : "Enter your company email to receive password reset instructions"}
-            </CardDescription>
-          </CardHeader>
+    <div className="min-h-screen w-full overflow-hidden relative" style={{ background: "#f7f9fc" }}>
+      {/* Force light mode */}
+      <style>{`
+        .forgot-page, .forgot-page * { color-scheme: light !important; }
+        @media (max-width: 768px) {
+          .forgot-left-panel { display: none !important; }
+          .forgot-divider { display: none !important; }
+          .forgot-right-panel {
+            width: 100% !important;
+            position: relative !important;
+            min-height: 100vh;
+          }
+        }
+      `}</style>
 
-          <CardContent>
-            {!isSubmitted ? (
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-slate-200">
-                    Company Email Address
+      {/* ====== LEFT PANEL ====== */}
+      <div className="forgot-left-panel absolute left-0 top-0 h-full" style={{ width: "45%" }}>
+        <img src="/logo/loginbackground2G.jpeg" alt="" className="absolute inset-0 w-full h-full object-cover" />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(160deg, rgba(30, 64, 120, 0.92) 0%, rgba(59, 109, 174, 0.82) 50%, rgba(59, 109, 174, 0.65) 100%)" }} />
+        <div className="absolute top-[12%] left-[10%] w-24 h-24 rounded-full border border-white/10" />
+        <div className="absolute bottom-[22%] left-[6%] w-16 h-16 rounded-full border border-white/8" />
+        <div className="relative z-10 h-full flex flex-col justify-center px-12">
+          <div className="mb-8">
+            <div className="inline-block rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(12px)" }}>
+              <img src="/logo/centrikaLogo.png" alt="Centrika" className="h-32 w-auto drop-shadow-xl" />
+            </div>
+          </div>
+          <h1 className="text-4xl font-bold text-white mb-3 leading-tight" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif", letterSpacing: "-0.02em" }}>
+            Password Recovery
+          </h1>
+          <p className="text-blue-100/90 text-lg mb-8 max-w-sm leading-relaxed">
+            Don't worry, we'll help you get back into your account quickly and securely.
+          </p>
+        </div>
+      </div>
+
+      {/* ====== DIAGONAL DIVIDER ====== */}
+      <div className="forgot-divider absolute top-0 h-full z-10" style={{ left: "40%", width: "200px" }}>
+        <svg viewBox="0 0 200 100" preserveAspectRatio="none" className="h-full w-full" style={{ display: "block" }}>
+          <polygon points="0,0 120,0 80,100 0,100" style={{ fill: "rgba(59, 109, 174, 0.82)" }} />
+          <polygon points="120,0 200,0 200,100 80,100" fill="#f7f9fc" />
+        </svg>
+      </div>
+
+      {/* ====== RIGHT PANEL ====== */}
+      <div className="forgot-right-panel absolute right-0 top-0 h-full z-20 flex items-center justify-center" style={{ width: "55%", background: "#f7f9fc" }}>
+        <div className="w-full max-w-md px-12">
+          {!isSubmitted ? (
+            <>
+              {/* Header */}
+              <div className="mb-8">
+                <h2 className="text-3xl font-semibold mb-1" style={{ color: "#1e3a5f", fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
+                  Forgot Password?
+                </h2>
+                <p style={{ color: "#8ca0b8", fontSize: "14px" }}>
+                  Enter your company email to receive reset instructions
+                </p>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="space-y-1.5">
+                  <Label htmlFor="email" style={{ color: "#5a7a99", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                    Email Address
                   </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="username@centrika.rw"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="bg-slate-700/50 border-slate-600 text-white placeholder-slate-500 focus:border-blue-500"
-                    required
-                  />
-                  <p className="text-xs text-slate-400">
-                    Use your company email in the format: username@centrika.rw
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: "#9bb5cc" }} />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="username@centrika.rw"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      style={{ paddingLeft: "40px", height: "48px", background: "#eef3f8", border: "1px solid #d4dfe9", borderRadius: "10px", color: "#1e3a5f", fontSize: "14px" }}
+                      required
+                    />
+                  </div>
+                  <p style={{ color: "#9bb5cc", fontSize: "12px" }}>
+                    Use your company email: username@centrika.rw
                   </p>
                 </div>
 
-                <div className="bg-blue-500/10 border border-blue-500/30 p-3 rounded-md">
-                  <p className="text-xs text-blue-200">
+                {/* Info box */}
+                <div className="p-3 rounded-lg" style={{ background: "rgba(59, 109, 174, 0.08)", border: "1px solid rgba(59, 109, 174, 0.15)" }}>
+                  <p style={{ color: "#3b6dae", fontSize: "12px" }}>
                     We'll send you an email with a link to reset your password. The link will expire in 15 minutes.
                   </p>
                 </div>
@@ -101,71 +134,69 @@ export default function ForgotPasswordPage() {
                 <Button
                   type="submit"
                   disabled={isLoading || !email.trim() || !validateEmail(email)}
-                  className="w-full bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold py-2"
+                  className="w-full h-12 rounded-full text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all duration-200"
+                  style={{ background: "linear-gradient(135deg, #3b6dae 0%, #2a8fd4 100%)", border: "none" }}
                 >
                   {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Sending...
-                    </>
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...</>
                   ) : (
                     "Send Reset Link"
                   )}
                 </Button>
 
-                <Button
+                <button
                   type="button"
                   onClick={() => navigate("/login")}
-                  variant="outline"
-                  className="w-full border-slate-600 text-slate-200 hover:bg-slate-700"
+                  className="w-full flex items-center justify-center gap-2 h-11 rounded-full transition-colors hover:bg-slate-100"
+                  style={{ color: "#3b6dae", fontSize: "14px", fontWeight: 500 }}
                 >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  <ArrowLeft className="h-4 w-4" />
                   Back to Login
-                </Button>
+                </button>
               </form>
-            ) : (
-              <div className="space-y-4 text-center">
-                <div className="flex justify-center">
-                  <CheckCircle className="h-16 w-16 text-green-500" />
+            </>
+          ) : (
+            <div className="text-center">
+              <div className="flex justify-center mb-6">
+                <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ background: "rgba(34, 197, 94, 0.1)" }}>
+                  <CheckCircle className="h-12 w-12" style={{ color: "#22c55e" }} />
                 </div>
-                <div>
-                  <p className="text-slate-200 mb-2">Check your email!</p>
-                  <p className="text-sm text-slate-400 mb-4">
-                    We've sent password reset instructions to<br />
-                    <strong>{email}</strong>
-                  </p>
-                  <p className="text-xs text-slate-500 mb-6">
-                    The reset link will expire in 15 minutes. If you don't see it, check your spam folder.
-                  </p>
-                </div>
+              </div>
+              <h2 className="text-2xl font-semibold mb-2" style={{ color: "#1e3a5f" }}>Check your email!</h2>
+              <p className="mb-1" style={{ color: "#5a7a99", fontSize: "14px" }}>
+                We've sent password reset instructions to
+              </p>
+              <p className="font-semibold mb-6" style={{ color: "#3b6dae", fontSize: "14px" }}>{email}</p>
+              <p className="mb-8" style={{ color: "#9bb5cc", fontSize: "12px" }}>
+                The reset link will expire in 15 minutes. Check your spam folder if you don't see it.
+              </p>
 
-                <Button
+              <div className="space-y-3">
+                <button
                   type="button"
-                  onClick={() => {
-                    setEmail("");
-                    setIsSubmitted(false);
-                  }}
-                  variant="outline"
-                  className="w-full border-slate-600 text-slate-200 hover:bg-slate-700"
+                  onClick={() => { setEmail(""); setIsSubmitted(false); }}
+                  className="w-full h-11 rounded-full transition-colors"
+                  style={{ color: "#3b6dae", border: "1px solid #d4dfe9", fontSize: "14px", fontWeight: 500 }}
                 >
                   Try Another Email
-                </Button>
-
+                </button>
                 <Button
                   type="button"
                   onClick={() => navigate("/login")}
-                  className="w-full bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold py-2"
+                  className="w-full h-12 rounded-full text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all"
+                  style={{ background: "linear-gradient(135deg, #3b6dae 0%, #2a8fd4 100%)", border: "none" }}
                 >
                   Back to Login
                 </Button>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </div>
+          )}
 
-        <div className="mt-12 text-center text-slate-500 text-sm">
-          <p>Centrika OnePortal Management System</p>
-          <p>© 2026 All rights reserved</p>
+          <div className="mt-8 pt-6" style={{ borderTop: "1px solid #e8eef4" }}>
+            <p className="text-center text-xs" style={{ color: "#b0c4d8" }}>
+              Centrika OnePortal &middot; © 2026
+            </p>
+          </div>
         </div>
       </div>
     </div>
