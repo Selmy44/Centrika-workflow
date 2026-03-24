@@ -274,16 +274,24 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
 
                     {/* 4. APPROVAL WORKFLOW */}
                     <Section title="4. APPROVAL WORKFLOW">
-                        <Row label="4.1 HR Approval">
-                            <Input
-                                value="Doreen MBABAZI"
-                                className="w-full h-8 border-blue-300 dark:border-[#3b6dae]/40 bg-gray-100 dark:bg-[#295482] text-black dark:text-slate-100 font-medium cursor-not-allowed max-w-[400px] mt-1 mb-1"
-                                disabled
-                            />
-                            {formDataDynamic?.hrSignatureUrl && (
+                        {formDataDynamic?.managerSignatureUrl && (
+                            <Row label="4.1 Line Manager / HOD">
+                                <div className="mt-2">
+                                    <p className="text-xs font-semibold text-gray-500 mb-2">Approved by HOD:</p>
+                                    <img src={formDataDynamic.managerSignatureUrl} alt="HOD Signature" className="h-10 object-contain border border-blue-200 dark:border-[#3b6dae]/30 rounded p-1 bg-white dark:bg-[#1f426b]" />
+                                </div>
+                            </Row>
+                        )}
+
+                        <Row label="4.2 HR Approval">
+                            {formDataDynamic?.hrSignatureUrl ? (
                                 <div className="mt-2">
                                     <p className="text-xs font-semibold text-gray-500 mb-2">Approved by HR:</p>
                                     <img src={formDataDynamic.hrSignatureUrl} alt="HR Signature" className="h-10 object-contain border border-blue-200 dark:border-[#3b6dae]/30 rounded p-1 bg-white dark:bg-[#1f426b]" />
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-2 py-2">
+                                    <span className="text-xs italic text-gray-500">Awaiting HR Review</span>
                                 </div>
                             )}
                             {isRequestRejected && (
