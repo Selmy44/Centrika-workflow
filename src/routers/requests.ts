@@ -305,7 +305,7 @@ export const requestsRouter = router({
         initialLevel = firstStep.roleResponsible;
 
         if (initialLevel === "head_of_department") {
-          approverId = input.initialApproverId || request.user.managerId || (await prisma.user.findFirst({ where: { role: "head_of_department" } }))?.id || 0;
+          approverId = input.initialApproverId || request.user.managerId || 0;
         } else {
           approverId = (await prisma.user.findFirst({
             where: { OR: [{ role: initialLevel as any }, { additionalRoles: { contains: initialLevel } }] }
@@ -313,11 +313,21 @@ export const requestsRouter = router({
         }
       } else {
         // Legacy fallback
-        initialLevel = request.type === "car" ? "hr" : "head_of_department";
-        approverId = input.initialApproverId || (await prisma.user.findFirst({ where: { role: initialLevel as any } }))?.id || 0;
+        initialLevel = "head_of_department";
+        approverId = input.initialApproverId || request.user.managerId || 0;
       }
 
-      if (!approverId) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "No approver found" });
+      // If no specific approverId but we have a role, we still proceed if it's a role-based pooling level (HR, Finance, CEO)
+      // but for HOD we really need a specific ID.
+      if (!approverId && initialLevel === "head_of_department") {
+        // Find ANY HOD if none assigned? Better to throw error or find a default.
+        const defaultHod = await prisma.user.findFirst({ where: { role: "head_of_department" } });
+        approverId = defaultHod?.id || 0;
+      }
+      
+      if (!approverId && !["hr", "head_of_finance", "ceo_md"].includes(initialLevel)) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "No approver found" });
+      }
 
       await prisma.$transaction([
         prisma.request.update({
@@ -381,7 +391,16 @@ export const requestsRouter = router({
     };
 
     const approvals = await prisma.requestApproval.findMany({
-      where: { approverId: ctx.user.id, status: "pending" },
+      where: { 
+        OR: [
+          { approverId: ctx.user.id, status: "pending" },
+          { 
+            status: "pending",
+            approvalLevel: ctx.user.role as any,
+            request: { currentApprovalLevel: ctx.user.role as any }
+          }
+        ]
+      },
       include: { request: { include: requestIncludes } }
     });
 
@@ -398,11 +417,14 @@ export const requestsRouter = router({
       results = Array.from(map.values());
     }
 
+    // Filter by role-specific needs if necessary
     if (ctx.user.role === "head_of_finance") {
-      results = (results as any[]).filter((r: any) => r.type === "expenditure");
+      results = (results as any[]).filter((r: any) => r.type === "expenditure" || r.type === "asset");
     }
 
-    return (results as any[]).sort((a: any, b: any) => b.createdAt.getTime() - a.createdAt.getTime());
+    // Deduplicate in case a user is both assigned by ID and by role
+    const uniqueMap = new Map(results.map((r: any) => [r.id, r]));
+    return Array.from(uniqueMap.values()).sort((a: any, b: any) => b.createdAt.getTime() - a.createdAt.getTime());
   }),
 
   listApprovalHistory: protectedProcedure.query(async ({ ctx }) => {
@@ -618,7 +640,11 @@ export const requestsRouter = router({
 
       // Legacy fallback
       if (request.type === "leave" && request.currentApprovalLevel === "head_of_department") await finalApprove();
-      else if (request.type === "car" && request.currentApprovalLevel === "hr") await finalApprove();
+      else if (request.type === "car") {
+        if (request.currentApprovalLevel === "head_of_department") await routeToNext("hr", "hr");
+        else if (request.currentApprovalLevel === "hr") await finalApprove();
+        else await finalApprove();
+      }
       else if (request.type === "expenditure") {
         if (request.currentApprovalLevel === "head_of_department") await routeToNext("hr", "hr");
         else if (request.currentApprovalLevel === "hr") await routeToNext("head_of_finance", "head_of_finance");
@@ -815,13 +841,21 @@ export const requestsRouter = router({
 
     const isApprover = ["head_of_department", "hr", "head_of_finance", "ceo_md"].includes(ctx.user.role) || !!ctx.user.additionalRoles;
     if (isApprover) {
-      const [pend, hdl] = await Promise.all([
-        prisma.requestApproval.count({ where: { approverId: ctx.user.id, status: "pending" } }),
+      const [pendCount, hdl] = await Promise.all([
+        prisma.request.count({
+          where: {
+            status: "pending",
+            OR: [
+              { currentApprovalLevel: ctx.user.role as any },
+              { approvals: { some: { approverId: ctx.user.id, status: "pending" } } }
+            ]
+          }
+        }),
         prisma.requestApproval.findMany({ where: { approverId: ctx.user.id, status: { in: ["approved", "rejected"] } } }),
       ]);
       return {
-        totalRequests: pend + hdl.length,
-        pendingRequests: pend,
+        totalRequests: pendCount + hdl.length,
+        pendingRequests: pendCount,
         approvedRequests: hdl.filter((a: any) => a.status === "approved").length,
         rejectedRequests: hdl.filter((a: any) => a.status === "rejected").length,
       };
@@ -939,6 +973,8 @@ export const requestsRouter = router({
       const submission = await prisma.formSubmission.findUnique({ where: { requestId: input.requestId } });
       if (submission) {
         const parsed = JSON.parse(submission.formData);
+        const hod = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "head_of_department" }, include: { signature: true } });
+        if (hod?.signature) parsed.managerSignatureUrl = hod.signature.fileUrl;
         const hr = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "hr" }, include: { signature: true } });
         if (hr?.signature) parsed.hrSignatureUrl = hr.signature.fileUrl;
         parsed.requestId = input.requestId;
@@ -968,6 +1004,8 @@ export const requestsRouter = router({
         if (hod?.signature) parsed.managerSignatureUrl = hod.signature.fileUrl;
         const finance = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "head_of_finance" }, include: { signature: true } });
         if (finance?.signature) parsed.financeSignatureUrl = finance.signature.fileUrl;
+        const hr = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "hr" }, include: { signature: true } });
+        if (hr?.signature) parsed.hrSignatureUrl = hr.signature.fileUrl;
         const ceo = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "ceo_md" }, include: { signature: true } });
         if (ceo?.signature) parsed.ceoSignatureUrl = ceo.signature.fileUrl;
         parsed.requestId = input.requestId;
@@ -997,6 +1035,8 @@ export const requestsRouter = router({
         if (hod?.signature) parsed.managerSignatureUrl = hod.signature.fileUrl;
         const finance = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "head_of_finance" }, include: { signature: true } });
         if (finance?.signature) parsed.financeSignatureUrl = finance.signature.fileUrl;
+        const hr = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "hr" }, include: { signature: true } });
+        if (hr?.signature) parsed.hrSignatureUrl = hr.signature.fileUrl;
         const ceo = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "ceo_md" }, include: { signature: true } });
         if (ceo?.signature) parsed.ceoSignatureUrl = ceo.signature.fileUrl;
         parsed.requestId = input.requestId;
