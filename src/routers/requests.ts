@@ -765,19 +765,24 @@ export const requestsRouter = router({
       });
     }
 
-    const approvedLeaves = await prisma.request.findMany({
-      where: { userId: ctx.user.id, type: "leave", status: "approved" },
+    const approvedAnnualLeaves = await prisma.request.findMany({
+      where: { 
+        userId: ctx.user.id, 
+        type: "leave", 
+        status: "approved",
+        leaveRequest: { leaveType: "annual" }
+      },
       include: { leaveRequest: true }
     });
 
-    const totalUsed = approvedLeaves.reduce((sum: number, r: any) => sum + (r.leaveRequest?.leaveDaysRequested || 0), 0);
-    const remaining = (leaveCalc.totalAnnualLeave + (balance.annualLeaveCarryover || 0)) - totalUsed;
+    const totalUsedAnnual = approvedAnnualLeaves.reduce((sum: number, r: any) => sum + (r.leaveRequest?.leaveDaysRequested || 0), 0);
+    const remaining = (leaveCalc.totalAnnualLeave + (balance.annualLeaveCarryover || 0)) - totalUsedAnnual;
 
     const updated = await prisma.leaveBalance.update({
       where: { id: balance.id },
       data: {
         annualLeaveEntitled: Math.round(leaveCalc.totalAnnualLeave * 100) / 100,
-        annualLeaveTaken: totalUsed,
+        annualLeaveTaken: totalUsedAnnual,
         annualLeaveRemaining: Math.round(remaining * 100) / 100,
         updatedAt: new Date(),
       }
