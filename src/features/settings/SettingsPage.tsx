@@ -81,7 +81,6 @@ export default function Settings() {
         dateOfEmployment: editDateOfEmployment,
         managerId: editManagerId ? parseInt(editManagerId) : null,
         profileImage: profileImage,
-        gender: editGender || undefined,
       });
       await utils.auth.me.invalidate();
       toast.success("Profile updated successfully!");

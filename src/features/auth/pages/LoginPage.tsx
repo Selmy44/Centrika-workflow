@@ -52,7 +52,7 @@ export default function Login() {
     } finally {
       setIsLoading(false);
     }
-  };~
+  };
 
   const handleDevLogin = async (role: "user" | "admin" | "hr" | "head_of_department" | "head_of_finance" | "ceo_md") => {
     try {

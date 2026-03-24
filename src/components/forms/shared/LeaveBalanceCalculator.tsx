@@ -21,32 +21,27 @@ export function LeaveBalanceCalculator({
 }: LeaveBalanceCalculatorProps) {
   const { user } = useAuth();
   
-  // Fetch user's leave history to auto-calculate "Already Taken"
-  const userRequests = trpc.requests.listUserRequests.useQuery(undefined, {
+  // Fetch user's accurate leave balance from the backend (for Annual Leave primarily)
+  const leaveBalanceQuery = trpc.requests.getLeaveBalance.useQuery(undefined, {
     staleTime: 60000,
   });
 
   const [requestedDays, setRequestedDays] = useState(0);
   const [entitledDays, setEntitledDays] = useState<number | "Unlimited">(0);
 
-  // 1. Calculate DB-backed 'Already Taken' from User History
+  // 1. Calculate DB-backed 'Already Taken' dynamically
   const historyTaken = useMemo(() => {
-    if (!userRequests.data) return 0;
-    const currentYear = new Date().getFullYear();
+    const type = leaveType.toLowerCase();
     
-    // Check if parental and map correctly
-    const mappedType = leaveType === "parental" 
-      ? ((user as any)?.gender === "female" ? "maternity" : "paternity") 
-      : leaveType;
-
-    const sum = userRequests.data
-      .filter((req: any) => req.type === "leave" && (req.status === "approved" || req.status === "pending"))
-      .filter((req: any) => req.leaveRequest?.leaveType === leaveType || req.leaveRequest?.parentalLeaveType === mappedType)
-      .filter((req: any) => new Date(req.createdAt).getFullYear() === currentYear)
-      .reduce((acc: number, req: any) => acc + (req.leaveRequest?.leaveDaysRequested || 0), 0);
-      
-    return sum;
-  }, [userRequests.data, leaveType, user]);
+    if (type === "annual") {
+      return leaveBalanceQuery.data?.annualLeaveTaken || 0;
+    }
+    
+    // For Sick, Parental (Maternity/Paternity), Personal, and Unpaid leaves,
+    // they operate on a PER-REQUEST limit rather than an annual pool.
+    // They get exact new days every request limit (e.g. 5 for sick, 84 for maternity)
+    return 0;
+  }, [leaveBalanceQuery.data, leaveType]);
 
   // 2. Calculate Entitled Days
   useEffect(() => {
@@ -54,7 +49,8 @@ export function LeaveBalanceCalculator({
     const type = leaveType.toLowerCase();
 
     if (type === "annual") {
-      entitled = 18;
+      // Use exactly what the backend statutory rule calculated (1.5 days/month, min 1 yr etc)
+      entitled = leaveBalanceQuery.data?.annualLeaveEntitled || 0;
     } else if (type === "sick") {
       entitled = 5;
     } else if (type === "maternity" || (type === "parental" && (user as any)?.gender === "female")) {
@@ -68,7 +64,7 @@ export function LeaveBalanceCalculator({
     }
 
     setEntitledDays(entitled);
-  }, [leaveType, (user as any)?.gender]);
+  }, [leaveType, (user as any)?.gender, leaveBalanceQuery.data]);
 
   // 3. Calculate Requested Days (Business Days Only)
   useEffect(() => {
@@ -129,7 +125,7 @@ export function LeaveBalanceCalculator({
           </div>
           <div className="bg-white dark:bg-[#1f426b] rounded-lg p-3 border shadow-sm text-center">
             <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-1">Already Taken</p>
-            {userRequests.isPending ? (
+            {leaveBalanceQuery.isPending ? (
                <p className="text-sm text-slate-400 mt-2 animate-pulse">Loading...</p>
             ) : (
                <p className="text-2xl font-bold text-amber-600 dark:text-amber-500">{historyTaken}</p>
