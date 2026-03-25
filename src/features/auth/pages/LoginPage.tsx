@@ -29,6 +29,7 @@ export default function Login() {
     const timer = setTimeout(() => setCardVisible(true), 500);
     return () => clearTimeout(timer);
   }, []);
+
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.email || !formData.password) {

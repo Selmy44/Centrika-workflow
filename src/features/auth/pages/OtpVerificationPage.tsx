@@ -3,13 +3,7 @@ import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, ArrowLeft, Mail } from "lucide-react";
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-} from "@/components/ui/input-otp";
 import { trpc } from "@/lib/trpc";
 import { Input } from "@/components/ui/input";
 
@@ -66,7 +60,7 @@ export default function OtpVerification({ email, onBack }: OtpVerificationProps)
   };
 
   return (
-    <div className="otp-page min-h-screen w-full overflow-hidden relative" style={{ background: "#f7f9fc" }}>
+    <div className="min-h-screen w-full overflow-hidden relative" style={{ background: "#f7f9fc" }}>
       {/* Force light mode */}
       <style>{`
         .otp-page, .otp-page * { color-scheme: light !important; }
@@ -162,25 +156,50 @@ export default function OtpVerification({ email, onBack }: OtpVerificationProps)
                 Enter Verification Code
               </Label>
 
-              {/* OTP Boxes using InputOTP component */}
+              {/* OTP Boxes */}
               <div className="relative group max-w-[340px] mx-auto">
-                <InputOTP
-                  maxLength={6}
+                <Input
+                  id="otp"
+                  type="text"
+                  inputMode="numeric"
                   value={otpCode}
-                  onChange={(value: string) => setOtpCode(value)}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, "").slice(0, 6);
+                    setOtpCode(value);
+                  }}
+                  className="absolute inset-0 w-full h-full opacity-0 z-20 cursor-text text-transparent selection:bg-transparent"
+                  required
                   disabled={isLoading}
+                  maxLength={6}
                   autoFocus
-                >
-                  <InputOTPGroup className="gap-2">
-                    {[0, 1, 2, 3, 4, 5].map((index) => (
-                      <InputOTPSlot
+                />
+
+                <div className="flex justify-between gap-2 max-w-full pointer-events-none pb-2">
+                  {[0, 1, 2, 3, 4, 5].map((index) => {
+                    const isActive = otpCode.length === index;
+                    const hasValue = otpCode.length > index;
+                    return (
+                      <div
                         key={index}
-                        index={index}
-                        className="w-[42px] h-14 sm:w-[50px] sm:h-16 text-xl font-bold text-[#1e3a5f] border-[#d4dfe9] rounded-xl !bg-[#f7f9fc] transition-all duration-300 focus-within:border-[#3b6dae] focus-within:ring-4 focus-within:ring-[#3b6dae]/5 focus-within:shadow-lg focus-within:!bg-[#f0f6ff]"
-                      />
-                    ))}
-                  </InputOTPGroup>
-                </InputOTP>
+                        className="relative flex h-14 w-12 sm:h-16 sm:w-14 items-center justify-center rounded-xl border-2 text-2xl font-bold transition-all duration-300"
+                        style={{
+                          borderColor: isActive ? "#3b6dae" : hasValue ? "#b0c4d8" : "#d4dfe9",
+                          background: isActive ? "#f0f6ff" : hasValue ? "#eef3f8" : "#f7f9fc",
+                          color: "#1e3a5f",
+                          boxShadow: isActive ? "0 0 15px rgba(59, 109, 174, 0.15)" : "none",
+                          transform: isActive ? "scale(1.05)" : "scale(1)",
+                        }}
+                      >
+                        {otpCode[index] || ""}
+                        {isActive && (
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="w-[1.5px] h-6 animate-pulse duration-1000" style={{ background: "#3b6dae" }} />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
@@ -222,11 +241,6 @@ export default function OtpVerification({ email, onBack }: OtpVerificationProps)
             </p>
           </div>
         </div>
-      </div>
-
-      {/* Footer - Always bottom */}
-      <div className="absolute bottom-6 left-0 w-full z-20 text-center text-[#1e40af]/30 text-[10px] font-semibold tracking-widest uppercase">
-        <p>OnePortal Secure Digital Environment • © 2026 Centrika Ltd • Access Strictly Controlled</p>
       </div>
     </div>
   );
