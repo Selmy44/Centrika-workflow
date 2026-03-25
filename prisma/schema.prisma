@@ -86,6 +86,36 @@ enum MfaMethod {
   totp
 }
 
+enum AssetCategory {
+  it_equipment
+  furniture
+  vehicles
+  software
+  other
+}
+
+enum AssetStatus {
+  available
+  assigned
+  in_maintenance
+  retired
+  lost
+}
+
+enum AssignmentStatus {
+  active
+  returned
+}
+
+enum AssetDocumentType {
+  invoice
+  warranty
+  contract
+  photo
+  maintenance_report
+  other
+}
+
 model User {
   id                Int      @id @default(autoincrement())
   openId            String   @unique @map("open_id") @db.VarChar(64)
@@ -136,6 +166,11 @@ model User {
   suggestions       Suggestion[]
   employeeDocuments EmployeeDocument[] @relation("EmployeeDocs")
   verifiedDocuments EmployeeDocument[] @relation("VerifiedDocs")
+  assignedAssets    AssetAssignment[] @relation("AssignedAssets")
+  assetsAssignedBy  AssetAssignment[] @relation("AssetsAssignedBy")
+  uploadedAssetDocs AssetDocument[]  @relation("UploadedAssetDocs")
+  loggedAssetMaintenance AssetMaintenance[] @relation("LoggedAssetMaintenance")
+  assetAuditLogs    AssetAuditLog[]  @relation("AssetAuditLogs")
 
   @@map("users")
 }
@@ -613,4 +648,99 @@ model Voucher {
   request       Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
 
   @@map("vouchers")
+}
+
+model Asset {
+  id             Int           @id @default(autoincrement())
+  assetTag       String        @unique @map("asset_tag") @db.VarChar(100)
+  name           String        @db.VarChar(255)
+  category       AssetCategory @default(it_equipment)
+  serialNumber   String?       @map("serial_number") @db.VarChar(255)
+  purchaseDate   DateTime      @map("purchase_date")
+  purchaseCost   Decimal       @map("purchase_cost") @db.Decimal(18, 2)
+  currency       String        @default("RWF") @db.VarChar(3)
+  vendor         String?       @db.VarChar(255)
+  warrantyExpiry DateTime?     @map("warranty_expiry")
+  status         AssetStatus   @default(available)
+  location       String?       @db.VarChar(255)
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @default(now()) @updatedAt @map("updated_at")
+
+  assignments AssetAssignment[]
+  documents   AssetDocument[]
+  maintenance AssetMaintenance[]
+  auditLogs   AssetAuditLog[]
+
+  @@map("assets")
+}
+
+model AssetAssignment {
+  id                    Int              @id @default(autoincrement())
+  assetId               Int              @map("asset_id")
+  userId                Int              @map("user_id") // Employee holding the asset
+  assignedAt            DateTime         @map("assigned_at")
+  expectedReturnDate    DateTime?        @map("expected_return_date")
+  returnedAt            DateTime?        @map("returned_at")
+  conditionAtAssignment String?          @map("condition_at_assignment") @db.Text
+  conditionAtReturn     String?          @map("condition_at_return") @db.Text
+  status                AssignmentStatus @default(active)
+  assignedBy            Int              @map("assigned_by") // HR/Admin who assigned it
+  createdAt             DateTime         @default(now()) @map("created_at")
+  updatedAt             DateTime         @default(now()) @updatedAt @map("updated_at")
+
+  asset     Asset           @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  user      User            @relation("AssignedAssets", fields: [userId], references: [id], onDelete: Cascade)
+  assigner  User            @relation("AssetsAssignedBy", fields: [assignedBy], references: [id], onDelete: Cascade)
+  documents AssetDocument[]
+
+  @@map("asset_assignments")
+}
+
+model AssetDocument {
+  id           Int               @id @default(autoincrement())
+  assetId      Int               @map("asset_id")
+  assignmentId Int?              @map("assignment_id") // For assignment contracts
+  type         AssetDocumentType
+  fileName     String            @map("file_name") @db.VarChar(255)
+  fileUrl      String            @map("file_url")
+  fileKey      String            @map("file_key") @db.VarChar(255)
+  uploadedBy   Int               @map("uploaded_by")
+  createdAt    DateTime          @default(now()) @map("created_at")
+
+  asset      Asset            @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  assignment AssetAssignment? @relation(fields: [assignmentId], references: [id], onDelete: SetNull)
+  uploader   User             @relation("UploadedAssetDocs", fields: [uploadedBy], references: [id], onDelete: Cascade)
+
+  @@map("asset_documents")
+}
+
+model AssetMaintenance {
+  id              Int      @id @default(autoincrement())
+  assetId         Int      @map("asset_id")
+  maintenanceDate DateTime @map("maintenance_date")
+  cost            Decimal  @db.Decimal(18, 2)
+  vendor          String?  @db.VarChar(255)
+  description     String   @db.Text
+  loggedBy        Int      @map("logged_by")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
+
+  asset  Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  logger User  @relation("LoggedAssetMaintenance", fields: [loggedBy], references: [id], onDelete: Cascade)
+
+  @@map("asset_maintenance")
+}
+
+model AssetAuditLog {
+  id        Int      @id @default(autoincrement())
+  assetId   Int      @map("asset_id")
+  userId    Int      @map("user_id")
+  action    String   @db.VarChar(50)
+  details   String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  user  User  @relation("AssetAuditLogs", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("asset_audit_logs")
 }
