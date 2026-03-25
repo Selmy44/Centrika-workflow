@@ -14,7 +14,7 @@ export const ENV = {
   emailUser: process.env.EMAIL_USER ?? "",
   emailPassword: process.env.EMAIL_PASSWORD ?? "",
   emailFrom: process.env.EMAIL_FROM ?? "noreply@centrika.rw",
-  appUrl: process.env.APP_URL ?? "http://localhost:5175",
+  appUrl: process.env.APP_URL ?? "http://localhost:5173",
   // Redis configuration
   redisHost: process.env.REDIS_HOST ?? "localhost",
   redisPort: process.env.REDIS_PORT ?? "6379",
@@ -24,3 +24,14 @@ export const ENV = {
   twilioAuthToken: process.env.TWILIO_AUTH_TOKEN ?? "",
   twilioPhoneNumber: process.env.TWILIO_PHONE_NUMBER ?? "",
 };
+
+// Startup validation — warn about missing critical config
+if (!ENV.cookieSecret) {
+  console.warn("⚠️  WARNING: JWT_SECRET is not set! Sessions will not work. Set JWT_SECRET in .env");
+}
+if (!ENV.databaseUrl) {
+  console.warn("⚠️  WARNING: DATABASE_URL is not set! Database will not connect. Set DATABASE_URL in .env");
+}
+if (!process.env.FRONTEND_URL) {
+  console.warn("⚠️  WARNING: FRONTEND_URL is not set! CORS defaults to http://localhost:5173. Set FRONTEND_URL in .env");
+}
