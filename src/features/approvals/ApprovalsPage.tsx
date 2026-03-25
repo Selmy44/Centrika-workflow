@@ -44,6 +44,7 @@ export default function Approvals() {
   const [approverSignatureUrl, setApproverSignatureUrl] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState<"all" | "pending" | "approved" | "rejected">("all");
+  const [isProcessingApproval, setIsProcessingApproval] = useState(false);
 
   const { data: pendingRequests, isLoading: pendingLoading, refetch } = (trpc as any).requests.listPendingApprovals.useQuery(undefined, {
     enabled: isAuthenticated && (user?.role !== "user" || !!user?.additionalRoles),
@@ -107,6 +108,7 @@ export default function Approvals() {
       setShowFullFormDialog(false);
       setComments("");
       setSelectedRequest(null);
+      setIsProcessingApproval(false);
       // Refresh the list to remove the approved request
       refetch();
       refetchHistory();
@@ -115,6 +117,7 @@ export default function Approvals() {
       queryClient.invalidateQueries({ queryKey: ["requests", "getRecentRequests"] });
     },
     onError: (error: any) => {
+      setIsProcessingApproval(false);
       toast.error(error.message || "Failed to approve request");
     },
   });
@@ -137,12 +140,109 @@ export default function Approvals() {
   });
 
   const storeFormData = (trpc as any).requests.storeLeaveFormData.useMutation();
+  const storeCarFormData = (trpc as any).requests.storeCarFormData.useMutation();
+  const storeExpenditureFormData = (trpc as any).requests.storeExpenditureFormData.useMutation();
+  const storeAssetFormData = (trpc as any).requests.storeAssetFormData.useMutation();
 
-  // Dynamic query for fetching form data when approving
   const getFormDataDynamic = (trpc as any).requests.getLeaveFormData.useQuery(
     { requestId: selectedRequest?.id || 0 },
-    { enabled: !!selectedRequest?.id && selectedRequest?.type === "leave" } // Only for leave requests
+    { enabled: !!selectedRequest?.id && selectedRequest?.type === "leave" }
   );
+  
+  const getCarFormDataDynamic = (trpc as any).requests.getCarFormData.useQuery(
+    { requestId: selectedRequest?.id || 0 },
+    { enabled: !!selectedRequest?.id && selectedRequest?.type === "car" }
+  );
+
+  const getExpenditureFormDataDynamic = (trpc as any).requests.getExpenditureFormData.useQuery(
+    { requestId: selectedRequest?.id || 0 },
+    { enabled: !!selectedRequest?.id && selectedRequest?.type === "expenditure" }
+  );
+
+  const getAssetFormDataDynamic = (trpc as any).requests.getAssetFormData.useQuery(
+    { requestId: selectedRequest?.id || 0 },
+    { enabled: !!selectedRequest?.id && selectedRequest?.type === "asset" }
+  );
+
+  const handleGenericApprove = async (data: any, type: string, dynamicQuery: any, storeMutation: any) => {
+    setIsProcessingApproval(true);
+    try {
+      if (!selectedRequest) {
+        setIsProcessingApproval(false);
+        return;
+      }
+      
+      const currentFormData = dynamicQuery.data || {};
+      if (Object.keys(currentFormData).length === 0 && dynamicQuery.refetch) {
+        const refetchResult = await dynamicQuery.refetch();
+        if (refetchResult.data) {
+          Object.assign(currentFormData, refetchResult.data);
+        }
+      }
+
+      let signatureDataUrl = "";
+      if (data.signatureFile) {
+        await new Promise<void>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            signatureDataUrl = event.target?.result as string;
+            resolve();
+          };
+          reader.onerror = () => reject(new Error("Failed to read signature file"));
+          reader.readAsDataURL(data.signatureFile);
+        });
+      }
+
+      const level = selectedRequest?.currentApprovalLevel;
+      const signatureUpdate: any = {};
+      
+      if (signatureDataUrl) {
+        if (type === "leave") signatureUpdate.approverSignatureUrl = signatureDataUrl;
+        
+        if (level === "head_of_department") {
+          signatureUpdate.managerSignatureUrl = signatureDataUrl;
+        } else if (level === "hr") {
+          signatureUpdate.hrSignatureUrl = signatureDataUrl;
+        } else if (level === "head_of_finance") {
+          signatureUpdate.financeSignatureUrl = signatureDataUrl;
+        } else if (level === "ceo_md" || level === "md") {
+          signatureUpdate.ceoSignatureUrl = signatureDataUrl;
+        }
+      }
+
+      const updatedFormData = {
+        ...currentFormData,
+        ...signatureUpdate,
+        ...(data.comments && { approvalComments: data.comments }),
+      };
+
+      if (signatureDataUrl || data.comments) {
+        try {
+          await storeMutation.mutateAsync({
+            requestId: selectedRequest.id,
+            formData: updatedFormData,
+          });
+          console.log(`[Approvals] ${type} form data stored successfully`);
+        } catch (storeErr) {
+          console.error(`[Approvals] Failed to store ${type} form data:`, storeErr);
+          toast.error("Failed to save form with signature. Please try again.");
+          setIsProcessingApproval(false);
+          return;
+        }
+      }
+
+      approveMutation.mutate({
+        requestId: selectedRequest.id,
+        comments: data.comments,
+        signatureFileId: undefined,
+        escalateToCeo: data.escalateToCeo,
+      });
+    } catch (err) {
+      console.error("[Approvals] Error in handleGenericApprove:", err);
+      toast.error("An error occurred while processing the approval.");
+      setIsProcessingApproval(false);
+    }
+  };
 
   if (!isAuthenticated) {
     return null;
@@ -531,79 +631,7 @@ export default function Approvals() {
                       <LeaveRequestForm
                         isApprover={true}
                         requestData={selectedRequest}
-                        onApprove={(data) => {
-                          const processApproval = async () => {
-                            try {
-                              const currentFormData = getFormDataDynamic.data;
-                              console.log("[Approvals] Fetched current form data:", currentFormData ? Object.keys(currentFormData) : "NULL");
-                              if (!currentFormData) {
-                                const refetchResult = await getFormDataDynamic.refetch();
-                                if (!refetchResult.data) {
-                                  console.error("[Approvals] CRITICAL: No form data found for request", selectedRequest.id);
-                                  toast.error("Cannot approve: Form data not found. Employee may not have properly submitted the form.");
-                                  return;
-                                }
-                                Object.assign(currentFormData, refetchResult.data);
-                              }
-                              let signatureDataUrl = "";
-                              if (data.signatureFile) {
-                                await new Promise<void>((resolve, reject) => {
-                                  const reader = new FileReader();
-                                  reader.onload = (event) => {
-                                    signatureDataUrl = event.target?.result as string;
-                                    resolve();
-                                  };
-                                  reader.onerror = () => reject(new Error("Failed to read signature file"));
-                                  reader.readAsDataURL(data.signatureFile);
-                                });
-                              }
-                              const level = selectedRequest?.currentApprovalLevel;
-                              const signatureUpdate: any = {};
-                              if (signatureDataUrl) {
-                                // Default fallback used by legacy leave forms
-                                signatureUpdate.approverSignatureUrl = signatureDataUrl;
-                                // Dynamically assign based on approval level
-                                if (level === "head_of_department") {
-                                  signatureUpdate.managerSignatureUrl = signatureDataUrl;
-                                } else if (level === "hr") {
-                                  signatureUpdate.hrSignatureUrl = signatureDataUrl;
-                                } else if (level === "head_of_finance") {
-                                  signatureUpdate.financeSignatureUrl = signatureDataUrl;
-                                } else if (level === "ceo_md" || level === "md") {
-                                  signatureUpdate.ceoSignatureUrl = signatureDataUrl;
-                                }
-                              }
-
-                              const updatedFormData = {
-                                ...currentFormData,
-                                ...signatureUpdate,
-                                ...(data.comments && { approvalComments: data.comments }),
-                              };
-                              if (signatureDataUrl || data.comments) {
-                                try {
-                                  await storeFormData.mutateAsync({
-                                    requestId: selectedRequest.id,
-                                    formData: updatedFormData,
-                                  });
-                                  console.log("[Approvals] Form data stored successfully");
-                                } catch (storeErr) {
-                                  console.error("[Approvals] Failed to store form data:", storeErr);
-                                  toast.error("Failed to save form with signature. Please try again.");
-                                  return;
-                                }
-                              }
-                              approveMutation.mutate({
-                                requestId: selectedRequest.id,
-                                comments: data.comments,
-                                signatureFileId: undefined,
-                              });
-                            } catch (err) {
-                              console.error("[Approvals] Error in processApproval:", err);
-                              toast.error("An error occurred while processing the approval.");
-                            }
-                          };
-                          processApproval();
-                        }}
+                        onApprove={(data) => handleGenericApprove(data, "leave", getFormDataDynamic, storeFormData)}
                         onReject={(reason) => {
                           rejectMutation.mutate({
                             requestId: selectedRequest.id,
@@ -611,7 +639,7 @@ export default function Approvals() {
                           });
                           setShowFullFormDialog(false);
                         }}
-                        isLoading={approveMutation.isPending || rejectMutation.isPending}
+                        isLoading={approveMutation.isPending || rejectMutation.isPending || isProcessingApproval}
                       />
                     )}
 
@@ -619,13 +647,7 @@ export default function Approvals() {
                     {selectedRequest.type === "car" && (
                       <CarRequestApprovalView
                         requestData={selectedRequest}
-                        onApprove={(data) => {
-                          approveMutation.mutate({
-                            requestId: selectedRequest.id,
-                            comments: data.comments,
-                            signatureFileId: undefined,
-                          });
-                        }}
+                        onApprove={(data) => handleGenericApprove(data, "car", getCarFormDataDynamic, storeCarFormData)}
                         onReject={(reason) => {
                           rejectMutation.mutate({
                             requestId: selectedRequest.id,
@@ -633,7 +655,7 @@ export default function Approvals() {
                           });
                           setShowFullFormDialog(false);
                         }}
-                        isLoading={approveMutation.isPending || rejectMutation.isPending}
+                        isLoading={approveMutation.isPending || rejectMutation.isPending || isProcessingApproval}
                       />
                     )}
 
@@ -641,13 +663,7 @@ export default function Approvals() {
                     {selectedRequest.type === "expenditure" && (
                       <ExpenditureRequestApprovalView
                         requestData={selectedRequest}
-                        onApprove={(data) => {
-                          approveMutation.mutate({
-                            requestId: selectedRequest.id,
-                            comments: data.comments,
-                            signatureFileId: undefined,
-                          });
-                        }}
+                        onApprove={(data) => handleGenericApprove(data, "expenditure", getExpenditureFormDataDynamic, storeExpenditureFormData)}
                         onReject={(reason) => {
                           rejectMutation.mutate({
                             requestId: selectedRequest.id,
@@ -655,7 +671,7 @@ export default function Approvals() {
                           });
                           setShowFullFormDialog(false);
                         }}
-                        isLoading={approveMutation.isPending || rejectMutation.isPending}
+                        isLoading={approveMutation.isPending || rejectMutation.isPending || isProcessingApproval}
                       />
                     )}
 
@@ -663,13 +679,7 @@ export default function Approvals() {
                     {selectedRequest.type === "asset" && (
                       <AssetRequestApprovalView
                         requestData={selectedRequest}
-                        onApprove={(data) => {
-                          approveMutation.mutate({
-                            requestId: selectedRequest.id,
-                            comments: data.comments,
-                            signatureFileId: undefined,
-                          });
-                        }}
+                        onApprove={(data) => handleGenericApprove(data, "asset", getAssetFormDataDynamic, storeAssetFormData)}
                         onReject={(reason) => {
                           rejectMutation.mutate({
                             requestId: selectedRequest.id,
@@ -677,7 +687,7 @@ export default function Approvals() {
                           });
                           setShowFullFormDialog(false);
                         }}
-                        isLoading={approveMutation.isPending || rejectMutation.isPending}
+                        isLoading={approveMutation.isPending || rejectMutation.isPending || isProcessingApproval}
                       />
                     )}
                   </>

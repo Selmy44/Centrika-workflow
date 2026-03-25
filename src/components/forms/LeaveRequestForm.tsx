@@ -601,7 +601,10 @@ export default function LeaveRequestForm({
                <Button variant="destructive" onClick={() => setShowRejectDialog(true)}>Reject</Button>
             )}
             {isApprover && !isReadOnly && (
-               <Button onClick={() => onApprove?.({ comments: approvalComments, signatureFile: approverSignature, selectedHR })} className="bg-green-600 hover:bg-green-700">Approve</Button>
+               <Button disabled={isLoading} onClick={() => onApprove?.({ comments: approvalComments, signatureFile: approverSignature, selectedHR })} className="bg-green-600 hover:bg-green-700">
+                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                 Approve
+               </Button>
             )}
 
             {!isApprover && !isReadOnly && (
