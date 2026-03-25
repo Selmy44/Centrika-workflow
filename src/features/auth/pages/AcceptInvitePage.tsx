@@ -2,7 +2,8 @@ import { useParams, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -76,133 +77,171 @@ export default function AcceptInvitePage() {
     });
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 to-indigo-100">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Verifying your invitation...</p>
+  return (
+    <div className="min-h-screen bg-[#fdfcf6] relative overflow-hidden flex flex-col p-6">
+      {/* Background Mesh Gradients */}
+      <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-linear-to-br from-[#1e40af]/10 to-transparent rounded-full blur-[140px] animate-pulse duration-[12s]" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-linear-to-tl from-[#fbbf24]/15 to-transparent rounded-full blur-[140px] animate-pulse duration-[18s] delay-[2s]" />
+      
+      <div className="absolute inset-0 bg-[#fdfcf6]/40 backdrop-blur-[1px]" />
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex items-center justify-center relative z-10 py-6">
+        <div className="w-full max-w-[480px] md:max-w-[520px] animate-in fade-in slide-in-from-bottom-8 duration-1000">
+          <Card className="!bg-white border-white shadow-[0_30px_70px_-20px_rgba(30,64,175,0.15)] backdrop-blur-3xl overflow-hidden rounded-[1.75rem] group border-2">
+            <div className="h-1.5 w-full bg-linear-to-r from-[#1e40af] via-[#fbbf24] to-[#1e40af] bg-[length:200%_auto] animate-gradient-x" />
+
+            {isLoading ? (
+              <CardContent className="py-16 flex flex-col items-center justify-center text-center">
+                <div className="relative scale-75">
+                  <div className="absolute inset-0 bg-[#1e40af]/5 blur-xl rounded-full scale-150 animate-pulse" />
+                  <Loader2 className="h-10 w-10 animate-spin text-[#1e40af] relative z-10" strokeWidth={2.5} />
+                </div>
+                <p className="mt-4 text-[8px] font-black text-[#1e40af]/30 uppercase tracking-[0.3em] animate-pulse">
+                  Verifying Business Invitation...
+                </p>
+              </CardContent>
+            ) : error ? (
+              <>
+                <CardHeader className="space-y-3 pt-6 pb-2 px-8 text-center border-none">
+                  <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto border border-red-500/20 scale-75">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-alert-circle text-red-500"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+                  </div>
+                  <div className="space-y-0.5">
+                    <CardTitle className="text-2xl leading-tight font-black text-[#1e40af] tracking-tight uppercase">Invitation <span className="text-red-500">Expired</span></CardTitle>
+                    <CardDescription className="text-[#1e40af]/40 font-bold text-[8px] uppercase tracking-[0.2em] leading-relaxed">
+                      {error}. Please contact your Department Head or Corporate Registry to request a fresh invitation link.
+                    </CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent className="px-8 pb-8">
+                  <Button 
+                    onClick={() => navigate("/login")} 
+                    className="w-full h-12 bg-[#1e40af] hover:bg-[#1e3a8a] text-white font-black tracking-[0.2em] uppercase text-[10px] shadow-xl shadow-[#1e40af]/20 transition-all duration-300 rounded-xl"
+                  >
+                    Return to Portal Login
+                  </Button>
+                </CardContent>
+              </>
+            ) : (
+              <>
+                <CardHeader className="space-y-3 pt-6 pb-2 px-8 text-center border-none">
+                  <div className="flex justify-center relative scale-75">
+                    <div className="absolute inset-0 bg-[#1e40af]/5 blur-3xl rounded-full scale-150 animate-pulse" />
+                    <img
+                      src="/logo/centrikaLogo.png"
+                      alt="Centrika Logo"
+                      className="h-14 w-auto relative z-10 drop-shadow-xl duration-700 transition-transform group-hover:scale-105"
+                    />
+                  </div>
+                  <div className="space-y-0.5">
+                    <CardTitle className="text-2xl leading-tight font-black text-[#1e40af] tracking-tight uppercase">Setup your <span className="text-[#fbbf24]">Access</span></CardTitle>
+                    <CardDescription className="text-[#1e40af]/40 font-bold text-[8px] uppercase tracking-[0.2em] leading-relaxed">
+                      Welcome, <strong>{invitationData?.name}</strong>. Let's secure your official business posture.
+                    </CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent className="px-8 pb-8">
+                  <form onSubmit={handleSubmit} className="space-y-5">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="block text-[9px] font-black text-[#1e40af] uppercase tracking-[0.2em] pl-1">
+                          Portal ID
+                        </label>
+                        <Input
+                          type="email"
+                          value={invitationData?.email || ""}
+                          disabled
+                          className="h-10 !bg-[#1e40af]/5 border-none text-[#1e40af] font-bold rounded-lg text-[11px]"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="block text-[9px] font-black text-[#1e40af] uppercase tracking-[0.2em] pl-1">
+                          Assigned Role
+                        </label>
+                        <Input
+                          type="text"
+                          value={invitationData?.role || ""}
+                          disabled
+                          className="h-10 !bg-[#1e40af]/5 border-none text-[#1e40af] font-bold rounded-lg capitalize text-[11px]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="password" title="password" className="text-[9px] font-black text-[#1e40af] uppercase tracking-[0.2em] pl-1 block">
+                        New Security Phrase
+                      </Label>
+                      <div className="relative group/input">
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#1e40af]/30 group-focus-within/input:text-[#1e40af] transition-colors duration-300">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-lock"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        </div>
+                        <Input
+                          id="password"
+                          type="password"
+                          placeholder="••••••••"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          disabled={isSubmitting}
+                          className="h-12 !bg-white border-[#1e40af]/5 pl-11 text-sm text-black placeholder:text-[#1e40af]/20 focus:!bg-white focus:border-[#1e40af]/30 focus:ring-4 focus:ring-[#1e40af]/5 transition-all duration-300 font-bold rounded-xl shadow-sm"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="confirm-password" title="confirm-password" className="text-[9px] font-black text-[#1e40af] uppercase tracking-[0.2em] pl-1 block">
+                        Verify New Phrase
+                      </Label>
+                      <div className="relative group/input">
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#1e40af]/30 group-focus-within/input:text-[#1e40af] transition-colors duration-300">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-shield-check"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+                        </div>
+                        <Input
+                          id="confirm-password"
+                          type="password"
+                          placeholder="••••••••"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          disabled={isSubmitting}
+                          className="h-12 !bg-white border-[#1e40af]/5 pl-11 text-sm text-black placeholder:text-[#1e40af]/20 focus:!bg-white focus:border-[#1e40af]/30 focus:ring-4 focus:ring-[#1e40af]/5 transition-all duration-300 font-bold rounded-xl shadow-sm"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-2">
+                      <Button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="w-full h-12 bg-[#1e40af] hover:bg-[#1e3a8a] text-white font-black tracking-[0.2em] uppercase text-[10px] shadow-xl shadow-[#1e40af]/20 transition-all duration-500 hover:scale-[1.01] active:scale-[0.99] rounded-xl group/btn"
+                      >
+                        {isSubmitting ? (
+                          <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.5} />
+                        ) : (
+                          "Activate My Security Profile"
+                        )}
+                      </Button>
+                    </div>
+
+                    <p className="text-[8px] font-black text-[#1e40af]/20 text-center uppercase tracking-[0.3em] leading-relaxed mt-4">
+                      This protocol link is temporary. If entry fails, contact the Corporate Helpdesk for a re-dispatch.
+                    </p>
+                  </form>
+                </CardContent>
+              </>
+            )}
+          </Card>
         </div>
       </div>
-    );
-  }
 
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 to-indigo-100">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Invitation Expired or Invalid</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-red-600 mb-4">{error}</p>
-            <p className="text-gray-600 mb-6">
-              Please contact your HR department to request a new invitation.
-            </p>
-            <Button
-              onClick={() => navigate("/login")}
-              className="w-full bg-blue-600 hover:bg-blue-700"
-            >
-              Back to Login
-            </Button>
-          </CardContent>
-        </Card>
+      {/* Footer - Always bottom */}
+      <div className="relative z-10 py-4 text-center text-[#1e40af]/50 text-[10px] font-black tracking-[0.2em] uppercase">
+        <p>OnePortal Secure Digital Environment</p>
+        <p>© 2026 Centrika Ltd • Access Strictly Controlled</p>
       </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 to-indigo-100 px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <div className="text-center mb-4">
-            <img
-              src="/logo/centrikaLogo.png"
-              alt="Centrika Logo"
-              className="h-16 w-auto mx-auto"
-            />
-          </div>
-          <CardTitle className="text-center">Complete Your Account Setup</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-6">
-            <p className="text-gray-600 text-sm mb-2">
-              Welcome, <strong>{invitationData?.name}</strong>!
-            </p>
-            <p className="text-gray-600 text-sm">
-              Please set a password to activate your Centrika OnePortal account.
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email
-              </label>
-              <Input
-                type="email"
-                value={invitationData?.email || ""}
-                disabled
-                className="bg-gray-100"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Role
-              </label>
-              <Input
-                type="text"
-                value={invitationData?.role || ""}
-                disabled
-                className="bg-gray-100 capitalize"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Password
-              </label>
-              <Input
-                type="password"
-                placeholder="Enter password (min 8 characters)"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isSubmitting}
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Use a mix of letters, numbers, and symbols for security
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Confirm Password
-              </label>
-              <Input
-                type="password"
-                placeholder="Confirm password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                disabled={isSubmitting}
-              />
-            </div>
-
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-blue-600 hover:bg-blue-700"
-            >
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isSubmitting ? "Activating Account..." : "Activate Account"}
-            </Button>
-          </form>
-
-          <p className="text-xs text-gray-500 text-center mt-4">
-            This link is valid for 5days . After that, please contact your HR department for a new invitation.
-          </p>
-        </CardContent>
-      </Card>
     </div>
   );
 }
+

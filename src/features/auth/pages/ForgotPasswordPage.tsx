@@ -43,7 +43,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen w-full overflow-hidden relative" style={{ background: "#f7f9fc" }}>
+    <div className="forgot-page min-h-screen w-full overflow-hidden relative" style={{ background: "#f7f9fc" }}>
       {/* Force light mode */}
       <style>{`
         .forgot-page, .forgot-page * { color-scheme: light !important; }
@@ -213,6 +213,11 @@ export default function ForgotPasswordPage() {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Footer - Always bottom */}
+      <div className="absolute bottom-6 left-0 w-full z-20 text-center text-[#1e40af]/30 text-[10px] font-semibold tracking-widest uppercase">
+        <p>OnePortal Secure Digital Environment • © 2026 Centrika Ltd • Access Strictly Controlled</p>
       </div>
     </div>
   );

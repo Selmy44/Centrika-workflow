@@ -30,6 +30,8 @@ import LeaveManagementPage from "./features/hr/LeaveManagementPage";
 import DocumentCenterPage from "./features/hr/DocumentCenterPage";
 import BudgetManagementPage from "./features/finance/BudgetManagementPage";
 import ReportsPage from "./features/common/pages/ReportsPage";
+import AssetsPage from "./features/assets/AssetsPage";
+import AssetDetailsPage from "./features/assets/AssetDetailsPage";
 import { PolicyKnowledgeBasePage } from "@/features/resources/pages/PolicyKnowledgeBasePage";
 import { PersonalInsightsPage } from "@/features/resources/pages/PersonalInsightsPage";
 import OrganizationViewPage from "./features/users/OrganizationViewPage";
@@ -93,6 +95,9 @@ function Router() {
       <Route path="/settings" component={SettingsPage} />
       <Route path="/policies" component={PolicyKnowledgeBasePage} />
       <Route path="/insights" component={PersonalInsightsPage} />
+      <Route path="/assets" component={AssetsPage} />
+      <Route path="/assets/:id" component={AssetDetailsPage} />
+      <Route path="/hr/assets" component={AssetsPage} />
       <Route path="/404" component={NotFoundPage} />
       {/* Final fallback route */}
       <Route component={NotFoundPage} />

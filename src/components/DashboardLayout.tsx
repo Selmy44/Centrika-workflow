@@ -25,7 +25,7 @@ import {
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, FileText, CheckCircle, Settings, Users, Bell, TrendingUp, DollarSign, Search, ChevronDown, Car, Calendar, BarChart3, User, Lock, AlertCircle, Building2, BookOpen, Wallet, Receipt, UserPlus } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, FileText, CheckCircle, Settings, Users, Bell, TrendingUp, DollarSign, Search, ChevronDown, Car, Calendar, BarChart3, User, Lock, AlertCircle, Building2, BookOpen, Wallet, Receipt, UserPlus, Package } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import ThemeToggleIcon from "@/components/ui/ThemeToggleIcon";
 import NotificationIcon from "@/components/NotificationIcon";
@@ -69,6 +69,7 @@ const adminMenuItems = [
     ],
   },
   { icon: FileText, label: "My Requests", path: "/requests" },
+  { icon: Package, label: "Asset Registry", path: "/assets" },
   { icon: Users, label: "User Management", path: "/admin/users" },
   { icon: Building2, label: "Departments", path: "/departments" },
   { icon: CheckCircle, label: "Approvals", path: "/approvals" },
@@ -78,6 +79,7 @@ const adminMenuItems = [
 const financeMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
   { icon: CheckCircle, label: "Approvals", path: "/approvals" },
+  { icon: Package, label: "Asset Registry", path: "/assets" },
   { icon: Receipt, label: "Expenditure History", path: "/finance/history" },
   { icon: Wallet, label: "Budget Management", path: "/finance/budgets" },
   { icon: BarChart3, label: "Finance Reports", path: "/finance/reports" },
@@ -99,6 +101,7 @@ const hrMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
   { icon: Users, label: "Employee Directory", path: "/employee-directory" },
   { icon: UserPlus, label: "User Management", path: "/admin/users" },
+  { icon: Package, label: "Asset Registry", path: "/assets" },
   { icon: Calendar, label: "Leave Management", path: "/hr/leave" },
   { icon: FileText, label: "Document Center", path: "/hr/documents" },
   { icon: BarChart3, label: "HR Reports", path: "/hr/reports" },
@@ -121,6 +124,7 @@ const hrMenuItems = [
 const deptHeadMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
   { icon: CheckCircle, label: "Approvals", path: "/approvals" },
+  { icon: Package, label: "Asset Registry", path: "/assets" },
   { icon: Users, label: "Employee Directory", path: "/employee-directory" },
   { icon: Calendar, label: "Team Status", path: "/team-status" },
   { icon: BarChart3, label: "Team Stats", path: "/team-statistics" },
@@ -142,6 +146,7 @@ const deptHeadMenuItems = [
 const ceoMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
   { icon: CheckCircle, label: "Approvals", path: "/approvals" },
+  { icon: Package, label: "Asset Registry", path: "/assets" },
   { icon: BarChart3, label: "Reports", path: "/finance/reports" },
   { icon: Users, label: "Organization View", path: "/organization-view" },
   { icon: Building2, label: "Department Management", path: "/departments" },
