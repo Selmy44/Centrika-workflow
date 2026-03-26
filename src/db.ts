@@ -56,8 +56,24 @@ export async function upsertUser(user: any): Promise<void> {
       lastSignedIn: user.lastSignedIn || new Date(),
     };
 
+    // Try to find by openId first, then fallback to email if provided
+    let whereClause: any = { openId: user.openId };
+    
+    if (user.email) {
+      try {
+        const existingUser = await prisma.user.findUnique({
+          where: { email: user.email },
+        });
+        if (existingUser) {
+          whereClause = { id: existingUser.id };
+        }
+      } catch {
+        // Email doesn't exist, use openId
+      }
+    }
+
     await prisma.user.upsert({
-      where: { openId: user.openId },
+      where: whereClause,
       update: {
         ...data,
         updatedAt: new Date(),

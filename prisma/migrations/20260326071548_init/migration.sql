@@ -23,10 +23,22 @@ CREATE TYPE "ApprovalLevel" AS ENUM ('head_of_department', 'hr', 'head_of_financ
 CREATE TYPE "AttachmentType" AS ENUM ('employee_signature', 'manager_signature', 'hr_signature', 'ceo_signature', 'supporting_document');
 
 -- CreateEnum
-CREATE TYPE "NotificationType" AS ENUM ('request_submitted', 'request_approved', 'request_rejected', 'approval_needed', 'approval_completed', 'escalation_notification');
+CREATE TYPE "NotificationType" AS ENUM ('request_submitted', 'request_approved', 'request_rejected', 'approval_needed', 'approval_completed', 'escalation_notification', 'new_comment', 'workflow_update');
 
 -- CreateEnum
 CREATE TYPE "MfaMethod" AS ENUM ('email', 'sms', 'totp');
+
+-- CreateEnum
+CREATE TYPE "AssetCategory" AS ENUM ('it_equipment', 'furniture', 'vehicles', 'software', 'other');
+
+-- CreateEnum
+CREATE TYPE "AssetStatus" AS ENUM ('available', 'assigned', 'in_maintenance', 'retired', 'lost');
+
+-- CreateEnum
+CREATE TYPE "AssignmentStatus" AS ENUM ('active', 'returned');
+
+-- CreateEnum
+CREATE TYPE "AssetDocumentType" AS ENUM ('invoice', 'warranty', 'contract', 'photo', 'maintenance_report', 'other');
 
 -- CreateTable
 CREATE TABLE "users" (
@@ -35,6 +47,7 @@ CREATE TABLE "users" (
     "name" TEXT,
     "email" VARCHAR(320),
     "password" TEXT,
+    "gender" VARCHAR(10),
     "login_method" VARCHAR(64),
     "role" "Role" NOT NULL DEFAULT 'user',
     "additional_roles" TEXT,
@@ -50,6 +63,11 @@ CREATE TABLE "users" (
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "last_signed_in" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "date_of_birth" VARCHAR(10),
+    "job_description" TEXT,
+    "contract_type" VARCHAR(50),
+    "contract_start" VARCHAR(10),
+    "contract_end" VARCHAR(10),
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
 );
@@ -362,8 +380,197 @@ CREATE TABLE "approval_logs" (
     CONSTRAINT "approval_logs_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "request_comments" (
+    "id" SERIAL NOT NULL,
+    "request_id" INTEGER NOT NULL,
+    "user_id" INTEGER NOT NULL,
+    "content" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "request_comments_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "announcements" (
+    "id" SERIAL NOT NULL,
+    "title" TEXT NOT NULL,
+    "content" TEXT NOT NULL,
+    "author_id" INTEGER NOT NULL,
+    "department_id" INTEGER,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "announcements_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "suggestions" (
+    "id" SERIAL NOT NULL,
+    "content" TEXT NOT NULL,
+    "is_anonymous" BOOLEAN NOT NULL DEFAULT true,
+    "user_id" INTEGER,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "suggestions_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "policies" (
+    "id" SERIAL NOT NULL,
+    "title" VARCHAR(255) NOT NULL,
+    "category" VARCHAR(100) NOT NULL,
+    "content" TEXT NOT NULL,
+    "last_updated" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "policies_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "employee_documents" (
+    "id" SERIAL NOT NULL,
+    "user_id" INTEGER NOT NULL,
+    "name" VARCHAR(255) NOT NULL,
+    "file_url" TEXT NOT NULL,
+    "file_key" VARCHAR(255) NOT NULL,
+    "category" VARCHAR(100) NOT NULL,
+    "status" VARCHAR(50) NOT NULL DEFAULT 'pending',
+    "verified_by" INTEGER,
+    "verified_at" TIMESTAMP(3),
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "employee_documents_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "budgets" (
+    "id" SERIAL NOT NULL,
+    "department_id" INTEGER NOT NULL,
+    "year" INTEGER NOT NULL,
+    "total_amount" DECIMAL(18,2) NOT NULL,
+    "currency" VARCHAR(3) NOT NULL DEFAULT 'RWF',
+    "category" VARCHAR(100),
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "budgets_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "budget_usages" (
+    "id" SERIAL NOT NULL,
+    "budget_id" INTEGER NOT NULL,
+    "amount" DECIMAL(18,2) NOT NULL,
+    "request_id" INTEGER,
+    "type" VARCHAR(20) NOT NULL,
+    "description" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "budget_usages_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "vouchers" (
+    "id" SERIAL NOT NULL,
+    "request_id" INTEGER NOT NULL,
+    "voucher_number" VARCHAR(50) NOT NULL,
+    "amount" DECIMAL(18,2) NOT NULL,
+    "currency" VARCHAR(3) NOT NULL,
+    "prepared_by" INTEGER NOT NULL,
+    "approved_by" INTEGER,
+    "status" VARCHAR(20) NOT NULL DEFAULT 'pending',
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "vouchers_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "assets" (
+    "id" SERIAL NOT NULL,
+    "asset_tag" VARCHAR(100) NOT NULL,
+    "name" VARCHAR(255) NOT NULL,
+    "category" "AssetCategory" NOT NULL DEFAULT 'it_equipment',
+    "serial_number" VARCHAR(255),
+    "purchase_date" TIMESTAMP(3) NOT NULL,
+    "purchase_cost" DECIMAL(18,2) NOT NULL,
+    "currency" VARCHAR(3) NOT NULL DEFAULT 'RWF',
+    "vendor" VARCHAR(255),
+    "warranty_expiry" TIMESTAMP(3),
+    "status" "AssetStatus" NOT NULL DEFAULT 'available',
+    "location" VARCHAR(255),
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "assets_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "asset_assignments" (
+    "id" SERIAL NOT NULL,
+    "asset_id" INTEGER NOT NULL,
+    "user_id" INTEGER NOT NULL,
+    "assigned_at" TIMESTAMP(3) NOT NULL,
+    "expected_return_date" TIMESTAMP(3),
+    "returned_at" TIMESTAMP(3),
+    "condition_at_assignment" TEXT,
+    "condition_at_return" TEXT,
+    "status" "AssignmentStatus" NOT NULL DEFAULT 'active',
+    "assigned_by" INTEGER NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "asset_assignments_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "asset_documents" (
+    "id" SERIAL NOT NULL,
+    "asset_id" INTEGER NOT NULL,
+    "assignment_id" INTEGER,
+    "type" "AssetDocumentType" NOT NULL,
+    "file_name" VARCHAR(255) NOT NULL,
+    "file_url" TEXT NOT NULL,
+    "file_key" VARCHAR(255) NOT NULL,
+    "uploaded_by" INTEGER NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "asset_documents_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "asset_maintenance" (
+    "id" SERIAL NOT NULL,
+    "asset_id" INTEGER NOT NULL,
+    "maintenance_date" TIMESTAMP(3) NOT NULL,
+    "cost" DECIMAL(18,2) NOT NULL,
+    "vendor" VARCHAR(255),
+    "description" TEXT NOT NULL,
+    "logged_by" INTEGER NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "asset_maintenance_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "asset_audit_logs" (
+    "id" SERIAL NOT NULL,
+    "asset_id" INTEGER NOT NULL,
+    "user_id" INTEGER NOT NULL,
+    "action" VARCHAR(50) NOT NULL,
+    "details" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "asset_audit_logs_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "users_open_id_key" ON "users"("open_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "departments_name_key" ON "departments"("name");
@@ -400,6 +607,18 @@ CREATE UNIQUE INDEX "invitations_token_key" ON "invitations"("token");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "workflow_configs_request_type_key" ON "workflow_configs"("request_type");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "budgets_department_id_year_category_key" ON "budgets"("department_id", "year", "category");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "vouchers_request_id_key" ON "vouchers"("request_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "vouchers_voucher_number_key" ON "vouchers"("voucher_number");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "assets_asset_tag_key" ON "assets"("asset_tag");
 
 -- AddForeignKey
 ALTER TABLE "users" ADD CONSTRAINT "users_department_id_fkey" FOREIGN KEY ("department_id") REFERENCES "departments"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -490,3 +709,66 @@ ALTER TABLE "approval_logs" ADD CONSTRAINT "approval_logs_request_id_fkey" FOREI
 
 -- AddForeignKey
 ALTER TABLE "approval_logs" ADD CONSTRAINT "approval_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "request_comments" ADD CONSTRAINT "request_comments_request_id_fkey" FOREIGN KEY ("request_id") REFERENCES "requests"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "request_comments" ADD CONSTRAINT "request_comments_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "announcements" ADD CONSTRAINT "announcements_author_id_fkey" FOREIGN KEY ("author_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "announcements" ADD CONSTRAINT "announcements_department_id_fkey" FOREIGN KEY ("department_id") REFERENCES "departments"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "suggestions" ADD CONSTRAINT "suggestions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "employee_documents" ADD CONSTRAINT "employee_documents_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "employee_documents" ADD CONSTRAINT "employee_documents_verified_by_fkey" FOREIGN KEY ("verified_by") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "budgets" ADD CONSTRAINT "budgets_department_id_fkey" FOREIGN KEY ("department_id") REFERENCES "departments"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "budget_usages" ADD CONSTRAINT "budget_usages_budget_id_fkey" FOREIGN KEY ("budget_id") REFERENCES "budgets"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "budget_usages" ADD CONSTRAINT "budget_usages_request_id_fkey" FOREIGN KEY ("request_id") REFERENCES "requests"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "vouchers" ADD CONSTRAINT "vouchers_request_id_fkey" FOREIGN KEY ("request_id") REFERENCES "requests"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "asset_assignments" ADD CONSTRAINT "asset_assignments_asset_id_fkey" FOREIGN KEY ("asset_id") REFERENCES "assets"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "asset_assignments" ADD CONSTRAINT "asset_assignments_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "asset_assignments" ADD CONSTRAINT "asset_assignments_assigned_by_fkey" FOREIGN KEY ("assigned_by") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "asset_documents" ADD CONSTRAINT "asset_documents_asset_id_fkey" FOREIGN KEY ("asset_id") REFERENCES "assets"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "asset_documents" ADD CONSTRAINT "asset_documents_assignment_id_fkey" FOREIGN KEY ("assignment_id") REFERENCES "asset_assignments"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "asset_documents" ADD CONSTRAINT "asset_documents_uploaded_by_fkey" FOREIGN KEY ("uploaded_by") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "asset_maintenance" ADD CONSTRAINT "asset_maintenance_asset_id_fkey" FOREIGN KEY ("asset_id") REFERENCES "assets"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "asset_maintenance" ADD CONSTRAINT "asset_maintenance_logged_by_fkey" FOREIGN KEY ("logged_by") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "asset_audit_logs" ADD CONSTRAINT "asset_audit_logs_asset_id_fkey" FOREIGN KEY ("asset_id") REFERENCES "assets"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "asset_audit_logs" ADD CONSTRAINT "asset_audit_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
