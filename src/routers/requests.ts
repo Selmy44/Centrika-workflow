@@ -390,17 +390,23 @@ export const requestsRouter = router({
       attachments: true,
     };
 
+    // Build OR conditions - only include role-based filter if role maps to ApprovalLevel
+    const validApprovalLevels = ["head_of_department", "hr", "head_of_finance", "ceo_md"];
+    const orConditions: any[] = [
+      { approverId: ctx.user.id, status: "pending" }
+    ];
+
+    // Only add role-based filter if the user's role is a valid ApprovalLevel
+    if (validApprovalLevels.includes(ctx.user.role)) {
+      orConditions.push({
+        status: "pending",
+        approvalLevel: ctx.user.role,
+        request: { currentApprovalLevel: ctx.user.role }
+      });
+    }
+
     const approvals = await prisma.requestApproval.findMany({
-      where: { 
-        OR: [
-          { approverId: ctx.user.id, status: "pending" },
-          { 
-            status: "pending",
-            approvalLevel: ctx.user.role as any,
-            request: { currentApprovalLevel: ctx.user.role as any }
-          }
-        ]
-      },
+      where: { OR: orConditions },
       include: { request: { include: requestIncludes } }
     });
 
