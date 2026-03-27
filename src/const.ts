@@ -13,7 +13,7 @@ export const getLoginUrl = () => {
   const oauthPortalUrl = import.meta.env.VITE_OAUTH_PORTAL_URL;
 
   // If OAuth server is not configured, fall back to local login page
-  if (!oauthPortalUrl || oauthPortalUrl === "undefined") {
+  if (!oauthPortalUrl || oauthPortalUrl === "undefined" || !oauthPortalUrl.startsWith("http")) {
     return "/login";
   }
 
