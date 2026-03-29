@@ -313,8 +313,15 @@ export const requestsRouter = router({
         }
       } else {
         // Legacy fallback
-        initialLevel = "head_of_department";
-        approverId = input.initialApproverId || request.user.managerId || 0;
+        if (request.type === "car") {
+          initialLevel = "hr";
+          approverId = (await prisma.user.findFirst({
+            where: { OR: [{ role: "hr" }, { additionalRoles: { contains: "hr" } }] }
+          }))?.id || 0;
+        } else {
+          initialLevel = "head_of_department";
+          approverId = input.initialApproverId || request.user.managerId || 0;
+        }
       }
 
       // If no specific approverId but we have a role, we still proceed if it's a role-based pooling level (HR, Finance, CEO)
@@ -633,11 +640,22 @@ export const requestsRouter = router({
           }
 
           if (!escalated) {
-            if (currentStep.isFinal) await finalApprove();
-            else {
-              const nextStep = workflow.steps.find((s: any) => s.stepOrder > currentStep.stepOrder);
-              if (nextStep) await routeToNext(nextStep.roleResponsible, nextStep.roleResponsible);
-              else await finalApprove();
+            // Head of finance has manual option to Escalate to CEO or Final Approve
+            if (currentStep.roleResponsible === "head_of_finance" && (request.type === "expenditure" || request.type === "asset")) {
+              if (input.escalateToCeo) {
+                const nextStep = workflow.steps.find((s: any) => s.roleResponsible === "ceo_md");
+                if (nextStep) await routeToNext(nextStep.roleResponsible, nextStep.roleResponsible);
+                else await routeToNext("ceo_md", "ceo_md");
+              } else {
+                await finalApprove();
+              }
+            } else {
+              if (currentStep.isFinal) await finalApprove();
+              else {
+                const nextStep = workflow.steps.find((s: any) => s.stepOrder > currentStep.stepOrder);
+                if (nextStep) await routeToNext(nextStep.roleResponsible, nextStep.roleResponsible);
+                else await finalApprove();
+              }
             }
           }
           return { success: true };
@@ -645,20 +663,22 @@ export const requestsRouter = router({
       }
 
       // Legacy fallback
-      if (request.type === "leave" && request.currentApprovalLevel === "head_of_department") await finalApprove();
-      else if (request.type === "car") {
-        if (request.currentApprovalLevel === "head_of_department") await routeToNext("hr", "hr");
-        else if (request.currentApprovalLevel === "hr") await finalApprove();
-        else await finalApprove();
-      }
-      else if (request.type === "expenditure") {
-        if (request.currentApprovalLevel === "head_of_department") await routeToNext("hr", "hr");
-        else if (request.currentApprovalLevel === "hr") await routeToNext("head_of_finance", "head_of_finance");
-        else if (request.currentApprovalLevel === "head_of_finance") {
+      if (request.type === "leave") {
+        await finalApprove();
+      } else if (request.type === "car") {
+        await finalApprove();
+      } else if (request.type === "expenditure" || request.type === "asset") {
+        if (request.currentApprovalLevel === "head_of_department") {
+          await routeToNext("head_of_finance", "head_of_finance");
+        } else if (request.currentApprovalLevel === "head_of_finance") {
           if (input.escalateToCeo) await routeToNext("ceo_md", "ceo_md");
           else await finalApprove();
-        } else if (request.currentApprovalLevel === "ceo_md") await finalApprove();
-      } else await finalApprove();
+        } else {
+          await finalApprove();
+        }
+      } else {
+        await finalApprove();
+      }
 
       return { success: true };
     }),

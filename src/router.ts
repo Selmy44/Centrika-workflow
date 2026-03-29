@@ -285,6 +285,7 @@ export const appRouter = router({
         contractType: z.string().optional(),
         contractStart: z.string().optional(),
         contractEnd: z.string().optional(),
+        gender: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         // If email is being changed, check it's not already in use by someone else
@@ -308,6 +309,7 @@ export const appRouter = router({
             dateOfEmployment: input.dateOfEmployment,
             managerId: input.managerId,
             profileImage: input.profileImage,
+            gender: input.gender,
             // @ts-ignore - resolve stale IDE Prisma type cache
             dateOfBirth: input.dateOfBirth,
             jobDescription: input.jobDescription,

@@ -10,7 +10,9 @@
     "check": "tsc --noEmit",
     "seed": "tsx scripts/seedHeads.ts",
     "seed:users": "tsx scripts/seedUsers.ts",
-    "seed:departments": "tsx scripts/seedDepartments.ts"
+    "seed:departments": "tsx scripts/seedDepartments.ts",
+    "seed:workflows": "tsx src/scripts/sync_workflows.ts",
+    "seed:multiroles": "tsx src/scripts/assign_multiroles.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
