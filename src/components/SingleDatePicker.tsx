@@ -12,6 +12,7 @@ interface SingleDatePickerProps {
   disabled?: boolean;
   label?: string;
   autoClose?: boolean;
+  className?: string;
 }
 
 export default function SingleDatePicker({
@@ -21,6 +22,7 @@ export default function SingleDatePicker({
   disabled = false,
   label = "Select Date",
   autoClose = true,
+  className,
 }: SingleDatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   
@@ -127,8 +129,9 @@ export default function SingleDatePicker({
           className={cn(
             "flex h-9 w-full min-w-0 items-center justify-between rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-[color,box-shadow] outline-none dark:bg-input/30",
             "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
-            disabled ? "cursor-not-allowed opacity-50" : "hover:bg-accent/50",
-            !value && "text-muted-foreground"
+            disabled ? "cursor-not-allowed opacity-50" : "hover:bg-transparent",
+            !value && "text-muted-foreground",
+            className
           )}
         >
           <span className="truncate">{formatDisplayDate(value)}</span>

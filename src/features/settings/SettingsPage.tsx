@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   User, Mail, Shield, Calendar, Loader2, Upload, Building2,
   Users, FileText, Bell, Eye, Database, Lock, Settings as SettingsIcon,
-  ShieldCheck, Clock, Key, ArrowRight
+  ShieldCheck, Clock, Key, ArrowRight, Pencil, Save, X
 } from "lucide-react";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
@@ -39,6 +39,7 @@ export default function Settings() {
   const utils = trpc.useUtils();
 
   // --- Profile State ---
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileImage, setProfileImage] = useState<string>(user?.profileImage || "");
   const [uploadingImage, setUploadingImage] = useState(false);
   const [editName, setEditName] = useState(user?.name || "");
@@ -81,8 +82,10 @@ export default function Settings() {
         dateOfEmployment: editDateOfEmployment,
         managerId: editManagerId ? parseInt(editManagerId) : null,
         profileImage: profileImage,
+        gender: editGender,
       });
       await utils.auth.me.invalidate();
+      setIsEditingProfile(false);
       toast.success("Profile updated successfully!");
     } catch (error: any) {
       toast.error(error.message || "Failed to update profile");
@@ -154,106 +157,168 @@ export default function Settings() {
               )}
             </TabsList>
 
-            <TabsContent value="profile" className="space-y-2 focus-visible:outline-none">
-              <Card className="bg-white/50 border-[#3b6dae]/5 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all">
-                <CardHeader className="bg-[#3b6dae]/3 border-b border-[#3b6dae]/5 py-2 px-4">
-                  <CardTitle className="text-[#3b6dae] ftext-sm font-black uppercase tracking-widest">Personal Identification</CardTitle>
-                </CardHeader>
-                <CardContent className="p-3 space-y-4">
-                  <div className="flex items-center gap-6">
-                    <div className="relative group">
-                      <div className="absolute inset-0 bg-[#3b6dae] rounded-2xl blur-xl opacity-0 group-hover:opacity-10 transition-opacity" />
-                      <Avatar className="h-24 w-24 border-4 border-white shadow-2xl rounded-2xl">
-                        <AvatarImage src={user.profileImage ?? undefined} className="object-cover" />
-                        <AvatarFallback className="bg-[#3b6dae] text-white text-2xl font-black">
-                          {user.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <label htmlFor="avatar-upload" className="absolute -bottom-1.5 -right-1.5 p-1.5 bg-[#c79d2d] text-white rounded-xl cursor-pointer hover:bg-[#c79d2d]/90 transition-all shadow-xl z-20 hover:scale-110 border-2 border-white">
-                        <Upload size={12} className="font-bold" />
-                        <span className="sr-only">Upload profile picture</span>
-                        <input id="avatar-upload" type="file" className="hidden" onChange={handleProfileImageUpload} aria-label="Upload profile picture" />
-                      </label>
-                    </div>
-                    <div className="space-y-0.5">
-                      <h3 className="font-black text-lg text-[#3b6dae] tracking-tight">{user.name}</h3>
-                      <p className="text-[10px] font-bold text-[#3b6dae]/40 uppercase tracking-[0.2em]">
-                        {user.role} Member
-                      </p>
-                      <div className="flex gap-2 mt-4">
-                        <Button variant="outline" size="sm" className="h-7 px-3 border-[#3b6dae]/10 text-[#3b6dae] font-black uppercase text-[8px] tracking-[0.15em] hover:bg-[#3b6dae] hover:text-white rounded-lg transition-all" onClick={handleUpdateProfile} disabled={updateProfileMutation.isPending}>
-                          Update Metadata
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                  <Separator className="bg-[#3b6dae]/5" />
-
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <Label className="text-[9px] font-black text-[#3b6dae]/40 uppercase tracking-widest pl-0.5">Full Name</Label>
-                        <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="h-9 bg-white/60 border-[#3b6dae]/10 focus:border-[#3b6dae]/30 rounded-lg font-bold text-xs shadow-none transition-all focus:bg-white" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-[9px] font-black text-[#3b6dae]/40 uppercase tracking-widest pl-0.5">Email Address</Label>
-                        <Input value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="h-9 bg-white/60 border-[#3b6dae]/10 focus:border-[#3b6dae]/30 rounded-lg font-bold text-xs shadow-none transition-all focus:bg-white" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-[9px] font-black text-[#3b6dae]/40 uppercase tracking-widest pl-0.5">Designation</Label>
-                        <Input value={editPosition} onChange={(e) => setEditPosition(e.target.value)} className="h-9 bg-white/60 border-[#3b6dae]/10 focus:border-[#3b6dae]/30 rounded-lg font-bold text-xs shadow-none transition-all focus:bg-white" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-[9px] font-black text-[#3b6dae]/40 uppercase tracking-widest pl-0.5">Department</Label>
-                        <Select onValueChange={setEditDepartmentId} value={editDepartmentId?.toString()}>
-                          <SelectTrigger className="h-9 bg-white/60 border-[#3b6dae]/10 focus:ring-0 rounded-lg font-bold text-xs shadow-none">
-                            <SelectValue placeholder="Select Department" />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-xl border-[#3b6dae]/10 shadow-2xl">
-                            {departments?.map((d: any) => (
-                              <SelectItem key={d.id} value={d.id.toString()} className="font-bold text-[11px] py-2 px-3 focus:bg-[#3b6dae] focus:text-white rounded-lg mx-1.5 my-0.5">{d.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-[9px] font-black text-[#3b6dae]/40 uppercase tracking-widest pl-0.5">Staff ID</Label>
-                        <Input value={editStaffId} onChange={(e) => setEditStaffId(e.target.value)} className="h-9 bg-white/60 border-[#3b6dae]/10 focus:border-[#3b6dae]/30 rounded-lg font-bold text-xs shadow-none transition-all focus:bg-white" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-[9px] font-black text-[#3b6dae]/40 uppercase tracking-widest pl-0.5">Gender</Label>
-                        <Select onValueChange={setEditGender} value={editGender}>
-                          <SelectTrigger className="h-9 bg-white/60 border-[#3b6dae]/10 focus:ring-0 rounded-lg font-bold text-xs shadow-none">
-                            <SelectValue placeholder="Select Gender" />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-xl border-[#3b6dae]/10 shadow-2xl">
-                            <SelectItem value="male" className="font-bold text-[11px] py-2 px-3 focus:bg-[#3b6dae] focus:text-white rounded-lg mx-1.5 my-0.5">Male</SelectItem>
-                            <SelectItem value="female" className="font-bold text-[11px] py-2 px-3 focus:bg-[#3b6dae] focus:text-white rounded-lg mx-1.5 my-0.5">Female</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-[9px] font-black text-[#3b6dae]/40 uppercase tracking-widest pl-0.5">Date of Employment</Label>
-                        <Input type="date" value={editDateOfEmployment} onChange={(e) => setEditDateOfEmployment(e.target.value)} className="h-9 bg-white/60 border-[#3b6dae]/10 focus:border-[#3b6dae]/30 rounded-lg font-bold text-xs shadow-none transition-all focus:bg-white" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-[9px] font-black text-[#3b6dae]/40 uppercase tracking-widest pl-0.5">Line Manager / HOD</Label>
-                        <Select onValueChange={setEditManagerId} value={editManagerId?.toString()}>
-                          <SelectTrigger className="h-9 bg-white/60 border-[#3b6dae]/10 focus:ring-0 rounded-lg font-bold text-xs shadow-none">
-                            <SelectValue placeholder="Select Manager" />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-xl border-[#3b6dae]/10 shadow-2xl">
-                            {managers?.map((m: any) => (
-                              <SelectItem key={m.id} value={m.id.toString()} className="font-bold text-[11px] py-2 px-3 focus:bg-[#3b6dae] focus:text-white rounded-lg mx-1.5 my-0.5">{m.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </div>
-                  <Button onClick={handleUpdateProfile} className="bg-[#3b6dae] hover:bg-[#2d5385] h-10 px-6 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-[#3b6dae]/10 transition-all active:scale-95">
-                    Sync Profile Details
+            <TabsContent value="profile" className="space-y-4 focus-visible:outline-none">
+              <div className="flex items-center justify-between pb-2">
+                <div>
+                  <h2 className="text-xl font-bold tracking-tight text-[#3b6dae]">Personal Information</h2>
+                  <p className="text-xs text-muted-foreground">Manage your personal details and contact information.</p>
+                </div>
+                {!isEditingProfile ? (
+                  <Button onClick={() => setIsEditingProfile(true)} className="bg-[#3b6dae] hover:bg-[#2d5385] text-white">
+                    <Pencil className="w-4 h-4 mr-2" />
+                    Edit Profile
                   </Button>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" onClick={() => setIsEditingProfile(false)} className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700">
+                      <X className="w-4 h-4 mr-2" />
+                      Cancel
+                    </Button>
+                    <Button onClick={handleUpdateProfile} disabled={updateProfileMutation.isPending} className="bg-green-600 hover:bg-green-700 text-white">
+                      {updateProfileMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                      Save Changes
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              <Card className="bg-white border-[#3b6dae]/10 shadow-sm overflow-hidden">
+                <CardContent className="p-0">
+                  <div className="p-6 md:p-8 flex flex-col md:flex-row items-center md:items-start gap-8">
+                    {/* AVATAR SECTION */}
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="relative group">
+                        <Avatar className="h-32 w-32 border-4 border-slate-50 shadow-md">
+                          <AvatarImage src={user.profileImage ?? undefined} className="object-cover" />
+                          <AvatarFallback className="bg-[#3b6dae] text-white text-4xl font-black">
+                            {user.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        {isEditingProfile && (
+                          <label htmlFor="avatar-upload" className="absolute bottom-0 right-0 p-2.5 bg-[#c79d2d] text-white rounded-full cursor-pointer hover:bg-[#c79d2d]/90 transition-all shadow-md border-2 border-white">
+                            {uploadingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                            <input id="avatar-upload" type="file" className="hidden" onChange={handleProfileImageUpload} accept="image/*" />
+                          </label>
+                        )}
+                      </div>
+                      <div className="text-center">
+                        <h3 className="font-bold text-lg text-slate-800 tracking-tight">{user.name}</h3>
+                        <Badge variant="secondary" className="mt-1 bg-blue-50 text-blue-700 hover:bg-blue-100">
+                          {[user.role, ...(user.additionalRoles ? JSON.parse(user.additionalRoles) : [])].join(' & ').replace(/_/g, ' ').toUpperCase()}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <Separator orientation="vertical" className="hidden md:block h-auto min-h-[300px] bg-slate-100" />
+                    <Separator orientation="horizontal" className="block md:hidden bg-slate-100" />
+
+                    {/* FIELDS SECTION */}
+                    <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Full Name</Label>
+                        {isEditingProfile ? (
+                          <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="h-10 border-slate-200 focus:border-[#3b6dae]/50 focus:ring-[#3b6dae]/50 transition-all font-medium" />
+                        ) : (
+                          <div className="h-10 flex items-center text-slate-900 font-medium px-1">{user.name || "—"}</div>
+                        )}
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Email Address</Label>
+                        {isEditingProfile ? (
+                          <Input value={editEmail} onChange={(e) => setEditEmail(e.target.value)} type="email" className="h-10 border-slate-200 focus:border-[#3b6dae]/50 focus:ring-[#3b6dae]/50 transition-all font-medium" />
+                        ) : (
+                          <div className="h-10 flex items-center text-slate-900 font-medium px-1 truncate">{user.email || "—"}</div>
+                        )}
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Designation / Title</Label>
+                        {isEditingProfile ? (
+                          <Input value={editPosition} onChange={(e) => setEditPosition(e.target.value)} className="h-10 border-slate-200 focus:border-[#3b6dae]/50 focus:ring-[#3b6dae]/50 transition-all font-medium" />
+                        ) : (
+                          <div className="h-10 flex items-center text-slate-900 font-medium px-1">{user.position || "—"}</div>
+                        )}
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Department</Label>
+                        {isEditingProfile ? (
+                          <Select onValueChange={setEditDepartmentId} value={editDepartmentId?.toString()}>
+                            <SelectTrigger className="h-10 border-slate-200 font-medium">
+                              <SelectValue placeholder="Select Department" />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-[300px]">
+                              {departments?.map((d: any) => (
+                                <SelectItem key={d.id} value={d.id.toString()}>{d.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <div className="h-10 flex items-center text-slate-900 font-medium px-1">
+                            {departments?.find((d: any) => d.id === user?.departmentId)?.name || "—"}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Staff ID</Label>
+                        {isEditingProfile ? (
+                          <Input value={editStaffId} onChange={(e) => setEditStaffId(e.target.value)} className="h-10 border-slate-200 focus:border-[#3b6dae]/50 focus:ring-[#3b6dae]/50 transition-all font-medium" />
+                        ) : (
+                          <div className="h-10 flex items-center text-slate-900 font-medium px-1">{user.staffId || "—"}</div>
+                        )}
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Gender</Label>
+                        {isEditingProfile ? (
+                          <Select onValueChange={setEditGender} value={editGender}>
+                            <SelectTrigger className="h-10 border-slate-200 font-medium">
+                              <SelectValue placeholder="Select Gender" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="male">Male</SelectItem>
+                              <SelectItem value="female">Female</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <div className="h-10 flex items-center text-slate-900 font-medium px-1 capitalize">{((user as any)?.gender) || "—"}</div>
+                        )}
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Date of Employment</Label>
+                        {isEditingProfile ? (
+                          <Input type="date" value={editDateOfEmployment} onChange={(e) => setEditDateOfEmployment(e.target.value)} className="h-10 border-slate-200 font-medium focus:border-[#3b6dae]/50" />
+                        ) : (
+                          <div className="h-10 flex items-center text-slate-900 font-medium px-1">
+                            {user.dateOfEmployment ? new Date(user.dateOfEmployment).toLocaleDateString() : "—"}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Line Manager / HOD</Label>
+                        {isEditingProfile ? (
+                          <Select onValueChange={setEditManagerId} value={editManagerId?.toString()}>
+                            <SelectTrigger className="h-10 border-slate-200 font-medium">
+                              <SelectValue placeholder="Select Manager" />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-[300px]">
+                              {managers?.map((m: any) => (
+                                <SelectItem key={m.id} value={m.id.toString()}>{m.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <div className="h-10 flex items-center text-slate-900 font-medium px-1">
+                            {managers?.find((m: any) => m.id === user?.managerId)?.name || "—"}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -379,7 +444,7 @@ export default function Settings() {
                   </div>
                   <div>
                     <p className="text-[10px] font-black text-white/40 uppercase tracking-widest leading-none mb-1.5">Portal Authority</p>
-                    <p className="text-lg font-black tracking-tight">{user.role?.replace(/_/g, ' ').toUpperCase()}</p>
+                    <p className="text-lg font-black tracking-tight">{[user.role, ...(user.additionalRoles ? JSON.parse(user.additionalRoles) : [])].join(' & ').replace(/_/g, ' ').toUpperCase()}</p>
                   </div>
                 </div>
 

@@ -147,6 +147,7 @@ export default function LeaveRequestForm({
         department: d.department || prev.department,
         position: d.position || prev.position,
         leaveType: d.leaveType || prev.leaveType,
+        parentalLeaveType: d.parentalLeaveType || prev.parentalLeaveType,
         startDate: d.startDate || prev.startDate,
         endDate: d.endDate || prev.endDate,
         leaveDaysRequested: d.leaveDaysRequested || prev.leaveDaysRequested,
@@ -193,7 +194,22 @@ export default function LeaveRequestForm({
   const uniqueHeads = headsOfDept.data || [];
   const uniqueHR = hrUsers.data || [];
 
-  const config = getLeaveTypeConfig(form.leaveType);
+  // Resolve parental leave to maternity/paternity based on the employee's gender
+  // For approver views, use the employee's gender from requestData, not the approver's
+  const resolvedLeaveType = (() => {
+    if (form.leaveType === "parental") {
+      // 1. If the saved form data already has a resolved type, use it
+      if (savedFormData?.data?.resolvedLeaveType) return savedFormData.data.resolvedLeaveType;
+      if (form.parentalLeaveType) return form.parentalLeaveType;
+      // 2. Use the employee's gender from requestData (for approver views)
+      const employeeGender = requestData?.user?.gender?.toLowerCase() || (user as any)?.gender?.toLowerCase();
+      if (employeeGender === "female") return "maternity";
+      if (employeeGender === "male") return "paternity";
+    }
+    return form.leaveType;
+  })();
+
+  const config = getLeaveTypeConfig(resolvedLeaveType);
   const colorMap: Record<string, string> = {
     yellow: "bg-yellow-500",
     red: "bg-red-500",
@@ -279,6 +295,8 @@ export default function LeaveRequestForm({
             requestId: requestId,
             formData: {
               ...form,
+              resolvedLeaveType,
+              parentalLeaveType: form.leaveType === "parental" ? (resolvedLeaveType === "maternity" ? "maternity" : "paternity") : "",
               employeeSignature: undefined, // Can't serialize File objects
               supportingDocument: undefined,
             },
@@ -405,7 +423,7 @@ export default function LeaveRequestForm({
             
             <div className="px-4 pb-4">
               <LeaveBalanceCalculator 
-                leaveType={form.leaveType}
+                leaveType={resolvedLeaveType}
                 startDate={form.startDate}
                 endDate={form.endDate}
                 alreadyTaken={parseInt(form.leaveDaysTaken) || 0}
@@ -567,7 +585,7 @@ export default function LeaveRequestForm({
                     <label className="text-xs font-semibold block mb-1">Signature</label>
                     {!isReadOnly ? (
                       <>
-                        <input type="file" accept="image/*" onChange={(e) => setApproverSignature(e.target.files?.[0] || null)} className="text-xs mb-2 block" />
+                        <input type="file" accept="image/*" onChange={(e) => setApproverSignature(e.target.files?.[0] || null)} className="block w-full text-xs text-slate-500 file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:font-semibold file:bg-[#3b6dae]/10 file:text-[#3b6dae] hover:file:bg-[#3b6dae]/20 border border-[#3b6dae]/30 rounded-lg p-1 transition-colors hover:border-[#3b6dae]/60 cursor-pointer mb-2 block" />
                         {approverSignature && (
                           <img 
                             src={URL.createObjectURL(approverSignature)} 

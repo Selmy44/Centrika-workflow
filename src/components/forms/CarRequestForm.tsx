@@ -312,6 +312,7 @@ export default function CarRequestForm({ onSuccess, onClose, onBack }: CarReques
                 value={form.departureDate}
                 onChange={(date) => setForm({ ...form, departureDate: date })}
                 label=""
+                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-white dark:bg-[#1f426b] font-medium text-black dark:text-slate-100"
               />
             </Row>
             <Row label="3.2 Departure Time">

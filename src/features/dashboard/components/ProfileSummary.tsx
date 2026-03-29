@@ -26,7 +26,7 @@ export const ProfileSummary = () => {
             </h3>
             <div className="flex items-center gap-2 mt-0.5">
                <span className="text-[7px] font-black bg-[#c79d2d] px-1 rounded-sm">
-                {user.role === 'admin' ? 'ADMIN' : (user.role || 'MEMBER').toUpperCase()}
+                {user.role === 'admin' ? 'ADMIN' : [user.role, ...(user.additionalRoles ? JSON.parse(user.additionalRoles).map((r: string) => r) : [])].join(' & ').replace(/_/g, ' ').toUpperCase() || 'MEMBER'}
               </span>
               <span className="text-[7px] font-black bg-white/10 px-1 rounded-sm text-white/80 border border-white/5 flex items-center gap-0.5">
                 <Hash size={7} /> {user.staffId || "----"}
