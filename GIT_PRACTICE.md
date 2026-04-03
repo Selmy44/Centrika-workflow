@@ -77,7 +77,32 @@ Wait for the reviewer to **Approve** AND **Merge** the MR.
 
 ---
 
-## STEP 6 — Promote develop to staging
+## STEP 6 — Clean up your local branch (after MR is merged)
+
+Once GitLab confirms the MR is **Merged**, delete the feature branch locally so it does not cause confusion later.
+
+```bash
+# Switch back to develop first (you cannot delete a branch you are currently on)
+git checkout develop
+
+# Pull the latest develop (which now includes your merged changes)
+git pull origin develop
+
+# Delete your local feature branch
+git branch -d feature/your-feature-name
+```
+
+> The `-d` flag is safe — it only deletes if the branch has already been merged.
+> If Git refuses, it means the branch was NOT yet merged. Do NOT use `-D` (force delete) unless you are certain the work is merged and you intentionally want to discard it.
+
+You can verify your branch is gone:
+```bash
+git branch
+```
+
+---
+
+## STEP 7 — Promote develop to staging
 
 Once the MR is merged into develop, bring it to staging:
 
@@ -90,15 +115,15 @@ git push origin staging
 
 ---
 
-## STEP 7 — Test on staging
+## STEP 8 — Test on staging
 
 Deploy and test on the staging server.
 If something is wrong, go back to Step 1 with a `fix/` branch.
-If everything is good, proceed to Step 8.
+If everything is good, proceed to Step 9.
 
 ---
 
-## STEP 8 — Promote staging to main (production)
+## STEP 9 — Promote staging to main (production)
 
 ```bash
 git checkout main
@@ -109,7 +134,7 @@ git push origin main
 
 ---
 
-## STEP 9 — Tag the release
+## STEP 10 — Tag the release
 
 Replace `v1.x.x` with the actual version number (e.g. `v1.1.0`).
 
@@ -120,7 +145,7 @@ git push origin v1.x.x
 
 ---
 
-## STEP 10 — Verify everything reached production
+## STEP 11 — Verify everything reached production
 
 Run these commands to confirm all branches are in sync:
 
@@ -171,19 +196,24 @@ git push origin feature/your-feature-name
 # 5. Go to GitLab → Open MR → feature/your-feature-name → develop
 # Wait for Approval + Merge on GitLab
 
-# 6. Promote to staging
+# 6. After MR is merged — clean up local branch
+git checkout develop
+git pull origin develop
+git branch -d feature/your-feature-name
+
+# 7. Promote to staging
 git checkout staging
 git pull origin staging
 git merge origin/develop
 git push origin staging
 
-# 7. Test on staging server, then promote to production
+# 8. Test on staging server, then promote to production
 git checkout main
 git pull origin main
 git merge origin/staging
 git push origin main
 
-# 8. Tag the release
+# 9. Tag the release
 git tag -a v1.x.x -m "Release v1.x.x"
 git push origin v1.x.x
 ```
@@ -198,3 +228,4 @@ git push origin v1.x.x
 - Fix bugs on `develop`, not on `staging`
 - Approve AND Merge are two separate actions on GitLab
 - Tag every release on `main`
+- Delete your local feature branch after the MR is merged — keep your local repo clean
