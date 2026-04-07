@@ -17,7 +17,7 @@ async function main() {
     });
     console.log("Updated dmbabazi@centrika.rw to HOD + HR");
   } else {
-    console.warn("User dmbabazi@centrika.rw not found");
+    console.warn("User dmbabazi@centrika.rw not found"); 
   }
 
   // 2. Assign HOD + Finance to pndabarasa@centrika.rw
@@ -33,6 +33,26 @@ async function main() {
     console.log("Updated pndabarasa@centrika.rw to HOD + Head of Finance");
   } else {
     console.warn("User pndabarasa@centrika.rw not found");
+  }
+
+  // 3. Assign Admin to snshuti@centrika.rw
+  const snshutiUser = await prisma.user.findUnique({ where: { email: "snshuti@centrika.rw" } });
+  if (snshutiUser) {
+    const additionalRoles = snshutiUser.additionalRoles 
+      ? JSON.parse(snshutiUser.additionalRoles as string) 
+      : [];
+    if (!additionalRoles.includes("admin")) {
+      additionalRoles.push("admin");
+    }
+    await prisma.user.update({
+      where: { id: snshutiUser.id },
+      data: {
+        additionalRoles: JSON.stringify(additionalRoles)
+      }
+    });
+    console.log("Updated snshuti@centrika.rw with additional 'admin' role");
+  } else {
+    console.warn("User snshuti@centrika.rw not found");
   }
 
   console.log("Done updating multi-roles!");

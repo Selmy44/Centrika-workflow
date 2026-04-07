@@ -541,8 +541,38 @@ export const appRouter = router({
       });
     }),
 
+    // Lightweight list of all staff for backup person selection in leave forms
+    listStaffForBackup: protectedProcedure.query(async () => {
+      const users = await prisma.user.findMany({
+        where: { status: "Active" },
+        select: {
+          id: true,
+          name: true,
+          phoneNumber: true,
+          email: true,
+          position: true,
+          department: { select: { name: true } },
+        },
+        orderBy: { name: "asc" },
+      });
+      return users.map((u: any) => ({
+        id: u.id,
+        name: u.name || "Unknown",
+        phoneNumber: u.phoneNumber || "",
+        email: u.email || "",
+        position: u.position || "",
+        department: u.department?.name || "",
+      }));
+    }),
+
     listAll: protectedProcedure.query(async ({ ctx }) => {
-      if (ctx.user.role !== "admin" && ctx.user.role !== "hr") {
+      const additionalRoles = typeof ctx.user.additionalRoles === 'string' 
+        ? JSON.parse(ctx.user.additionalRoles || "[]") 
+        : (ctx.user.additionalRoles || []);
+      const hasAdminOrHr = ctx.user.role === "admin" || ctx.user.role === "hr" || 
+        additionalRoles.includes("admin") || additionalRoles.includes("hr");
+
+      if (!hasAdminOrHr) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Only admins and HR can view all users" });
       }
       return prisma.user.findMany({
@@ -554,7 +584,7 @@ export const appRouter = router({
       .input(z.object({
         email: z.string().email("Invalid email"),
         name: z.string().min(2, "Name must be at least 2 characters"),
-        departmentId: z.number().optional(), // Frontend currently sends string 'department', we'll fix that.
+        departmentId: z.number().optional(),
         position: z.string().optional(),
         role: z.enum(["user", "admin", "hr", "head_of_department", "head_of_finance", "ceo_md"]).default("user"),
         dateOfEmployment: z.string().optional(),
@@ -563,9 +593,17 @@ export const appRouter = router({
         contractType: z.string().optional(),
         contractStart: z.string().optional(),
         contractEnd: z.string().optional(),
+        phoneNumber: z.string().optional(),
+        gender: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== "admin" && ctx.user.role !== "hr") {
+        const additionalRoles = typeof ctx.user.additionalRoles === 'string' 
+          ? JSON.parse(ctx.user.additionalRoles || "[]") 
+          : (ctx.user.additionalRoles || []);
+        const hasAdminOrHr = ctx.user.role === "admin" || ctx.user.role === "hr" || 
+          additionalRoles.includes("admin") || additionalRoles.includes("hr");
+
+        if (!hasAdminOrHr) {
           throw new TRPCError({ code: "FORBIDDEN", message: "Only admins/hr can create users" });
         }
 
@@ -599,6 +637,8 @@ export const appRouter = router({
             contractType: input.contractType,
             contractStart: input.contractStart,
             contractEnd: input.contractEnd,
+            phoneNumber: input.phoneNumber,
+            gender: input.gender,
             staffId: "", // Will be generated below
           }
         });
@@ -629,9 +669,18 @@ export const appRouter = router({
         contractType: z.string().optional(),
         contractStart: z.string().optional(),
         contractEnd: z.string().optional(),
+        phoneNumber: z.string().optional(),
+        gender: z.string().optional(),
+        profileImage: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== "admin" && ctx.user.role !== "hr") {
+        const additionalRoles = typeof ctx.user.additionalRoles === 'string' 
+          ? JSON.parse(ctx.user.additionalRoles || "[]") 
+          : (ctx.user.additionalRoles || []);
+        const hasAdminOrHr = ctx.user.role === "admin" || ctx.user.role === "hr" || 
+          additionalRoles.includes("admin") || additionalRoles.includes("hr");
+
+        if (!hasAdminOrHr) {
           throw new TRPCError({ code: "FORBIDDEN", message: "Only admins and HR can update users" });
         }
 
@@ -649,6 +698,9 @@ export const appRouter = router({
             contractType: input.contractType,
             contractStart: input.contractStart,
             contractEnd: input.contractEnd,
+            phoneNumber: input.phoneNumber,
+            gender: input.gender,
+            profileImage: input.profileImage,
             updatedAt: new Date(),
           }
         });
@@ -662,7 +714,13 @@ export const appRouter = router({
         role: z.enum(["user", "admin", "hr", "head_of_department", "head_of_finance", "ceo_md"]),
       }))
       .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== "admin" && ctx.user.role !== "hr") {
+        const additionalRoles = typeof ctx.user.additionalRoles === 'string' 
+          ? JSON.parse(ctx.user.additionalRoles || "[]") 
+          : (ctx.user.additionalRoles || []);
+        const hasAdminOrHr = ctx.user.role === "admin" || ctx.user.role === "hr" || 
+          additionalRoles.includes("admin") || additionalRoles.includes("hr");
+
+        if (!hasAdminOrHr) {
           throw new TRPCError({ code: "FORBIDDEN", message: "Only administrators and HR can assign roles" });
         }
 
@@ -691,7 +749,13 @@ export const appRouter = router({
         newPassword: z.string().min(6, "Password must be at least 6 characters")
       }))
       .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== "admin" && ctx.user.role !== "hr") {
+        const additionalRoles = typeof ctx.user.additionalRoles === 'string' 
+          ? JSON.parse(ctx.user.additionalRoles || "[]") 
+          : (ctx.user.additionalRoles || []);
+        const hasAdminOrHr = ctx.user.role === "admin" || ctx.user.role === "hr" || 
+          additionalRoles.includes("admin") || additionalRoles.includes("hr");
+
+        if (!hasAdminOrHr) {
           throw new TRPCError({ code: "FORBIDDEN", message: "Only admins can reset passwords" });
         }
 
@@ -712,7 +776,13 @@ export const appRouter = router({
     deleteUser: protectedProcedure
       .input(z.object({ userId: z.number() }))
       .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== "admin" && ctx.user.role !== "hr") {
+        const additionalRoles = typeof ctx.user.additionalRoles === 'string' 
+          ? JSON.parse(ctx.user.additionalRoles || "[]") 
+          : (ctx.user.additionalRoles || []);
+        const hasAdminOrHr = ctx.user.role === "admin" || ctx.user.role === "hr" || 
+          additionalRoles.includes("admin") || additionalRoles.includes("hr");
+
+        if (!hasAdminOrHr) {
           throw new TRPCError({ code: "FORBIDDEN", message: "Only admins and HR can delete users" });
         }
 
