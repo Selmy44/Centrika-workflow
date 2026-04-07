@@ -30,7 +30,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Loader2, Edit2, Trash2, Plus, Mail, User, RotateCw, X, MoreHorizontal, Key } from "lucide-react";
+import { Loader2, Edit2, Trash2, Plus, Mail, User, RotateCw, X, MoreHorizontal, Key, Phone } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { InviteUserModal } from "@/components/InviteUserModal";
@@ -76,6 +76,8 @@ export default function AdminUsers() {
   const [editGender, setEditGender] = useState("");
   const [profileImage, setProfileImage] = useState("");
   const [editProfileImage, setEditProfileImage] = useState("");
+  const [createPhoneNumber, setCreatePhoneNumber] = useState("");
+  const [editPhoneNumber, setEditPhoneNumber] = useState("");
 
   const [validationErrors, setValidationErrors] = useState<{name?: string, email?: string, department?: string, gender?: string}>({});
 
@@ -162,6 +164,7 @@ export default function AdminUsers() {
       setCreateContractEnd("");
       setCreateGender("");
       setProfileImage("");
+      setCreatePhoneNumber("");
       setValidationErrors({});
       refetch();
     },
@@ -212,6 +215,7 @@ export default function AdminUsers() {
     setEditContractEnd(userData.contractEnd || "");
     setEditGender(userData.gender || "");
     setEditProfileImage(userData.profileImage || "");
+    setEditPhoneNumber(userData.phoneNumber || "");
     setShowDialog(true);
   };
 
@@ -233,6 +237,7 @@ export default function AdminUsers() {
         contractEnd: editContractEnd || undefined,
         gender: editGender || undefined,
         profileImage: editProfileImage || undefined,
+        phoneNumber: editPhoneNumber || undefined,
       });
     } catch (error) {
       console.error(error);
@@ -520,6 +525,20 @@ export default function AdminUsers() {
                 />
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="editPhoneNumber">Phone Number</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    id="editPhoneNumber"
+                    placeholder="+250..."
+                    value={editPhoneNumber}
+                    onChange={(e) => setEditPhoneNumber(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Date of Birth</Label>
@@ -786,6 +805,20 @@ export default function AdminUsers() {
                   />
                 </div>
               </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="createPhoneNumber">Phone Number</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    id="createPhoneNumber"
+                    placeholder="+250..."
+                    value={createPhoneNumber}
+                    onChange={(e) => setCreatePhoneNumber(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+              </div>
 
             <div className="space-y-2">
               <Label htmlFor="createDate">Date of Employment</Label>
@@ -921,6 +954,7 @@ export default function AdminUsers() {
                     contractStart: createContractStart,
                     contractEnd: createContractEnd,
                     gender: createGender,
+                    phoneNumber: createPhoneNumber,
                   });
                 } catch (error: any) {
                   console.error("Mutation failed:", error);

@@ -49,7 +49,7 @@ export default function LeaveRequestForm({
   const [rejectReason, setRejectReason] = useState("");
 
   const autoFillData = useFormAutoFill();
-  
+
   const [form, setForm] = useState({
     employeeName: "",
     staffId: "",
@@ -67,6 +67,9 @@ export default function LeaveRequestForm({
     leaveDaysRemaining: 0,
     outsideCountry: "no" as "yes" | "no",
     contactDuringLeave: "",
+    backupPersonId: "",
+    backupPersonName: "",
+    backupPersonPhone: "",
     supportingDocument: null as File | null,
     supportingDocumentUrl: "",
     employeeSignature: null as File | null,
@@ -85,6 +88,7 @@ export default function LeaveRequestForm({
 
   const headsOfDept = trpc.users.listHeads.useQuery();
   const hrUsers = trpc.users.getHRUsers.useQuery();
+  const staffForBackup = (trpc as any).users.listStaffForBackup.useQuery();
 
   // Fetch the saved form JSON blob for approver/read-only views
   const savedFormData = (trpc as any).requests.getLeaveFormData.useQuery(
@@ -155,6 +159,9 @@ export default function LeaveRequestForm({
         leaveDaysTaken: d.leaveDaysTaken || prev.leaveDaysTaken,
         leaveDaysRemaining: d.leaveDaysRemaining || prev.leaveDaysRemaining,
         contactDuringLeave: d.contactDuringLeave || prev.contactDuringLeave,
+        backupPersonId: d.backupPersonId || prev.backupPersonId,
+        backupPersonName: d.backupPersonName || prev.backupPersonName,
+        backupPersonPhone: d.backupPersonPhone || prev.backupPersonPhone,
         employeeSignatureUrl: d.employeeSignatureUrl || prev.employeeSignatureUrl,
         signatureDate: d.signatureDate || prev.signatureDate,
         documentId: d.documentId || prev.documentId,
@@ -179,8 +186,8 @@ export default function LeaveRequestForm({
       toast.error("Requested days must be greater than 0. Please check dates.");
       return false;
     }
-    if (!form.contactDuringLeave.trim()) {
-      toast.error("Contact details during leave are required");
+    if (!form.backupPersonId) {
+      toast.error("Please select a backup person");
       return false;
     }
     const remaining = Number(form.leaveDaysRemaining);
@@ -252,6 +259,8 @@ export default function LeaveRequestForm({
         leaveDaysEntitled: Number(form.leaveDaysEntitled) || 0,
         leaveDaysTaken: Number(form.leaveDaysTaken) || 0,
         leaveDaysRequested: Number(form.leaveDaysRequested) || 0,
+        backupPersonName: form.backupPersonName || undefined,
+        backupPersonPhone: form.backupPersonPhone || undefined,
       });
       toast.success("Draft saved successfully");
       onSuccess?.();
@@ -279,6 +288,8 @@ export default function LeaveRequestForm({
         leaveDaysEntitled: Number(form.leaveDaysEntitled) || 0,
         leaveDaysTaken: Number(form.leaveDaysTaken) || 0,
         leaveDaysRequested: Number(form.leaveDaysRequested) || 0,
+        backupPersonName: form.backupPersonName || undefined,
+        backupPersonPhone: form.backupPersonPhone || undefined,
       });
 
       const requestId = (created as any)?.id as number;
@@ -420,9 +431,9 @@ export default function LeaveRequestForm({
                 maxDays={200}
               />
             </Row>
-            
+
             <div className="px-4 pb-4">
-              <LeaveBalanceCalculator 
+              <LeaveBalanceCalculator
                 leaveType={resolvedLeaveType}
                 startDate={form.startDate}
                 endDate={form.endDate}
@@ -453,16 +464,76 @@ export default function LeaveRequestForm({
                 <span className="text-xs font-medium text-gray-600 dark:text-slate-400">Day(s)</span>
               </div>
             </Row>
-            <Row label="2.4 Contact Details / Backup Person">
+            <Row label="2.4 Backup Person">
+              <div className="space-y-2 py-1">
+                {effectiveIsReadOnly ? (
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-blue-900 dark:text-blue-300">Name:</span>
+                      <span className="text-xs font-medium">{form.backupPersonName || "Not selected"}</span>
+                    </div>
+                    {form.backupPersonPhone && (
+                      <div className="flex items-center gap-2">
+                        <Phone size={12} className="text-blue-600" />
+                        <span className="text-xs font-medium">{form.backupPersonPhone}</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    <Select
+                      value={form.backupPersonId}
+                      onValueChange={(val) => {
+                        const selectedStaff = staffForBackup.data?.find((s: any) => String(s.id) === val);
+                        setForm({
+                          ...form,
+                          backupPersonId: val,
+                          backupPersonName: selectedStaff?.name || "",
+                          backupPersonPhone: selectedStaff?.phoneNumber || "",
+                          contactDuringLeave: `Backup: ${selectedStaff?.name || ""}${selectedStaff?.phoneNumber ? " | Tel: " + selectedStaff.phoneNumber : ""}`,
+                        });
+                      }}
+                    >
+                      <SelectTrigger className="h-8 border-blue-300 dark:border-[#3b6dae]/40 text-xs">
+                        <SelectValue placeholder="Select a backup person..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {staffForBackup.data
+                          ?.filter((s: any) => s.id !== user?.id)
+                          .map((s: any) => (
+                            <SelectItem key={s.id} value={String(s.id)}>
+                              <span className="font-medium">{s.name}</span>
+                              {s.department && <span className="text-muted-foreground ml-1">({s.department})</span>}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    {form.backupPersonPhone && (
+                      <div className="flex items-center gap-2 bg-blue-50 dark:bg-[#1a385c] rounded px-3 py-1.5 border border-blue-200 dark:border-[#3b6dae]/30">
+                        <Phone size={14} className="text-blue-600 shrink-0" />
+                        <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">{form.backupPersonPhone}</span>
+                        {form.backupPersonName && (
+                          <span className="text-xs text-gray-500 dark:text-slate-400 ml-1">— {form.backupPersonName}</span>
+                        )}
+                      </div>
+                    )}
+                    {form.backupPersonId && !form.backupPersonPhone && (
+                      <p className="text-xs text-amber-600 dark:text-amber-400 italic">No phone number on file for this staff member</p>
+                    )}
+                  </>
+                )}
+              </div>
+            </Row>
+            <Row label="2.5 Additional Contact Notes">
               <Textarea
                 value={form.contactDuringLeave}
                 onChange={(e) => setForm({ ...form, contactDuringLeave: e.target.value })}
                 disabled={effectiveIsReadOnly}
-                placeholder="Provide details about who will cover your duties and how to reach you..."
-                className="min-h-16 border-blue-300 dark:border-[#3b6dae]/40 text-xs"
+                placeholder="Optional: additional contact info or notes during your leave..."
+                className="min-h-12 border-blue-300 dark:border-[#3b6dae]/40 text-xs"
               />
             </Row>
-            <Row label="2.5 Will you be outside the country?">
+            <Row label="2.6 Will you be outside the country?">
               <div className="flex gap-4">
                 <label className="flex items-center gap-2 text-xs">
                   <input
@@ -534,9 +605,9 @@ export default function LeaveRequestForm({
                 )}
                 <div className="mt-2 w-[240px]">
                   <p className="text-xs font-semibold text-blue-900 mb-1">Signature Date</p>
-                  <Input 
-                    value={form.signatureDate || new Date().toISOString().split("T")[0]} 
-                    readOnly 
+                  <Input
+                    value={form.signatureDate || new Date().toISOString().split("T")[0]}
+                    readOnly
                     className="h-8 bg-gray-100 dark:bg-[#295482] text-gray-600 dark:text-slate-400 font-medium cursor-not-allowed w-full border-blue-200 dark:border-[#3b6dae]/30 text-xs"
                   />
                 </div>
@@ -587,10 +658,10 @@ export default function LeaveRequestForm({
                       <>
                         <input type="file" accept="image/*" onChange={(e) => setApproverSignature(e.target.files?.[0] || null)} className="block w-full text-xs text-slate-500 file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:font-semibold file:bg-[#3b6dae]/10 file:text-[#3b6dae] hover:file:bg-[#3b6dae]/20 border border-[#3b6dae]/30 rounded-lg p-1 transition-colors hover:border-[#3b6dae]/60 cursor-pointer mb-2 block" />
                         {approverSignature && (
-                          <img 
-                            src={URL.createObjectURL(approverSignature)} 
-                            alt="HOD Signature Preview" 
-                            className="h-10 object-contain border border-blue-300 dark:border-[#3b6dae]/40 p-1" 
+                          <img
+                            src={URL.createObjectURL(approverSignature)}
+                            alt="HOD Signature Preview"
+                            className="h-10 object-contain border border-blue-300 dark:border-[#3b6dae]/40 p-1"
                           />
                         )}
                       </>
@@ -616,13 +687,13 @@ export default function LeaveRequestForm({
           </div>
           <div className="flex gap-2">
             {isApprover && !isReadOnly && (
-               <Button variant="destructive" onClick={() => setShowRejectDialog(true)}>Reject</Button>
+              <Button variant="destructive" onClick={() => setShowRejectDialog(true)}>Reject</Button>
             )}
             {isApprover && !isReadOnly && (
-               <Button disabled={isLoading} onClick={() => onApprove?.({ comments: approvalComments, signatureFile: approverSignature, selectedHR })} className="bg-green-600 hover:bg-green-700">
-                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                 Approve
-               </Button>
+              <Button disabled={isLoading} onClick={() => onApprove?.({ comments: approvalComments, signatureFile: approverSignature, selectedHR })} className="bg-green-600 hover:bg-green-700">
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Approve
+              </Button>
             )}
 
             {!isApprover && !isReadOnly && (
