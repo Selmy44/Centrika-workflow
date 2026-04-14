@@ -99,7 +99,8 @@ export function LeaveBalanceCalculator({
       entitled: entitledDays,
       taken: historyTaken,
     });
-  }, [requestedDays, entitledDays, historyTaken, onCalculated]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requestedDays, entitledDays, historyTaken]);
 
   const currentBalance = entitledDays === "Unlimited" ? "Unlimited" : (Number(entitledDays) - historyTaken);
   const newBalance = entitledDays === "Unlimited" ? "Unlimited" : (Number(currentBalance) - requestedDays);

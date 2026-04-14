@@ -16,7 +16,27 @@ export function useAuth(options?: UseAuthOptions) {
   const hasRole = useCallback((user: any, roleToCheck: string) => {
     if (!user) return false;
     if (user.role === roleToCheck) return true;
-    if (user.additionalRoles && user.additionalRoles.includes(roleToCheck)) return true;
+    
+    // Handle additionalRoles which can be a JSON string or an array
+    if (user.additionalRoles) {
+      if (typeof user.additionalRoles === 'string') {
+        try {
+          // If it starts with [ it's likely a JSON array
+          const trimmed = user.additionalRoles.trim();
+          if (trimmed.startsWith('[')) {
+            const roles = JSON.parse(trimmed);
+            return Array.isArray(roles) && roles.includes(roleToCheck);
+          }
+          // Fallback to simple string check if it contains the role
+          return trimmed.split(',').map((r: string) => r.trim()).includes(roleToCheck);
+        } catch (e) {
+          // If parsing fails, fall back to simple string check
+          return user.additionalRoles.includes(roleToCheck);
+        }
+      } else if (Array.isArray(user.additionalRoles)) {
+        return user.additionalRoles.includes(roleToCheck);
+      }
+    }
     return false;
   }, []);
 
