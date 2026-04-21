@@ -71,8 +71,14 @@ export const appRouter = router({
           });
         }
 
+        const normalizedInputEmail = input.email.trim().toLowerCase();
         const existingUser = await prisma.user.findFirst({
-          where: { email: input.email }
+          where: {
+            email: {
+              equals: normalizedInputEmail,
+              mode: "insensitive"
+            }
+          }
         });
 
         if (existingUser) {
@@ -123,7 +129,13 @@ export const appRouter = router({
           });
         }
 
-        const welcomeEmail = emailTemplates.welcomeEmail(input.name, input.email);
+        const welcomeEmail = emailTemplates.welcomeEmail(input.name, input.email, {
+          dept: "SYSTEM",
+          pos: "USER",
+          topic: "WELCOME",
+          action: "ACCOUNT-CREATED",
+          level: "NORMAL"
+        });
         await sendEmail(input.email, welcomeEmail.subject, welcomeEmail.html);
 
         return {
@@ -139,20 +151,31 @@ export const appRouter = router({
         password: z.string().min(6, "Invalid password"),
       }))
       .mutation(async ({ ctx, input }) => {
+        const normalizedEmail = input.email.trim().toLowerCase();
+        console.log(`[Auth] Login attempt for: ${normalizedEmail}`);
+
         const user = await prisma.user.findFirst({
-          where: { email: input.email }
+          where: {
+            email: {
+              equals: normalizedEmail,
+              mode: "insensitive"
+            }
+          }
         });
 
         if (!user) {
+          console.warn(`[Auth] Login failed: user not found for ${normalizedEmail}`);
           throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid email or password" });
         }
 
         if (!user.password) {
+          console.warn(`[Auth] Login failed: no password set for user ${user.id} (${normalizedEmail})`);
           throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid email or password" });
         }
 
         const isPasswordValid = await bcrypt.compare(input.password, user.password);
         if (!isPasswordValid) {
+          console.warn(`[Auth] Login failed: wrong password for user ${user.id} (${normalizedEmail})`);
           throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid email or password" });
         }
 
@@ -161,11 +184,14 @@ export const appRouter = router({
           throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "User email not found" });
         }
 
+        console.log(`[Auth] Password valid for user ${user.id}, sending OTP to ${user.email}`);
         const otpResult = await sendOtp(user.id, "email", user.email);
         if (!otpResult.success) {
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to send OTP" });
+          console.error(`[Auth] OTP send failed for user ${user.id}: ${otpResult.message}`);
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to send verification code. Please try again." });
         }
 
+        console.log(`[Auth] OTP sent successfully for user ${user.id}`);
         return {
           success: true,
           message: "OTP sent to your email",
@@ -179,15 +205,32 @@ export const appRouter = router({
         code: z.string().min(6, "Invalid OTP code"),
       }))
       .mutation(async ({ ctx, input }) => {
+        const normalizedEmail = input.email.trim().toLowerCase();
         const user = await prisma.user.findFirst({
-          where: { email: input.email }
+          where: {
+            email: {
+              equals: normalizedEmail,
+              mode: "insensitive"
+            }
+          }
         });
 
         if (!user) {
-          throw new TRPCError({ code: "UNAUTHORIZED", message: "User not found" });
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "This email address is not registered in our system. Please contact HR to create an account." });
         }
 
-        const otpResult = await verifyOtp(user.id, input.code, "email");
+        // Ensure user has an openId
+        if (!user.openId) {
+          const newOpenId = `email-${crypto.randomBytes(16).toString("hex")}`;
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { openId: newOpenId }
+          });
+          user.openId = newOpenId;
+        }
+
+        // Trim the OTP code to handle pasted whitespace
+        const otpResult = await verifyOtp(user.id, input.code.trim(), "email");
         if (!otpResult.success) {
           throw new TRPCError({ code: "UNAUTHORIZED", message: otpResult.message || "Invalid or expired OTP" });
         }
@@ -291,7 +334,12 @@ export const appRouter = router({
         // If email is being changed, check it's not already in use by someone else
         if (input.email && input.email !== ctx.user.email) {
           const existing = await prisma.user.findFirst({
-            where: { email: input.email }
+            where: {
+              email: {
+                equals: input.email.trim().toLowerCase(),
+                mode: "insensitive"
+              }
+            }
           });
           if (existing) {
             throw new TRPCError({ code: "CONFLICT", message: "Email is already in use" });
@@ -372,7 +420,18 @@ export const appRouter = router({
           }
         });
 
-        const passwordChangedEmail = emailTemplates.passwordChangedEmail(userWithPassword.name || "User");
+        const userWithDept = await prisma.user.findUnique({
+          where: { id: userWithPassword.id },
+          include: { department: true }
+        });
+
+        const passwordChangedEmail = emailTemplates.passwordChangedEmail(userWithPassword.name || "User", {
+          dept: userWithDept?.department?.name || "SYSTEM",
+          pos: userWithDept?.position || "USER",
+          topic: "SECURITY",
+          action: "PASSWORD-CHANGED",
+          level: "URGENT"
+        });
         await sendEmail(userWithPassword.email || "", passwordChangedEmail.subject, passwordChangedEmail.html);
 
         return { success: true };
@@ -426,12 +485,28 @@ export const appRouter = router({
         email: z.string().email("Invalid email"),
       }))
       .mutation(async ({ input }) => {
+        const normalizedEmail = input.email.trim().toLowerCase();
         const user = await prisma.user.findFirst({
-          where: { email: input.email }
+          where: {
+            email: {
+              equals: normalizedEmail,
+              mode: "insensitive"
+            }
+          }
         });
 
-        if (!user || !user.password) {
-          return { success: true, message: "If email exists, you will receive reset instructions" };
+        if (!user) {
+          throw new TRPCError({ 
+            code: "NOT_FOUND", 
+            message: "This email address is not registered in our system. Please contact HR to create an account." 
+          });
+        }
+
+        if (!user.password) {
+          throw new TRPCError({ 
+            code: "BAD_REQUEST", 
+            message: "This account does not have a password set. Please contact support." 
+          });
         }
 
         const resetToken = crypto.randomBytes(32).toString("hex");
@@ -446,10 +521,21 @@ export const appRouter = router({
         });
 
         const resetLink = `${ENV.appUrl}/reset-password?token=${resetToken}`;
-        const resetEmail = emailTemplates.passwordResetEmail(user.name || "User", resetLink);
+        const userWithDeptForReset = await prisma.user.findUnique({
+          where: { id: user.id },
+          include: { department: true }
+        });
+
+        const resetEmail = emailTemplates.passwordResetEmail(user.name || "User", resetLink, {
+          dept: userWithDeptForReset?.department?.name || "SYSTEM",
+          pos: userWithDeptForReset?.position || "USER",
+          topic: "SECURITY",
+          action: "PASSWORD-RESET-REQUEST",
+          level: "URGENT"
+        });
         await sendEmail(input.email, resetEmail.subject, resetEmail.html);
 
-        return { success: true, message: "If email exists, you will receive reset instructions" };
+        return { success: true, message: "Password reset instructions have been sent to your email" };
       }),
 
     resetPassword: publicProcedure
@@ -490,7 +576,18 @@ export const appRouter = router({
           data: { usedAt: new Date() }
         });
 
-        const confirmEmail = emailTemplates.passwordChangedEmail(resetToken.user.name || "User");
+        const userWithDeptForConfirm = await prisma.user.findUnique({
+          where: { id: resetToken.userId },
+          include: { department: true }
+        });
+
+        const confirmEmail = emailTemplates.passwordChangedEmail(resetToken.user.name || "User", {
+          dept: userWithDeptForConfirm?.department?.name || "SYSTEM",
+          pos: userWithDeptForConfirm?.position || "USER",
+          topic: "SECURITY",
+          action: "PASSWORD-RESET-SUCCESS",
+          level: "URGENT"
+        });
         await sendEmail(resetToken.user.email || "", confirmEmail.subject, confirmEmail.html);
 
         return { success: true, message: "Password reset successfully" };
@@ -566,10 +663,10 @@ export const appRouter = router({
     }),
 
     listAll: protectedProcedure.query(async ({ ctx }) => {
-      const additionalRoles = typeof ctx.user.additionalRoles === 'string' 
-        ? JSON.parse(ctx.user.additionalRoles || "[]") 
+      const additionalRoles = typeof ctx.user.additionalRoles === 'string'
+        ? JSON.parse(ctx.user.additionalRoles || "[]")
         : (ctx.user.additionalRoles || []);
-      const hasAdminOrHr = ctx.user.role === "admin" || ctx.user.role === "hr" || 
+      const hasAdminOrHr = ctx.user.role === "admin" || ctx.user.role === "hr" ||
         additionalRoles.includes("admin") || additionalRoles.includes("hr");
 
       if (!hasAdminOrHr) {
@@ -597,10 +694,10 @@ export const appRouter = router({
         gender: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        const additionalRoles = typeof ctx.user.additionalRoles === 'string' 
-          ? JSON.parse(ctx.user.additionalRoles || "[]") 
+        const additionalRoles = typeof ctx.user.additionalRoles === 'string'
+          ? JSON.parse(ctx.user.additionalRoles || "[]")
           : (ctx.user.additionalRoles || []);
-        const hasAdminOrHr = ctx.user.role === "admin" || ctx.user.role === "hr" || 
+        const hasAdminOrHr = ctx.user.role === "admin" || ctx.user.role === "hr" ||
           additionalRoles.includes("admin") || additionalRoles.includes("hr");
 
         if (!hasAdminOrHr) {
@@ -608,7 +705,12 @@ export const appRouter = router({
         }
 
         const existingUser = await prisma.user.findFirst({
-          where: { email: input.email }
+          where: {
+            email: {
+              equals: input.email.trim().toLowerCase(),
+              mode: "insensitive"
+            }
+          }
         });
         if (existingUser) {
           throw new TRPCError({ code: "CONFLICT", message: "Email already exists" });
@@ -674,10 +776,10 @@ export const appRouter = router({
         profileImage: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        const additionalRoles = typeof ctx.user.additionalRoles === 'string' 
-          ? JSON.parse(ctx.user.additionalRoles || "[]") 
+        const additionalRoles = typeof ctx.user.additionalRoles === 'string'
+          ? JSON.parse(ctx.user.additionalRoles || "[]")
           : (ctx.user.additionalRoles || []);
-        const hasAdminOrHr = ctx.user.role === "admin" || ctx.user.role === "hr" || 
+        const hasAdminOrHr = ctx.user.role === "admin" || ctx.user.role === "hr" ||
           additionalRoles.includes("admin") || additionalRoles.includes("hr");
 
         if (!hasAdminOrHr) {
@@ -714,10 +816,10 @@ export const appRouter = router({
         role: z.enum(["user", "admin", "hr", "head_of_department", "head_of_finance", "ceo_md"]),
       }))
       .mutation(async ({ ctx, input }) => {
-        const additionalRoles = typeof ctx.user.additionalRoles === 'string' 
-          ? JSON.parse(ctx.user.additionalRoles || "[]") 
+        const additionalRoles = typeof ctx.user.additionalRoles === 'string'
+          ? JSON.parse(ctx.user.additionalRoles || "[]")
           : (ctx.user.additionalRoles || []);
-        const hasAdminOrHr = ctx.user.role === "admin" || ctx.user.role === "hr" || 
+        const hasAdminOrHr = ctx.user.role === "admin" || ctx.user.role === "hr" ||
           additionalRoles.includes("admin") || additionalRoles.includes("hr");
 
         if (!hasAdminOrHr) {
@@ -749,10 +851,10 @@ export const appRouter = router({
         newPassword: z.string().min(6, "Password must be at least 6 characters")
       }))
       .mutation(async ({ ctx, input }) => {
-        const additionalRoles = typeof ctx.user.additionalRoles === 'string' 
-          ? JSON.parse(ctx.user.additionalRoles || "[]") 
+        const additionalRoles = typeof ctx.user.additionalRoles === 'string'
+          ? JSON.parse(ctx.user.additionalRoles || "[]")
           : (ctx.user.additionalRoles || []);
-        const hasAdminOrHr = ctx.user.role === "admin" || ctx.user.role === "hr" || 
+        const hasAdminOrHr = ctx.user.role === "admin" || ctx.user.role === "hr" ||
           additionalRoles.includes("admin") || additionalRoles.includes("hr");
 
         if (!hasAdminOrHr) {
@@ -776,10 +878,10 @@ export const appRouter = router({
     deleteUser: protectedProcedure
       .input(z.object({ userId: z.number() }))
       .mutation(async ({ ctx, input }) => {
-        const additionalRoles = typeof ctx.user.additionalRoles === 'string' 
-          ? JSON.parse(ctx.user.additionalRoles || "[]") 
+        const additionalRoles = typeof ctx.user.additionalRoles === 'string'
+          ? JSON.parse(ctx.user.additionalRoles || "[]")
           : (ctx.user.additionalRoles || []);
-        const hasAdminOrHr = ctx.user.role === "admin" || ctx.user.role === "hr" || 
+        const hasAdminOrHr = ctx.user.role === "admin" || ctx.user.role === "hr" ||
           additionalRoles.includes("admin") || additionalRoles.includes("hr");
 
         if (!hasAdminOrHr) {

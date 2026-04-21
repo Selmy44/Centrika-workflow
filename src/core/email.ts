@@ -60,10 +60,23 @@ export async function sendEmail(to: string, subject: string, html: string) {
   }
 }
 
+export interface EmailMetadata {
+  dept?: string;
+  pos?: string;
+  topic: string;
+  action: string;
+  level?: string;
+}
+
+export function formatEmailSubject(meta: EmailMetadata) {
+  const { dept = "SYSTEM", pos = "N/A", topic, action, level = "NORMAL" } = meta;
+  return `CTK-${dept.toUpperCase()}-${pos.toUpperCase()}-${topic}-${action}-${level.toUpperCase()}`;
+}
+
 // Email templates
 export const emailTemplates = {
-  welcomeEmail: (name: string, email: string, password?: string) => ({
-    subject: "Welcome to Centrika OnePortal",
+  welcomeEmail: (name: string, email: string, meta: EmailMetadata, password?: string) => ({
+    subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; color: white; text-align: center;">
@@ -101,8 +114,8 @@ export const emailTemplates = {
     `,
   }),
 
-  passwordResetEmail: (name: string, resetLink: string) => ({
-    subject: "Password Reset Request - Centrika OnePortal",
+  passwordResetEmail: (name: string, resetLink: string, meta: EmailMetadata) => ({
+    subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; color: white; text-align: center;">
@@ -142,8 +155,8 @@ export const emailTemplates = {
     `,
   }),
 
-  passwordChangedEmail: (name: string) => ({
-    subject: "Password Changed Successfully - Centrika OnePortal",
+  passwordChangedEmail: (name: string, meta: EmailMetadata) => ({
+    subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; color: white; text-align: center;">
@@ -171,8 +184,8 @@ export const emailTemplates = {
     `,
   }),
 
-  otpEmail: (name: string, code: string, expiryMinutes: number = 10) => ({
-    subject: "Your Login Code - Centrika OnePortal",
+  otpEmail: (name: string, code: string, meta: EmailMetadata, expiryMinutes: number = 10) => ({
+    subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; color: white; text-align: center;">
@@ -209,8 +222,8 @@ export const emailTemplates = {
     `,
   }),
 
-  magicLinkEmail: (name: string, magicLink: string) => ({
-    subject: "Your Magic Login Link - Centrika OnePortal",
+  magicLinkEmail: (name: string, magicLink: string, meta: EmailMetadata) => ({
+    subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; color: white; text-align: center;">
@@ -249,8 +262,8 @@ export const emailTemplates = {
     `,
   }),
 
-  mfaSetupEmail: (name: string, code: string) => ({
-    subject: "Confirm Your Multi-Factor Authentication - Centrika OnePortal",
+  mfaSetupEmail: (name: string, code: string, meta: EmailMetadata) => ({
+    subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; color: white; text-align: center;">
@@ -284,8 +297,8 @@ export const emailTemplates = {
     `,
   }),
 
-  leaveRequestSubmittedEmail: (employeeName: string, hodName: string, requestNumber: string, startDate: string, endDate: string) => ({
-    subject: `New Leave Request #${requestNumber} from ${employeeName}`,
+  leaveRequestSubmittedEmail: (employeeName: string, hodName: string, requestNumber: string, startDate: string, endDate: string, meta: EmailMetadata) => ({
+    subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; color: white; text-align: center;">
@@ -327,8 +340,8 @@ export const emailTemplates = {
     `,
   }),
 
-  leaveRequestApprovedEmail: (employeeName: string, approverName: string, requestNumber: string, startDate: string, endDate: string) => ({
-    subject: `Your Leave Request #${requestNumber} Has Been Approved`,
+  leaveRequestApprovedEmail: (employeeName: string, approverName: string, requestNumber: string, startDate: string, endDate: string, meta: EmailMetadata) => ({
+    subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); padding: 40px; color: white; text-align: center;">
@@ -370,8 +383,8 @@ export const emailTemplates = {
     `,
   }),
 
-  leaveRequestRejectedEmail: (employeeName: string, approverName: string, requestNumber: string, reason: string) => ({
-    subject: `Your Leave Request #${requestNumber} Has Been Rejected`,
+  leaveRequestRejectedEmail: (employeeName: string, approverName: string, requestNumber: string, reason: string, meta: EmailMetadata) => ({
+    subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); padding: 40px; color: white; text-align: center;">
@@ -412,8 +425,8 @@ export const emailTemplates = {
     `,
   }),
 
-  userInvitationEmail: (name: string, email: string, inviteLink: string, invitedBy: string) => ({
-    subject: "Welcome to Centrika OnePortal - Complete Your Account Setup",
+  userInvitationEmail: (name: string, email: string, inviteLink: string, invitedBy: string, meta: EmailMetadata) => ({
+    subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; color: white; text-align: center;">
@@ -483,9 +496,10 @@ export const emailTemplates = {
     daysRequested: number,
     reason: string,
     requestNumber: string,
-    approvalDate: string
+    approvalDate: string,
+    meta: EmailMetadata
   ) => ({
-    subject: `Leave Approved: ${employeeName} - ${leaveType} Leave (#${requestNumber})`,
+    subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); padding: 40px; color: white; text-align: center;">
@@ -535,8 +549,8 @@ export const emailTemplates = {
     `,
   }),
 
-  requestSubmittedEmail: (approverName: string, employeeName: string, requestType: string, requestNumber: string, detailsHtml: string) => ({
-    subject: `Action Required: New ${requestType.charAt(0).toUpperCase() + requestType.slice(1)} Request #${requestNumber}`,
+  requestSubmittedEmail: (approverName: string, employeeName: string, requestType: string, requestNumber: string, detailsHtml: string, meta: EmailMetadata) => ({
+    subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; color: white; text-align: center;">
@@ -570,8 +584,8 @@ export const emailTemplates = {
     `,
   }),
 
-  requestApprovedEmail: (employeeName: string, approverName: string, requestType: string, requestNumber: string, detailsHtml: string) => ({
-    subject: `Approved: Your ${requestType.charAt(0).toUpperCase() + requestType.slice(1)} Request #${requestNumber}`,
+  requestApprovedEmail: (employeeName: string, approverName: string, requestType: string, requestNumber: string, detailsHtml: string, meta: EmailMetadata) => ({
+    subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); padding: 40px; color: white; text-align: center;">
@@ -597,8 +611,8 @@ export const emailTemplates = {
     `,
   }),
 
-  requestRejectedEmail: (employeeName: string, approverName: string, requestType: string, requestNumber: string, reason: string) => ({
-    subject: `Update: Your ${requestType.charAt(0).toUpperCase() + requestType.slice(1)} Request #${requestNumber} was Rejected`,
+  requestRejectedEmail: (employeeName: string, approverName: string, requestType: string, requestNumber: string, reason: string, meta: EmailMetadata) => ({
+    subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); padding: 40px; color: white; text-align: center;">
@@ -624,8 +638,8 @@ export const emailTemplates = {
     `,
   }),
 
-  observerNotificationEmail: (recipientName: string, employeeName: string, approverName: string, actionType: "APPROVED" | "REJECTED", requestType: string, requestNumber: string, detailsHtml: string) => ({
-    subject: `FYI: ${employeeName}'s ${requestType} Request #${requestNumber} was ${actionType}`,
+  observerNotificationEmail: (recipientName: string, employeeName: string, approverName: string, actionType: "APPROVED" | "REJECTED", requestType: string, requestNumber: string, detailsHtml: string, meta: EmailMetadata) => ({
+    subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, ${actionType === "APPROVED" ? "#28a745 0%, #20c997 100%" : "#dc3545 0%, #c82333 100%"}); padding: 40px; color: white; text-align: center;">
@@ -650,6 +664,150 @@ export const emailTemplates = {
             </a>
           </div>
           <p style="font-size: 12px; color: #999; margin-top: 30px;">This is an automated message. Please do not reply to this email.</p>
+        </div>
+      </div>
+    `,
+  }),
+
+  announcementPostedEmail: (recipientName: string, authorName: string, authorRole: string, announcementTitle: string, announcementContent: string, meta: EmailMetadata) => ({
+    subject: formatEmailSubject(meta),
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, #3b6dae 0%, #2d5385 100%); padding: 40px; color: white; text-align: center;">
+          <h1 style="margin: 0; font-size: 22px;">📢 New Internal Communication</h1>
+          <p style="margin: 10px 0 0 0; font-size: 14px; opacity: 0.9;">Centrika OnePortal</p>
+        </div>
+        <div style="padding: 40px; background: #f9f9f9;">
+          <p style="font-size: 16px; color: #333;">Hello <strong>${recipientName}</strong>,</p>
+          
+          <p style="font-size: 14px; color: #666; line-height: 1.6;">
+            <strong>${authorName}</strong> (${authorRole}) has shared a new communication on the Centrika OnePortal.
+          </p>
+
+          <div style="background: white; padding: 24px; border-radius: 8px; margin: 24px 0; border-left: 4px solid #c79d2d;">
+            <h3 style="color: #3b6dae; margin-top: 0; font-size: 18px;">${announcementTitle}</h3>
+            <p style="font-size: 14px; color: #555; line-height: 1.7; margin-bottom: 0;">
+              ${announcementContent.length > 300 ? announcementContent.substring(0, 300) + "..." : announcementContent}
+            </p>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://centrika.rw/dashboard" style="background: linear-gradient(135deg, #3b6dae 0%, #2d5385 100%); color: white; padding: 14px 35px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 14px;">
+              View on OnePortal
+            </a>
+          </div>
+
+          <p style="font-size: 12px; color: #999; margin-top: 30px;">
+            This is an automated message. Please do not reply to this email.
+          </p>
+        </div>
+        <div style="background: #333; padding: 20px; color: white; text-align: center; font-size: 12px;">
+          <p>&copy; 2026 Centrika. All rights reserved.</p>
+        </div>
+      </div>
+    `,
+  }),
+
+  newCommentEmail: (recipientName: string, commenterName: string, commenterPosition: string, announcementTitle: string, commentContent: string, meta: EmailMetadata) => ({
+    subject: formatEmailSubject(meta),
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, #c79d2d 0%, #a67c00 100%); padding: 40px; color: white; text-align: center;">
+          <h1 style="margin: 0; font-size: 22px;">💬 New Comment Added</h1>
+          <p style="margin: 10px 0 0 0; font-size: 14px; opacity: 0.9;">Centrika OnePortal</p>
+        </div>
+        <div style="padding: 40px; background: #f9f9f9;">
+          <p style="font-size: 16px; color: #333;">Hello <strong>${recipientName}</strong>,</p>
+          
+          <p style="font-size: 14px; color: #666; line-height: 1.6;">
+            <strong>${commenterName}</strong> (${commenterPosition || "Staff"}) has posted a new comment on <strong>"${announcementTitle}"</strong>.
+          </p>
+
+          <div style="background: white; padding: 24px; border-radius: 8px; margin: 24px 0; border-left: 4px solid #3b6dae;">
+            <p style="font-size: 14px; color: #333; line-height: 1.7; margin-bottom: 0;">
+              ${commentContent.length > 300 ? commentContent.substring(0, 300) + "..." : commentContent}
+            </p>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://centrika.rw/dashboard" style="background: linear-gradient(135deg, #3b6dae 0%, #2d5385 100%); color: white; padding: 14px 35px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 14px;">
+              View on OnePortal
+            </a>
+          </div>
+
+          <p style="font-size: 12px; color: #999; margin-top: 30px;">
+            This is an automated message. Please do not reply to this email.
+          </p>
+        </div>
+        <div style="background: #333; padding: 20px; color: white; text-align: center; font-size: 12px;">
+          <p>&copy; 2026 Centrika. All rights reserved.</p>
+        </div>
+      </div>
+    `,
+  }),
+
+  newSuggestionEmail: (recipientName: string, roleName: string, suggestionContent: string, meta: EmailMetadata) => ({
+    subject: formatEmailSubject(meta),
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, #c79d2d 0%, #a67c00 100%); padding: 40px; color: white; text-align: center;">
+          <h1 style="margin: 0; font-size: 22px;">📥 Incoming Feedback</h1>
+          <p style="margin: 10px 0 0 0; font-size: 14px; opacity: 0.9;">Centrika OnePortal</p>
+        </div>
+        <div style="padding: 40px; background: #f9f9f9;">
+          <p style="font-size: 16px; color: #333;">Hello <strong>${recipientName}</strong>,</p>
+          
+          <p style="font-size: 14px; color: #666; line-height: 1.6;">
+            A staff member has submitted a new suggestion tagging the <strong>${roleName}</strong> department/role.
+          </p>
+
+          <div style="background: white; padding: 24px; border-radius: 8px; margin: 24px 0; border-left: 4px solid #c79d2d;">
+            <p style="font-size: 14px; color: #333; line-height: 1.7; margin-bottom: 0; white-space: pre-wrap;">
+              ${suggestionContent.length > 300 ? suggestionContent.substring(0, 300) + "..." : suggestionContent}
+            </p>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://centrika.rw/dashboard" style="background: linear-gradient(135deg, #3b6dae 0%, #2d5385 100%); color: white; padding: 14px 35px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 14px;">
+              Review in Inbox
+            </a>
+          </div>
+        </div>
+        <div style="background: #333; padding: 20px; color: white; text-align: center; font-size: 12px;">
+          <p>&copy; 2026 Centrika. All rights reserved.</p>
+        </div>
+      </div>
+    `,
+  }),
+
+  feedbackReplyEmail: (recipientName: string, replierPosition: string, replyContent: string, meta: EmailMetadata) => ({
+    subject: formatEmailSubject(meta),
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, #3b6dae 0%, #2d5385 100%); padding: 40px; color: white; text-align: center;">
+          <h1 style="margin: 0; font-size: 22px;">📩 Feedback Reply</h1>
+        </div>
+        <div style="padding: 40px; background: #f9f9f9;">
+          <p style="font-size: 16px; color: #333;">Hello <strong>${recipientName}</strong>,</p>
+          
+          <p style="font-size: 14px; color: #666; line-height: 1.6;">
+            <strong>${replierPosition}</strong> has replied to your recent feedback submission.
+          </p>
+
+          <div style="background: white; padding: 24px; border-radius: 8px; margin: 24px 0; border-left: 4px solid #3b6dae;">
+            <p style="font-size: 14px; color: #333; line-height: 1.7; margin-bottom: 0; white-space: pre-wrap;">
+              ${replyContent.length > 300 ? replyContent.substring(0, 300) + "..." : replyContent}
+            </p>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://centrika.rw/dashboard" style="background: linear-gradient(135deg, #3b6dae 0%, #2d5385 100%); color: white; padding: 14px 35px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 14px;">
+              View Full Conversation
+            </a>
+          </div>
+        </div>
+        <div style="background: #333; padding: 20px; color: white; text-align: center; font-size: 12px;">
+          <p>&copy; 2026 Centrika. All rights reserved.</p>
         </div>
       </div>
     `,

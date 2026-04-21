@@ -137,6 +137,9 @@ export function validateFile(
     "image/webp",
     "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "video/mp4",
+    "video/webm",
+    "video/quicktime",
   ];
 
   if (!allowedTypes.includes(mimeType)) {

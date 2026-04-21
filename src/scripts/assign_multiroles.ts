@@ -17,7 +17,7 @@ async function main() {
     });
     console.log("Updated dmbabazi@centrika.rw to HOD + HR");
   } else {
-    console.warn("User dmbabazi@centrika.rw not found"); 
+    console.warn("User dmbabazi@centrika.rw not found");
   }
 
   // 2. Assign HOD + Finance to pndabarasa@centrika.rw

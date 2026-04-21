@@ -285,7 +285,7 @@ export const requestsRouter = router({
     .mutation(async ({ ctx, input }) => {
       const request = await prisma.request.findUnique({
         where: { id: input.id },
-        include: { user: true }
+        include: { user: { include: { department: true } } }
       });
 
       if (!request) throw new TRPCError({ code: "NOT_FOUND" });
@@ -376,7 +376,14 @@ export const requestsRouter = router({
             request.user.name || "Employee",
             request.type,
             docId,
-            detailsHtml
+            detailsHtml,
+            {
+              dept: request.user.department?.name || "N/A",
+              pos: request.user.position || "Staff",
+              topic: `${request.type.toUpperCase()} REQUEST`,
+              action: "SUBMITTED",
+              level: "MODERATE"
+            }
           );
           await sendEmail(approver.email, emailContent.subject, emailContent.html);
         }
@@ -482,7 +489,7 @@ export const requestsRouter = router({
     .mutation(async ({ ctx, input }) => {
       const request = await prisma.request.findUnique({
         where: { id: input.requestId },
-        include: { user: true }
+        include: { user: { include: { department: true } } }
       });
 
       if (!request) throw new TRPCError({ code: "NOT_FOUND" });
@@ -515,7 +522,14 @@ export const requestsRouter = router({
               approver.name || "Manager",
               request.type,
               docId,
-              detailsHtml
+              detailsHtml,
+              {
+                dept: request.user.department?.name || "N/A",
+                pos: request.user.position || "Staff",
+                topic: `${request.type.toUpperCase()} REQUEST`,
+                action: "APPROVED",
+                level: "NORMAL"
+              }
             );
             await sendEmail(request.user.email, emailContent.subject, emailContent.html);
           }
@@ -558,7 +572,14 @@ export const requestsRouter = router({
                 "APPROVED",
                 request.type,
                 docId,
-                detailsHtml
+                detailsHtml,
+                {
+                  dept: request.user.department?.name || "N/A",
+                  pos: request.user.position || "Staff",
+                  topic: `${request.type.toUpperCase()} NOTIFICATION`,
+                  action: "OBSERVED-APPROVED",
+                  level: "NORMAL"
+                }
               );
               await sendEmail(recipient.email, notifEmail.subject, notifEmail.html);
             }
@@ -599,7 +620,14 @@ export const requestsRouter = router({
               request.user.name || "Employee",
               request.type,
               docId,
-              detailsHtml
+              detailsHtml,
+              {
+                dept: request.user.department?.name || "N/A",
+                pos: request.user.position || "Staff",
+                topic: `${request.type.toUpperCase()} ESCALATION`,
+                action: "PENDING-APPROVAL",
+                level: "URGENT"
+              }
             );
             await sendEmail(nextUser.email, emailContent.subject, emailContent.html);
           }
@@ -686,7 +714,10 @@ export const requestsRouter = router({
   rejectRequest: protectedProcedure
     .input(z.object({ requestId: z.number(), comments: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const request = await prisma.request.findUnique({ where: { id: input.requestId }, include: { user: true } });
+      const request = await prisma.request.findUnique({
+        where: { id: input.requestId },
+        include: { user: { include: { department: true } } }
+      });
       if (!request) throw new TRPCError({ code: "NOT_FOUND" });
 
       await prisma.requestApproval.updateMany({
@@ -721,7 +752,14 @@ export const requestsRouter = router({
             approver.name || "Manager",
             request.type,
             docId,
-            input.comments
+            input.comments,
+            {
+              dept: request.user.department?.name || "N/A",
+              pos: request.user.position || "Staff",
+              topic: `${request.type.toUpperCase()} REQUEST`,
+              action: "REJECTED",
+              level: "MODERATE"
+            }
           );
           await sendEmail(request.user.email, emailContent.subject, emailContent.html);
         }
@@ -747,7 +785,14 @@ export const requestsRouter = router({
               "REJECTED",
               request.type,
               docId,
-              detailsHtml + `<br/><p style="color:#d32f2f"><strong>Rejection Reason:</strong> ${input.comments}</p>`
+              detailsHtml + `<br/><p style="color:#d32f2f"><strong>Rejection Reason:</strong> ${input.comments}</p>`,
+              {
+                dept: request.user.department?.name || "N/A",
+                pos: request.user.position || "Staff",
+                topic: `${request.type.toUpperCase()} NOTIFICATION`,
+                action: "OBSERVED-REJECTED",
+                level: "MODERATE"
+              }
             );
             await sendEmail(recipient.email, notifEmail.subject, notifEmail.html);
           }

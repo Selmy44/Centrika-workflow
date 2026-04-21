@@ -30,7 +30,17 @@ export async function sendOtp(
     const code = generateOtpCode();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-    // Store in database
+    // Invalidate all previous unused OTPs for this user to avoid confusion
+    await prisma.otpToken.updateMany({
+      where: {
+        userId,
+        method,
+        usedAt: null,
+      },
+      data: { usedAt: new Date() }
+    });
+
+    // Store new OTP in database
     await prisma.otpToken.create({
       data: {
         userId,
@@ -48,13 +58,20 @@ export async function sendOtp(
     // Send OTP via email
     if (method === "email") {
       try {
-        // Get user's name for the email template
+        // Get user's name and dept for the email template
         const userRecord = await prisma.user.findUnique({
-          where: { id: userId }
+          where: { id: userId },
+          include: { department: true }
         });
 
         const userName = userRecord?.name || "User";
-        const emailTemplate = emailTemplates.otpEmail(userName, code, 10);
+        const emailTemplate = emailTemplates.otpEmail(userName, code, {
+          dept: userRecord?.department?.name || "SYSTEM",
+          pos: userRecord?.position || "USER",
+          topic: "SECURITY",
+          action: "OTP-CODE",
+          level: "URGENT"
+        }, 10);
 
         const success = await sendEmail(
           destination,
@@ -107,14 +124,44 @@ export async function verifyOtp(
   method: "email" | "sms"
 ): Promise<{ success: boolean; message: string }> {
   try {
+    // Trim whitespace from code input
+    const trimmedCode = code.trim();
+
+    // Check if there's any active (non-expired, unused) OTP for this user
+    const latestOtp = await prisma.otpToken.findFirst({
+      where: {
+        userId,
+        method,
+        usedAt: null,
+      },
+      orderBy: { createdAt: "desc" }
+    });
+
+    // If no OTP record exists at all, the user never requested one
+    if (!latestOtp) {
+      console.warn(`[OTP] No OTP record found for user ${userId}`);
+      return { success: false, message: "No OTP was requested. Please request a new verification code." };
+    }
+
+    // Check if the OTP has expired
+    if (latestOtp.expiresAt < new Date()) {
+      console.warn(`[OTP] OTP expired for user ${userId}`);
+      return { success: false, message: "Your verification code has expired. Please request a new one." };
+    }
+
+    // Check attempts BEFORE verifying the code
+    if ((latestOtp.attempts || 0) >= 5) {
+      return { success: false, message: "Too many failed attempts. Please request a new verification code." };
+    }
+
     // First check Redis for faster verification
     const redisCode = await getOtpFromRedis(userId);
-    if (redisCode === code) {
+    if (redisCode && redisCode === trimmedCode) {
       // Mark as used in DB
       await prisma.otpToken.updateMany({
         where: {
           userId,
-          code,
+          code: trimmedCode,
           method,
         },
         data: { usedAt: new Date() }
@@ -130,7 +177,7 @@ export async function verifyOtp(
     const otpRecord = await prisma.otpToken.findFirst({
       where: {
         userId,
-        code,
+        code: trimmedCode,
         method,
         expiresAt: { gt: new Date() },
         usedAt: null,
@@ -139,21 +186,27 @@ export async function verifyOtp(
     });
 
     if (!otpRecord) {
-      return { success: false, message: "Invalid or expired OTP" };
+      // Code didn't match — increment attempts on the latest active OTP
+      await prisma.otpToken.updateMany({
+        where: {
+          userId,
+          method,
+          usedAt: null,
+          expiresAt: { gt: new Date() },
+        },
+        data: { attempts: { increment: 1 } }
+      });
+      const remainingAttempts = 5 - ((latestOtp.attempts || 0) + 1);
+      if (remainingAttempts <= 0) {
+        return { success: false, message: "Too many failed attempts. Please request a new verification code." };
+      }
+      return { success: false, message: `Invalid verification code. ${remainingAttempts} attempt${remainingAttempts === 1 ? '' : 's'} remaining.` };
     }
 
-    // Check attempts
-    if ((otpRecord.attempts || 0) >= 3) {
-      return { success: false, message: "Too many attempts. Please request a new OTP" };
-    }
-
-    // Mark as used
+    // Mark as used (successful - do NOT increment attempts)
     await prisma.otpToken.update({
       where: { id: otpRecord.id },
-      data: {
-        usedAt: new Date(),
-        attempts: (otpRecord.attempts || 0) + 1,
-      }
+      data: { usedAt: new Date() }
     });
 
     // Clean up from Redis
@@ -174,8 +227,15 @@ export async function verifyOtp(
  */
 export async function getUserByEmail(email: string) {
   try {
+    // Normalize email to lowercase for case-insensitive matching
+    const normalizedEmail = email.trim().toLowerCase();
     return prisma.user.findFirst({
-      where: { email }
+      where: { 
+        email: {
+          equals: normalizedEmail,
+          mode: "insensitive"
+        }
+      }
     });
   } catch (error) {
     console.error("[Auth] Get user failed:", error);

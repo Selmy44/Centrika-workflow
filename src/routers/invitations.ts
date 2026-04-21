@@ -94,7 +94,14 @@ export const invitationsRouter = router({
           input.name,
           input.email,
           inviteLink,
-          roleDisplay
+          roleDisplay,
+          {
+            dept: "SYSTEM",
+            pos: "ADMIN",
+            topic: "ACCOUNT INVITATION",
+            action: "JOIN-ONEPORTAL",
+            level: "MODERATE"
+          }
         );
 
         try {
@@ -197,7 +204,14 @@ export const invitationsRouter = router({
           inv.name || "User",
           inv.email,
           inviteLink,
-          roleDisplay
+          roleDisplay,
+          {
+            dept: "SYSTEM",
+            pos: "ADMIN",
+            topic: "ACCOUNT INVITATION",
+            action: "RESEND-INVITE",
+            level: "MODERATE"
+          }
         );
 
         try {
@@ -339,7 +353,14 @@ export const invitationsRouter = router({
         // Send welcome email
         const welcomeEmailData = emailTemplates.welcomeEmail(
           newUser.name || "User",
-          newUser.email || ""
+          newUser.email || "",
+          {
+            dept: "SYSTEM",
+            pos: "USER",
+            topic: "WELCOME",
+            action: "ACCOUNT-ACTIVATED",
+            level: "NORMAL"
+          }
         );
 
         try {

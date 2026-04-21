@@ -59,7 +59,13 @@ async function sendOtpToAllUsers() {
         }
 
         // Send email with OTP
-        const template = emailTemplates.otpEmail(user.name || "User", result.code || "");
+        const template = emailTemplates.otpEmail(user.name || "User", result.code || "", {
+          dept: "SYSTEM",
+          pos: "USER",
+          topic: "SECURITY",
+          action: "FORCE-OTP-RESET",
+          level: "URGENT"
+        });
         await sendEmail(user.email, template.subject, template.html);
 
         console.log(`   ✅ OTP sent successfully (Code: ${result.code})`);

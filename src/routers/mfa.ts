@@ -29,10 +29,11 @@ export const mfaRouter = router({
         if (!user) {
           throw new TRPCError({
             code: "NOT_FOUND",
-            message: "User not found",
+            message: "This email address is not registered in our system. Please contact HR to create an account.",
           });
         }
 
+        // sendOtp already sends the email internally - no need to send again
         const result = await sendOtp(user.id, "email", user.email!);
         if (!result.success) {
           throw new TRPCError({
@@ -40,9 +41,6 @@ export const mfaRouter = router({
             message: result.message,
           });
         }
-
-        const template = emailTemplates.otpEmail(user.name || "User", result.code || "");
-        await sendEmail(user.email!, template.subject, template.html);
 
         return {
           success: true,
@@ -66,7 +64,7 @@ export const mfaRouter = router({
     .input(
       z.object({
         email: z.string().email(),
-        code: z.string().length(6),
+        code: z.string().min(6, "Invalid OTP code"),
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -75,11 +73,21 @@ export const mfaRouter = router({
         if (!user) {
           throw new TRPCError({
             code: "NOT_FOUND",
-            message: "Invalid email or code",
+            message: "This email address is not registered in our system. Please contact HR to create an account.",
           });
         }
 
-        const result = await verifyOtp(user.id, input.code, "email");
+        // Ensure user has an openId
+        let userOpenId = user.openId;
+        if (!userOpenId) {
+          userOpenId = `email-${crypto.randomBytes(16).toString("hex")}`;
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { openId: userOpenId }
+          });
+        }
+
+        const result = await verifyOtp(user.id, input.code.trim(), "email");
         if (!result.success) {
           throw new TRPCError({
             code: "BAD_REQUEST",
@@ -88,7 +96,7 @@ export const mfaRouter = router({
         }
 
         const token = await new SignJWT({
-          openId: user.openId,
+          openId: userOpenId,
           appId: ENV.appId,
           name: user.name,
         })
@@ -149,7 +157,18 @@ export const mfaRouter = router({
         });
 
         const magicLink = `${ENV.appUrl}/auth/magic-link?token=${token}`;
-        const template = emailTemplates.magicLinkEmail(user.name || "User", magicLink);
+        const userWithDept = await prisma.user.findUnique({
+          where: { id: user.id },
+          include: { department: true }
+        });
+
+        const template = emailTemplates.magicLinkEmail(user.name || "User", magicLink, {
+          dept: userWithDept?.department?.name || "SYSTEM",
+          pos: userWithDept?.position || "USER",
+          topic: "SECURITY",
+          action: "MAGIC-LINK-LOGIN",
+          level: "URGENT"
+        });
         await sendEmail(user.email!, template.subject, template.html);
 
         return {
@@ -266,6 +285,7 @@ export const mfaRouter = router({
         });
       }
 
+      // sendOtp already sends the verification email internally — no need to send again
       const result = await sendOtp(ctx.user.id, "email", ctx.user.email!);
       if (!result.success) {
         throw new TRPCError({
@@ -273,9 +293,6 @@ export const mfaRouter = router({
           message: result.message,
         });
       }
-
-      const template = emailTemplates.mfaSetupEmail(ctx.user.name || "User", result.code || "");
-      await sendEmail(ctx.user.email!, template.subject, template.html);
 
       return {
         success: true,
