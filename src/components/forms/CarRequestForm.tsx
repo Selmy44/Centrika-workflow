@@ -179,23 +179,9 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
       }
 
       toast.success(
-        submit ? "Car request submitted successfully" : "Draft saved"
+        submit ? "🎉 Car request successfully submitted!" : "Draft saved"
       );
       onSuccess();
-      
-      // Redirect to My Requests if submitted
-      if (submit) {
-        setTimeout(() => {
-          navigate("/requests");
-        }, 500);
-      }
-      
-      // Redirect to My Requests if submitted
-      if (submit) {
-        setTimeout(() => {
-          navigate("/requests");
-        }, 500);
-      }
     } catch (e: any) {
       toast.error(e.message || "Something went wrong");
     } finally {

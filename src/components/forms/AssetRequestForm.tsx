@@ -215,15 +215,8 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                 });
             }
 
-            toast.success(submit ? "Asset request submitted for approval" : "Draft saved");
+            toast.success(submit ? "🎉 Asset request successfully submitted!" : "Draft saved");
             onSuccess?.();
-            
-            // Redirect to My Requests if submitted
-            if (submit) {
-                setTimeout(() => {
-                    navigate("/requests");
-                }, 500);
-            }
         } catch (e: any) {
             toast.error(e.message || "Submission failed");
         } finally {

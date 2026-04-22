@@ -354,12 +354,8 @@ export default function LeaveRequestForm({
         }
       }
 
-      toast.success("Request submitted successfully!");
+      toast.success("🎉 Leave request successfully submitted!");
       onSuccess?.();
-      // Redirect to My Requests page after successful submission
-      setTimeout(() => {
-        navigate("/requests");
-      }, 500);
     } catch (error: any) {
       toast.error(error.message || "Failed to submit request");
     } finally {

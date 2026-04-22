@@ -193,15 +193,8 @@ export default function UnpaidLeaveForm({ requestData, isReadOnly = false, onSuc
         }
       }
 
-      toast.success(submit ? "Unpaid leave request submitted successfully!" : "Draft saved");
+      toast.success(submit ? "🎉 Unpaid leave request successfully submitted!" : "Draft saved");
       onSuccess?.();
-      
-      // Redirect to My Requests if submitted
-      if (submit) {
-        setTimeout(() => {
-          navigate("/requests");
-        }, 500);
-      }
     } catch (error: any) {
       toast.error(error.message || "Failed to submit request");
     } finally {

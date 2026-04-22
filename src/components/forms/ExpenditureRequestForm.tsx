@@ -191,15 +191,8 @@ export default function ExpenditureRequestForm({ requestData, isReadOnly = false
         });
       }
 
-      toast.success(submit ? "Expenditure request submitted" : "Draft saved");
+      toast.success(submit ? "🎉 Expenditure request successfully submitted!" : "Draft saved");
       onSuccess?.();
-      
-      // Redirect to My Requests if submitted
-      if (submit) {
-        setTimeout(() => {
-          navigate("/requests");
-        }, 500);
-      }
     } catch (e: any) {
       toast.error(e.message || "Submission failed");
     } finally {
