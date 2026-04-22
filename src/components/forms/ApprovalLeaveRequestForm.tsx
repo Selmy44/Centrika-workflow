@@ -274,7 +274,6 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
                       setSignatureFile(null);
                       setSignaturePreview("");
                     }}
-                    backgroundColor="white"
                   />
                 </div>
               )}

@@ -83,7 +83,6 @@ export function CreateRequestDialog({
               <LeaveRequestForm
                 onSuccess={handleSuccess}
                 leaveType={selectedLeaveType}
-                onBack={handleBackToLeaveSelector}
               />
             </div>
           </DialogContent>

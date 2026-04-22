@@ -129,7 +129,7 @@ export function StaffSelector({ selectedStaffIds, onChange }: StaffSelectorProps
                   >
                     <Avatar className="h-8 w-8 rounded-lg shrink-0 border border-slate-100 shadow-sm">
                       <AvatarImage src={staff.profileImage || ""} />
-                      <AvatarFallback className="bg-slate-100 text-[#3b6dae] text-[10px] font-black">{staff.name.charAt(0)}</AvatarFallback>
+                      <AvatarFallback className="bg-slate-100 text-[#3b6dae] text-[10px] font-black">{(staff.name ?? "S").charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 overflow-hidden">
                       <p className="text-xs font-black text-slate-800 dark:text-slate-100 truncate">{staff.name}</p>

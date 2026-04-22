@@ -120,7 +120,7 @@ export function AnnouncementDetailDialog({ announcementId, isOpen, onClose }: An
                   <div className="flex items-start justify-between mb-5">
                     <div className="flex items-center gap-3">
                       <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${roleGradient} flex items-center justify-center text-white text-sm font-black shadow-md`}>
-                        {announcement.author.name.charAt(0)}
+                        {(announcement.author.name ?? "A").charAt(0)}
                       </div>
                       <div>
                         <p className="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center">

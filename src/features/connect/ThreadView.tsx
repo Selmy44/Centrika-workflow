@@ -136,7 +136,7 @@ export function ThreadView({ suggestionId }: { suggestionId: number }) {
         });
 
         const base64 = await base64Promise;
-        const result = await uploadMutation.mutateAsync({
+        const result = await (uploadMutation as any).mutateAsync({
           fileName: file.name,
           fileData: base64.split(',')[1],
           mimeType: file.type
@@ -144,8 +144,8 @@ export function ThreadView({ suggestionId }: { suggestionId: number }) {
 
         setAttachments(prev => [...prev, {
           fileName: file.name,
-          fileUrl: result.url,
-          fileKey: result.key,
+          fileUrl: result.fileUrl || result.url,
+          fileKey: result.fileKey || result.key || `chat-${Date.now()}`,
           mimeType: file.type,
           fileSize: file.size
         }]);
@@ -188,17 +188,20 @@ export function ThreadView({ suggestionId }: { suggestionId: number }) {
       </div>
     );
 
+  // At this point, suggestion is guaranteed to be defined (we return early above if not)
+  const sug = suggestion!;
+
   // Build a flat list of all messages (original + replies)
   const allMessages = [
     {
-      id: suggestion.id,
-      content: suggestion.content,
-      createdAt: suggestion.createdAt,
-      userId: suggestion.userId,
-      user: suggestion.user,
-      attachments: (suggestion as any).attachments || []
+      id: sug.id,
+      content: sug.content,
+      createdAt: sug.createdAt,
+      userId: sug.userId,
+      user: sug.user,
+      attachments: (sug as any).attachments || []
     },
-    ...(suggestion.replies || []).map((r: any) => ({
+    ...(sug.replies || []).map((r: any) => ({
       id: r.id,
       content: r.content,
       createdAt: r.createdAt,
@@ -208,16 +211,16 @@ export function ThreadView({ suggestionId }: { suggestionId: number }) {
     })),
   ];
 
-  const readStatuses = (suggestion as any).readStatuses || [];
+  const readStatuses = (sug as any).readStatuses || [];
   const seenBy = readStatuses
     .filter((rs: any) => rs.userId !== user?.id)
     .map((rs: any) => rs.user?.name || "Staff Member");
 
   // The other person in the chat
-  const isOwner = suggestion.userId === user?.id;
+  const isOwner = sug.userId === user?.id;
   const otherUser = isOwner
-    ? (suggestion as any).targetUsers?.[0] || allMessages.find((m) => m.userId !== user?.id)?.user
-    : suggestion.user;
+    ? (sug as any).targetUsers?.[0] || allMessages.find((m) => m.userId !== user?.id)?.user
+    : sug.user;
 
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
@@ -231,10 +234,10 @@ export function ThreadView({ suggestionId }: { suggestionId: number }) {
         </Avatar>
         <div className="min-w-0 flex-1">
           <p className="text-[13px] font-bold text-slate-800 dark:text-white truncate leading-tight">
-            {suggestion.title || otherUser?.name || "Group Chat"}
+            {sug.title || otherUser?.name || "Group Chat"}
           </p>
           <p className="text-[10px] text-slate-400 font-medium truncate">
-            {suggestion.title ? `${suggestion.targetUserIds.length + 1} Participants` : otherUser?.position || "Member"}
+            {sug.title ? `${sug.targetUserIds.length + 1} Participants` : otherUser?.position || "Member"}
           </p>
         </div>
 
@@ -246,7 +249,7 @@ export function ThreadView({ suggestionId }: { suggestionId: number }) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40 rounded-xl border-slate-200/60 dark:border-slate-800 shadow-xl overflow-hidden p-1.5 flex flex-col gap-1">
-            {(user?.id === suggestion.userId || suggestion.targetUserIds?.includes(user?.id) || ["admin", "hr", "ceo_md"].includes(user?.role || "")) && (
+            {(user?.id === sug.userId || sug.targetUserIds?.includes(user?.id ?? -1) || ["admin", "hr", "ceo_md"].includes(user?.role || "")) && (
               <DropdownMenuItem
                 onSelect={() => setIsDeleteDialogOpen(true)}
                 className="text-[#eb2027] dark:text-[#eb2027] text-[12px] font-bold cursor-pointer rounded-lg p-2 hover:bg-transparent focus:bg-transparent focus:text-[#eb2027]"

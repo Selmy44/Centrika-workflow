@@ -129,7 +129,7 @@ export function NoticeBoard() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2.5">
                 <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${roleGradient} flex items-center justify-center text-white text-xs font-black shadow-md`}>
-                  {currentAnnouncement.author.name.charAt(0)}
+                  {(currentAnnouncement.author.name ?? "A").charAt(0)}
                 </div>
                 <div>
                   <p className="text-xs font-bold text-slate-800 dark:text-slate-100 leading-tight flex items-center">

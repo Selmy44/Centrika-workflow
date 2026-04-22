@@ -1,6 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
-import { PdfConverterCard } from "@/components/PdfConverterCard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,9 +8,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   User, Mail, Shield, Calendar, Loader2, Upload, Building2,
   Users, FileText, Bell, Eye, Database, Lock, Settings as SettingsIcon,
-  Clock, Key, ArrowRight, Pencil, Save, X, Phone
+  Clock, Key, ArrowRight, Pencil, Save, X, Phone, Download, Trash2
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -539,13 +538,174 @@ function DocumentUploadForm() {
   );
 }
 
+function DocumentViewer({ doc, onClose, onDownload }: { doc: any; onClose: () => void; onDownload: (doc: any) => void }) {
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!doc?.fileUrl) return;
+    
+    // Fix existing broken DO spaces URLs with SSL issues due to dot-separated bucket name
+    let safeUrl = doc.fileUrl;
+    if (safeUrl.includes(".digitaloceanspaces.com") && safeUrl.includes("www.xentripay.com.")) {
+      safeUrl = safeUrl.replace(
+        "www.xentripay.com.nyc3.digitaloceanspaces.com", 
+        "nyc3.digitaloceanspaces.com/www.xentripay.com"
+      );
+    }
+
+    if (safeUrl.startsWith("data:")) {
+      fetch(safeUrl)
+        .then(res => res.blob())
+        .then(blob => {
+          const url = URL.createObjectURL(blob);
+          setBlobUrl(url);
+        })
+        .catch(err => {
+          console.error("Failed to parse data URL:", err);
+          setBlobUrl(safeUrl); // Fallback
+        });
+    } else {
+      setBlobUrl(safeUrl);
+    }
+    return () => {
+      if (blobUrl && blobUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(blobUrl);
+      }
+    };
+  }, [doc]);
+
+  const isImageUrl = (url: string) => {
+    if (!url) return false;
+    if (url.startsWith("data:image/")) return true;
+    return /\.(png|jpe?g|gif|webp|bmp|svg)(\?|$)/i.test(url);
+  };
+
+  const isValidUrl = (url: string) => {
+    if (!url) return false;
+    if (url.startsWith("data:") || url.startsWith("blob:")) return true;
+    try {
+      const parsed = new URL(url);
+      return !parsed.hostname.includes("example.com") && !parsed.hostname.includes("example.org");
+    } catch { return false; }
+  };
+
+  return (
+    <Dialog open={!!doc} onOpenChange={onClose}>
+      <DialogContent showCloseButton={false} className="!max-w-6xl !w-[85vw] h-[85vh] p-0 border border-[#3b6dae]/20 rounded-2xl overflow-hidden flex flex-col bg-white/95 backdrop-blur-2xl shadow-[0_30px_100px_-15px_rgba(59,109,174,0.15)]">
+        <DialogTitle className="sr-only">Document Viewer</DialogTitle>
+        <DialogDescription className="sr-only">Viewing document {doc?.name}</DialogDescription>
+        
+        {/* Crisp, clean system-white header with blue accents */}
+        <div className="flex items-center justify-between px-8 py-4 bg-white/80 backdrop-blur-md border-b border-slate-100 shrink-0 z-10 relative">
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 bg-[#3b6dae]/10 rounded-2xl flex items-center justify-center text-[#3b6dae] shadow-sm">
+              <FileText size={22} />
+            </div>
+            <div>
+              <h2 className="text-base font-black text-slate-800 tracking-tight">{doc?.name}</h2>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                {doc?.user?.name ? `${doc.user.name} — ` : ""}
+                {(doc?.category || "").replace("_", " ")}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button size="sm" onClick={() => onDownload(doc)} className="h-10 px-5 rounded-xl text-xs font-black uppercase tracking-widest bg-[#3b6dae] hover:bg-[#2d5385] text-white border-none transition-all shadow-lg shadow-[#3b6dae]/20">
+              <Download size={14} className="mr-2" /> Download
+            </Button>
+            <div className="h-6 w-px bg-slate-200 mx-1"></div>
+            <Button variant="ghost" size="icon" onClick={onClose} className="h-10 w-10 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-all">
+              <X size={22} />
+            </Button>
+          </div>
+        </div>
+
+        {/* Viewer Area - Minimalist light gray background */}
+        <div className="flex-1 overflow-hidden bg-slate-50 flex items-center justify-center relative p-0">
+          {!blobUrl ? (
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <div className="h-14 w-14 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-slate-100">
+                <Loader2 className="h-7 w-7 animate-spin text-[#3b6dae]" />
+              </div>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Preparing Document...</p>
+            </div>
+          ) : !isValidUrl(blobUrl) ? (
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <div className="w-20 h-20 bg-red-50 rounded-3xl flex items-center justify-center shadow-sm border border-red-100">
+                <FileText size={32} className="text-red-400" />
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-black text-slate-800 uppercase tracking-widest mb-1">Document Unavailable</p>
+                <p className="text-xs font-bold text-slate-500">This document could not be loaded securely.</p>
+              </div>
+            </div>
+          ) : isImageUrl(doc?.fileUrl || "") ? (
+            <div className="w-full h-full p-8 flex items-center justify-center">
+              <img src={blobUrl} alt={doc?.name} className="max-w-full max-h-full object-contain rounded-xl shadow-xl ring-1 ring-slate-200/50" />
+            </div>
+          ) : (
+            <iframe src={blobUrl} className="w-full h-full border-none bg-white" title="Document Viewer" />
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+
 function UserDocumentsTable() {
   const { user } = useAuth();
-  const [selectedDocUrl, setSelectedDocUrl] = useState<string | null>(null);
+  const [selectedDoc, setSelectedDoc] = useState<any>(null);
+  const [deleteDocId, setDeleteDocId] = useState<number | null>(null);
+  const utils = trpc.useUtils();
   const { data: documents, isLoading } = (trpc as any).hr.listDocuments.useQuery(
     { userId: user?.id || 0 },
     { enabled: !!user?.id }
   );
+
+  const deleteMutation = (trpc as any).hr.deleteDocument.useMutation({
+    onSuccess: () => { toast.success("Document deleted"); setDeleteDocId(null); utils.hr.listDocuments.invalidate(); },
+    onError: (err: any) => toast.error(err.message || "Failed to delete"),
+  });
+
+  const isImageUrl = (url: string) => {
+    if (!url) return false;
+    if (url.startsWith("data:image/")) return true;
+    return /\.(png|jpe?g|gif|webp|bmp|svg)(\?|$)/i.test(url);
+  };
+
+  const isPdfUrl = (url: string) => {
+    if (!url) return false;
+    if (url.startsWith("data:application/pdf")) return true;
+    return /\.pdf(\?|$)/i.test(url);
+  };
+
+  const isValidUrl = (url: string) => {
+    if (!url) return false;
+    if (url.startsWith("data:")) return true;
+    try {
+      const parsed = new URL(url);
+      return !parsed.hostname.includes("example.com") && !parsed.hostname.includes("example.org");
+    } catch { return false; }
+  };
+
+  const handleDownloadActual = (doc: any) => {
+    let safeUrl = doc.fileUrl;
+    if (safeUrl && safeUrl.includes(".digitaloceanspaces.com") && safeUrl.includes("www.xentripay.com.")) {
+      safeUrl = safeUrl.replace(
+        "www.xentripay.com.nyc3.digitaloceanspaces.com", 
+        "nyc3.digitaloceanspaces.com/www.xentripay.com"
+      );
+    }
+    const link = document.createElement("a");
+    link.href = safeUrl;
+    link.target = "_blank";
+    link.download = doc.name || "document";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Download started");
+  };
 
   if (isLoading) return <Loader2 className="animate-spin h-8 w-8 mx-auto text-[#3b6dae]" />;
 
@@ -576,56 +736,41 @@ function UserDocumentsTable() {
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                {doc.status === 'verified' ? (
-                  <Badge className="bg-green-500 font-black text-[8px] rounded-lg border-none hover:bg-green-600">VERIFIED</Badge>
-                ) : doc.status === 'rejected' ? (
-                  <Badge className="bg-red-500 font-black text-[8px] rounded-lg border-none hover:bg-red-600">REJECTED</Badge>
-                ) : (
-                  <Badge className="bg-amber-500 font-black text-[8px] rounded-lg border-none hover:bg-amber-600">PENDING</Badge>
-                )}
-              </div>
-              <Button 
-                size="icon" 
-                variant="ghost" 
-                className="h-8 w-8 text-[#3b6dae] hover:bg-[#3b6dae]/10 rounded-lg"
-                onClick={() => setSelectedDocUrl(doc.fileUrl)}
-                title="View PDF"
-              >
-                <Eye size={16} />
-                <span className="sr-only">View</span>
+            <div className="flex items-center gap-1.5">
+              <Button size="icon" variant="ghost" className="h-7 w-7 text-[#3b6dae] hover:bg-[#3b6dae]/10 rounded-lg" onClick={() => setSelectedDoc(doc)} title="View">
+                <Eye size={15} />
+              </Button>
+              <Button size="icon" variant="ghost" className="h-7 w-7 text-[#c79d2d] hover:bg-[#c79d2d]/10 rounded-lg" onClick={() => handleDownloadActual(doc)} title="Download">
+                <Download size={15} />
+              </Button>
+              <Button size="icon" variant="ghost" className="h-7 w-7 text-red-400 hover:bg-red-50 rounded-lg" onClick={() => setDeleteDocId(doc.id)} title="Delete">
+                <Trash2 size={15} />
               </Button>
             </div>
           </div>
         ))}
       </div>
-      {selectedDocUrl && (
-        <Dialog open={!!selectedDocUrl} onOpenChange={() => setSelectedDocUrl(null)}>
-          <DialogContent className="max-w-4xl w-[90vw] h-[90vh] p-0 border-none rounded-2xl overflow-hidden">
-            <div className="flex flex-col h-full">
-              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
-                <h2 className="text-sm font-bold text-slate-800 dark:text-white">Document Viewer</h2>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={() => setSelectedDocUrl(null)}
-                  className="h-8 w-8 text-slate-500 hover:text-slate-800"
-                >
-                  <X size={18} />
-                </Button>
-              </div>
-              <div className="flex-1 overflow-auto bg-slate-100 dark:bg-slate-950">
-                <iframe 
-                  src={selectedDocUrl} 
-                  className="w-full h-full border-none"
-                  title="PDF Viewer"
-                />
-              </div>
-            </div>
+
+      {/* Delete Confirmation */}
+      {deleteDocId && (
+        <Dialog open={!!deleteDocId} onOpenChange={() => setDeleteDocId(null)}>
+          <DialogContent className="max-w-sm rounded-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-sm font-black text-slate-800">Delete Document?</DialogTitle>
+              <DialogDescription className="text-xs text-slate-500">This action cannot be undone. The document will be permanently removed.</DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" size="sm" onClick={() => setDeleteDocId(null)} className="rounded-lg text-xs font-bold">Cancel</Button>
+              <Button variant="destructive" size="sm" onClick={() => deleteMutation.mutate({ documentId: deleteDocId })} disabled={deleteMutation.isPending} className="rounded-lg text-xs font-bold bg-red-500 hover:bg-red-600">
+                {deleteMutation.isPending ? <Loader2 size={12} className="animate-spin mr-1" /> : null} Delete
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Document Viewer */}
+      <DocumentViewer doc={selectedDoc} onClose={() => setSelectedDoc(null)} onDownload={handleDownloadActual} />
     </>
   );
 }
@@ -633,21 +778,58 @@ function UserDocumentsTable() {
 function AllEmployeesDocumentsTable() {
   const { hasRole } = useAuth();
   const [searchUser, setSearchUser] = useState("");
-  const [selectedDocUrl, setSelectedDocUrl] = useState<string | null>(null);
+  const [selectedDoc, setSelectedDoc] = useState<any>(null);
+  const [deleteDocId, setDeleteDocId] = useState<number | null>(null);
+  const utils = trpc.useUtils();
   
   const { data: documents, isLoading } = (trpc as any).hr.listAllDocuments.useQuery(
     { status: "", category: "" },
     { enabled: hasRole("admin") || hasRole("hr") || hasRole("head_of_department") || hasRole("ceo_md") }
   );
 
-  if (!hasRole("admin") && !hasRole("hr") && !hasRole("head_of_department") && !hasRole("ceo_md")) {
-    return null;
-  }
+  const deleteMutation = (trpc as any).hr.deleteDocument.useMutation({
+    onSuccess: () => { toast.success("Document deleted"); setDeleteDocId(null); utils.hr.listAllDocuments.invalidate(); },
+    onError: (err: any) => toast.error(err.message || "Failed to delete"),
+  });
 
+  const isImageUrl = (url: string) => {
+    if (!url) return false;
+    if (url.startsWith("data:image/")) return true;
+    return /\.(png|jpe?g|gif|webp|bmp|svg)(\?|$)/i.test(url);
+  };
+
+  const isValidUrl = (url: string) => {
+    if (!url) return false;
+    if (url.startsWith("data:")) return true;
+    try {
+      const parsed = new URL(url);
+      return !parsed.hostname.includes("example.com") && !parsed.hostname.includes("example.org");
+    } catch { return false; }
+  };
+
+  const handleDownloadActual = (doc: any) => {
+    let safeUrl = doc.fileUrl;
+    if (safeUrl && safeUrl.includes(".digitaloceanspaces.com") && safeUrl.includes("www.xentripay.com.")) {
+      safeUrl = safeUrl.replace(
+        "www.xentripay.com.nyc3.digitaloceanspaces.com", 
+        "nyc3.digitaloceanspaces.com/www.xentripay.com"
+      );
+    }
+    const link = document.createElement("a");
+    link.href = safeUrl;
+    link.target = "_blank";
+    link.download = doc.name || "document";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Download started");
+  };
+
+  if (!hasRole("admin") && !hasRole("hr") && !hasRole("head_of_department") && !hasRole("ceo_md")) return null;
   if (isLoading) return <Loader2 className="animate-spin h-8 w-8 mx-auto text-[#3b6dae]" />;
 
   const filteredDocuments = documents?.filter((doc: any) => 
-    !searchUser || doc.user?.name.toLowerCase().includes(searchUser.toLowerCase())
+    !searchUser || doc.user?.name?.toLowerCase().includes(searchUser.toLowerCase())
   ) || [];
 
   if (!filteredDocuments || filteredDocuments.length === 0) {
@@ -662,19 +844,12 @@ function AllEmployeesDocumentsTable() {
   return (
     <>
       <div className="space-y-3">
-        <Input 
-          placeholder="Search by employee name..." 
-          value={searchUser}
-          onChange={(e) => setSearchUser(e.target.value)}
-          className="h-9 bg-white border-[#3b6dae]/10 text-xs"
-        />
+        <Input placeholder="Search by employee name..." value={searchUser} onChange={(e) => setSearchUser(e.target.value)} className="h-9 bg-white border-[#3b6dae]/10 text-xs" />
         <div className="space-y-2">
           {filteredDocuments.map((doc: any) => (
             <div key={doc.id} className="flex items-center justify-between p-3 bg-white/40 rounded-xl border border-[#3b6dae]/5 hover:bg-white/60 transition-all">
               <div className="flex items-center gap-3 flex-1">
-                <div className="h-8 w-8 bg-[#3b6dae]/10 rounded-lg flex items-center justify-center text-[#3b6dae] shrink-0">
-                  <FileText size={16} />
-                </div>
+                <div className="h-8 w-8 bg-[#3b6dae]/10 rounded-lg flex items-center justify-center text-[#3b6dae] shrink-0"><FileText size={16} /></div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <p className="text-xs font-black text-[#3b6dae] truncate">{doc.name}</p>
@@ -685,86 +860,52 @@ function AllEmployeesDocumentsTable() {
                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{doc.category.replace('_', ' ')}</span>
                     <span className="text-[8px] text-slate-300">•</span>
                     <span className="text-[9px] font-bold text-slate-400">{new Date(doc.createdAt).toLocaleDateString()}</span>
-                    {doc.user?.department && (
-                      <>
-                        <span className="text-[8px] text-slate-300">•</span>
-                        <span className="text-[9px] font-bold text-slate-400">{doc.user.department.name}</span>
-                      </>
-                    )}
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-3 shrink-0 ml-2">
-                <div className="text-right">
-                  {doc.status === 'verified' ? (
-                    <Badge className="bg-green-500 font-black text-[8px] rounded-lg border-none hover:bg-green-600">VERIFIED</Badge>
-                  ) : doc.status === 'rejected' ? (
-                    <Badge className="bg-red-500 font-black text-[8px] rounded-lg border-none hover:bg-red-600">REJECTED</Badge>
-                  ) : (
-                    <Badge className="bg-amber-500 font-black text-[8px] rounded-lg border-none hover:bg-amber-600">PENDING</Badge>
-                  )}
-                </div>
-                <Button 
-                  size="icon" 
-                  variant="ghost" 
-                  className="h-8 w-8 text-[#3b6dae] hover:bg-[#3b6dae]/10 rounded-lg shrink-0"
-                  onClick={() => setSelectedDocUrl(doc.fileUrl)}
-                  title="View PDF"
-                >
-                  <Eye size={16} />
-                  <span className="sr-only">View</span>
+              <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                <Button size="icon" variant="ghost" className="h-7 w-7 text-[#3b6dae] hover:bg-[#3b6dae]/10 rounded-lg" onClick={() => setSelectedDoc(doc)} title="View">
+                  <Eye size={15} />
+                </Button>
+                <Button size="icon" variant="ghost" className="h-7 w-7 text-[#c79d2d] hover:bg-[#c79d2d]/10 rounded-lg" onClick={() => handleDownloadActual(doc)} title="Download">
+                  <Download size={15} />
+                </Button>
+                <Button size="icon" variant="ghost" className="h-7 w-7 text-red-400 hover:bg-red-50 rounded-lg" onClick={() => setDeleteDocId(doc.id)} title="Delete">
+                  <Trash2 size={15} />
                 </Button>
               </div>
             </div>
           ))}
         </div>
       </div>
-      {selectedDocUrl && (
-        <Dialog open={!!selectedDocUrl} onOpenChange={() => setSelectedDocUrl(null)}>
-          <DialogContent className="max-w-4xl w-[90vw] h-[90vh] p-0 border-none rounded-2xl overflow-hidden">
-            <div className="flex flex-col h-full">
-              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
-                <h2 className="text-sm font-bold text-slate-800 dark:text-white">Document Viewer</h2>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={() => setSelectedDocUrl(null)}
-                  className="h-8 w-8 text-slate-500 hover:text-slate-800"
-                >
-                  <X size={18} />
-                </Button>
-              </div>
-              <div className="flex-1 overflow-auto bg-slate-100 dark:bg-slate-950">
-                <iframe 
-                  src={selectedDocUrl} 
-                  className="w-full h-full border-none"
-                  title="PDF Viewer"
-                />
-              </div>
-            </div>
+
+      {/* Delete Confirmation */}
+      {deleteDocId && (
+        <Dialog open={!!deleteDocId} onOpenChange={() => setDeleteDocId(null)}>
+          <DialogContent className="max-w-sm rounded-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-sm font-black text-slate-800">Delete Document?</DialogTitle>
+              <DialogDescription className="text-xs text-slate-500">This action cannot be undone. The document will be permanently removed.</DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" size="sm" onClick={() => setDeleteDocId(null)} className="rounded-lg text-xs font-bold">Cancel</Button>
+              <Button variant="destructive" size="sm" onClick={() => deleteMutation.mutate({ documentId: deleteDocId })} disabled={deleteMutation.isPending} className="rounded-lg text-xs font-bold bg-red-500 hover:bg-red-600">
+                {deleteMutation.isPending ? <Loader2 size={12} className="animate-spin mr-1" /> : null} Delete
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Document Viewer */}
+      <DocumentViewer doc={selectedDoc} onClose={() => setSelectedDoc(null)} onDownload={handleDownloadActual} />
     </>
   );
 }
-
 function UserDocumentsPdfConverter() {
-  const { user } = useAuth();
-  const { data: documents = [] } = (trpc as any).hr.listDocuments.useQuery(
-    { userId: user?.id || 0 },
-    { enabled: !!user?.id }
-  );
-
-  return <PdfConverterCard documents={documents} />;
+  return null;
 }
 
 function AllEmployeesPdfConverter() {
-  const { hasRole } = useAuth();
-  const { data: documents = [] } = (trpc as any).hr.listAllDocuments.useQuery(
-    { status: "", category: "" },
-    { enabled: hasRole("admin") || hasRole("hr") || hasRole("head_of_department") || hasRole("ceo_md") }
-  );
-
-  return <PdfConverterCard documents={documents} />;
+  return null;
 }

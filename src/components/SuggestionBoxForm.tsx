@@ -67,7 +67,7 @@ export function SuggestionBoxForm({ onSuccess }: { onSuccess?: () => void }) {
         });
 
         const base64 = await base64Promise;
-        const result = await uploadMutation.mutateAsync({
+        const result = await (uploadMutation as any).mutateAsync({
           fileName: file.name,
           fileData: base64.split(',')[1],
           mimeType: file.type
@@ -75,8 +75,8 @@ export function SuggestionBoxForm({ onSuccess }: { onSuccess?: () => void }) {
 
         setAttachments(prev => [...prev, {
           fileName: file.name,
-          fileUrl: result.url,
-          fileKey: result.key,
+          fileUrl: result.fileUrl || result.url,
+          fileKey: result.fileKey || result.key || `chat-${Date.now()}`,
           mimeType: file.type,
           fileSize: file.size
         }]);
