@@ -8,6 +8,7 @@ import { getSessionCookieOptions } from "../core/cookies";
 import { SignJWT } from "jose";
 import { ENV } from "../core/env";
 import { COOKIE_NAME } from "../shared/const";
+import crypto from "crypto";
 
 export const mfaRouter = router({
   // ==================== OTP Endpoints ====================

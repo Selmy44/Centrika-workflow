@@ -2,18 +2,14 @@ import { protectedProcedure, router } from "../core/trpc";
 import { prisma } from "../db";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import {
-  convertTextToPdf,
-  createDocumentSummaryPdf,
-} from "../lib/pdfConverter";
-
+import { uploadFileToSpaces, isSpacesConfigured } from "../lib/spaces";
 
 export const hrRouter = router({
   uploadDocument: protectedProcedure
     .input(z.object({
       userId: z.number(),
       name: z.string(),
-      fileUrl: z.string(),
+      fileUrl: z.string(), // base64 data URL from frontend
       fileKey: z.string(),
       category: z.string(),
     }))
@@ -27,12 +23,30 @@ export const hrRouter = router({
       }
 
       try {
+        let finalUrl = input.fileUrl;
+        let finalKey = input.fileKey;
+
+        // If Spaces is configured, upload to cloud storage for proper URLs
+        if (isSpacesConfigured() && input.fileUrl.startsWith("data:")) {
+          const matches = input.fileUrl.match(/^data:([^;]+);base64,(.+)$/);
+          if (matches) {
+            const mimeType = matches[1];
+            const base64Data = matches[2];
+            const fileBuffer = Buffer.from(base64Data, "base64");
+            const spacesKey = `documents/user-${input.userId}/${input.fileKey}`;
+            const result = await uploadFileToSpaces(fileBuffer, spacesKey, mimeType);
+            finalUrl = result.url;
+            finalKey = result.key;
+          }
+        }
+        // If Spaces is NOT configured, store the base64 data URL directly (works for viewing)
+
         const document = await prisma.employeeDocument.create({
           data: {
             userId: input.userId,
             name: input.name,
-            fileUrl: input.fileUrl,
-            fileKey: input.fileKey,
+            fileUrl: finalUrl,
+            fileKey: finalKey,
             category: input.category,
             status: "pending",
           },
@@ -223,187 +237,28 @@ export const hrRouter = router({
     ];
   }),
 
-  convertDocumentToPdf: protectedProcedure
-    .input(
-      z.object({
-        documentId: z.number(),
-        includeMetadata: z.boolean().optional().default(true),
-      })
-    )
+  deleteDocument: protectedProcedure
+    .input(z.object({ documentId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      try {
-        // @ts-ignore
-        const document = await prisma.employeeDocument.findUnique({
-          where: { id: input.documentId },
-          include: { user: true },
-        });
+      const doc = await prisma.employeeDocument.findUnique({ where: { id: input.documentId } });
+      if (!doc) throw new TRPCError({ code: "NOT_FOUND", message: "Document not found" });
 
-        if (!document) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Document not found",
-          });
-        }
-
-        // User can convert their own docs, HR/Admin can convert any
-        if (
-          ctx.user.id !== document.userId &&
-          ctx.user.role !== "hr" &&
-          ctx.user.role !== "admin"
-        ) {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "You don't have permission to convert this document",
-          });
-        }
-
-        // If include metadata is true, create a summary PDF
-        if (input.includeMetadata) {
-          const pdfBuffer = await createDocumentSummaryPdf(
-            document.name,
-            document.category,
-            document.createdAt,
-            document.status,
-            document.userId
-          );
-
-          return {
-            success: true,
-            buffer: pdfBuffer.toString("base64"),
-            fileName: `${document.name}-summary.pdf`,
-            mimeType: "application/pdf",
-          };
-        }
-
-        return {
-          success: true,
-          buffer: Buffer.from("").toString("base64"),
-          fileName: `${document.name}.pdf`,
-          mimeType: "application/pdf",
-        };
-      } catch (error: any) {
-        console.error("[hr.convertDocumentToPdf] Error:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: error.message || "Failed to convert document to PDF",
-        });
-      }
-    }),
-
-  downloadDocumentAsPdf: protectedProcedure
-    .input(
-      z.object({
-        documentId: z.number(),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      try {
-        // @ts-ignore
-        const document = await prisma.employeeDocument.findUnique({
-          where: { id: input.documentId },
-        });
-
-        if (!document) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Document not found",
-          });
-        }
-
-        // User can download their own docs, HR/Admin can download any
-        if (
-          ctx.user.id !== document.userId &&
-          ctx.user.role !== "hr" &&
-          ctx.user.role !== "admin"
-        ) {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "You don't have permission to download this document",
-          });
-        }
-
-        // Create a summary PDF
-        const pdfBuffer = await createDocumentSummaryPdf(
-          document.name,
-          document.category,
-          document.createdAt,
-          document.status,
-          document.userId
-        );
-
-        return {
-          buffer: pdfBuffer.toString("base64"),
-          fileName: `${document.name}.pdf`,
-          mimeType: "application/pdf",
-          size: pdfBuffer.length,
-        };
-      } catch (error: any) {
-        console.error("[hr.downloadDocumentAsPdf] Error:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: error.message || "Failed to download document as PDF",
-        });
-      }
-    }),
-
-  generateBulkDocumentsPdf: protectedProcedure
-    .input(
-      z.object({
-        documentIds: z.array(z.number()).min(1),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      // Only HR and Admin can generate bulk PDFs
-      if (ctx.user.role !== "hr" && ctx.user.role !== "admin") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Only HR or Admin can generate bulk PDFs",
-        });
+      // Only the owner, HR, or admin can delete
+      if (doc.userId !== ctx.user.id && ctx.user.role !== "hr" && ctx.user.role !== "admin") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Not authorized to delete this document" });
       }
 
-      try {
-        // @ts-ignore
-        const documents = await prisma.employeeDocument.findMany({
-          where: { id: { in: input.documentIds } },
-          include: { user: true },
-        });
-
-        if (documents.length === 0) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "No documents found",
-          });
+      // Delete from Spaces if stored there
+      if (doc.fileKey && !doc.fileUrl.startsWith("data:")) {
+        try {
+          const { deleteFileFromSpaces } = await import("../lib/spaces");
+          await deleteFileFromSpaces(doc.fileKey);
+        } catch (err) {
+          console.error("[hr.deleteDocument] Spaces deletion error:", err);
         }
-
-        // Create a summary document
-        let summaryText = `BULK DOCUMENT EXPORT REPORT\n`;
-        summaryText += `Generated: ${new Date().toLocaleString()}\n`;
-        summaryText += `Total Documents: ${documents.length}\n\n`;
-        summaryText += `=======================================================\n\n`;
-
-        documents.forEach((doc, index) => {
-          summaryText += `${index + 1}. ${doc.name}\n`;
-          summaryText += `   User: ${doc.user?.name || "Unknown"}\n`;
-          summaryText += `   Category: ${doc.category.replace(/_/g, " ")}\n`;
-          summaryText += `   Status: ${doc.status}\n`;
-          summaryText += `   Uploaded: ${doc.createdAt.toLocaleString()}\n\n`;
-        });
-
-        const pdfBuffer = await convertTextToPdf(summaryText, "Bulk Export Report");
-
-        return {
-          success: true,
-          buffer: pdfBuffer.toString("base64"),
-          fileName: `bulk-documents-${Date.now()}.pdf`,
-          mimeType: "application/pdf",
-          documentCount: documents.length,
-        };
-      } catch (error: any) {
-        console.error("[hr.generateBulkDocumentsPdf] Error:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: error.message || "Failed to generate bulk PDF",
-        });
       }
+
+      await prisma.employeeDocument.delete({ where: { id: input.documentId } });
+      return { success: true };
     }),
 });

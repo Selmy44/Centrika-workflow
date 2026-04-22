@@ -61,8 +61,8 @@ export async function uploadFileToSpaces(
 
     await spacesClient.send(command);
 
-    // Construct the public URL
-    const url = `https://${BUCKET_NAME}.${process.env.SPACES_REGION || "nyc3"}.digitaloceanspaces.com/${fileKey}`;
+    // Construct the public URL (Path-style avoids SSL cert errors for buckets with dots in name)
+    const url = `https://${process.env.SPACES_REGION || "nyc3"}.digitaloceanspaces.com/${BUCKET_NAME}/${fileKey}`;
 
     return { url, key: fileKey };
   } catch (error) {
