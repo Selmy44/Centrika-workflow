@@ -5,7 +5,7 @@ import { RecentRequests } from "./RecentRequests";
 import { ProfileSummary } from "./ProfileSummary";
 import { PendingApprovalsWidget } from "./PendingApprovalsWidget";
 import { NoticeBoard } from "@/components/NoticeBoard";
-import { SuggestionBoxForm } from "@/components/SuggestionBoxForm";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { DollarSign, Shield, ArrowRight } from "lucide-react";
@@ -95,13 +95,7 @@ export const RoleDashboard = ({ user }: RoleDashboardProps) => {
             <QuickActions />
           </div>
 
-          <div className="space-y-3 pt-2 border-t border-[#3b6dae]/5">
-            <h2 className="text-[9px] font-black text-[#3b6dae]/30 uppercase tracking-[0.4em] px-1 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#3b6dae]/20" />
-              Pulse & Feedback
-            </h2>
-            <SuggestionBoxForm />
-          </div>
+
         </div>
       </div>
     </DashboardLayout>
