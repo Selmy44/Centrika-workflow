@@ -721,16 +721,7 @@ export default function LeaveRequestForm({
               )}
             </Row>
 
-            {!isApprover && requestData?.status !== "approved" && (
-              <>
-                <Row label="4.2 HR Review">
-                  <p className="text-xs text-gray-500 font-medium">Pending HR Approval</p>
-                </Row>
-                <Row label="4.3 Final Approval (CEO/MD)">
-                  <p className="text-xs text-gray-500 font-medium">Pending Final Approval</p>
-                </Row>
-              </>
-            )}
+
 
             {requestData?.status === "rejected" && (
               <div className="p-4 border border-red-300 dark:border-red-900/50 rounded-lg bg-red-50 dark:bg-red-950/30 mb-4">

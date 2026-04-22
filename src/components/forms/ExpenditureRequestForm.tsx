@@ -452,12 +452,7 @@ export default function ExpenditureRequestForm({ requestData, isReadOnly = false
                 disabled
               />
             </Row>
-            <Row label="4.2 Head of Finance">
-              <p className="text-xs text-gray-500 font-medium">Pending Finance Approval</p>
-            </Row>
-            <Row label="4.3 Final Approval (CEO/MD)">
-              <p className="text-xs text-gray-500 font-medium">Pending Final Approval</p>
-            </Row>
+
           </Section>
         </div>
 

@@ -486,9 +486,9 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
 
           {/* 6. APPROVAL WORKFLOW */}
           <Section title="6. APPROVAL WORKFLOW">
-            <Row label="6.1 HR Approval">
+            <Row label="6.1 Line Manager / HOD">
               <Input
-                value="Doreen MBABAZI"
+                value={uniqueHeads.find((h: any) => h.id === parseInt(form.reportingManager))?.name || "Not assigned"}
                 className="w-full h-8 border-blue-300 dark:border-[#3b6dae]/40 bg-gray-100 dark:bg-[#295482] text-black dark:text-slate-100 font-medium cursor-not-allowed max-w-[400px] mt-1 mb-1"
                 disabled
               />
