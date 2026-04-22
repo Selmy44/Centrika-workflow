@@ -5,7 +5,7 @@ import { TRPCError } from "@trpc/server";
 export const analyticsRouter = router({
   getMyStats: protectedProcedure.query(async ({ ctx }) => {
     const requests = await prisma.request.findMany({
-      where: { userId: ctx.user.id },
+      where: { userId: ctx.user.id, NOT: { status: { in: ["draft", "cancelled"] } } },
       orderBy: { createdAt: "desc" },
     });
 
@@ -31,6 +31,7 @@ export const analyticsRouter = router({
       where: {
         userId: ctx.user.id,
         createdAt: { gte: sixMonthsAgo },
+        NOT: { status: { in: ["draft", "cancelled"] } },
       },
     });
 

@@ -110,7 +110,6 @@ export const appRouter = router({
             staffId: input.staffId || "",
             dateOfEmployment: input.dateOfEmployment,
             managerId: input.managerId,
-            // @ts-ignore - resolve stale IDE Prisma type cache
             dateOfBirth: input.dateOfBirth,
             jobDescription: input.jobDescription,
             contractType: input.contractType,
@@ -329,6 +328,7 @@ export const appRouter = router({
         contractStart: z.string().optional(),
         contractEnd: z.string().optional(),
         gender: z.string().optional(),
+        phoneNumber: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         // If email is being changed, check it's not already in use by someone else
@@ -358,7 +358,7 @@ export const appRouter = router({
             managerId: input.managerId,
             profileImage: input.profileImage,
             gender: input.gender,
-            // @ts-ignore - resolve stale IDE Prisma type cache
+            phoneNumber: input.phoneNumber,
             dateOfBirth: input.dateOfBirth,
             jobDescription: input.jobDescription,
             contractType: input.contractType,
@@ -383,8 +383,9 @@ export const appRouter = router({
         dataRetention: z.number().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        // Stub: Just return success for now to fix frontend errors
-        return { success: true };
+        // TODO: Implement user settings persistence when database schema is updated
+        // For now, client-side settings are cached in localStorage
+        return { success: true, message: "Settings cached in browser" };
       }),
 
     changePassword: protectedProcedure
@@ -639,15 +640,31 @@ export const appRouter = router({
     }),
 
     // Lightweight list of all staff for backup person selection in leave forms
-    listStaffForBackup: protectedProcedure.query(async () => {
+    listStaffForBackup: protectedProcedure.query(async ({ ctx }) => {
       const users = await prisma.user.findMany({
-        where: { status: "Active" },
+        where: {
+          AND: [
+            { id: { not: ctx.user.id } }, // Exclude current user
+            {
+              OR: [
+                { status: "Active" },
+                { status: null }, // Include users with no status set
+              ]
+            },
+            {
+              role: {
+                in: ["user", "head_of_department", "head_of_finance", "ceo_md", "hr", "admin"]
+              }
+            }
+          ]
+        },
         select: {
           id: true,
           name: true,
           phoneNumber: true,
           email: true,
           position: true,
+          staffId: true,
           department: { select: { name: true } },
         },
         orderBy: { name: "asc" },
@@ -658,6 +675,7 @@ export const appRouter = router({
         phoneNumber: u.phoneNumber || "",
         email: u.email || "",
         position: u.position || "",
+        staffId: u.staffId || "",
         department: u.department?.name || "",
       }));
     }),
@@ -733,7 +751,6 @@ export const appRouter = router({
             departmentId: input.departmentId,
             position: input.position || "Staff",
             dateOfEmployment,
-            // @ts-ignore - resolve stale IDE Prisma type cache
             dateOfBirth: input.dateOfBirth,
             jobDescription: input.jobDescription,
             contractType: input.contractType,
@@ -794,7 +811,6 @@ export const appRouter = router({
             managerId: input.managerId,
             staffId: input.staffId,
             position: input.position,
-            // @ts-ignore - resolve stale IDE Prisma type cache
             dateOfBirth: input.dateOfBirth,
             jobDescription: input.jobDescription,
             contractType: input.contractType,

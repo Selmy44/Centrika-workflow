@@ -53,9 +53,7 @@ export const employeesRouter = router({
           phoneNumber: (emp as any).phoneNumber,
           location: (emp as any).location,
           status: (emp as any).status,
-          // @ts-ignore - resolve stale IDE Prisma type cache
           dateOfBirth: emp.dateOfBirth,
-          // @ts-ignore - resolve stale IDE Prisma type cache
           contractType: emp.contractType,
         }));
       } catch (error) {
@@ -124,15 +122,10 @@ export const employeesRouter = router({
           phoneNumber: employee.phoneNumber,
           location: (employee as any).location,
           status: (employee as any).status,
-          // @ts-ignore - resolve stale IDE Prisma type cache
           dateOfBirth: employee.dateOfBirth,
-          // @ts-ignore - resolve stale IDE Prisma type cache
           jobDescription: employee.jobDescription,
-          // @ts-ignore - resolve stale IDE Prisma type cache
           contractType: employee.contractType,
-          // @ts-ignore - resolve stale IDE Prisma type cache
           contractStart: employee.contractStart,
-          // @ts-ignore - resolve stale IDE Prisma type cache
           contractEnd: employee.contractEnd,
           leaveHistory: requests
             .filter((r: any) => r.type === "leave" && r.leaveRequest)

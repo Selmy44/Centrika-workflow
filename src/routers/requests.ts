@@ -118,6 +118,69 @@ export const requestsRouter = router({
       return { id: request.id };
     }),
 
+  updateLeaveRequest: protectedProcedure
+    .input(
+      z.object({
+        requestId: z.number(),
+        title: z.string().min(1),
+        leaveType: z.enum(["annual", "sick", "personal", "unpaid", "parental"]),
+        parentalLeaveType: z.enum(["paternity", "maternity"]).optional(),
+        startDate: z.string(),
+        endDate: z.string(),
+        reason: z.string().optional(),
+        leaveDaysEntitled: z.number().optional(),
+        leaveDaysTaken: z.number().optional(),
+        leaveDaysRequested: z.number().optional(),
+        backupPersonName: z.string().optional(),
+        backupPersonPhone: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const request = await prisma.request.findUnique({ where: { id: input.requestId } });
+      if (!request) throw new TRPCError({ code: "NOT_FOUND", message: "Request not found" });
+      if (request.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+
+      const user = await prisma.user.findUnique({ where: { id: ctx.user.id } });
+      if (!user) throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+
+      let entitled = input.leaveDaysEntitled;
+      if (input.leaveType === "annual") {
+        const leaveBalance = calculateAnnualLeaveBalance(user.dateOfEmployment);
+        entitled = leaveBalance.totalAnnualLeave;
+      } else {
+        entitled = entitled || 0;
+      }
+
+      const taken = input.leaveDaysTaken || 0;
+      const requested = input.leaveDaysRequested || 0;
+      const remaining = entitled - taken - requested;
+
+      await prisma.request.update({
+        where: { id: input.requestId },
+        data: {
+          title: input.title,
+          description: input.reason,
+          leaveRequest: {
+            update: {
+              leaveType: input.leaveType,
+              parentalLeaveType: input.parentalLeaveType ?? null,
+              startDate: input.startDate,
+              endDate: input.endDate,
+              reason: input.reason ?? null,
+              leaveDaysEntitled: Math.round(entitled * 100) / 100,
+              leaveDaysTaken: taken,
+              leaveDaysRequested: requested,
+              leaveDaysRemaining: Math.round(remaining * 100) / 100,
+              backupPersonName: input.backupPersonName ?? null,
+              backupPersonPhone: input.backupPersonPhone ?? null,
+            },
+          },
+        },
+      });
+
+      return { id: input.requestId };
+    }),
+
   createCarRequest: protectedProcedure
     .input(
       z.object({
@@ -154,6 +217,47 @@ export const requestsRouter = router({
       });
 
       return { id: request.id };
+    }),
+
+  updateCarRequest: protectedProcedure
+    .input(
+      z.object({
+        requestId: z.number(),
+        title: z.string().min(1),
+        destination: z.string().min(1),
+        purpose: z.string().optional(),
+        departureDate: z.string(),
+        departureTime: z.string().optional(),
+        passengers: z.number().int().min(1),
+        driverName: z.string().optional(),
+        carInfo: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const request = await prisma.request.findUnique({ where: { id: input.requestId } });
+      if (!request) throw new TRPCError({ code: "NOT_FOUND", message: "Request not found" });
+      if (request.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+
+      await prisma.request.update({
+        where: { id: input.requestId },
+        data: {
+          title: input.title,
+          description: input.purpose,
+          carRequest: {
+            update: {
+              destination: input.destination,
+              purpose: input.purpose,
+              departureDate: input.departureDate,
+              departureTime: input.departureTime,
+              passengers: input.passengers,
+              driverName: input.driverName,
+              carInfo: input.carInfo,
+            },
+          },
+        },
+      });
+
+      return { id: input.requestId };
     }),
 
   getAvailableDrivers: protectedProcedure.query(async () => {
@@ -229,9 +333,86 @@ export const requestsRouter = router({
       return { id: request.id };
     }),
 
-  listUserRequests: protectedProcedure.query(async ({ ctx }) => {
+  updateExpenditureRequest: protectedProcedure
+    .input(
+      z.object({
+        requestId: z.number(),
+        title: z.string().min(1),
+        amount: z.number().int().positive(),
+        currency: z.string().default("RWF"),
+        department: z.string().optional(),
+        category: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const request = await prisma.request.findUnique({ where: { id: input.requestId } });
+      if (!request) throw new TRPCError({ code: "NOT_FOUND", message: "Request not found" });
+      if (request.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+
+      await prisma.request.update({
+        where: { id: input.requestId },
+        data: {
+          title: input.title,
+          expenditureRequest: {
+            update: {
+              amount: input.amount,
+              currency: input.currency,
+              department: input.department,
+              category: input.category,
+            },
+          },
+        },
+      });
+
+      return { id: input.requestId };
+    }),
+
+  updateAssetRequest: protectedProcedure
+    .input(
+      z.object({
+        requestId: z.number(),
+        title: z.string().min(1),
+        itemName: z.string().min(1),
+        description: z.string().optional(),
+        estimatedCost: z.number().int().positive(),
+        currency: z.string().default("RWF"),
+        category: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const request = await prisma.request.findUnique({ where: { id: input.requestId } });
+      if (!request) throw new TRPCError({ code: "NOT_FOUND", message: "Request not found" });
+      if (request.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+
+      await prisma.request.update({
+        where: { id: input.requestId },
+        data: {
+          title: input.title,
+          description: input.description,
+          assetRequest: {
+            update: {
+              itemName: input.itemName,
+              description: input.description,
+              estimatedCost: input.estimatedCost,
+              currency: input.currency,
+              category: input.category,
+            },
+          },
+        },
+      });
+
+      return { id: input.requestId };
+    }),
+
+  listUserRequests: protectedProcedure
+    .input(z.object({ includeNonSubmitted: z.boolean().optional() }).optional())
+    .query(async ({ ctx, input }) => {
     const userReqs = await prisma.request.findMany({
-      where: { userId: ctx.user.id },
+      where: { 
+        userId: ctx.user.id,
+        // Only exclude draft/cancelled if not explicitly requested
+        ...(input?.includeNonSubmitted ? {} : { NOT: { status: { in: ["draft", "cancelled"] } } })
+      },
       include: {
         leaveRequest: true,
         carRequest: true,
@@ -872,6 +1053,32 @@ export const requestsRouter = router({
       include: { leaveRequest: true }
     });
 
+    // Get all approved leave dates for calendar visualization
+    const allApprovedLeaves = await prisma.request.findMany({
+      where: {
+        userId: ctx.user.id,
+        type: "leave",
+        status: "approved",
+      },
+      include: { leaveRequest: true }
+    });
+
+    // Extract all taken leave dates (from startDate to endDate inclusive)
+    const takenLeaveDates: string[] = [];
+    for (const request of allApprovedLeaves) {
+      if (request.leaveRequest?.startDate && request.leaveRequest?.endDate) {
+        const start = new Date(request.leaveRequest.startDate);
+        const end = new Date(request.leaveRequest.endDate);
+        const current = new Date(start);
+        
+        while (current <= end) {
+          const dateStr = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}-${String(current.getDate()).padStart(2, '0')}`;
+          takenLeaveDates.push(dateStr);
+          current.setDate(current.getDate() + 1);
+        }
+      }
+    }
+
     const totalUsedAnnual = approvedAnnualLeaves.reduce((sum: number, r: any) => sum + (r.leaveRequest?.leaveDaysRequested || 0), 0);
     const remaining = (leaveCalc.totalAnnualLeave + (balance.annualLeaveCarryover || 0)) - totalUsedAnnual;
 
@@ -892,6 +1099,7 @@ export const requestsRouter = router({
       monthsEmployed: leaveCalc.monthsEmployed,
       yearsEmployed: leaveCalc.yearsEmployed,
       totalAnnualLeave: leaveCalc.totalAnnualLeave,
+      takenLeaveDates, // Array of dates already on leave
       eligibilityMessage: leaveCalc.completedFullYear
         ? `✓ Eligible for annual leave (${leaveCalc.yearsEmployed} year(s) employed)`
         : `Not eligible yet. Accrued: ${Math.round(leaveCalc.totalAnnualLeave * 100) / 100} days`,
@@ -945,9 +1153,15 @@ export const requestsRouter = router({
     .input(z.object({ limit: z.number().default(5) }))
     .query(async ({ ctx, input }) => {
       return prisma.request.findMany({
-        where: { userId: ctx.user.id },
+        where: { userId: ctx.user.id, NOT: { status: { in: ["draft", "cancelled"] } } },
         orderBy: { createdAt: "desc" },
         take: input.limit,
+        include: {
+          leaveRequest: true,
+          carRequest: true,
+          expenditureRequest: true,
+          assetRequest: true,
+        },
       });
     }),
 
