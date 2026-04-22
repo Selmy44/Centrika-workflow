@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Phone, Mail, Globe, MapPin } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
@@ -15,6 +15,8 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { SignaturePad } from "@/components/SignaturePad";
+import { base64ToFile } from "@/lib/fileUtils";
 
 interface Props {
   request: any;
@@ -32,6 +34,7 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
   const [approvalComments, setApprovalComments] = useState("");
   const [signatureFile, setSignatureFile] = useState<File | null>(null);
   const [signaturePreview, setSignaturePreview] = useState("");
+  const [signatureMethod, setSignatureMethod] = useState<"upload" | "draw">("draw");
   const [rejectReason, setRejectReason] = useState("");
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [selectedHR, setSelectedHR] = useState("");
@@ -192,6 +195,7 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
       </div>
 
       {/* Approver Signature & Comments Section */}
+      {request?.status !== "approved" && request?.status !== "rejected" && (
       <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
         <h2 className="font-bold text-yellow-700 mb-4">{getApprovalLevelLabel().toUpperCase()}</h2>
 
@@ -209,27 +213,87 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
               />
             </div>
 
-            {/* Signature Upload */}
+            {/* Signature Section */}
             <div>
               <label className="text-sm font-semibold text-gray-700">Your Signature</label>
-              <p className="text-xs text-gray-600 dark:text-slate-400 mb-2">Upload an image or PDF of your signature</p>
-              <div className="border-2 border-dashed border-yellow-400 rounded-lg p-4 bg-white dark:bg-[#1f426b]">
-                <input
-                  type="file"
-                  accept="image/*,.pdf"
-                  onChange={handleSignatureChange}
-                  className="block w-full text-sm text-gray-600 dark:text-slate-400"
-                />
-                {signaturePreview && (
-                  <div className="mt-3 p-2 bg-gray-50 dark:bg-[#1a385c] rounded border border-gray-200">
-                    {signatureFile?.type.includes("image") ? (
-                      <img src={signaturePreview} alt="signature" className="h-24 object-contain mx-auto" />
-                    ) : (
-                      <p className="text-xs text-center text-gray-600 dark:text-slate-400">PDF signature uploaded: {signatureFile?.name}</p>
-                    )}
-                  </div>
-                )}
+              <div className="flex gap-4 my-2">
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <input
+                    type="radio"
+                    checked={signatureMethod === "draw"}
+                    onChange={() => {
+                      setSignatureMethod("draw");
+                      setSignatureFile(null);
+                      setSignaturePreview("");
+                    }}
+                    className="w-4 h-4 accent-blue-600"
+                  />
+                  <span className="text-xs font-black uppercase tracking-widest text-[#3b6dae] group-hover:text-blue-800">Draw Signature</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <input
+                    type="radio"
+                    checked={signatureMethod === "upload"}
+                    onChange={() => {
+                      setSignatureMethod("upload");
+                      setSignatureFile(null);
+                      setSignaturePreview("");
+                    }}
+                    className="w-4 h-4 accent-blue-600"
+                  />
+                  <span className="text-xs font-black uppercase tracking-widest text-[#3b6dae] group-hover:text-blue-800">Upload Image</span>
+                </label>
               </div>
+
+              {signatureMethod === "upload" ? (
+                <div className="border-2 border-dashed border-yellow-400 rounded-lg p-4 bg-white dark:bg-[#1f426b] animate-in fade-in slide-in-from-top-2 duration-300">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setSignatureFile(file);
+                        const reader = new FileReader();
+                        reader.onload = (ev) => setSignaturePreview(ev.target?.result as string);
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="block w-full text-sm text-gray-600 dark:text-slate-400"
+                  />
+                </div>
+              ) : (
+                <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                  <SignaturePad 
+                    onSave={(dataUrl) => {
+                      const file = base64ToFile(dataUrl, "approver_signature.png");
+                      setSignatureFile(file);
+                      setSignaturePreview(dataUrl);
+                    }}
+                    onClear={() => {
+                      setSignatureFile(null);
+                      setSignaturePreview("");
+                    }}
+                    backgroundColor="white"
+                  />
+                </div>
+              )}
+
+              {signaturePreview && (
+                <div className="mt-3 p-2 bg-gray-50 dark:bg-[#1a385c] rounded border border-gray-200 animate-in zoom-in duration-300">
+                  <img src={signaturePreview} alt="signature" className="h-24 object-contain mx-auto" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSignaturePreview("");
+                      setSignatureFile(null);
+                    }}
+                    className="block mx-auto mt-2 text-[10px] text-red-600 hover:text-red-800 font-bold uppercase underline"
+                  >
+                    Clear and Change
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* HR Selector - only for HOD */}
@@ -274,15 +338,17 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
         ) : (
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-semibold text-gray-700">Reason for Rejection</label>
+              <label className="text-sm font-semibold text-gray-700 mb-2 block">Reason for Rejection *</label>
               <Textarea
-                placeholder="Please explain why you are rejecting this request..."
+                placeholder="Provide a clear and professional reason for rejection (minimum 10 characters)..."
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
-                className="mt-2 border-gray-300"
+                className="mt-2 border-red-300 focus:border-red-500 focus:ring-red-500 min-h-24 text-sm"
                 rows={4}
+                maxLength={500}
                 required
               />
+              <p className="text-xs text-gray-500 mt-1">{rejectReason.length}/500 characters</p>
             </div>
             <div className="flex gap-3">
               <Button
@@ -292,14 +358,21 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
                   setRejectReason("");
                 }}
                 disabled={isLoading}
+                className="border-gray-300"
               >
                 Cancel
               </Button>
               <Button
                 variant="destructive"
-                onClick={() => onReject(rejectReason)}
-                disabled={isLoading || !rejectReason.trim()}
-                className="ml-auto"
+                onClick={() => {
+                  if (rejectReason.trim().length >= 10) {
+                    onReject(rejectReason);
+                    setRejectReason("");
+                    setShowRejectForm(false);
+                  }
+                }}
+                disabled={rejectReason.trim().length < 10 || isLoading}
+                className="ml-auto bg-red-600 hover:bg-red-700 text-white font-semibold"
               >
                 {isLoading ? "Processing..." : "Confirm Rejection"}
               </Button>
@@ -307,6 +380,7 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
           </div>
         )}
       </div>
+      )}
 
       {/* Footer Info */}
       <div className="bg-gray-50 dark:bg-[#1a385c] border border-gray-200 rounded p-3 text-xs text-gray-600 dark:text-slate-400">

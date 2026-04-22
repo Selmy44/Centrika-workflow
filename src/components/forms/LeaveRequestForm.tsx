@@ -5,6 +5,7 @@ import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer } from "lucide-r
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
+import { useLocation } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,6 +16,8 @@ import DateRangePicker from "@/components/DateRangePicker";
 import SingleDatePicker from "@/components/SingleDatePicker";
 import { getLeaveTypeConfig } from "@/lib/leaveTypeConfig";
 import { LeaveBalanceCalculator } from "./shared/LeaveBalanceCalculator";
+import { SignaturePad } from "@/components/SignaturePad";
+import { base64ToFile } from "@/lib/fileUtils";
 
 interface LeaveRequestFormProps {
   requestId?: number;
@@ -25,8 +28,6 @@ interface LeaveRequestFormProps {
   onReject?: (reason: string) => void;
   isLoading?: boolean;
   onSuccess?: () => void;
-  onClose?: () => void;
-  onBack?: () => void;
   leaveType?: string;
 }
 
@@ -39,14 +40,14 @@ export default function LeaveRequestForm({
   onReject,
   isLoading = false,
   onSuccess,
-  onClose,
-  onBack,
   leaveType: initialLeaveType,
 }: LeaveRequestFormProps) {
   const { user, isAuthenticated } = useAuth();
+  const [, navigate] = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+  const [takenLeaveDates, setTakenLeaveDates] = useState<string[]>([]);
 
   const autoFillData = useFormAutoFill();
 
@@ -79,10 +80,13 @@ export default function LeaveRequestForm({
     month: (new Date().getMonth() + 1).toString(),
     documentId: "",
     managerSignatureUrl: "",
+    signatureMethod: "draw" as "upload" | "draw",
   });
 
   const [approvalComments, setApprovalComments] = useState("");
   const [approverSignature, setApproverSignature] = useState<File | null>(null);
+  const [approverSignatureUrl, setApproverSignatureUrl] = useState("");
+  const [approverSignatureMethod, setApproverSignatureMethod] = useState<"upload" | "draw">("draw");
   const [approverSignatureFileId, setApproverSignatureFileId] = useState<number | null>(null);
   const [selectedHR, setSelectedHR] = useState("");
 
@@ -90,10 +94,10 @@ export default function LeaveRequestForm({
   const hrUsers = trpc.users.getHRUsers.useQuery();
   const staffForBackup = (trpc as any).users.listStaffForBackup.useQuery();
 
-  // Fetch the saved form JSON blob for approver/read-only views
+  // Fetch the saved form JSON blob for approver/read-only views OR when editing draft forms
   const savedFormData = (trpc as any).requests.getLeaveFormData.useQuery(
     { requestId: requestData?.id || requestId || 0 },
-    { enabled: !!(requestData?.id || requestId) && (isReadOnly || !!onApprove || !!onReject) }
+    { enabled: !!(requestData?.id || requestId) && (isReadOnly || !!onApprove || !!onReject || requestData?.status === "draft") }
   );
 
   const isApprover = propsIsApprover !== undefined ? propsIsApprover : (!!onApprove || !!onReject);
@@ -142,36 +146,17 @@ export default function LeaveRequestForm({
 
   // Merge saved form JSON (employee signature, contact details, etc.) when available
   useEffect(() => {
-    if (savedFormData?.data) {
+    if (savedFormData.data) {
       const d = savedFormData.data;
       setForm((prev: any) => ({
         ...prev,
-        employeeName: d.employeeName || prev.employeeName,
-        staffId: d.staffId || prev.staffId,
-        department: d.department || prev.department,
-        position: d.position || prev.position,
-        leaveType: d.leaveType || prev.leaveType,
-        parentalLeaveType: d.parentalLeaveType || prev.parentalLeaveType,
-        startDate: d.startDate || prev.startDate,
-        endDate: d.endDate || prev.endDate,
-        leaveDaysRequested: d.leaveDaysRequested || prev.leaveDaysRequested,
-        leaveDaysEntitled: d.leaveDaysEntitled || prev.leaveDaysEntitled,
-        leaveDaysTaken: d.leaveDaysTaken || prev.leaveDaysTaken,
-        leaveDaysRemaining: d.leaveDaysRemaining || prev.leaveDaysRemaining,
-        contactDuringLeave: d.contactDuringLeave || prev.contactDuringLeave,
-        backupPersonId: d.backupPersonId || prev.backupPersonId,
-        backupPersonName: d.backupPersonName || prev.backupPersonName,
-        backupPersonPhone: d.backupPersonPhone || prev.backupPersonPhone,
-        employeeSignatureUrl: d.employeeSignatureUrl || prev.employeeSignatureUrl,
-        signatureDate: d.signatureDate || prev.signatureDate,
-        documentId: d.documentId || prev.documentId,
-        dateOfEmployment: d.dateOfEmployment || prev.dateOfEmployment,
-        outsideCountry: d.outsideCountry || prev.outsideCountry,
-        reportingManager: d.reportingManager || prev.reportingManager,
-        managerSignatureUrl: d.managerSignatureUrl || prev.managerSignatureUrl,
+        ...d, // Spread all saved data first
+        // Then explicitly set file/signature fields that can't be serialized
+        employeeSignature: null, // Don't restore file objects
+        supportingDocument: null,
       }));
     }
-  }, [savedFormData?.data]);
+  }, [savedFormData.data]);
 
   const validate = () => {
     if (!form.startDate || !form.endDate) {
@@ -244,13 +229,17 @@ export default function LeaveRequestForm({
   const calculatedBusinessDays = calculateBusinessDays(form.startDate, form.endDate);
 
   const createLeave = trpc.requests.createLeaveRequest.useMutation();
+  const updateLeave = (trpc as any).requests.updateLeaveRequest.useMutation();
   const submitRequestMutation = trpc.requests.submitRequest.useMutation();
   const storeFormData = (trpc as any).requests.storeLeaveFormData.useMutation();
 
   const handleSaveAsDraft = async () => {
     setIsSubmitting(true);
     try {
-      await createLeave.mutateAsync({
+      // Check if we're updating an existing draft request
+      const isEditing = requestData?.id && requestData?.status === "draft";
+      
+      const payload = {
         title: `${config.title || "Leave"} Request - ${form.documentId}`,
         leaveType: form.leaveType as any,
         startDate: form.startDate,
@@ -261,7 +250,40 @@ export default function LeaveRequestForm({
         leaveDaysRequested: Number(form.leaveDaysRequested) || 0,
         backupPersonName: form.backupPersonName || undefined,
         backupPersonPhone: form.backupPersonPhone || undefined,
-      });
+      };
+
+      let requestId: number;
+      if (isEditing) {
+        // Update existing draft
+        await updateLeave.mutateAsync({
+          requestId: requestData.id,
+          ...payload,
+        });
+        requestId = requestData.id;
+      } else {
+        // Create new draft
+        const created = await createLeave.mutateAsync(payload);
+        requestId = (created as any)?.id as number;
+      }
+
+      if (requestId) {
+        // Store the full form data JSON for draft forms too
+        try {
+          await storeFormData.mutateAsync({
+            requestId: requestId,
+            formData: {
+              ...form,
+              resolvedLeaveType,
+              parentalLeaveType: form.leaveType === "parental" ? (resolvedLeaveType === "maternity" ? "maternity" : "paternity") : "",
+              employeeSignature: undefined, // Can't serialize File objects
+              supportingDocument: undefined,
+            },
+          });
+        } catch (e) {
+          console.error("Failed to store form data", e);
+        }
+      }
+
       toast.success("Draft saved successfully");
       onSuccess?.();
     } catch (error: any) {
@@ -279,7 +301,10 @@ export default function LeaveRequestForm({
     }
     setIsSubmitting(true);
     try {
-      const created = await createLeave.mutateAsync({
+      // Check if we're updating an existing draft request
+      const isEditing = requestData?.id && requestData?.status === "draft";
+      
+      const payload = {
         title: `${config.title || "Leave"} Request - ${form.documentId}`,
         leaveType: form.leaveType as any,
         startDate: form.startDate,
@@ -290,9 +315,21 @@ export default function LeaveRequestForm({
         leaveDaysRequested: Number(form.leaveDaysRequested) || 0,
         backupPersonName: form.backupPersonName || undefined,
         backupPersonPhone: form.backupPersonPhone || undefined,
-      });
+      };
 
-      const requestId = (created as any)?.id as number;
+      let requestId: number;
+      if (isEditing) {
+        // Update existing draft
+        await updateLeave.mutateAsync({
+          requestId: requestData.id,
+          ...payload,
+        });
+        requestId = requestData.id;
+      } else {
+        // Create new request
+        const created = await createLeave.mutateAsync(payload);
+        requestId = (created as any)?.id as number;
+      }
 
       if (requestId) {
         await submitRequestMutation.mutateAsync({
@@ -319,6 +356,10 @@ export default function LeaveRequestForm({
 
       toast.success("Request submitted successfully!");
       onSuccess?.();
+      // Redirect to My Requests page after successful submission
+      setTimeout(() => {
+        navigate("/requests");
+      }, 500);
     } catch (error: any) {
       toast.error(error.message || "Failed to submit request");
     } finally {
@@ -329,54 +370,52 @@ export default function LeaveRequestForm({
   if (!isAuthenticated) return null;
 
   return (
-    <div className="w-full bg-white dark:bg-[#1f426b] text-black dark:text-slate-100 px-4 leave-form-container relative dark:border-[#2b6cb0]/30">
+      <div className="w-full bg-white dark:bg-[#1f426b] text-black dark:text-slate-100 px-3 md:px-4 leave-form-container relative dark:border-[#2b6cb0]/30">
       <div>
         {/* HEADER WITH LOGO AND CONTACT INFO */}
-        <div className="flex justify-between items-start px-6 py-3 gap-8">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-start px-3 md:px-6 py-3 gap-4 md:gap-8">
           <div className="shrink-0">
-            <img src="/logo/centrikaLogo.png" alt="Centrika Logo" className="h-20 w-auto" />
+            <img src="/logo/centrikaLogo.png" alt="Centrika Logo" className="h-14 md:h-20 w-auto" />
           </div>
-          <div className="text-sm flex-1 flex justify-end">
-            <div className="flex flex-col gap-3 items-start">
-              <div className="flex items-center gap-2">
-                <Phone size={16} className="text-blue-600" />
-                <span className="text-blue-600 font-semibold">+250 788 123 099</span>
+          <div className="text-xs md:text-sm flex-1 flex justify-start md:justify-end">
+            <div className="flex flex-col gap-2 md:gap-3 items-start">
+              <div className="flex items-center gap-2 min-w-0">
+                <Phone size={14} className="text-blue-600 shrink-0 md:w-[16px] md:h-[16px]" />
+                <span className="text-blue-600 font-semibold truncate text-[11px] md:text-sm">+250 788 123 099</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Mail size={16} className="text-blue-600" />
-                <span className="text-blue-600 font-semibold">info@centrika.rw</span>
+              <div className="flex items-center gap-2 min-w-0">
+                <Mail size={14} className="text-blue-600 shrink-0 md:w-[16px] md:h-[16px]" />
+                <span className="text-blue-600 font-semibold truncate text-[11px] md:text-sm">info@centrika.rw</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Globe size={16} className="text-blue-600" />
-                <span className="text-blue-600 font-semibold">www.centrika.rw</span>
+              <div className="flex items-center gap-2 min-w-0">
+                <Globe size={14} className="text-blue-600 shrink-0 md:w-[16px] md:h-[16px]" />
+                <span className="text-blue-600 font-semibold truncate text-[11px] md:text-sm">www.centrika.rw</span>
               </div>
               <div className="flex items-start gap-2">
-                <MapPin size={16} className="text-blue-600 shrink-0 mt-0.5" />
-                <div className="flex flex-col">
-                  <span className="text-blue-600 font-semibold">Room F002, 2nd Floor, CHIC Building,</span>
-                  <span className="text-blue-600 font-semibold">Plot 1007, KN2 Kigali-Rwanda</span>
+                <MapPin size={14} className="text-blue-600 shrink-0 mt-0.5 md:w-[16px] md:h-[16px]" />
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-blue-600 font-semibold text-[10px] md:text-sm leading-tight">Room F002, 2nd Floor, CHIC Building,</span>
+                  <span className="text-blue-600 font-semibold text-[10px] md:text-sm leading-tight">Plot 1007, KN2 Kigali-Rwanda</span>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-
-        {/* TITLE BAR (YELLOW AS REQUESTED) */}
+        </div>        {/* TITLE BAR (YELLOW AS REQUESTED) */}
         <div className="bg-yellow-500 text-white text-center font-bold py-2 text-lg tracking-wide uppercase">
           {config.title || "LEAVE REQUEST FORM"}
         </div>
 
-        {/* REQUEST HEADER SECTION (5-col style requested previously, adopting 4-col inputs style matching CarRequest) */}
-        <div className="grid grid-cols-4 gap-3 px-6 py-3 text-sm items-end">
+        {/* REQUEST HEADER SECTION - Responsive Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 px-3 md:px-6 py-2 md:py-3 text-xs md:text-sm items-end">
           <div>
-            <p className="font-semibold text-blue-600 mb-1 text-xs">Department</p>
+            <p className="font-semibold text-blue-600 mb-1 text-[10px] md:text-xs">Department</p>
             <div className="flex gap-0 items-center">
-              <span className="text-blue-600 font-bold text-xs whitespace-nowrap">CTK - </span>
-              <Input value={form.department} className="w-full h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed border-l-0" disabled />
+              <span className="text-blue-600 font-bold text-[10px] md:text-xs whitespace-nowrap">CTK - </span>
+              <Input value={form.department} className="w-full h-6 md:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] md:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed border-l-0" disabled />
             </div>
           </div>
           <div>
-            <p className="font-semibold text-blue-600 mb-1 text-xs">Date of Request</p>
+            <p className="font-semibold text-blue-600 mb-1 text-[10px] md:text-xs">Date of Request</p>
             <Input type="text" value={new Date().toISOString().split('T')[0]} className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed" disabled />
           </div>
           <div>
@@ -429,6 +468,7 @@ export default function LeaveRequestForm({
                 onEndDateChange={(d: string) => setForm({ ...form, endDate: d })}
                 disabled={effectiveIsReadOnly}
                 maxDays={200}
+                takenLeaveDates={takenLeaveDates}
               />
             </Row>
 
@@ -453,6 +493,10 @@ export default function LeaveRequestForm({
                       leaveDaysEntitled: typeof data.entitled === "number" ? data.entitled : 999,
                       leaveDaysTaken: data.taken.toString()
                     }));
+                  }
+                  // Update taken leave dates from backend
+                  if (data.takenLeaveDates) {
+                    setTakenLeaveDates(data.takenLeaveDates);
                   }
                 }}
               />
@@ -502,8 +546,13 @@ export default function LeaveRequestForm({
                           ?.filter((s: any) => s.id !== user?.id)
                           .map((s: any) => (
                             <SelectItem key={s.id} value={String(s.id)}>
-                              <span className="font-medium">{s.name}</span>
-                              {s.department && <span className="text-muted-foreground ml-1">({s.department})</span>}
+                              <div className="flex flex-col">
+                                <span className="font-medium">{s.name}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {s.phoneNumber && <span>{s.phoneNumber} • </span>}
+                                  {s.department?.name || s.department}
+                                </span>
+                              </div>
                             </SelectItem>
                           ))}
                       </SelectContent>
@@ -582,33 +631,77 @@ export default function LeaveRequestForm({
               <div className="space-y-3">
                 {!effectiveIsReadOnly ? (
                   <>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        if (e.target.files?.[0]) {
-                          const file = e.target.files[0];
-                          setForm({ ...form, employeeSignature: file });
-                          const reader = new FileReader();
-                          reader.onload = (ev) => setForm((prev: any) => ({ ...prev, employeeSignatureUrl: ev.target?.result as string }));
-                          reader.readAsDataURL(file);
-                        }
-                      }}
-                      className="text-xs"
-                    />
-                    {form.employeeSignatureUrl && <img src={form.employeeSignatureUrl} alt="sig" className="h-10 object-contain border border-blue-300 dark:border-[#3b6dae]/40 p-1" />}
+                    <div className="flex gap-4 mb-4">
+                      <label className="flex items-center gap-2 cursor-pointer group">
+                        <input
+                          type="radio"
+                          checked={form.signatureMethod === "draw"}
+                          onChange={() => setForm({ ...form, signatureMethod: "draw", employeeSignature: null, employeeSignatureUrl: "" })}
+                          className="w-4 h-4 accent-blue-600"
+                        />
+                        <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600">Draw Signature</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer group">
+                        <input
+                          type="radio"
+                          checked={form.signatureMethod === "upload"}
+                          onChange={() => setForm({ ...form, signatureMethod: "upload", employeeSignature: null, employeeSignatureUrl: "" })}
+                          className="w-4 h-4 accent-blue-600"
+                        />
+                        <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600">Upload Image</span>
+                      </label>
+                    </div>
+
+                    {form.signatureMethod === "upload" ? (
+                      <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            if (e.target.files?.[0]) {
+                              const file = e.target.files[0];
+                              setForm({ ...form, employeeSignature: file });
+                              const reader = new FileReader();
+                              reader.onload = (ev) => setForm((prev: any) => ({ ...prev, employeeSignatureUrl: ev.target?.result as string }));
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                          className="text-xs block w-full text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all"
+                        />
+                      </div>
+                    ) : (
+                      <SignaturePad 
+                        onSave={(dataUrl) => {
+                          const file = base64ToFile(dataUrl, "signature.png");
+                          setForm({ ...form, employeeSignature: file, employeeSignatureUrl: dataUrl });
+                        }}
+                        onClear={() => {
+                          setForm({ ...form, employeeSignature: null, employeeSignatureUrl: "" });
+                        }}
+                      />
+                    )}
+                    
+                    {form.employeeSignatureUrl && form.signatureMethod === "upload" && (
+                       <div className="mt-2 animate-in zoom-in duration-300">
+                          <img src={form.employeeSignatureUrl} alt="sig" className="h-16 object-contain border-2 border-blue-100 rounded-xl p-2 bg-white" />
+                       </div>
+                    )}
                   </>
                 ) : (
                   <div className="space-y-1">
-                    {form.employeeSignatureUrl ? <img src={form.employeeSignatureUrl} alt="sig" className="h-10 object-contain" /> : <p className="text-xs italic text-gray-500">No signature</p>}
+                    {form.employeeSignatureUrl ? (
+                      <img src={form.employeeSignatureUrl} alt="sig" className="h-16 object-contain" />
+                    ) : (
+                      <p className="text-xs italic text-gray-500">No signature</p>
+                    )}
                   </div>
                 )}
-                <div className="mt-2 w-[240px]">
-                  <p className="text-xs font-semibold text-blue-900 mb-1">Signature Date</p>
+                <div className="mt-4 w-full md:w-[240px]">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-blue-900 mb-1.5 opacity-60">Signature Date</p>
                   <Input
                     value={form.signatureDate || new Date().toISOString().split("T")[0]}
                     readOnly
-                    className="h-8 bg-gray-100 dark:bg-[#295482] text-gray-600 dark:text-slate-400 font-medium cursor-not-allowed w-full border-blue-200 dark:border-[#3b6dae]/30 text-xs"
+                    className="h-9 bg-slate-50 dark:bg-slate-900/50 text-slate-600 dark:text-slate-400 font-bold cursor-not-allowed w-full border-blue-100 dark:border-blue-900/30 text-xs rounded-xl"
                   />
                 </div>
               </div>
@@ -632,7 +725,7 @@ export default function LeaveRequestForm({
               )}
             </Row>
 
-            {!isApprover && (
+            {!isApprover && requestData?.status !== "approved" && (
               <>
                 <Row label="4.2 HR Review">
                   <p className="text-xs text-gray-500 font-medium">Pending HR Approval</p>
@@ -643,7 +736,21 @@ export default function LeaveRequestForm({
               </>
             )}
 
-            {isApprover && (
+            {requestData?.status === "rejected" && (
+              <div className="p-4 border border-red-300 dark:border-red-900/50 rounded-lg bg-red-50 dark:bg-red-950/30 mb-4">
+                <div className="flex items-start gap-3">
+                  <div className="text-red-600 dark:text-red-400 font-bold text-lg">✕</div>
+                  <div className="flex-1">
+                    <h3 className="text-sm font-bold text-red-700 dark:text-red-400 mb-2">Request Rejected</h3>
+                    <p className="text-xs text-red-600 dark:text-red-300">
+                      {requestData?.rejectionReason || "This leave request has been rejected. Please contact your manager or HR for more information."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {isApprover && requestData?.status !== "approved" && requestData?.status !== "rejected" && (
               <div className="p-4 border-b border-blue-400 dark:border-[#3b6dae]/50 bg-blue-50/30">
                 <h3 className="text-sm font-bold text-blue-700 mb-3">Your Approval ({user?.role || "Approver"})</h3>
                 <div className="space-y-3">
@@ -651,20 +758,80 @@ export default function LeaveRequestForm({
                     <label className="text-xs font-semibold block mb-1">Comments</label>
                     <Textarea value={approvalComments} onChange={(e) => setApprovalComments(e.target.value)} disabled={isReadOnly} placeholder="Add comments..." className="text-xs border-blue-300 dark:border-[#3b6dae]/40" />
                   </div>
-                  {/* Removed Forward to HR field since it's handled automatically via workflows */}
                   <div>
                     <label className="text-xs font-semibold block mb-1">Signature</label>
                     {!isReadOnly ? (
-                      <>
-                        <input type="file" accept="image/*" onChange={(e) => setApproverSignature(e.target.files?.[0] || null)} className="block w-full text-xs text-slate-500 file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:font-semibold file:bg-[#3b6dae]/10 file:text-[#3b6dae] hover:file:bg-[#3b6dae]/20 border border-[#3b6dae]/30 rounded-lg p-1 transition-colors hover:border-[#3b6dae]/60 cursor-pointer mb-2 block" />
-                        {approverSignature && (
-                          <img
-                            src={URL.createObjectURL(approverSignature)}
-                            alt="HOD Signature Preview"
-                            className="h-10 object-contain border border-blue-300 dark:border-[#3b6dae]/40 p-1"
+                      <div className="space-y-3">
+                        <div className="flex gap-4 mb-4">
+                          <label className="flex items-center gap-2 cursor-pointer group">
+                            <input
+                              type="radio"
+                              checked={approverSignatureMethod === "draw"}
+                              onChange={() => {
+                                setApproverSignatureMethod("draw");
+                                setApproverSignature(null);
+                                setApproverSignatureUrl("");
+                              }}
+                              className="w-4 h-4 accent-blue-600"
+                            />
+                            <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600">Draw</span>
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer group">
+                            <input
+                              type="radio"
+                              checked={approverSignatureMethod === "upload"}
+                              onChange={() => {
+                                setApproverSignatureMethod("upload");
+                                setApproverSignature(null);
+                                setApproverSignatureUrl("");
+                              }}
+                              className="w-4 h-4 accent-blue-600"
+                            />
+                            <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600">Upload</span>
+                          </label>
+                        </div>
+
+                        {approverSignatureMethod === "upload" ? (
+                          <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0] || null;
+                                setApproverSignature(file);
+                                if (file) {
+                                  const reader = new FileReader();
+                                  reader.onload = (ev) => setApproverSignatureUrl(ev.target?.result as string);
+                                  reader.readAsDataURL(file);
+                                }
+                              }}
+                              className="block w-full text-xs text-slate-500 file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:font-semibold file:bg-[#3b6dae]/10 file:text-[#3b6dae] hover:file:bg-[#3b6dae]/20 border border-[#3b6dae]/30 rounded-lg p-1 transition-colors hover:border-[#3b6dae]/60 cursor-pointer"
+                            />
+                          </div>
+                        ) : (
+                          <SignaturePad 
+                            onSave={(dataUrl) => {
+                              const file = base64ToFile(dataUrl, "approver_signature.png");
+                              setApproverSignature(file);
+                              setApproverSignatureUrl(dataUrl);
+                            }}
+                            onClear={() => {
+                              setApproverSignature(null);
+                              setApproverSignatureUrl("");
+                            }}
                           />
                         )}
-                      </>
+
+                        {approverSignatureUrl && (
+                          <div className="mt-2 animate-in zoom-in duration-300">
+                            <img
+                              src={approverSignatureUrl}
+                              alt="Signature Preview"
+                              className="h-10 object-contain border border-blue-300 dark:border-[#3b6dae]/40 p-1 bg-white"
+                            />
+                          </div>
+                        )}
+                      </div>
                     ) : (
                       <p className="text-xs italic text-gray-500">Signature on file</p>
                     )}
@@ -678,25 +845,43 @@ export default function LeaveRequestForm({
         {/* ACTIONS & FOOTER */}
         <div className="flex justify-between items-center px-6 py-4 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c] gap-4 mt-4">
           <div className="flex gap-2">
-            <Button variant="outline" disabled={isSubmitting} onClick={() => window.print()} className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600">
-              <Printer size={16} className="mr-1" /> Print
-            </Button>
-            <Button variant="outline" disabled={isSubmitting} onClick={() => toast.info("Requires PDF generation")} className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600">
-              <Download size={16} className="mr-1" /> Download
-            </Button>
+            {requestData?.status === "approved" && (
+              <>
+                <Button variant="outline" disabled={isSubmitting} onClick={() => window.print()} className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600">
+                  <Printer size={16} className="mr-1" /> Print
+                </Button>
+                <Button 
+                  variant="outline" 
+                  disabled={isSubmitting} 
+                  onClick={() => {
+                    toast.info("Preparing your document for download... Please select 'Save as PDF' in the print menu.");
+                    setTimeout(() => window.print(), 1000);
+                  }} 
+                  className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600"
+                >
+                  <Download size={16} className="mr-1" /> Download
+                </Button>
+              </>
+            )}
           </div>
           <div className="flex gap-2">
-            {isApprover && !isReadOnly && (
-              <Button variant="destructive" onClick={() => setShowRejectDialog(true)}>Reject</Button>
+            {isApprover && !isReadOnly && requestData?.status !== "rejected" && (
+              <Button 
+                variant="destructive" 
+                onClick={() => setShowRejectDialog(true)}
+                className="bg-red-600 hover:bg-red-700 text-white font-semibold"
+              >
+                Reject Request
+              </Button>
             )}
-            {isApprover && !isReadOnly && (
+            {isApprover && !isReadOnly && requestData?.status !== "rejected" && (
               <Button disabled={isLoading} onClick={() => onApprove?.({ comments: approvalComments, signatureFile: approverSignature, selectedHR })} className="bg-green-600 hover:bg-green-700">
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Approve
               </Button>
             )}
 
-            {!isApprover && !isReadOnly && (
+            {!isApprover && !isReadOnly && requestData?.status !== "rejected" && (
               <>
                 <Button variant="outline" disabled={isSubmitting} onClick={handleSaveAsDraft} className="border-blue-400 dark:border-[#3b6dae]/50">Save Draft</Button>
                 <Button disabled={isSubmitting} onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700">
@@ -716,12 +901,52 @@ export default function LeaveRequestForm({
 
       {isApprover && (
         <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Reject Request</DialogTitle></DialogHeader>
-            <Textarea placeholder="Rejection reason..." value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} />
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowRejectDialog(false)}>Cancel</Button>
-              <Button variant="destructive" disabled={!rejectReason || isLoading} onClick={() => onReject?.(rejectReason)}>Reject</Button>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-lg font-bold text-red-600">Reject Request</DialogTitle>
+              <DialogDescription className="text-sm text-gray-600 mt-2">
+                Please provide a detailed reason for rejecting this request. This feedback will be shared with the requester.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <label className="text-sm font-semibold text-gray-700 mb-2 block">Rejection Reason *</label>
+                <Textarea 
+                  placeholder="Provide a clear and professional reason for rejection (minimum 10 characters)..." 
+                  value={rejectReason} 
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  className="min-h-24 text-sm border-red-300 focus:border-red-500 focus:ring-red-500"
+                  maxLength={500}
+                />
+                <p className="text-xs text-gray-500 mt-1">{rejectReason.length}/500 characters</p>
+              </div>
+            </div>
+            <DialogFooter className="flex gap-2 justify-end">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowRejectDialog(false);
+                  setRejectReason("");
+                }}
+                className="border-gray-300"
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive" 
+                disabled={rejectReason.trim().length < 10 || isLoading}
+                onClick={() => {
+                  if (rejectReason.trim().length >= 10) {
+                    onReject?.(rejectReason);
+                    setRejectReason("");
+                    setShowRejectDialog(false);
+                  }
+                }}
+                className="bg-red-600 hover:bg-red-700 text-white font-semibold"
+              >
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Reject Request
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -741,9 +966,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-[220px_1fr] border-b border-[#3b6dae]">
-      <div className="px-3 py-2 font-medium border-r border-[#3b6dae] bg-blue-100 text-[#3b6dae] text-xs">{label}</div>
-      <div className="px-3 py-1">{children}</div>
+    <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] border-b border-[#3b6dae] gap-0">
+      <div className="px-2 md:px-3 py-1.5 md:py-2 font-medium md:border-r border-[#3b6dae] bg-blue-100 text-[#3b6dae] text-[10px] md:text-xs md:whitespace-nowrap">{label}</div>
+      <div className="px-2 md:px-3 py-1 md:py-1 text-xs md:text-sm">{children}</div>
     </div>
   );
 }

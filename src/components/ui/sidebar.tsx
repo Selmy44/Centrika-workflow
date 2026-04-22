@@ -17,7 +17,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useIsMobile } from "@/hooks/useMobile";
+import { useIsMobile, useIsTablet } from "@/hooks/useMobile";
 import { cn } from "@/lib/utils";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, VariantProps } from "class-variance-authority";
@@ -66,11 +66,26 @@ function SidebarProvider({
   onOpenChange?: (open: boolean) => void;
 }) {
   const isMobile = useIsMobile();
+  const isTablet = useIsTablet();
+  const isSmallDevice = isMobile || isTablet;
   const [openMobile, setOpenMobile] = React.useState(false);
 
   // This is the internal state of the sidebar.
   // We use openProp and setOpenProp for control from outside the component.
-  const [_open, _setOpen] = React.useState(defaultOpen);
+  const [_open, _setOpen] = React.useState(() => {
+    // On mobile/tablet, always start closed and ignore localStorage
+    if (isSmallDevice) {
+      return false;
+    }
+    
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(SIDEBAR_COOKIE_NAME);
+      if (saved !== null) {
+        return saved === "true";
+      }
+    }
+    return defaultOpen;
+  });
   const open = openProp ?? _open;
   const setOpen = React.useCallback(
     (value: boolean | ((value: boolean) => boolean)) => {
@@ -81,15 +96,17 @@ function SidebarProvider({
         _setOpen(openState);
       }
 
-      // This sets the cookie to keep the sidebar state.
-      document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+      // This sets localStorage to keep the sidebar state (only on desktop)
+      if (!isSmallDevice) {
+        localStorage.setItem(SIDEBAR_COOKIE_NAME, openState.toString());
+      }
     },
-    [setOpenProp, open]
+    [setOpenProp, open, isSmallDevice]
   );
 
   // Helper to toggle the sidebar.
   const toggleSidebar = React.useCallback(() => {
-    return isMobile ? setOpenMobile(open => !open) : setOpen(open => !open);
+    return isMobile || isTablet ? setOpenMobile(open => !open) : setOpen(open => !open);
   }, [isMobile, setOpen, setOpenMobile]);
 
   // Adds a keyboard shortcut to toggle the sidebar.

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, ArrowLeft, CheckCircle, Mail } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { validateEmail } from "@/utils/emailValidation";
 
 export default function ForgotPasswordPage() {
   const [, navigate] = useLocation();
@@ -15,55 +16,56 @@ export default function ForgotPasswordPage() {
 
   const forgotPasswordMutation = trpc.auth.forgotPassword.useMutation();
 
-  const validateEmail = (email: string): boolean => {
-    const centrikaEmailRegex = /^[a-zA-Z0-9._%+-]+@centrika\.rw$/;
-    return centrikaEmailRegex.test(email);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) {
-      toast.error("Please enter your email address");
-      return;
-    }
-    if (!validateEmail(email)) {
-      toast.error("Please use your company email (username@centrika.rw)");
+    
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.valid) {
+      toast.error(emailValidation.error || "Invalid email address");
       return;
     }
     setIsLoading(true);
     try {
-      await forgotPasswordMutation.mutateAsync({ email });
+      const result = await forgotPasswordMutation.mutateAsync({ email });
       setIsSubmitted(true);
-      toast.success("Reset instructions sent to your email!");
+      toast.success(result.message || "Reset instructions sent to your email!");
     } catch (error: any) {
-      toast.error(error.message || "Failed to send reset email");
+      toast.error(error.message || "An error occurred. Please try again or contact support.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen w-full overflow-hidden relative" style={{ background: "#f7f9fc" }}>
+    <div className="min-h-screen w-full flex bg-[#f7f9fc]">
       {/* Force light mode */}
       <style>{`
         .forgot-page, .forgot-page * { color-scheme: light !important; }
-        @media (max-width: 768px) {
-          .forgot-left-panel { display: none !important; }
-          .forgot-divider { display: none !important; }
-          .forgot-right-panel {
-            width: 100% !important;
-            position: relative !important;
-            min-height: 100vh;
-          }
+        .forgot-page .dark\\:bg-slate-950,
+        .forgot-page .dark\\:bg-slate-900,
+        .forgot-page .dark\\:bg-slate-800,
+        .forgot-page .dark\\:text-white,
+        .forgot-page .dark\\:text-slate-100,
+        .forgot-page .dark\\:text-slate-200,
+        .forgot-page .dark\\:text-slate-300,
+        .forgot-page .dark\\:text-slate-400,
+        .forgot-page .dark\\:border-slate-700,
+        .forgot-page .dark\\:border-slate-600 {
+          all: revert;
         }
       `}</style>
 
       {/* ====== LEFT PANEL ====== */}
-      <div className="forgot-left-panel absolute left-0 top-0 h-full" style={{ width: "45%" }}>
+      <div className="hidden md:flex relative w-[45%] flex-col justify-center overflow-hidden">
         <img src="/logo/loginbackground2G.jpeg" alt="" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0" style={{ background: "linear-gradient(160deg, rgba(30, 64, 120, 0.92) 0%, rgba(59, 109, 174, 0.82) 50%, rgba(59, 109, 174, 0.65) 100%)" }} />
+        
+        {/* Decorative circles */}
         <div className="absolute top-[12%] left-[10%] w-24 h-24 rounded-full border border-white/10" />
+        <div className="absolute top-[28%] left-[18%] w-6 h-6 rounded-full bg-white/8" />
         <div className="absolute bottom-[22%] left-[6%] w-16 h-16 rounded-full border border-white/8" />
+        <div className="absolute bottom-[40%] right-[10%] w-10 h-10 rounded-full bg-white/5" />
+
         <div className="relative z-10 h-full flex flex-col justify-center px-12">
           <div className="mb-8">
             <div className="inline-block rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(12px)" }}>
@@ -94,17 +96,9 @@ export default function ForgotPasswordPage() {
         </div>
       </div>
 
-      {/* ====== DIAGONAL DIVIDER ====== */}
-      <div className="forgot-divider absolute top-0 h-full z-10" style={{ left: "40%", width: "200px" }}>
-        <svg viewBox="0 0 200 100" preserveAspectRatio="none" className="h-full w-full" style={{ display: "block" }}>
-          <polygon points="0,0 120,0 80,100 0,100" style={{ fill: "rgba(59, 109, 174, 0.82)" }} />
-          <polygon points="120,0 200,0 200,100 80,100" fill="#f7f9fc" />
-        </svg>
-      </div>
-
       {/* ====== RIGHT PANEL ====== */}
-      <div className="forgot-right-panel absolute right-0 top-0 h-full z-20 flex items-center justify-center" style={{ width: "55%", background: "#f7f9fc" }}>
-        <div className="w-full max-w-md px-12">
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-12 relative z-20">
+        <div className="w-full max-w-md">
           {!isSubmitted ? (
             <>
               {/* Header */}
@@ -136,13 +130,6 @@ export default function ForgotPasswordPage() {
                   </div>
                   <p style={{ color: "#9bb5cc", fontSize: "12px" }}>
                     Use your company email: username@centrika.rw
-                  </p>
-                </div>
-
-                {/* Info box */}
-                <div className="p-3 rounded-lg" style={{ background: "rgba(59, 109, 174, 0.08)", border: "1px solid rgba(59, 109, 174, 0.15)" }}>
-                  <p style={{ color: "#3b6dae", fontSize: "12px" }}>
-                    We'll send you an email with a link to reset your password. The link will expire in 15 minutes.
                   </p>
                 </div>
 
@@ -182,9 +169,15 @@ export default function ForgotPasswordPage() {
                 We've sent password reset instructions to
               </p>
               <p className="font-semibold mb-6" style={{ color: "#3b6dae", fontSize: "14px" }}>{email}</p>
-              <p className="mb-8" style={{ color: "#9bb5cc", fontSize: "12px" }}>
-                The reset link will expire in 15 minutes. Check your spam folder if you don't see it.
-              </p>
+              
+              <div className="mb-8 p-4 rounded-xl border border-blue-100 bg-blue-50/30">
+                <p style={{ color: "#3b6dae", fontSize: "13px", fontWeight: 500 }} className="mb-1">
+                  Expires in 7 minutes
+                </p>
+                <p style={{ color: "#8ca0b8", fontSize: "12px" }}>
+                  We'll send you an email with a link to reset your password. The link will expire in 7 minutes.
+                </p>
+              </div>
 
               <div className="space-y-3">
                 <button

@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Bell, Check, X, AlertCircle } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
+import { Bell, Check, X, AlertCircle, Megaphone, MessageCircle, Inbox, MessageSquare } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -11,6 +11,7 @@ export default function NotificationIcon() {
   const { isAuthenticated, user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [, setLocation] = useLocation();
+  const notificationRef = useRef<HTMLDivElement>(null);
 
   const { data: unreadCount = 0, refetch: refetchCount } = trpc.notifications.getUnreadCount.useQuery(undefined, {
     enabled: isAuthenticated,
@@ -47,6 +48,14 @@ export default function NotificationIcon() {
         return <X className="text-red-500" size={16} />;
       case "request_submitted":
         return <Bell className="text-blue-500" size={16} />;
+      case "announcement_posted":
+        return <Megaphone className="text-indigo-500" size={16} />;
+      case "new_comment":
+        return <MessageCircle className="text-amber-500" size={16} />;
+      case "new_suggestion":
+        return <Inbox className="text-emerald-500" size={16} />;
+      case "feedback_reply":
+        return <MessageSquare className="text-blue-500" size={16} />;
       default:
         return <Bell className="text-gray-500" size={16} />;
     }
@@ -66,12 +75,26 @@ export default function NotificationIcon() {
     return new Date(date).toLocaleDateString();
   };
 
+  // Handle click outside to close notification
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen]);
+
   if (!isAuthenticated) {
     return null;
   }
 
   return (
-    <div className="relative">
+    <div className="relative" ref={notificationRef}>
       {/* Notification Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
@@ -88,18 +111,18 @@ export default function NotificationIcon() {
 
       {/* Notification Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 top-12 w-96 z-[9999] animate-in fade-in slide-in-from-top-2">
+        <div className="fixed inset-x-2 sm:absolute sm:inset-x-auto sm:right-0 sm:top-12 top-16 max-w-xs sm:max-w-sm md:w-96 max-h-[calc(100vh-6rem)] z-[9999] animate-in fade-in slide-in-from-top-2">
           <Card className="bg-card border border-border shadow-2xl rounded-lg overflow-hidden">
             {/* Header */}
-            <div className="px-4 py-3 border-b border-border flex items-center justify-between bg-card">
-              <h3 className="font-semibold text-foreground">Notifications</h3>
+            <div className="px-3 sm:px-4 py-2 sm:py-3 border-b border-border flex items-center justify-between bg-card gap-2">
+              <h3 className="font-semibold text-foreground text-sm sm:text-base">Notifications</h3>
               {unreadCount > 0 && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     markAllAsRead.mutate();
                   }}
-                  className="text-xs text-accent hover:text-accent/80 font-medium"
+                  className="text-xs text-accent hover:text-accent/80 font-medium whitespace-nowrap"
                 >
                   Mark all as read
                 </button>
@@ -108,17 +131,17 @@ export default function NotificationIcon() {
 
             {/* Notifications List */}
             {notificationsData.length === 0 ? (
-              <div className="px-4 py-8 text-center bg-white dark:bg-slate-950">
-                <Bell className="mx-auto mb-2 text-muted-foreground opacity-50" size={24} />
-                <p className="text-sm text-muted-foreground">No notifications yet</p>
+              <div className="px-3 sm:px-4 py-6 sm:py-8 text-center bg-white dark:bg-slate-950">
+                <Bell className="mx-auto mb-2 text-muted-foreground opacity-50" size={20} />
+                <p className="text-xs sm:text-sm text-muted-foreground">No notifications yet</p>
               </div>
             ) : (
-              <ScrollArea className="h-96 bg-white dark:bg-slate-950">
+              <ScrollArea className="h-64 sm:h-80 md:h-96 bg-white dark:bg-slate-950">
                 <div className="divide-y divide-gray-200 dark:divide-slate-800">
                   {notificationsData.map((notif: any) => (
                     <div
                       key={notif.id}
-                      className={`px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer ${
+                      className={`px-3 sm:px-4 py-2 sm:py-3 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer ${
                         !notif.isRead ? "bg-blue-50 dark:bg-slate-800/40" : "bg-white dark:bg-slate-950"
                       }`}
                       onClick={() => {
@@ -126,28 +149,78 @@ export default function NotificationIcon() {
                         if (!notif.isRead) {
                           markAsRead.mutate({ notificationId: notif.id });
                         }
-                        // Navigate to approval if it's an approval_needed notification
-                        if (notif.type === "approval_needed" && notif.requestId) {
-                          setIsOpen(false);
-                          setLocation(`/approvals?requestId=${notif.requestId}`);
+                        
+                        // Close notification dropdown
+                        setIsOpen(false);
+
+                        // Handle different notification types
+                        switch (notif.type) {
+                          // Request-related notifications
+                          case "approval_needed":
+                            if (notif.requestId) {
+                              setLocation(`/approvals?requestId=${notif.requestId}`);
+                            }
+                            break;
+                          
+                          case "request_approved":
+                          case "request_rejected":
+                          case "request_submitted":
+                            if (notif.requestId) {
+                              // Navigate to requests and open the form as modal
+                              setLocation(`/requests/${notif.requestId}`);
+                            }
+                            break;
+
+                          // Announcement notifications
+                          case "announcement_posted":
+                          case "new_comment":
+                            const announcementId = notif.announcementId;
+                            if (window.location.pathname === "/") {
+                              // If already on dashboard, trigger modal via custom event
+                              window.dispatchEvent(new CustomEvent('open-announcement-detail', { detail: { id: announcementId } }));
+                            } else {
+                              // Navigate to dashboard and open announcement modal
+                              if (announcementId) {
+                                setLocation(`/?announcementId=${announcementId}`);
+                              } else {
+                                setLocation("/");
+                              }
+                            }
+                            break;
+
+                          // Centrika Connect notifications
+                          case "new_suggestion":
+                          case "feedback_reply":
+                            const suggestionId = notif.suggestionId || notif.requestId;
+                            if (suggestionId) {
+                              window.dispatchEvent(new CustomEvent('open-centrika-connect', { 
+                                detail: { mode: 'thread', suggestionId } 
+                              }));
+                            }
+                            break;
+
+                          default:
+                            // For any other type, navigate to dashboard
+                            setLocation("/");
+                            break;
                         }
                       }}
                     >
-                      <div className="flex gap-3">
+                      <div className="flex gap-2 sm:gap-3">
                         {/* Icon */}
-                        <div className="shrink-0 mt-1">{getNotificationIcon(notif.type)}</div>
+                        <div className="shrink-0 mt-0.5 sm:mt-1">{getNotificationIcon(notif.type)}</div>
 
                         {/* Content */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
-                            <p className="text-sm font-medium text-foreground line-clamp-1">{notif.title}</p>
-                            {!notif.isRead && <div className="w-2 h-2 bg-blue-500 rounded-full shrink-0 mt-1.5" />}
+                            <p className="text-xs sm:text-sm font-medium text-foreground line-clamp-1">{notif.title}</p>
+                            {!notif.isRead && <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-500 rounded-full shrink-0 mt-1 sm:mt-1.5" />}
                           </div>
                           <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{notif.message}</p>
-                          <div className="flex items-center gap-2 mt-2">
+                          <div className="flex items-center gap-1 sm:gap-2 mt-1 sm:mt-2">
                             <p className="text-xs text-muted-foreground">{formatDate(notif.createdAt)}</p>
                             {notif.triggeredByUser?.name && (
-                              <p className="text-xs text-muted-foreground">• {notif.triggeredByUser.name}</p>
+                              <p className="text-xs text-muted-foreground hidden sm:inline">• {notif.triggeredByUser.name}</p>
                             )}
                           </div>
                         </div>
@@ -160,7 +233,7 @@ export default function NotificationIcon() {
 
             {/* Footer */}
             {notificationsData.length > 0 && (
-              <div className="px-4 py-3 border-t border-border bg-card text-center">
+              <div className="px-3 sm:px-4 py-2 sm:py-3 border-t border-border bg-card text-center">
                 <button
                   onClick={() => {
                     setIsOpen(false);

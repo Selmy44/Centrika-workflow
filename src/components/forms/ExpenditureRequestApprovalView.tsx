@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
@@ -8,6 +8,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { SignaturePad } from "@/components/SignaturePad";
 import {
     Dialog,
     DialogContent,
@@ -16,6 +17,18 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+
+const base64ToFile = (base64: string, filename: string) => {
+    const arr = base64.split(",");
+    const mime = arr[0].match(/:(.*?);/)?.[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, { type: mime });
+};
 
 interface Props {
     requestData: any;
@@ -35,6 +48,7 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
     const [approvalComments, setApprovalComments] = useState("");
     const [signatureFile, setSignatureFile] = useState<File | null>(null);
     const [signaturePreview, setSignaturePreview] = useState("");
+    const [signatureMethod, setSignatureMethod] = useState<"upload" | "draw">("draw");
     const [rejectReason, setRejectReason] = useState("");
     const [showRejectDialog, setShowRejectDialog] = useState(false);
 
@@ -320,21 +334,73 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
                                 {/* Signature Upload */}
                                 <Row label="Your Signature">
                                     <div className="space-y-3">
-                                        {!signaturePreview ? (
-                                            <>
-                                                <p className="text-xs text-gray-600 dark:text-slate-400 mb-2">Upload an image or PDF of your signature</p>
+                                        {!approvalSectionIsReadOnly && (
+                                            <div className="flex gap-4 mb-4">
+                                                <label className="flex items-center gap-2 cursor-pointer group">
+                                                    <input
+                                                        type="radio"
+                                                        checked={signatureMethod === "draw"}
+                                                        onChange={() => {
+                                                            setSignatureMethod("draw");
+                                                            setSignatureFile(null);
+                                                            setSignaturePreview("");
+                                                        }}
+                                                        className="w-4 h-4 accent-blue-600"
+                                                    />
+                                                    <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600">Draw Signature</span>
+                                                </label>
+                                                <label className="flex items-center gap-2 cursor-pointer group">
+                                                    <input
+                                                        type="radio"
+                                                        checked={signatureMethod === "upload"}
+                                                        onChange={() => {
+                                                            setSignatureMethod("upload");
+                                                            setSignatureFile(null);
+                                                            setSignaturePreview("");
+                                                        }}
+                                                        className="w-4 h-4 accent-blue-600"
+                                                    />
+                                                    <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600">Upload Image</span>
+                                                </label>
+                                            </div>
+                                        )}
+
+                                        {signatureMethod === "upload" ? (
+                                            <div className="animate-in fade-in slide-in-from-top-2 duration-300">
                                                 <input
                                                     type="file"
-                                                    accept="image/*,.pdf"
-                                                    onChange={handleSignatureChange}
+                                                    accept="image/*"
+                                                    onChange={(e) => {
+                                                        const file = e.target.files?.[0];
+                                                        if (file) {
+                                                            setSignatureFile(file);
+                                                            const reader = new FileReader();
+                                                            reader.onload = (ev) => setSignaturePreview(ev.target?.result as string);
+                                                            reader.readAsDataURL(file);
+                                                        }
+                                                    }}
                                                     disabled={isLoading}
                                                     className="block w-full text-xs text-gray-600 dark:text-slate-400 border border-dashed border-blue-300 dark:border-[#3b6dae]/40 rounded p-2 cursor-pointer"
                                                 />
-                                            </>
+                                            </div>
                                         ) : (
-                                            <div className="space-y-2">
+                                            <SignaturePad 
+                                                onSave={(dataUrl) => {
+                                                    const file = base64ToFile(dataUrl, "approver_signature.png");
+                                                    setSignatureFile(file);
+                                                    setSignaturePreview(dataUrl);
+                                                }}
+                                                onClear={() => {
+                                                    setSignatureFile(null);
+                                                    setSignaturePreview("");
+                                                }}
+                                            />
+                                        )}
+
+                                        {signaturePreview && (
+                                            <div className="space-y-2 animate-in zoom-in duration-300">
                                                 <div className="p-3 border-2 border-dashed border-green-300 rounded bg-green-50">
-                                                    <p className="text-xs font-semibold text-green-700 mb-2">Signature Uploaded:</p>
+                                                    <p className="text-xs font-semibold text-green-700 mb-2">Signature Preview:</p>
                                                     <img src={signaturePreview} alt="approver-signature" className="h-14 object-contain" />
                                                 </div>
                                                 <button
@@ -345,7 +411,7 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
                                                     }}
                                                     className="text-xs text-red-600 hover:text-red-800 text-left"
                                                 >
-                                                    Remove
+                                                    Remove Signature
                                                 </button>
                                             </div>
                                         )}
@@ -364,26 +430,29 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
 
                 {/* ===== ACTIONS ===== */}
                 <div className="flex justify-between items-center px-6 py-4 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c] gap-4">
-                    <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            disabled={isLoading}
-                            onClick={() => window.print()}
-                            className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600"
-                        >
-                            <Printer size={16} className="mr-1" /> Print
-                        </Button>
-                        <Button
-                            variant="outline"
-                            disabled={isLoading}
-                            onClick={() => {
-                                toast.info("Download functionality requires backend PDF generation");
-                            }}
-                            className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600"
-                        >
-                            <Download size={16} className="mr-1" /> Download
-                        </Button>
-                    </div>
+                    {isRequestApproved && (
+                        <div className="flex gap-2">
+                            <Button
+                                variant="outline"
+                                disabled={isLoading}
+                                onClick={() => window.print()}
+                                className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600"
+                            >
+                                <Printer size={16} className="mr-1" /> Print
+                            </Button>
+                            <Button
+                                variant="outline"
+                                disabled={isLoading}
+                                onClick={() => {
+                                    toast.info("Preparing your document for download... Please select 'Save as PDF' in the print menu.");
+                                    setTimeout(() => window.print(), 1000);
+                                }}
+                                className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600"
+                            >
+                                <Download size={16} className="mr-1" /> Download
+                            </Button>
+                        </div>
+                    )}
                     <div className="flex gap-2">
                         {!approvalSectionIsReadOnly && (
                             <>
@@ -432,31 +501,51 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
 
                 {/* ===== REJECT DIALOG ===== */}
                 <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
-                    <DialogContent>
+                    <DialogContent className="sm:max-w-md">
                         <DialogHeader>
-                            <DialogTitle>Reject Request</DialogTitle>
-                            <DialogDescription>
-                                Please provide a reason for rejecting this expenditure request.
+                            <DialogTitle className="text-lg font-bold text-red-600">Reject Request</DialogTitle>
+                            <DialogDescription className="text-sm text-gray-600 mt-2">
+                                Please provide a detailed reason for rejecting this expenditure request. This feedback will be shared with the requester.
                             </DialogDescription>
                         </DialogHeader>
-                        <Textarea
-                            placeholder="Enter rejection reason..."
-                            value={rejectReason}
-                            onChange={(e) => setRejectReason(e.target.value)}
-                        />
-                        <DialogFooter>
-                            <Button variant="outline" onClick={() => setShowRejectDialog(false)}>
+                        <div className="space-y-4 py-4">
+                            <div>
+                                <label className="text-sm font-semibold text-gray-700 mb-2 block">Rejection Reason *</label>
+                                <Textarea
+                                    placeholder="Provide a clear and professional reason for rejection (minimum 10 characters)..."
+                                    value={rejectReason}
+                                    onChange={(e) => setRejectReason(e.target.value)}
+                                    className="min-h-24 text-sm border-red-300 focus:border-red-500 focus:ring-red-500"
+                                    maxLength={500}
+                                />
+                                <p className="text-xs text-gray-500 mt-1">{rejectReason.length}/500 characters</p>
+                            </div>
+                        </div>
+                        <DialogFooter className="flex gap-2 justify-end">
+                            <Button 
+                                variant="outline" 
+                                onClick={() => {
+                                    setShowRejectDialog(false);
+                                    setRejectReason("");
+                                }}
+                                className="border-gray-300"
+                            >
                                 Cancel
                             </Button>
                             <Button
                                 variant="destructive"
-                                disabled={!rejectReason || isLoading}
+                                disabled={rejectReason.trim().length < 10 || isLoading}
                                 onClick={() => {
-                                    onReject(rejectReason);
+                                    if (rejectReason.trim().length >= 10) {
+                                        onReject(rejectReason);
+                                        setRejectReason("");
+                                        setShowRejectDialog(false);
+                                    }
                                 }}
+                                className="bg-red-600 hover:bg-red-700 text-white font-semibold"
                             >
                                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Reject
+                                Reject Request
                             </Button>
                         </DialogFooter>
                     </DialogContent>

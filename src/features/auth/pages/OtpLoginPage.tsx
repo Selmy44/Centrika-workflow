@@ -1,16 +1,12 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-} from "@/components/ui/input-otp";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Loader2, CheckCircle, AlertCircle, Mail, Key, ArrowLeft, ShieldCheck } from "lucide-react";
+import { toast } from "sonner";
+import { validateEmail } from "@/utils/emailValidation";
 
 type LoginStep = "email" | "otp";
 
@@ -38,26 +34,35 @@ export default function OtpLoginPage() {
       setStep("otp");
       setTimeLeft(600); // 10 minutes
       setError("");
+      toast.success("Verification code sent to your email");
       setTimeout(() => otpInputRef.current?.focus(), 100);
     },
     onError: (err: any) => {
-      setError(err.message || "Failed to send OTP. Please try again.");
+      const msg = err.message || "Failed to send OTP. Please try again.";
+      setError(msg);
+      toast.error(msg);
     },
   });
 
   const verifyOtpMutation = trpc.mfa.verifyOtpLogin.useMutation({
-    onSuccess: async (data: any) => {
+    onSuccess: async () => {
       setSuccess(true);
       setError("");
-      // Ensure user info is refetched and persisted to local storage
-      await utils.auth.me.invalidate();
-      // Show success message, then redirect
+      toast.success("Login successful!");
+      // Wait for auth data to be refetched with new session
+      try {
+        await utils.auth.me.refetch();
+      } catch (err) {
+        console.warn("Auth refetch failed, proceeding anyway");
+      }
       setTimeout(() => {
-        setLocation("/dashboard");
-      }, 1500);
+        window.location.href = "/";
+      }, 500);
     },
     onError: (err: any) => {
-      setError(err.message || "Invalid OTP. Please try again.");
+      const msg = err.message || "Invalid OTP. Please try again.";
+      setError(msg);
+      toast.error(msg);
       setOtp("");
     },
   });
@@ -69,9 +74,10 @@ export default function OtpLoginPage() {
       return;
     }
 
-    // Basic email validation
-    if (!email.includes("@centrika.rw")) {
-      setError("Please use your company email (@centrika.rw)");
+    // Use comprehensive email validation
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.valid) {
+      setError(emailValidation.error || "Invalid email address");
       return;
     }
 
@@ -79,7 +85,7 @@ export default function OtpLoginPage() {
     setError("");
     try {
       await sendOtpMutation.mutateAsync({
-        email,
+        email: email.trim().toLowerCase(),
         purpose: "login",
       });
     } finally {
@@ -115,68 +121,93 @@ export default function OtpLoginPage() {
   const isOtpExpired = timeLeft === 0 && step === "otp";
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] relative overflow-hidden flex items-center justify-center p-4">
-      {/* Background Mesh Gradients */}
-      <div className="absolute top-0 -left-4 w-96 h-96 bg-[#3b6dae]/10 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" />
-      <div className="absolute top-0 -right-4 w-96 h-96 bg-[#c79d2d]/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" style={{ animationDelay: '1s' }} />
-      <div className="absolute -bottom-8 left-20 w-96 h-96 bg-[#3b6dae]/10 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" style={{ animationDelay: '2s' }} />
-      <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px]" />
+    <div className="min-h-screen w-full flex bg-[#f7f9fc]">
+      {/* Force light mode */}
+      <style>{`
+        .otp-login-page, .otp-login-page * { color-scheme: light !important; }
+        .otp-login-page .dark\\:bg-slate-950,
+        .otp-login-page .dark\\:bg-slate-900,
+        .otp-login-page .dark\\:bg-slate-800,
+        .otp-login-page .dark\\:text-white,
+        .otp-login-page .dark\\:text-slate-100,
+        .otp-login-page .dark\\:text-slate-200,
+        .otp-login-page .dark\\:text-slate-300,
+        .otp-login-page .dark\\:text-slate-400,
+        .otp-login-page .dark\\:border-slate-700,
+        .otp-login-page .dark\\:border-slate-600 {
+          all: revert;
+        }
+      `}</style>
 
-      <div className="w-full max-w-md relative z-10">
-        <Card className="bg-white/80 border-[#3b6dae]/10 backdrop-blur-xl shadow-2xl shadow-[#3b6dae]/10 overflow-hidden">
-          {/* Subtle top accent line */}
-          <div className="h-1 w-full bg-linear-to-r from-[#3b6dae] to-[#c79d2d]" />
+      {/* ====== LEFT: Branding Panel ====== */}
+      <div className="hidden md:flex relative w-[45%] flex-col justify-center overflow-hidden">
+        <img src="/logo/loginbackground2G.jpeg" alt="" className="absolute inset-0 w-full h-full object-cover" />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(160deg, rgba(30, 64, 120, 0.92) 0%, rgba(59, 109, 174, 0.82) 50%, rgba(59, 109, 174, 0.65) 100%)" }} />
+        
+        {/* Decorative elements */}
+        <div className="absolute top-[12%] left-[10%] w-24 h-24 rounded-full border border-white/10" />
+        <div className="absolute bottom-[22%] left-[6%] w-16 h-16 rounded-full border border-white/8" />
 
-          <CardHeader className="space-y-4 pb-6 pt-10 px-8 text-left">
-            <div className="space-y-1">
-              <p className="text-sm font-semibold text-[#3b6dae]/70">
-                Get started! 👋
-              </p>
-              <CardTitle className="text-3xl font-black text-[#3b6dae] tracking-tight">
-                {step === "email" ? "Login with OTP" : "Email verification with OTP"}
-              </CardTitle>
+        <div className="relative z-10 h-full flex flex-col justify-center px-12">
+          <div className="mb-8">
+            <div className="inline-block rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(12px)" }}>
+              <img src="/logo/centrikaLogo.png" alt="Centrika" className="h-32 w-auto drop-shadow-xl" />
             </div>
-            <CardDescription className="text-[#3b6dae]/60 font-medium text-sm leading-relaxed max-w-[90%]">
-              {step === "email" ? (
-                "Enter your company email to receive a one-time login code."
-              ) : (
-                <>
-                  Enter the verification code sent to your email address.<br />
-                  If you haven't received it, click the <span className="font-bold text-[#3b6dae]">Resend Code</span> button below to request a new one.
-                </>
-              )}
-            </CardDescription>
-          </CardHeader>
+          </div>
+          <h1 className="text-4xl font-bold text-white mb-3 tracking-tight">OnePortal Access</h1>
+          <p className="text-blue-100/90 text-lg mb-10 max-w-sm">
+            Experience seamless and secure authentication with our one-time password system.
+          </p>
+          <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/10 border border-white/10 backdrop-blur-md">
+            <ShieldCheck className="h-8 w-8 text-blue-300" />
+            <div>
+              <p className="text-white font-bold text-sm">Enhanced Security</p>
+              <p className="text-blue-100/70 text-xs">Multi-factor authentication enabled for all accounts.</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
-          <CardContent className="px-8 pb-8 space-y-6">
-            {/* Success State */}
-            {success && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-center gap-2 text-[#3b6dae] mb-4">
-                  <CheckCircle2 className="w-5 h-5" />
-                  <span className="font-black tracking-widest uppercase text-xs">Login successful!</span>
+      {/* ====== RIGHT: Form Panel ====== */}
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-12 relative z-20">
+        <div className="w-full max-w-md">
+          {success ? (
+            <div className="text-center">
+              <div className="flex justify-center mb-6">
+                <div className="w-20 h-20 rounded-full flex items-center justify-center bg-green-50 shadow-inner">
+                  <CheckCircle className="h-12 w-12 text-green-500" />
                 </div>
-                <p className="text-center text-xs font-semibold text-[#3b6dae]/60">Redirecting to dashboard...</p>
               </div>
-            )}
+              <h2 className="text-3xl font-bold text-[#1e3a5f] mb-2">Authenticated!</h2>
+              <p className="text-[#5a7a99] mb-8">Redirecting you to the dashboard...</p>
+              <Loader2 className="h-8 w-8 animate-spin mx-auto text-[#3b6dae]/40" />
+            </div>
+          ) : (
+            <>
+              <div className="mb-8">
+                <h2 className="text-3xl font-bold text-[#1e3a5f] mb-2">
+                  {step === "email" ? "Login with OTP" : "Verify Email"}
+                </h2>
+                <p className="text-[#8ca0b8] text-sm leading-relaxed">
+                  {step === "email" 
+                    ? "Enter your company email to receive a secure login code." 
+                    : `We've sent a 6-digit code to ${email}. Please enter it below.`}
+                </p>
+              </div>
 
-            {/* Error Alert */}
-            {error && (
-              <Alert className="bg-red-50 border-red-200">
-                <AlertCircle className="h-4 w-4 text-red-500" />
-                <AlertDescription className="text-red-700 font-medium text-xs tracking-wide">{error}</AlertDescription>
-              </Alert>
-            )}
+              {error && (
+                <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-100 flex gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <AlertCircle className="h-5 w-5 text-red-500 shrink-0" />
+                  <p className="text-red-700 text-xs font-semibold leading-tight">{error}</p>
+                </div>
+              )}
 
-            {!success && (
-              <>
-                {/* Email Step */}
-                {step === "email" && (
-                  <form onSubmit={handleSendOtp} className="space-y-5">
-                    <div className="space-y-2">
-                      <label htmlFor="email" className="block text-xs font-bold text-[#3b6dae] uppercase tracking-wider pl-1">
-                        Company Email
-                      </label>
+              {step === "email" ? (
+                <form onSubmit={handleSendOtp} className="space-y-6">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="email" style={{ color: "#5a7a99", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>Company Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9bb5cc]" />
                       <Input
                         id="email"
                         type="email"
@@ -187,151 +218,114 @@ export default function OtpLoginPage() {
                           setError("");
                         }}
                         disabled={loading}
-                        className="h-12 bg-white/70 border-[#3b6dae]/10 text-[#3b6dae] placeholder:text-[#3b6dae]/30 focus:border-[#3b6dae]/30 focus:ring-[#3b6dae]/10 transition-all font-semibold rounded-xl px-4"
+                        className="h-12 pl-12 bg-white border-[#d4dfe9] rounded-xl focus:ring-[#3b6dae]/20 font-medium"
+                        required
                       />
                     </div>
+                  </div>
 
-                    <div className="pt-2">
-                      <Button
-                        type="submit"
-                        disabled={loading || !email}
-                        className="w-full h-12 bg-[#3b6dae] hover:bg-[#2d5385] text-white font-black tracking-[0.2em] uppercase text-[11px] shadow-xl shadow-[#3b6dae]/20 transition-all active:scale-[0.98] rounded-xl"
-                      >
-                        {loading ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Sending...
-                          </>
-                        ) : (
-                          "Send Code"
-                        )}
-                      </Button>
-                    </div>
-                  </form>
-                )}
-
-                {/* OTP Step */}
-                {step === "otp" && (
-                  <form onSubmit={handleVerifyOtp} className="space-y-5">
-                    <div className="flex justify-center pt-2 relative">
-                      <div className="relative group max-w-[340px] mx-auto">
-                        <Input
-                          id="otp"
-                          type="text"
-                          inputMode="numeric"
-                          value={otp}
-                          onChange={(e) => {
-                            const value = e.target.value.replace(/\D/g, "").slice(0, 6);
-                            setOtp(value);
-                            setError("");
-                          }}
-                          className="absolute inset-0 w-full h-full opacity-0 z-20 cursor-text text-transparent selection:bg-transparent"
-                          required
-                          disabled={loading || isOtpExpired}
-                          maxLength={6}
-                          autoFocus
-                          ref={otpInputRef as any}
-                        />
-                        
-                        <div className="flex justify-between gap-2 max-w-full pointer-events-none pb-2">
-                          {[0, 1, 2, 3, 4, 5].map((index) => {
-                            const isActive = otp.length === index && !(loading || isOtpExpired);
-                            const hasValue = otp.length > index;
-                            return (
-                              <div
-                                key={index}
-                                className={`relative flex h-14 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-xl border-2 text-2xl font-black transition-all duration-300 ${
-                                  isActive
-                                    ? "border-[#3b6dae] shadow-[0_0_15px_rgba(59,109,174,0.3)] bg-white scale-105 z-10"
-                                    : hasValue
-                                      ? "border-[#3b6dae]/40 bg-[#3b6dae]/5 text-[#3b6dae]"
-                                      : "border-[#3b6dae]/10 bg-white/50 text-transparent group-focus-within:border-[#3b6dae]/30"
-                                }`}
-                              >
-                                {otp[index] || ""}
-                                {isActive && (
-                                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                    <div className="w-[2px] h-6 bg-[#3b6dae] animate-pulse duration-1000" />
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                      
+                  <Button
+                    type="submit"
+                    disabled={loading || !email}
+                    className="w-full h-12 rounded-full bg-[#3b6dae] hover:bg-[#2d5385] text-white font-bold tracking-widest uppercase text-[11px] shadow-xl shadow-[#3b6dae]/20 transition-all active:scale-[0.98]"
+                  >
+                    {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...</> : "Send Verification Code"}
+                  </Button>
+                </form>
+              ) : (
+                <form onSubmit={handleVerifyOtp} className="space-y-6">
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center px-1">
+                      <Label htmlFor="otp" style={{ color: "#5a7a99", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>Verification Code</Label>
                       {timeLeft > 0 && (
-                        <div className="absolute -top-6 right-0 bg-white/80 px-2 py-1 rounded-md shadow-sm border border-[#3b6dae]/5">
-                          <span
-                            className={`text-[10px] font-black tracking-widest ${
-                              timeLeft < 60 ? "text-red-500" : "text-[#3b6dae]/60"
-                            }`}
-                          >
-                            {formatTime(timeLeft)}
-                          </span>
-                        </div>
+                        <span className={`text-[11px] font-bold ${timeLeft < 60 ? "text-red-500 animate-pulse" : "text-[#3b6dae]/60"}`}>
+                          Expires in {formatTime(timeLeft)}
+                        </span>
                       )}
                     </div>
-
-                    {/* Info Message */}
-                    <div className="p-3 bg-[#3b6dae]/5 border border-[#3b6dae]/10 rounded-xl">
-                      <p className="text-xs font-semibold text-[#3b6dae]/70 text-center">
-                        Check your email. Code expires in {formatTime(timeLeft)}.
-                      </p>
+                    
+                    <div className="relative group">
+                      <Input
+                        id="otp"
+                        type="text"
+                        inputMode="numeric"
+                        value={otp}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, "").slice(0, 6);
+                          setOtp(value);
+                          setError("");
+                        }}
+                        className="absolute inset-0 w-full h-full opacity-0 z-20 cursor-text text-transparent selection:bg-transparent"
+                        required
+                        disabled={loading || isOtpExpired}
+                        maxLength={6}
+                        autoFocus
+                        ref={otpInputRef as any}
+                      />
+                      
+                      <div className="flex justify-between gap-2 max-w-full pointer-events-none">
+                        {[0, 1, 2, 3, 4, 5].map((index) => {
+                          const isActive = otp.length === index && !(loading || isOtpExpired);
+                          const hasValue = otp.length > index;
+                          return (
+                            <div
+                              key={index}
+                              className={`relative flex h-14 w-[15%] items-center justify-center rounded-xl border-2 text-2xl font-black transition-all duration-300 ${
+                                isActive
+                                  ? "border-[#3b6dae] bg-white scale-105 shadow-lg shadow-[#3b6dae]/10 z-10"
+                                  : hasValue
+                                    ? "border-[#3b6dae]/40 bg-[#3b6dae]/5 text-[#3b6dae]"
+                                    : "border-[#d4dfe9] bg-white text-transparent"
+                              }`}
+                            >
+                              {otp[index] || ""}
+                              {isActive && (
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <div className="w-[2px] h-6 bg-[#3b6dae] animate-pulse" />
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
+                  </div>
 
-                    <div className="pt-2">
-                      <Button
-                        type="submit"
-                        disabled={loading || otp.length !== 6 || isOtpExpired}
-                        className="w-full h-14 bg-[#3b6dae] hover:bg-[#2d5385] text-white font-bold tracking-wide uppercase text-sm shadow-xl shadow-[#3b6dae]/20 transition-all active:scale-[0.98] rounded-xl"
-                      >
-                        {loading ? (
-                          <>
-                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                            Verifying...
-                          </>
-                        ) : (
-                          "SIGN IN"
-                        )}
-                      </Button>
+                  {isOtpExpired && (
+                    <div className="p-3 bg-red-50 border border-red-100 rounded-xl">
+                      <p className="text-red-600 text-[11px] font-bold text-center uppercase tracking-wider">The code has expired. Please request a new one.</p>
                     </div>
+                  )}
 
-                    {/* Resend Option */}
-                    <div className="pt-2 text-center">
-                      <p className="text-sm font-medium text-[#3b6dae]/60">
-                        Didn't receive code?{" "}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setStep("email");
-                            setOtp("");
-                            setTimeLeft(0);
-                          }}
-                          className="font-bold text-[#3b6dae] hover:text-[#2d5385] hover:underline transition-colors"
-                        >
-                          Resend the Code
-                        </button>
-                      </p>
-                    </div>
-                  </form>
-                )}
-              </>
-            )}
+                  <Button
+                    type="submit"
+                    disabled={loading || otp.length !== 6 || isOtpExpired}
+                    className="w-full h-12 rounded-full bg-[#3b6dae] hover:bg-[#2d5385] text-white font-bold tracking-widest uppercase text-[11px] shadow-xl shadow-[#3b6dae]/20 transition-all active:scale-[0.98]"
+                  >
+                    {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying...</> : "Sign In"}
+                  </Button>
 
-            {/* Footer Form Note */}
-            <div className="pt-6 border-t border-[#3b6dae]/10">
-              <p className="text-[10px] text-center font-bold tracking-widest uppercase text-[#3b6dae]/40">
-                🔒 Protected by single-use OTP
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+                  <div className="pt-2 text-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setStep("email");
+                        setOtp("");
+                        setTimeLeft(0);
+                      }}
+                      className="text-sm font-bold text-[#3b6dae] hover:text-[#2d5385] flex items-center justify-center gap-2 mx-auto transition-colors"
+                    >
+                      <ArrowLeft size={16} /> Use a different email
+                    </button>
+                  </div>
+                </form>
+              )}
+            </>
+          )}
 
-        {/* Global Footer */}
-        <div className="mt-8 text-center text-[#3b6dae]/30 text-[10px] font-black tracking-widest uppercase space-y-1">
-          <p>Centrika OnePortal System</p>
-          <p>© 2026 All rights reserved</p>
+          <div className="mt-12 text-center text-[10px] font-bold text-[#b0c4d8] uppercase tracking-[0.2em] pt-6 border-t border-[#e8eef4]">
+            Centrika OnePortal &middot; © 2026
+          </div>
         </div>
       </div>
     </div>

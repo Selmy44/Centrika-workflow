@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -19,6 +19,19 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { LeaveBalanceCalculator } from "./shared/LeaveBalanceCalculator";
+import { SignaturePad } from "@/components/SignaturePad";
+
+const base64ToFile = (base64: string, filename: string) => {
+  const arr = base64.split(",");
+  const mime = arr[0].match(/:(.*?);/)?.[1];
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new File([u8arr], filename, { type: mime });
+};
 
 interface Props {
   onSuccess?: () => void;
@@ -59,6 +72,7 @@ export default function AnnualLeaveForm({ onSuccess, onClose, onBack }: Props) {
     employeeSignature: null as File | null,
     employeeSignatureUrl: "" as string,
     signatureDate: new Date().toISOString().split("T")[0],
+    signatureMethod: "draw" as "upload" | "draw",
   });
 
   const { data: heads = [] } = trpc.users.listHeads.useQuery(undefined, {
@@ -411,32 +425,69 @@ export default function AnnualLeaveForm({ onSuccess, onClose, onBack }: Props) {
 
           {/* 5. EMPLOYEE SIGNATURE */}
           <Section title="5. EMPLOYEE SIGNATURE">
-            <Row label="5.1 Upload Your Signature">
-              <div className="space-y-2 py-1">
-                <input
-                  type="file"
-                  accept=".png,.jpg,.jpeg,.pdf"
-                  onChange={(e) => {
-                    if (e.target.files?.[0]) {
-                      const file = e.target.files[0];
-                      setForm({ ...form, employeeSignature: file });
-                      const reader = new FileReader();
-                      reader.onload = (event) => {
-                        setForm((prev) => ({
-                          ...prev,
-                          employeeSignatureUrl: event.target?.result as string,
-                        }));
-                      };
-                      reader.readAsDataURL(file);
-                    }
-                  }}
-                  className="text-xs"
-                />
-                {form.employeeSignature && (
-                  <p className="text-xs text-green-600">✓ {form.employeeSignature.name} selected</p>
+            <Row label="5.1 Your Signature">
+              <div className="space-y-3 py-1">
+                <div className="flex gap-4 mb-2">
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <input
+                      type="radio"
+                      checked={form.signatureMethod === "draw"}
+                      onChange={() => {
+                        setForm({ ...form, signatureMethod: "draw", employeeSignature: null, employeeSignatureUrl: "" });
+                      }}
+                      className="w-4 h-4 accent-blue-600"
+                    />
+                    <span className="text-xs font-black uppercase tracking-widest text-[#3b6dae] group-hover:text-blue-800">Draw Signature</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <input
+                      type="radio"
+                      checked={form.signatureMethod === "upload"}
+                      onChange={() => {
+                        setForm({ ...form, signatureMethod: "upload", employeeSignature: null, employeeSignatureUrl: "" });
+                      }}
+                      className="w-4 h-4 accent-blue-600"
+                    />
+                    <span className="text-xs font-black uppercase tracking-widest text-[#3b6dae] group-hover:text-blue-800">Upload Image</span>
+                  </label>
+                </div>
+
+                {form.signatureMethod === "upload" ? (
+                  <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        if (e.target.files?.[0]) {
+                          const file = e.target.files[0];
+                          setForm({ ...form, employeeSignature: file });
+                          const reader = new FileReader();
+                          reader.onload = (ev) => {
+                            setForm((prev) => ({
+                              ...prev,
+                              employeeSignatureUrl: ev.target?.result as string,
+                            }));
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      className="text-xs block w-full text-slate-500 file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                  </div>
+                ) : (
+                  <SignaturePad 
+                    onSave={(dataUrl) => {
+                      const file = base64ToFile(dataUrl, "signature.png");
+                      setForm({ ...form, employeeSignature: file, employeeSignatureUrl: dataUrl });
+                    }}
+                    onClear={() => {
+                      setForm({ ...form, employeeSignature: null, employeeSignatureUrl: "" });
+                    }}
+                  />
                 )}
-                {form.employeeSignatureUrl && (
-                  <div className="p-2 border border-dashed border-blue-300 dark:border-[#3b6dae]/40 rounded bg-blue-50 inline-block">
+                
+                {form.employeeSignatureUrl && form.signatureMethod === "upload" && (
+                  <div className="p-2 border border-dashed border-blue-300 dark:border-[#3b6dae]/40 rounded bg-blue-50 inline-block animate-in zoom-in duration-300">
                     <img src={form.employeeSignatureUrl} alt="signature" className="h-16 object-contain" />
                   </div>
                 )}
@@ -455,24 +506,7 @@ export default function AnnualLeaveForm({ onSuccess, onClose, onBack }: Props) {
         {/* ===== ACTIONS ===== */}
         <div className="flex justify-between items-center px-6 py-4 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c] gap-4">
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              disabled={isSubmitting}
-              onClick={() => window.print()}
-              className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600"
-            >
-              <Printer size={16} className="mr-1" /> Print
-            </Button>
-            <Button
-              variant="outline"
-              disabled={isSubmitting}
-              onClick={() => {
-                toast.info("Download functionality requires backend PDF generation");
-              }}
-              className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600"
-            >
-              <Download size={16} className="mr-1" /> Download
-            </Button>
+            {/* Print/Download options are only available for approved requests */}
           </div>
           <div className="flex gap-2">
             <Button

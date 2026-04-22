@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useFormAutoFill } from "@/_core/hooks/useFormAutoFill";
 import { trpc } from "@/lib/trpc";
@@ -19,19 +20,22 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { LeaveBalanceCalculator } from "./shared/LeaveBalanceCalculator";
+import { SignaturePad } from "@/components/SignaturePad";
+import { base64ToFile } from "@/lib/fileUtils";
 
 interface Props {
+  requestData?: any;
+  isReadOnly?: boolean;
   onSuccess?: () => void;
-  onClose?: () => void;
-  onBack?: () => void;
 }
 
 /**
  * Unpaid Leave Form - Professional document-style design
  * Matches CarRequestForm / ExpenditureRequestForm / AssetRequestForm layout
  */
-export default function UnpaidLeaveForm({ onSuccess, onClose, onBack }: Props) {
+export default function UnpaidLeaveForm({ requestData, isReadOnly = false, onSuccess }: Props) {
   const { user, isAuthenticated } = useAuth();
+  const [, navigate] = useLocation();
   const autoFillData = useFormAutoFill();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [acknowledgeUnpaid, setAcknowledgeUnpaid] = useState(false);
@@ -62,6 +66,7 @@ export default function UnpaidLeaveForm({ onSuccess, onClose, onBack }: Props) {
     employeeSignature: null as File | null,
     employeeSignatureUrl: "" as string,
     signatureDate: new Date().toISOString().split("T")[0],
+    signatureMethod: "draw" as "upload" | "draw",
   });
 
   const { data: heads = [] } = trpc.users.listHeads.useQuery(undefined, {
@@ -80,6 +85,25 @@ export default function UnpaidLeaveForm({ onSuccess, onClose, onBack }: Props) {
   const createLeave = trpc.requests.createLeaveRequest.useMutation();
   const submitRequest = trpc.requests.submitRequest.useMutation();
   const storeFormData = (trpc as any).requests.storeLeaveFormData.useMutation();
+
+  // Fetch saved form data for draft/read-only views
+  const savedFormData = (trpc as any).requests.getLeaveFormData.useQuery(
+    { requestId: requestData?.id || 0 },
+    { enabled: !!requestData?.id && (isReadOnly || requestData?.status === "draft") }
+  );
+
+  // Merge saved form data when available
+  useEffect(() => {
+    if (savedFormData.data) {
+      const d = savedFormData.data;
+      setForm((prev: any) => ({
+        ...prev,
+        ...d, // Spread all saved data first
+        // Then explicitly set file/signature fields that can't be serialized
+        employeeSignature: null, // Don't restore file objects
+      }));
+    }
+  }, [savedFormData.data]);
 
   useEffect(() => {
     if (user && autoFillData) {
@@ -152,22 +176,32 @@ export default function UnpaidLeaveForm({ onSuccess, onClose, onBack }: Props) {
 
       const requestId = (created as any)?.id as number;
 
-      if (submit && requestId) {
-        await submitRequest.mutateAsync({
-          id: requestId,
-          initialApproverId: parseInt(form.reportingManager),
-        });
-
+      if (requestId) {
         try {
+          // Store form data for both draft and submitted forms
           await storeFormData.mutateAsync({
             requestId: requestId,
             formData: { ...form, employeeSignature: undefined, leaveType: "unpaid" },
           });
         } catch (e) { console.error("Failed to store form data", e); }
+
+        if (submit) {
+          await submitRequest.mutateAsync({
+            id: requestId,
+            initialApproverId: parseInt(form.reportingManager),
+          });
+        }
       }
 
       toast.success(submit ? "Unpaid leave request submitted successfully!" : "Draft saved");
       onSuccess?.();
+      
+      // Redirect to My Requests if submitted
+      if (submit) {
+        setTimeout(() => {
+          navigate("/requests");
+        }, 500);
+      }
     } catch (error: any) {
       toast.error(error.message || "Failed to submit request");
     } finally {
@@ -235,32 +269,32 @@ export default function UnpaidLeaveForm({ onSuccess, onClose, onBack }: Props) {
           </div>
         </div>
 
-        {/* ===== REQUEST HEADER SECTION ===== */}
-        <div className="grid grid-cols-5 gap-3 px-6 py-3 text-sm items-end">
+        {/* ===== REQUEST HEADER SECTION - Responsive Grid ===== */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-3 px-3 md:px-6 py-2 md:py-3 text-xs md:text-sm items-end">
           <div>
-            <p className="font-semibold text-blue-600 mb-1 text-xs">Name of Department</p>
+            <p className="font-semibold text-blue-600 mb-1 text-[10px] md:text-xs">Name of Department</p>
             <div className="flex gap-0 items-center">
-              <span className="text-blue-600 font-bold text-xs whitespace-nowrap">CTK - </span>
+              <span className="text-blue-600 font-bold text-[10px] md:text-xs whitespace-nowrap">CTK - </span>
               <Input
                 value={form.department}
-                className="w-full h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed border-l-0"
+                className="w-full h-6 md:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] md:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed border-l-0"
                 disabled
               />
             </div>
           </div>
           <div>
-            <p className="font-semibold text-blue-600 mb-1 text-xs">Nature of Leave</p>
+            <p className="font-semibold text-blue-600 mb-1 text-[10px] md:text-xs">Nature of Leave</p>
             <Input
               value="Unpaid Leave"
-              className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
+              className="h-6 md:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] md:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
               disabled
             />
           </div>
           <div>
-            <p className="font-semibold text-blue-600 text-xs mb-1">Year</p>
+            <p className="font-semibold text-blue-600 text-[10px] md:text-xs mb-1">Year</p>
             <Input
               value={form.year}
-              className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
+              className="h-6 md:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] md:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
               disabled
             />
           </div>
@@ -472,32 +506,69 @@ export default function UnpaidLeaveForm({ onSuccess, onClose, onBack }: Props) {
 
           {/* 7. EMPLOYEE SIGNATURE */}
           <Section title="7. EMPLOYEE SIGNATURE">
-            <Row label="7.1 Upload Your Signature">
-              <div className="space-y-2 py-1">
-                <input
-                  type="file"
-                  accept=".png,.jpg,.jpeg,.pdf"
-                  onChange={(e) => {
-                    if (e.target.files?.[0]) {
-                      const file = e.target.files[0];
-                      setForm({ ...form, employeeSignature: file });
-                      const reader = new FileReader();
-                      reader.onload = (event) => {
-                        setForm((prev) => ({
-                          ...prev,
-                          employeeSignatureUrl: event.target?.result as string,
-                        }));
-                      };
-                      reader.readAsDataURL(file);
-                    }
-                  }}
-                  className="text-xs"
-                />
-                {form.employeeSignature && (
-                  <p className="text-xs text-green-600">✓ {form.employeeSignature.name} selected</p>
+            <Row label="7.1 Your Signature">
+              <div className="space-y-3 py-1">
+                <div className="flex gap-4 mb-2">
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <input
+                      type="radio"
+                      checked={form.signatureMethod === "draw"}
+                      onChange={() => {
+                        setForm({ ...form, signatureMethod: "draw", employeeSignature: null, employeeSignatureUrl: "" });
+                      }}
+                      className="w-4 h-4 accent-blue-600"
+                    />
+                    <span className="text-xs font-black uppercase tracking-widest text-[#3b6dae] group-hover:text-blue-800">Draw Signature</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <input
+                      type="radio"
+                      checked={form.signatureMethod === "upload"}
+                      onChange={() => {
+                        setForm({ ...form, signatureMethod: "upload", employeeSignature: null, employeeSignatureUrl: "" });
+                      }}
+                      className="w-4 h-4 accent-blue-600"
+                    />
+                    <span className="text-xs font-black uppercase tracking-widest text-[#3b6dae] group-hover:text-blue-800">Upload Image</span>
+                  </label>
+                </div>
+
+                {form.signatureMethod === "upload" ? (
+                  <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        if (e.target.files?.[0]) {
+                          const file = e.target.files[0];
+                          setForm({ ...form, employeeSignature: file });
+                          const reader = new FileReader();
+                          reader.onload = (ev) => {
+                            setForm((prev) => ({
+                              ...prev,
+                              employeeSignatureUrl: ev.target?.result as string,
+                            }));
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      className="text-xs block w-full text-slate-500 file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                  </div>
+                ) : (
+                  <SignaturePad 
+                    onSave={(dataUrl) => {
+                      const file = base64ToFile(dataUrl, "signature.png");
+                      setForm({ ...form, employeeSignature: file, employeeSignatureUrl: dataUrl });
+                    }}
+                    onClear={() => {
+                      setForm({ ...form, employeeSignature: null, employeeSignatureUrl: "" });
+                    }}
+                  />
                 )}
-                {form.employeeSignatureUrl && (
-                  <div className="p-2 border border-dashed border-blue-300 dark:border-[#3b6dae]/40 rounded bg-blue-50 inline-block">
+                
+                {form.employeeSignatureUrl && form.signatureMethod === "upload" && (
+                  <div className="p-2 border border-dashed border-blue-300 dark:border-[#3b6dae]/40 rounded bg-blue-50 inline-block animate-in zoom-in duration-300">
                     <img src={form.employeeSignatureUrl} alt="signature" className="h-16 object-contain" />
                   </div>
                 )}
@@ -516,24 +587,7 @@ export default function UnpaidLeaveForm({ onSuccess, onClose, onBack }: Props) {
         {/* ===== ACTIONS ===== */}
         <div className="flex justify-between items-center px-6 py-4 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c] gap-4">
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              disabled={isSubmitting}
-              onClick={() => window.print()}
-              className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600"
-            >
-              <Printer size={16} className="mr-1" /> Print
-            </Button>
-            <Button
-              variant="outline"
-              disabled={isSubmitting}
-              onClick={() => {
-                toast.info("Download functionality requires backend PDF generation");
-              }}
-              className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600"
-            >
-              <Download size={16} className="mr-1" /> Download
-            </Button>
+            {/* Buttons hidden until approved */}
           </div>
           <div className="flex gap-2">
             <Button
@@ -579,11 +633,11 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-[220px_1fr] border-b border-blue-400 dark:border-[#3b6dae]/50">
-      <div className="px-3 py-2 font-medium border-r border-blue-400 dark:border-[#3b6dae]/50 bg-blue-100 text-blue-700 text-xs">
+    <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] border-b border-blue-400 dark:border-[#3b6dae]/50 gap-0">
+      <div className="px-2 md:px-3 py-1.5 md:py-2 font-medium md:border-r border-blue-400 dark:border-[#3b6dae]/50 bg-blue-100 text-blue-700 text-[10px] md:text-xs md:whitespace-nowrap">
         {label}
       </div>
-      <div className="px-3 py-1">{children}</div>
+      <div className="px-2 md:px-3 py-1 text-xs md:text-sm">{children}</div>
     </div>
   );
 }

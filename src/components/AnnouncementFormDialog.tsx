@@ -29,7 +29,7 @@ export function AnnouncementFormDialog() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) return;
-    createMutation.mutate({ title, content });
+    createMutation.mutate({ title, content, departmentId: null });
   };
 
   return (

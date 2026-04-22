@@ -24,17 +24,18 @@ import {
 } from "@/components/ui/sidebar";
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
-import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, FileText, CheckCircle, Settings, Users, Bell, TrendingUp, DollarSign, Search, ChevronDown, Car, Calendar, BarChart3, User, Lock, AlertCircle, Building2, BookOpen, Wallet, Receipt, UserPlus, Package } from "lucide-react";
+import { useIsMobile, useIsTablet } from "@/hooks/useMobile";
+import { LayoutDashboard, LogOut, PanelLeft, FileText, CheckCircle, Settings, Users, Bell, TrendingUp, DollarSign, Search, ChevronDown, Car, Calendar, BarChart3, User, Lock, AlertCircle, Building2, Wallet, Receipt, UserPlus, Package, MessageSquare } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import ThemeToggleIcon from "@/components/ui/ThemeToggleIcon";
 import NotificationIcon from "@/components/NotificationIcon";
-import { CSSProperties, useCallback, useEffect, useRef, useState } from "react";
+import React, { CSSProperties, useCallback, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 import { CreateRequestDialog } from "@/components/CreateRequestDialog";
 import { Input } from "./ui/input";
+import { ConnectFloatingDock } from "./ConnectFloatingDock";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
@@ -51,7 +52,6 @@ const menuItems = [
   },
   { icon: FileText, label: "My Requests", path: "/requests" },
   { icon: Calendar, label: "Leave Balance", path: "/leave-balance" },
-  { icon: BookOpen, label: "Knowledge Base", path: "/policies" },
   { icon: TrendingUp, label: "My Insights", path: "/insights" },
 ];
 
@@ -74,7 +74,6 @@ const adminMenuItems = [
   { icon: Package, label: "Asset Registry", path: "/assets" },
   { icon: Building2, label: "Departments", path: "/departments" },
   { icon: CheckCircle, label: "Approvals", path: "/approvals" },
-  { icon: BookOpen, label: "Knowledge Base", path: "/policies" },
 ];
 
 const financeMenuItems = [
@@ -129,7 +128,6 @@ const deptHeadMenuItems = [
   { icon: Users, label: "Employee Directory", path: "/employee-directory" },
   { icon: Calendar, label: "Team Status", path: "/team-status" },
   { icon: BarChart3, label: "Team Stats", path: "/team-statistics" },
-  { icon: BookOpen, label: "Knowledge Base", path: "/policies" },
   {
     icon: FileText,
     label: "New Request",
@@ -170,16 +168,20 @@ const SIDEBAR_WIDTH_KEY = "sidebar-width";
 const DEFAULT_WIDTH = 240;
 const MIN_WIDTH = 180;
 const MAX_WIDTH = 480;
+
 export default function DashboardLayout({
   children,
+  hideConnectDock = false,
 }: {
   children: React.ReactNode;
+  hideConnectDock?: boolean;
 }) {
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
     return saved ? parseInt(saved, 10) : DEFAULT_WIDTH;
   });
   const { loading, user } = useAuth();
+  const [currentPath] = useLocation();
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
@@ -236,6 +238,7 @@ export default function DashboardLayout({
       <DashboardLayoutContent setSidebarWidth={setSidebarWidth}>
         {children}
       </DashboardLayoutContent>
+      {!hideConnectDock && <ConnectFloatingDock />}
     </SidebarProvider>
   );
 }
@@ -275,6 +278,7 @@ function DashboardLayoutContent({
   }, [user, hasRole]);
 
   const { data: pendingApprovals } = trpc.requests.listPendingApprovals.useQuery(undefined, { enabled: !!user && user.role !== "user" });
+  const { data: connectUnreadCount } = trpc.suggestions.getUnreadCount.useQuery(undefined, { enabled: !!user, refetchInterval: 10000 });
   const { theme, toggleTheme, switchable } = useTheme();
   const [location, setLocation] = useLocation();
   const { state, toggleSidebar, setOpen } = useSidebar();
@@ -282,6 +286,12 @@ function DashboardLayoutContent({
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
+  const isTablet = useIsTablet();
+  const isSmallScreen = isMobile || isTablet;
+  
+  // collapsible mode: "offcanvas" (drawer) for mobile/tablet, "icon" (collapsible) for desktop
+  const collapsibleMode: "icon" | "offcanvas" = isSmallScreen ? "offcanvas" : "icon";
+  
   const [showRequestDialog, setShowRequestDialog] = useState(false);
   const [requestType, setRequestType] = useState<"leave" | "car" | "expenditure" | "asset">("leave");
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
@@ -341,7 +351,7 @@ function DashboardLayoutContent({
     <>
       <div className="relative" ref={sidebarRef}>
         <Sidebar
-          collapsible="icon"
+          collapsible={collapsibleMode}
           className="border-r-0 shadow-[2px_0_8px_-3px_rgba(0,0,0,0.1)] dark:shadow-none bg-linear-to-b from-[#3b6dae] via-[#325d96] to-[#264b77] dark:bg-none dark:bg-[#0f172a] text-white overflow-hidden"
           disableTransition={isResizing}
         >
@@ -387,7 +397,7 @@ function DashboardLayoutContent({
           </SidebarHeader>
 
           <SidebarContent className="gap-0 py-2">
-            <SidebarMenu className="px-3 py-2 space-y-1">
+            <SidebarMenu className="px-3 py-2 space-y-1 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:items-center">
               {allMenus.map((item: any) => {
                 const isActive = location === item.path || (item.submenu?.some((sub: any) => sub.path === location));
                 const hasSubmenu = "submenu" in item && item.submenu;
@@ -411,6 +421,14 @@ function DashboardLayoutContent({
                         className={`h-5 w-5 shrink-0 ${isActive ? "text-[#c79d2d]" : ""}`}
                       />
                       <span className="ml-2 group-data-[collapsible=icon]:hidden whitespace-nowrap">{item.label}</span>
+                      
+                      {/* Notifications Badge Layer */}
+                      {item.label === "Centrika Connect" && connectUnreadCount && connectUnreadCount > 0 ? (
+                        <span className="ml-auto flex shrink-0 items-center justify-center rounded-full bg-rose-500 text-[10px] font-black text-white h-5 min-w-5 px-1 shadow-md shadow-rose-500/20 animate-in zoom-in group-data-[collapsible=icon]:absolute group-data-[collapsible=icon]:top-1 group-data-[collapsible=icon]:right-1 group-data-[collapsible=icon]:h-4 group-data-[collapsible=icon]:min-w-4 group-data-[collapsible=icon]:text-[8px]">
+                          {connectUnreadCount > 99 ? '99+' : connectUnreadCount}
+                        </span>
+                      ) : null}
+
                       {hasSubmenu && (
                         <ChevronDown className={`ml-auto h-3.5 w-3.5 transition-transform duration-200 group-data-[collapsible=icon]:hidden ${shouldExpand ? "rotate-180" : ""}`} />
                       )}
@@ -466,7 +484,7 @@ function DashboardLayoutContent({
                       className={`flex items-center gap-3 w-full h-12 px-3 rounded-xl transition-all text-sm font-semibold ${isActive
                         ? "bg-[#c79d2d] text-white shadow-lg shadow-[#c79d2d]/10 hover:bg-[#c79d2d]/90 group-data-[collapsible=icon]:shadow-[#c79d2d]/30"
                         : "text-white/70 hover:bg-white/10 hover:text-white"
-                        } group-data-[collapsible=icon]:size-12 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:rounded-2xl`}
+                        } group-data-[collapsible=icon]:size-12 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:rounded-2xl group-data-[collapsible=icon]:mx-auto`}
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
                       <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
@@ -479,7 +497,7 @@ function DashboardLayoutContent({
             <div className="space-y-3 pt-2">
               <button
                 onClick={logout}
-                className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-rose-300 hover:bg-rose-500/20 hover:text-rose-200 transition-all w-full group-data-[collapsible=icon]:size-12 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:rounded-2xl"
+                className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-rose-300 hover:bg-rose-500/20 hover:text-rose-200 transition-all w-full group-data-[collapsible=icon]:size-12 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:rounded-2xl group-data-[collapsible=icon]:mx-auto"
               >
                 <LogOut className="h-4 w-4 shrink-0" />
                 <span className="group-data-[collapsible=icon]:hidden">Sign Out</span>
@@ -498,61 +516,45 @@ function DashboardLayoutContent({
       </div>
 
       <SidebarInset className="bg-[#FFFAE8] dark:bg-slate-950 transition-colors duration-300">
-        <header className="sticky top-0 z-40 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md h-16 border-b border-slate-200/60 dark:border-slate-800/80 shadow-xs dark:shadow-none no-print transition-colors duration-300">
+        <header className="sticky top-0 z-40 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md h-14 sm:h-16 border-b border-slate-200/60 dark:border-slate-800/80 shadow-xs dark:shadow-none no-print transition-colors duration-300">
           <div className="flex h-full w-full">
             {/* Left Header Area */}
-            <div className="flex-1 flex items-center justify-between px-4 lg:px-8">
-              <div className="flex items-center gap-2 md:gap-4">
-                <SidebarTrigger className="md:hidden h-8 w-8 border shadow-xs shrink-0 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200" />
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="h-5 w-1 bg-[#3b6dae] dark:bg-[#c79d2d] rounded-full shrink-0" />
-                  <h2 className="text-xs md:text-sm font-black text-[#3b6dae] dark:text-[#c79d2d] uppercase tracking-[0.2em] opacity-80 truncate">
+            <div className="flex-1 flex items-center justify-between px-2 sm:px-4 lg:px-8 gap-2 sm:gap-4">
+              <div className="flex items-center gap-1 sm:gap-2 md:gap-4 min-w-0">
+                <SidebarTrigger className="md:hidden h-7 w-7 sm:h-8 sm:w-8 border shadow-xs shrink-0 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 text-xs" />
+                <div className="flex items-center gap-1 sm:gap-2 min-w-0">
+                  <span className="h-4 sm:h-5 w-0.5 sm:w-1 bg-[#3b6dae] dark:bg-[#c79d2d] rounded-full shrink-0" />
+                  <h2 className="text-xs md:text-sm font-black text-[#3b6dae] dark:text-[#c79d2d] uppercase tracking-[0.1em] md:tracking-[0.2em] opacity-80 truncate">
                     {activeMenuItem?.label || "Workspace"}
                   </h2>
                 </div>
               </div>
 
-              {/* High Contrast Modern Search Bar */}
-              <div className="hidden lg:flex items-center flex-1 max-w-md mx-6">
-                <div className="relative w-full group">
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-                    <Search className="h-4 w-4 text-slate-500 dark:text-slate-400 group-focus-within:text-blue-600 dark:group-focus-within:text-blue-400 transition-colors duration-200" />
-                  </div>
-                  <Input
-                    placeholder="Search across the portal..."
-                    className="pl-11 pr-16 h-11 bg-slate-100/70 border-slate-200/60 hover:bg-slate-100 hover:border-slate-300 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:bg-slate-950 dark:border-slate-800 dark:hover:bg-slate-900 dark:focus:bg-slate-950 dark:focus:border-blue-500/50 rounded-full text-sm font-semibold text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-500 transition-all shadow-inner dark:shadow-none w-full"
-                  />
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <div className="hidden sm:flex h-6 items-center rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 font-mono text-[10px] font-bold text-slate-500 dark:text-slate-400 shadow-sm dark:shadow-none">
-                      ⌘K
-                    </div>
-                  </div>
-                </div>
-              </div>
+
 
               {/* Utilities */}
-              <div className="flex items-center gap-2 md:gap-4 ml-auto shrink-0">
+              <div className="flex items-center gap-1 sm:gap-2 md:gap-4 ml-auto shrink-0">
                 {switchable && (
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 sm:gap-2">
                     <NotificationIcon />
                     <button
                       onClick={() => toggleTheme?.()}
                       title={theme === "dark" ? "Light Mode" : "Dark Mode"}
-                      className="h-10 w-10 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 transition-colors"
+                      className="h-8 sm:h-10 w-8 sm:w-10 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 transition-colors"
                     >
-                      <ThemeToggleIcon theme={theme} className="h-5 w-5 text-slate-600 dark:text-slate-300" />
+                      <ThemeToggleIcon theme={theme} className="h-4 w-4 sm:h-5 sm:w-5 text-slate-600 dark:text-slate-300" />
                     </button>
                   </div>
                 )}
                 
                 {/* Vertical Divider */}
-                <div className="hidden sm:block h-8 w-px bg-slate-200 dark:bg-slate-800 mx-2" />
+                <div className="hidden sm:block h-7 sm:h-8 w-px bg-slate-200 dark:bg-slate-800 mx-1 sm:mx-2" />
                 
                 {/* Profile Section */}
-                <div className="flex items-center gap-3 py-1.5 px-2 rounded-full cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors">
-                <Avatar className="h-8 w-8 md:h-9 md:w-9 border-2 border-[#3b6dae]/10 dark:border-blue-500/20 shadow-sm shrink-0">
+                <div className="flex items-center gap-2 sm:gap-3 py-1 sm:py-1.5 px-1 sm:px-2 rounded-full cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors">
+                <Avatar className="h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 border-2 border-[#3b6dae]/10 dark:border-blue-500/20 shadow-sm shrink-0">
                   <AvatarImage src={user?.profileImage || ""} alt={user?.name || "User"} className="object-cover" />
-                  <AvatarFallback className="text-[10px] font-black bg-linear-to-br from-[#3b6dae] to-[#2d5385] text-white">
+                  <AvatarFallback className="text-[9px] sm:text-[10px] font-black bg-linear-to-br from-[#3b6dae] to-[#2d5385] text-white">
                     {user?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || "-"}
                   </AvatarFallback>
                 </Avatar>
@@ -579,7 +581,7 @@ function DashboardLayoutContent({
           </div>
         </header>
 
-        <main className="flex-1 overflow-auto custom-scrollbar">
+        <main className="flex-1 overflow-auto custom-scrollbar flex flex-col min-h-0">
           {children}
         </main>
       </SidebarInset>

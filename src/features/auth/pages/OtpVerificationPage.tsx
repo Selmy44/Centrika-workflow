@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ export default function OtpVerification({ email, onBack }: OtpVerificationProps)
 
   const utils = trpc.useUtils();
   const verifyLoginOtp = trpc.auth.verifyLoginOtp.useMutation();
+  const resendOtpMutation = trpc.mfa.sendEmailOtp.useMutation();
 
   const handleOtpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,12 +32,19 @@ export default function OtpVerification({ email, onBack }: OtpVerificationProps)
     try {
       const result = await verifyLoginOtp.mutateAsync({
         email: email,
-        code: otpCode,
+        code: otpCode.trim(),
       });
       if (result.success) {
         toast.success("Logged in successfully!");
-        await utils.auth.me.invalidate();
-        navigate("/");
+        // Wait for auth data to be refetched with new session
+        try {
+          await utils.auth.me.refetch();
+        } catch (err) {
+          console.warn("Auth refetch failed, proceeding anyway");
+        }
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 500);
       }
     } catch (error: any) {
       toast.error(error.message || "Invalid OTP");
@@ -46,6 +54,21 @@ export default function OtpVerification({ email, onBack }: OtpVerificationProps)
   };
 
   const handleResendOtp = async () => {
+    setIsLoading(true);
+    try {
+      await resendOtpMutation.mutateAsync({
+        email: email,
+        purpose: "login",
+      });
+      toast.success("New verification code sent to your email!");
+      setOtpCode("");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to resend OTP. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+
+    // Start the cooldown countdown
     setResendCountdown(60);
     const interval = setInterval(() => {
       setResendCountdown((prev) => {
@@ -56,31 +79,38 @@ export default function OtpVerification({ email, onBack }: OtpVerificationProps)
         return prev - 1;
       });
     }, 1000);
-    toast.success("OTP resent to your email!");
   };
 
   return (
-    <div className="min-h-screen w-full overflow-hidden relative" style={{ background: "#f7f9fc" }}>
+    <div className="min-h-screen w-full flex bg-[#f7f9fc]">
       {/* Force light mode */}
       <style>{`
         .otp-page, .otp-page * { color-scheme: light !important; }
-        @media (max-width: 768px) {
-          .otp-left-panel { display: none !important; }
-          .otp-divider { display: none !important; }
-          .otp-right-panel {
-            width: 100% !important;
-            position: relative !important;
-            min-height: 100vh;
-          }
+        .otp-page .dark\\:bg-slate-950,
+        .otp-page .dark\\:bg-slate-900,
+        .otp-page .dark\\:bg-slate-800,
+        .otp-page .dark\\:text-white,
+        .otp-page .dark\\:text-slate-100,
+        .otp-page .dark\\:text-slate-200,
+        .otp-page .dark\\:text-slate-300,
+        .otp-page .dark\\:text-slate-400,
+        .otp-page .dark\\:border-slate-700,
+        .otp-page .dark\\:border-slate-600 {
+          all: revert;
         }
       `}</style>
 
       {/* ====== LEFT PANEL ====== */}
-      <div className="otp-left-panel absolute left-0 top-0 h-full" style={{ width: "45%" }}>
+      <div className="hidden md:flex relative w-[45%] flex-col justify-center overflow-hidden">
         <img src="/logo/loginbackground2G.jpeg" alt="" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0" style={{ background: "linear-gradient(160deg, rgba(30, 64, 120, 0.92) 0%, rgba(59, 109, 174, 0.82) 50%, rgba(59, 109, 174, 0.65) 100%)" }} />
+        
+        {/* Decorative circles */}
         <div className="absolute top-[12%] left-[10%] w-24 h-24 rounded-full border border-white/10" />
+        <div className="absolute top-[28%] left-[18%] w-6 h-6 rounded-full bg-white/8" />
         <div className="absolute bottom-[22%] left-[6%] w-16 h-16 rounded-full border border-white/8" />
+        <div className="absolute bottom-[40%] right-[10%] w-10 h-10 rounded-full bg-white/5" />
+
         <div className="relative z-10 h-full flex flex-col justify-center px-12">
           <div className="mb-8">
             <div className="inline-block rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(12px)" }}>
@@ -111,17 +141,9 @@ export default function OtpVerification({ email, onBack }: OtpVerificationProps)
         </div>
       </div>
 
-      {/* ====== DIAGONAL DIVIDER ====== */}
-      <div className="otp-divider absolute top-0 h-full z-10" style={{ left: "40%", width: "200px" }}>
-        <svg viewBox="0 0 200 100" preserveAspectRatio="none" className="h-full w-full" style={{ display: "block" }}>
-          <polygon points="0,0 120,0 80,100 0,100" style={{ fill: "rgba(59, 109, 174, 0.82)" }} />
-          <polygon points="120,0 200,0 200,100 80,100" fill="#f7f9fc" />
-        </svg>
-      </div>
-
       {/* ====== RIGHT PANEL ====== */}
-      <div className="otp-right-panel absolute right-0 top-0 h-full z-20 flex items-center justify-center" style={{ width: "55%", background: "#f7f9fc" }}>
-        <div className="w-full max-w-md px-12">
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-12 relative z-20">
+        <div className="w-full max-w-md">
           {/* Back button */}
           <button
             type="button"

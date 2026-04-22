@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer } from "lucide-react";
 import { toast } from "sonner";
-
+import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useFormAutoFill } from "@/_core/hooks/useFormAutoFill";
@@ -18,6 +18,19 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { SignaturePad } from "@/components/SignaturePad";
+
+const base64ToFile = (base64: string, filename: string) => {
+  const arr = base64.split(",");
+  const mime = arr[0].match(/:(.*?);/)?.[1];
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new File([u8arr], filename, { type: mime });
+};
 
 /**
  * ExpenditureRequestForm - Matches LeaveRequestForm design system
@@ -25,13 +38,14 @@ import {
  */
 
 interface Props {
+  requestData?: any;
+  isReadOnly?: boolean;
   onSuccess?: () => void;
-  onClose?: () => void;
-  onBack?: () => void;
 }
 
-export default function ExpenditureRequestForm({ onSuccess, onClose, onBack }: Props) {
+export default function ExpenditureRequestForm({ requestData, isReadOnly = false, onSuccess }: Props) {
   const { user, isAuthenticated } = useAuth();
+  const [, navigate] = useLocation();
   const autoFillData = useFormAutoFill();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -50,6 +64,7 @@ export default function ExpenditureRequestForm({ onSuccess, onClose, onBack }: P
     employeeSignatureUrl: "",
     signaturePreview: "",
     signatureFile: null as File | null,
+    signatureMethod: "draw" as "upload" | "draw",
   });
 
   useEffect(() => {
@@ -84,9 +99,31 @@ export default function ExpenditureRequestForm({ onSuccess, onClose, onBack }: P
     new Map(heads.map((h: any) => [h.id, h])).values()
   );
 
+  // Fetch saved form data for draft/read-only views
+  const savedFormData = (trpc as any).requests.getExpenditureFormData.useQuery(
+    { requestId: requestData?.id || 0 },
+    { enabled: !!requestData?.id && (isReadOnly || requestData?.status === "draft") }
+  );
+
   const createExpenditure = trpc.requests.createExpenditureRequest.useMutation();
+  const updateExpenditure = (trpc as any).requests.updateExpenditureRequest.useMutation();
   const submitRequest = trpc.requests.submitRequest.useMutation();
   const storeFormData = trpc.requests.storeExpenditureFormData.useMutation();
+
+  // Merge saved form data when available
+  useEffect(() => {
+    if (savedFormData.data) {
+      const d = savedFormData.data;
+      setForm((prev: any) => ({
+        ...prev,
+        ...d, // Spread all saved data first
+        // Then explicitly set file/signature fields that can't be serialized
+        employeeSignatureUrl: d.employeeSignatureUrl || prev.employeeSignatureUrl,
+        signatureFile: null, // Don't restore file objects
+        signaturePreview: d.signaturePreview || prev.signaturePreview,
+      }));
+    }
+  }, [savedFormData.data]);
 
   const handleSubmit = async (submit: boolean) => {
     if (submit) {
@@ -110,31 +147,59 @@ export default function ExpenditureRequestForm({ onSuccess, onClose, onBack }: P
 
     setIsSubmitting(true);
     try {
-      const created = await createExpenditure.mutateAsync({
+      // Check if we're updating an existing draft request
+      const isEditing = requestData?.id && requestData?.status === "draft";
+      
+      // Parse amount, defaulting to 0 for drafts
+      const parsedAmount = form.amount ? Number(form.amount.replace(/,/g, "")) : 0;
+      
+      const payload = {
         title: form.expenseType || "Expenditure Request",
-        amount: Number(form.amount.replace(/,/g, "")),
+        amount: parsedAmount || 1, // Use 1 as minimum for validation (>0)
         currency: form.currency,
         department: form.department,
         category: form.expenseType,
+      };
+
+      let requestId: number;
+      if (isEditing) {
+        // Update existing draft
+        await updateExpenditure.mutateAsync({
+          requestId: requestData.id,
+          ...payload,
+        });
+        requestId = requestData.id;
+      } else {
+        // Create new request
+        const created = await createExpenditure.mutateAsync(payload);
+        requestId = created.id;
+      }
+
+      // Store form data for both draft and submitted forms
+      await storeFormData.mutateAsync({
+        requestId: requestId,
+        formData: {
+          ...form,
+          signatureFile: undefined, // Non-serializable
+        }
       });
 
       if (submit) {
         await submitRequest.mutateAsync({
-          id: created.id,
+          id: requestId,
           initialApproverId: Number(form.reportingManager),
-        });
-        await storeFormData.mutateAsync({
-          requestId: created.id,
-          formData: {
-            ...form,
-            requestDetails: created,
-            signatureFile: undefined, // Non-serializable
-          }
         });
       }
 
       toast.success(submit ? "Expenditure request submitted" : "Draft saved");
       onSuccess?.();
+      
+      // Redirect to My Requests if submitted
+      if (submit) {
+        setTimeout(() => {
+          navigate("/requests");
+        }, 500);
+      }
     } catch (e: any) {
       toast.error(e.message || "Submission failed");
     } finally {
@@ -187,30 +252,30 @@ export default function ExpenditureRequestForm({ onSuccess, onClose, onBack }: P
           EXPENDITURE REQUEST FORM
         </div>
 
-        {/* ===== REQUEST HEADER SECTION ===== */}
-        <div className="grid grid-cols-4 gap-3 px-6 py-3 text-sm items-end">
+        {/* ===== REQUEST HEADER SECTION - Responsive Grid ===== */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 px-3 md:px-6 py-2 md:py-3 text-xs md:text-sm items-end">
           <div>
-            <p className="font-semibold text-blue-600 mb-1 text-xs">Department</p>
+            <p className="font-semibold text-blue-600 mb-1 text-[10px] md:text-xs">Department</p>
             <div className="flex gap-0 items-center">
-              <span className="text-blue-600 font-bold text-xs whitespace-nowrap">CTK - </span>
+              <span className="text-blue-600 font-bold text-[10px] md:text-xs whitespace-nowrap">CTK - </span>
               <Input
                 value={form.department}
-                className="w-full h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed border-l-0"
+                className="w-full h-6 md:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] md:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed border-l-0"
                 disabled
               />
             </div>
           </div>
           <div>
-            <p className="font-semibold text-blue-600 mb-1 text-xs">Date of Request</p>
+            <p className="font-semibold text-blue-600 mb-1 text-[10px] md:text-xs">Date of Request</p>
             <Input
               type="text"
               value={new Date().toISOString().split('T')[0]}
-              className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
+              className="h-6 md:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] md:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
               disabled
             />
           </div>
           <div>
-            <p className="font-semibold text-blue-600 text-xs mb-1">Request Number</p>
+            <p className="font-semibold text-blue-600 text-[10px] md:text-xs mb-1">Request Number</p>
             <Input
               value={form.requestNumber}
               className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
@@ -319,28 +384,68 @@ export default function ExpenditureRequestForm({ onSuccess, onClose, onBack }: P
           {/* 3. EMPLOYEE SIGNATURE */}
           <Section title="3. EMPLOYEE SIGNATURE">
             <Row label="3.1 Your Signature">
-              <div className="space-y-3">
-                <input
-                  type="file"
-                  accept="image/*,.pdf"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onload = (ev) => {
-                        setForm({ 
-                          ...form, 
-                          signatureFile: file, 
-                          signaturePreview: URL.createObjectURL(file),
-                          employeeSignatureUrl: ev.target?.result as string 
-                        });
-                      };
-                      reader.readAsDataURL(file);
-                    }
-                  }}
-                  className="text-xs"
-                />
-                {form.employeeSignatureUrl && <img src={form.employeeSignatureUrl} alt="sig" className="h-10 object-contain border border-blue-300 dark:border-[#3b6dae]/40 p-1" />}
+              <div className="space-y-3 w-full">
+                <div className="flex gap-4 mb-4">
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <input
+                      type="radio"
+                      checked={form.signatureMethod === "draw"}
+                      onChange={() => setForm({ ...form, signatureMethod: "draw", signatureFile: null, employeeSignatureUrl: "" })}
+                      className="w-4 h-4 accent-blue-600"
+                    />
+                    <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600">Draw Signature</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <input
+                      type="radio"
+                      checked={form.signatureMethod === "upload"}
+                      onChange={() => setForm({ ...form, signatureMethod: "upload", signatureFile: null, employeeSignatureUrl: "" })}
+                      className="w-4 h-4 accent-blue-600"
+                    />
+                    <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600">Upload Image</span>
+                  </label>
+                </div>
+
+                {form.signatureMethod === "upload" ? (
+                  <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (ev) => {
+                            setForm({ 
+                              ...form, 
+                              signatureFile: file, 
+                              signaturePreview: URL.createObjectURL(file),
+                              employeeSignatureUrl: ev.target?.result as string 
+                            });
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      className="text-xs block w-full text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all"
+                    />
+                  </div>
+                ) : (
+                  <SignaturePad 
+                    onSave={(dataUrl) => {
+                      const file = base64ToFile(dataUrl, "signature.png");
+                      setForm({ ...form, signatureFile: file, employeeSignatureUrl: dataUrl });
+                    }}
+                    onClear={() => {
+                      setForm({ ...form, signatureFile: null, employeeSignatureUrl: "" });
+                    }}
+                  />
+                )}
+                
+                {form.employeeSignatureUrl && form.signatureMethod === "upload" && (
+                   <div className="mt-2 animate-in zoom-in duration-300">
+                      <img src={form.employeeSignatureUrl} alt="sig" className="h-16 object-contain border-2 border-blue-100 rounded-xl p-2 bg-white text-black" />
+                   </div>
+                )}
               </div>
             </Row>
           </Section>
@@ -366,24 +471,7 @@ export default function ExpenditureRequestForm({ onSuccess, onClose, onBack }: P
         {/* ===== ACTIONS ===== */}
         <div className="flex justify-between items-center px-6 py-4 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c] gap-4">
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              disabled={isSubmitting}
-              onClick={() => window.print()}
-              className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600"
-            >
-              <Printer size={16} className="mr-1" /> Print
-            </Button>
-            <Button
-              variant="outline"
-              disabled={isSubmitting}
-              onClick={() => {
-                toast.info("Download functionality requires backend PDF generation");
-              }}
-              className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600"
-            >
-              <Download size={16} className="mr-1" /> Download
-            </Button>
+            {/* Print/Download hidden until approved */}
           </div>
           <div className="flex gap-2">
             <Button

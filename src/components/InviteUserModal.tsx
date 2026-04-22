@@ -68,7 +68,7 @@ export function InviteUserModal({ open, onOpenChange, onSuccess }: InviteUserMod
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-106.25">
+      <DialogContent className="w-[95vw] sm:w-[90vw] md:max-w-lg">
         <DialogHeader>
           <DialogTitle>Invite New User</DialogTitle>
           <DialogDescription>

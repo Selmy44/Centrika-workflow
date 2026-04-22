@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { Loader2, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { Input } from "@/components/ui/input";
 import OtpVerification from "./OtpVerificationPage";
+import { validateEmail } from "@/utils/emailValidation";
 
 export default function Login() {
   const [, navigate] = useLocation();
@@ -19,6 +20,7 @@ export default function Login() {
   });
   const [cardVisible, setCardVisible] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const utils = trpc.useUtils();
@@ -32,14 +34,25 @@ export default function Login() {
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.email || !formData.password) {
-      toast.error("Please fill in all fields");
+    
+    // Validate email
+    const emailValidation = validateEmail(formData.email);
+    if (!emailValidation.valid) {
+      setEmailError(emailValidation.error || "Invalid email address");
+      toast.error(emailValidation.error || "Invalid email address");
       return;
     }
+    setEmailError(null);
+
+    if (!formData.password) {
+      toast.error("Please enter your password");
+      return;
+    }
+
     setIsLoading(true);
     try {
       const result = await login.mutateAsync({
-        email: formData.email,
+        email: formData.email.trim().toLowerCase(),
         password: formData.password,
       });
       if (result.success) {
@@ -48,7 +61,7 @@ export default function Login() {
         setShowOtpPage(true);
       }
     } catch (error: any) {
-      toast.error(error.message || "Invalid credentials");
+      toast.error(error.message || "An error occurred during login. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -61,7 +74,9 @@ export default function Login() {
       await utils.auth.me.invalidate();
       toast.dismiss();
       toast.success(`Signed in as ${role.replace(/_/g, " ")}!`);
-      navigate("/");
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 500);
     } catch (error) {
       toast.dismiss();
       toast.error("Failed to sign in");
@@ -83,8 +98,7 @@ export default function Login() {
   return (
     <div
       ref={scrollRef}
-      className="login-page min-h-screen w-full overflow-hidden relative"
-      style={{ background: "#f7f9fc" }}
+      className="login-page min-h-screen w-full flex bg-[#f7f9fc]"
     >
       {/* Force light mode on login page */}
       <style>{`
@@ -103,19 +117,10 @@ export default function Login() {
         .login-page .dark\\:border-slate-600 {
           all: revert;
         }
-        @media (max-width: 768px) {
-          .login-left-panel { display: none !important; }
-          .login-divider { display: none !important; }
-          .login-right-panel {
-            width: 100% !important;
-            position: relative !important;
-            min-height: 100vh;
-          }
-        }
       `}</style>
 
       {/* ====== LEFT: Background Image with Blue Overlay ====== */}
-      <div className="login-left-panel absolute left-0 top-0 h-full" style={{ width: "45%" }}>
+      <div className="hidden xl:flex relative w-[45%] flex-col justify-center overflow-hidden">
         {/* Photo */}
         <img
           src="/logo/loginbackground2G.jpeg"
@@ -171,27 +176,10 @@ export default function Login() {
         </div>
       </div>
 
-      {/* ====== DIAGONAL DIVIDER ====== */}
-      <div className="login-divider absolute top-0 h-full z-10" style={{ left: "40%", width: "200px" }}>
-        <svg
-          viewBox="0 0 200 100"
-          preserveAspectRatio="none"
-          className="h-full w-full"
-          style={{ display: "block" }}
-        >
-          {/* Angled divider — clean diagonal with a subtle curve */}
-          <polygon points="0,0 120,0 80,100 0,100" style={{ fill: "rgba(59, 109, 174, 0.82)" }} />
-          <polygon points="120,0 200,0 200,100 80,100" fill="#f7f9fc" />
-        </svg>
-      </div>
-
       {/* ====== RIGHT: Login Form Panel ====== */}
-      <div
-        className="login-right-panel absolute right-0 top-0 h-full z-20 flex items-center justify-center"
-        style={{ width: "55%", background: "#f7f9fc" }}
-      >
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-12 relative z-20">
         <div
-          className={`w-full max-w-md px-12 transition-all duration-700 ease-out ${cardVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+          className={`w-full max-w-md transition-all duration-700 ease-out ${cardVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
             }`}
         >
           {/* Welcome */}
@@ -220,26 +208,35 @@ export default function Login() {
               <div className="relative">
                 <Mail
                   className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4"
-                  style={{ color: "#9bb5cc" }}
+                  style={{ color: emailError ? "#ef4444" : "#9bb5cc" }}
                 />
                 <Input
                   id="email"
                   type="email"
                   placeholder="username@centrika.rw"
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, email: e.target.value });
+                    // Clear error on change
+                    if (emailError) setEmailError(null);
+                  }}
                   style={{
                     paddingLeft: "40px",
                     height: "48px",
                     background: "#eef3f8",
-                    border: "1px solid #d4dfe9",
+                    border: emailError ? "1px solid #ef4444" : "1px solid #d4dfe9",
                     borderRadius: "10px",
                     color: "#1e3a5f",
                     fontSize: "14px",
                   }}
-                  required
+                  disabled={isLoading}
                 />
               </div>
+              {emailError && (
+                <p className="text-xs font-medium" style={{ color: "#ef4444" }}>
+                  {emailError}
+                </p>
+              )}
             </div>
 
             {/* Password */}
@@ -271,7 +268,7 @@ export default function Login() {
                     color: "#1e3a5f",
                     fontSize: "14px",
                   }}
-                  required
+                  
                 />
                 <button
                   type="button"
@@ -317,12 +314,13 @@ export default function Login() {
             {/* Footer */}
             <p className="text-center text-xs pt-2" style={{ color: "#8ca0b8" }}>
               Don't have an account?{" "}
-              <span
+              <a
+                href="mailto:dmbabazi@centrika.rw?subject=Centrika%20OnePortal%20Access%20Request"
                 className="font-medium cursor-pointer hover:underline"
                 style={{ color: "#3b6dae" }}
               >
                 Contact HR
-              </span>
+              </a>
             </p>
           </form>
 

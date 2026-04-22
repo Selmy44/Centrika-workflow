@@ -44,10 +44,10 @@ export const RecentRequests = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-8">
           {recentRequests.map((request: any) => (
             <Link key={request.id} href={`/requests/${request.id}`}>
-              <Card className="group bg-white dark:bg-slate-900/40 border-border/50 hover:border-[#3b6dae]/30 transition-all duration-300 rounded-2xl cursor-pointer overflow-hidden shadow-sm hover:shadow-md">
+              <Card className="group bg-white dark:bg-slate-900/40 border-border/50 hover:border-[#3b6dae]/30 transition-all duration-300 rounded-2xl cursor-pointer overflow-hidden shadow-sm hover:shadow-md mb-2">
                 <CardContent className="p-0">
                   <div className="flex items-center gap-3 p-3">
                     <div className="p-2 bg-[#3b6dae]/5 dark:bg-white/5 rounded-xl text-[#3b6dae] dark:text-blue-400 group-hover:scale-105 transition-transform duration-300">

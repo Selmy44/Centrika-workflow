@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
 import { formatDateTime } from "@/lib/dateFormatter";
-import { Loader2, FileText, Car, DollarSign, RefreshCw, CheckCircle2, XCircle, Clock, Trash2, Package } from "lucide-react";
+import { Loader2, FileText, Car, DollarSign, RefreshCw, CheckCircle2, XCircle, Clock, Trash2, Package, Edit } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
@@ -31,7 +31,7 @@ export default function Requests() {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
 
-  const { data: requests, isLoading, refetch } = trpc.requests.listUserRequests.useQuery(undefined, {
+  const { data: requests, isLoading, refetch } = trpc.requests.listUserRequests.useQuery({ includeNonSubmitted: true }, {
     enabled: isAuthenticated,
   });
 
@@ -71,18 +71,22 @@ export default function Requests() {
   return (
     <DashboardLayout>
       <div className="space-y-6 p-4 lg:p-6">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-[#3b6dae] dark:text-[#c79d2d]">My Requests</h1>
-            <p className="text-muted-foreground mt-2">View and manage all your requests</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-[#3b6dae] dark:text-[#c79d2d]">My Requests</h1>
+            <p className="text-muted-foreground mt-2 text-sm">View and manage all your requests</p>
           </div>
-          <div className="flex items-center gap-3">
-            <SearchInput
-              placeholder="Search requests..."
-              value={searchTerm}
-              onChange={setSearchTerm}
-            />
-            <CreateRequestDialog />
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+            <div className="flex-1 sm:flex-none">
+              <SearchInput
+                placeholder="Search requests..."
+                value={searchTerm}
+                onChange={setSearchTerm}
+              />
+            </div>
+            <div className="flex-shrink-0">
+              <CreateRequestDialog />
+            </div>
           </div>
         </div>
 
@@ -100,14 +104,14 @@ export default function Requests() {
               {filteredRequests.map((request: any) => (
                 <Card key={request.id} className="bg-card border-border">
                   <CardContent className="pt-6">
-                    <div className="flex items-start justify-between">
-                      <Link href={`/requests/${request.id}`} className="flex-1">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                      <Link href={`/requests/${request.id}`} className="flex-1 min-w-0">
                         <div className="flex items-start gap-4 cursor-pointer hover:opacity-80 transition-opacity">
-                          <div className="p-2 bg-muted rounded-lg">
+                          <div className="p-2 bg-muted rounded-lg flex-shrink-0">
                             <RequestIcon type={request.type} />
                           </div>
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-foreground">{request.title}</h3>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-foreground truncate">{request.title}</h3>
                             <p className="text-sm text-muted-foreground mt-1">
                               {request.type.charAt(0).toUpperCase() + request.type.slice(1)} Request
                             </p>
@@ -117,21 +121,35 @@ export default function Requests() {
                           </div>
                         </div>
                       </Link>
-                      <div className="flex items-center gap-3 ml-4">
-                        <StatusBadge status={request.status} />
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 flex-shrink-0">
+                        <div className="flex-shrink-0">
+                          <StatusBadge status={request.status} />
+                        </div>
+                        {request.status === "draft" && (
+                          <Link href={`/requests/${request.id}`} className="w-full sm:w-auto">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full sm:w-auto text-blue-600 border-blue-500/30 hover:bg-blue-500/10"
+                            >
+                              <Edit size={16} className="mr-1" />
+                              Edit
+                            </Button>
+                          </Link>
+                        )}
                         {(request.status === "pending" || request.status === "draft") && (
                           <Button
                             variant="outline"
                             size="sm"
-                            className="text-red-600 border-red-500/30 hover:bg-red-500/10"
+                            className="w-full sm:w-auto text-red-600 border-red-500/30 hover:bg-red-500/10"
                             onClick={(e) => {
                               e.preventDefault();
                               setSelectedRequest(request);
                               setShowCancelDialog(true);
                             }}
                           >
-                            <Trash2 size={16} />
-                            Cancel
+                            <Trash2 size={16} className="mr-1" />
+                            <span className="hidden sm:inline">Cancel</span>
                           </Button>
                         )}
                       </div>

@@ -74,7 +74,7 @@ export function CreateRequestDialog({
       {initialRequestType === "leave" && selectedLeaveType && (
         <Dialog open={showFormDialog} onOpenChange={handleCloseAll}>
           <DialogContent
-            className="w-[70vw]! max-w-225! max-h-[90vh]! overflow-y-auto! p-0! flex! flex-col! gap-0!"
+            className="w-[95vw] sm:w-[90vw] md:w-[80vw] lg:w-[70vw]! max-w-5xl! max-h-[90vh]! overflow-y-auto! p-0! flex! flex-col! gap-0!"
           >
             <DialogHeader className="sr-only">
               <DialogTitle>Create Leave Request</DialogTitle>
@@ -94,7 +94,7 @@ export function CreateRequestDialog({
       {initialRequestType === "car" && (
         <Dialog open={showFormDialog} onOpenChange={handleCloseAll}>
           <DialogContent
-            className="w-[70vw]! max-w-225! max-h-[90vh]! overflow-y-auto! p-0! flex! flex-col! gap-0!"
+            className="w-[95vw] sm:w-[90vw] md:w-[80vw] lg:w-[70vw]! max-w-5xl! max-h-[90vh]! overflow-y-auto! p-0! flex! flex-col! gap-0!"
           >
             <DialogHeader className="sr-only">
               <DialogTitle>Create Car Request</DialogTitle>
@@ -110,7 +110,7 @@ export function CreateRequestDialog({
       {initialRequestType === "expenditure" && (
         <Dialog open={showFormDialog} onOpenChange={handleCloseAll}>
           <DialogContent
-            className="w-[70vw]! max-w-225! max-h-[90vh]! overflow-y-auto! p-0! flex! flex-col! gap-0!"
+            className="w-[95vw] sm:w-[90vw] md:w-[80vw] lg:w-[70vw]! max-w-5xl! max-h-[90vh]! overflow-y-auto! p-0! flex! flex-col! gap-0!"
           >
             <DialogHeader className="sr-only">
               <DialogTitle>Create Expenditure Request</DialogTitle>
@@ -125,7 +125,7 @@ export function CreateRequestDialog({
       {initialRequestType === "asset" && (
         <Dialog open={showFormDialog} onOpenChange={handleCloseAll}>
           <DialogContent
-            className="w-[70vw]! max-w-225! max-h-[90vh]! overflow-y-auto! p-0! flex! flex-col! gap-0!"
+            className="w-[95vw] sm:w-[90vw] md:w-[80vw] lg:w-[70vw]! max-w-5xl! max-h-[90vh]! overflow-y-auto! p-0! flex! flex-col! gap-0!"
             onInteractOutside={(e) => e.preventDefault()}
           >
             <DialogHeader className="sr-only">

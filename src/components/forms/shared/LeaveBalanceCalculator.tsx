@@ -10,7 +10,7 @@ interface LeaveBalanceCalculatorProps {
   endDate: string;
   alreadyTaken?: number; // Optional now, since we auto-calculate by default
   onTakenChange?: (val: number) => void;
-  onCalculated: (data: { requested: number; remaining: number | "Unlimited"; entitled: number | "Unlimited"; taken: number }) => void;
+  onCalculated: (data: { requested: number; remaining: number | "Unlimited"; entitled: number | "Unlimited"; taken: number; takenLeaveDates?: string[] }) => void;
 }
 
 export function LeaveBalanceCalculator({
@@ -98,9 +98,10 @@ export function LeaveBalanceCalculator({
       remaining,
       entitled: entitledDays,
       taken: historyTaken,
+      takenLeaveDates: leaveBalanceQuery.data?.takenLeaveDates || [],
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [requestedDays, entitledDays, historyTaken]);
+  }, [requestedDays, entitledDays, historyTaken, leaveBalanceQuery.data?.takenLeaveDates]);
 
   const currentBalance = entitledDays === "Unlimited" ? "Unlimited" : (Number(entitledDays) - historyTaken);
   const newBalance = entitledDays === "Unlimited" ? "Unlimited" : (Number(currentBalance) - requestedDays);
@@ -114,7 +115,7 @@ export function LeaveBalanceCalculator({
         <div className="bg-blue-600 px-4 py-2.5 flex items-center gap-2 text-white">
           <History className="w-4 h-4 opacity-90" />
           <h3 className="text-sm font-semibold tracking-wide">Your Leave Summary</h3>
-          <span className="text-[10px] bg-white dark:bg-[#1f426b] px-2 py-0.5 rounded-full ml-auto uppercase tracking-wide">
+          <span className="text-[9px] bg-white text-blue-600 dark:bg-blue-900/40 dark:text-blue-200 px-2 py-0.5 rounded-full ml-auto uppercase tracking-wider font-bold shadow-sm border border-blue-100 dark:border-white/10">
             Auto-Synced
           </span>
         </div>

@@ -11,6 +11,7 @@ import LeaveRequestForm from "@/components/forms/LeaveRequestForm";
 import CarRequestApprovalView from "@/components/forms/CarRequestApprovalView";
 import ExpenditureRequestApprovalView from "@/components/forms/ExpenditureRequestApprovalView";
 import AssetRequestApprovalView from "@/components/forms/AssetRequestApprovalView";
+import { SignaturePad } from "@/components/SignaturePad";
 import {
   Dialog,
   DialogContent,
@@ -26,6 +27,18 @@ import { Link, useSearch } from "wouter";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+
+const base64ToFile = (base64: string, filename: string) => {
+  const arr = base64.split(",");
+  const mime = arr[0].match(/:(.*?);/)?.[1];
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new File([u8arr], filename, { type: mime });
+};
 
 export default function Approvals() {
   const { isAuthenticated, user } = useAuth();
@@ -45,6 +58,7 @@ export default function Approvals() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState<"all" | "pending" | "approved" | "rejected">("all");
   const [isProcessingApproval, setIsProcessingApproval] = useState(false);
+  const [signatureMethod, setSignatureMethod] = useState<"upload" | "draw">("draw");
 
   const { data: pendingRequests, isLoading: pendingLoading, refetch } = (trpc as any).requests.listPendingApprovals.useQuery(undefined, {
     enabled: isAuthenticated && (user?.role !== "user" || !!user?.additionalRoles),
@@ -489,16 +503,74 @@ export default function Approvals() {
               </div>
               <div>
                 <label className="text-sm font-medium">Signature (Optional)</label>
-                <div className="mt-2 border-2 border-dashed border-border rounded-lg p-4">
-                  <input
-                    type="file"
-                    accept="image/*,.pdf"
-                    onChange={(e) => setSignatureFile(e.target.files?.[0] || null)}
-                    className="w-full"
-                    title="Upload signature file"
-                  />
-                  {signatureFile && (
-                    <p className="text-xs text-muted-foreground mt-2">Selected: {signatureFile.name}</p>
+                <div className="mt-4">
+                  <div className="flex gap-4 mb-4">
+                    <label className="flex items-center gap-2 cursor-pointer group">
+                      <input
+                        type="radio"
+                        checked={signatureMethod === "draw"}
+                        onChange={() => {
+                          setSignatureMethod("draw");
+                          setSignatureFile(null);
+                          setApproverSignatureUrl("");
+                        }}
+                        className="w-4 h-4 accent-blue-600"
+                      />
+                      <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600">Draw Signature</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer group">
+                      <input
+                        type="radio"
+                        checked={signatureMethod === "upload"}
+                        onChange={() => {
+                          setSignatureMethod("upload");
+                          setSignatureFile(null);
+                          setApproverSignatureUrl("");
+                        }}
+                        className="w-4 h-4 accent-blue-600"
+                      />
+                      <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600">Upload Image</span>
+                    </label>
+                  </div>
+
+                  {signatureMethod === "upload" ? (
+                    <div className="border-2 border-dashed border-border rounded-lg p-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0] || null;
+                          setSignatureFile(file);
+                          if (file) {
+                             const reader = new FileReader();
+                             reader.onload = (ev) => setApproverSignatureUrl(ev.target?.result as string);
+                             reader.readAsDataURL(file);
+                          }
+                        }}
+                        className="w-full text-xs"
+                      />
+                      {signatureFile && (
+                        <p className="text-xs text-muted-foreground mt-2 font-semibold">Selected: {signatureFile.name}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <SignaturePad 
+                      onSave={(dataUrl) => {
+                        const file = base64ToFile(dataUrl, "approver_signature.png");
+                        setSignatureFile(file);
+                        setApproverSignatureUrl(dataUrl);
+                      }}
+                      onClear={() => {
+                        setSignatureFile(null);
+                        setApproverSignatureUrl("");
+                      }}
+                    />
+                  )}
+                  
+                  {approverSignatureUrl && signatureMethod === "upload" && (
+                    <div className="mt-2 animate-in zoom-in duration-300">
+                       <img src={approverSignatureUrl} alt="sig" className="h-16 object-contain border border-blue-100 rounded-lg p-1 bg-white" />
+                    </div>
                   )}
                 </div>
               </div>

@@ -209,5 +209,67 @@ body, .bg-background, .text-foreground, .card, .popover {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #3b6dae50;
+  background: #3b6dae60;
+}
+/* Print Styles */
+@media print {
+  @page {
+    size: A4;
+    margin: 1cm;
+  }
+
+  body {
+    background: white !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide UI elements */
+  nav, 
+  aside,
+  header,
+  .no-print,
+  button,
+  .close-button,
+  [role="navigation"],
+  .sidebar-trigger {
+    display: none !important;
+  }
+
+  /* Ensure the form takes full width and is centered */
+  .leave-form-container,
+  .form-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    position: static !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Reset layout constraints for main content */
+  main, .flex {
+    display: block !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Dark mode overrides for print */
+  .dark {
+    background: white !important;
+    color: black !important;
+  }
+
+  .dark * {
+    border-color: #3b6dae !important;
+    color: black !important;
+  }
+
+  /* Specific color adjustments for Centrika headers */
+  .bg-yellow-500 { background-color: #f59e0b !important; }
+  .bg-[#3b6dae] { background-color: #3b6dae !important; }
+  .text-white { color: white !important; }
+  .text-blue-600 { color: #2563eb !important; }
 }

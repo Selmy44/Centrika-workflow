@@ -32,9 +32,9 @@ import BudgetManagementPage from "./features/finance/BudgetManagementPage";
 import ReportsPage from "./features/common/pages/ReportsPage";
 import AssetsPage from "./features/assets/AssetsPage";
 import AssetDetailsPage from "./features/assets/AssetDetailsPage";
-import { PolicyKnowledgeBasePage } from "@/features/resources/pages/PolicyKnowledgeBasePage";
 import { PersonalInsightsPage } from "@/features/resources/pages/PersonalInsightsPage";
 import OrganizationViewPage from "./features/users/OrganizationViewPage";
+import CentrikaConnectPage from "./features/connect/CentrikaConnectPage";
 
 // Re-index trigger
 
@@ -93,8 +93,8 @@ function Router() {
       <Route path="/admin/users" component={AdminUsersPage} />
       <Route path="/admin/departments" component={DepartmentManagementPage} />
       <Route path="/settings" component={SettingsPage} />
-      <Route path="/policies" component={PolicyKnowledgeBasePage} />
       <Route path="/insights" component={PersonalInsightsPage} />
+      <Route path="/connect" component={CentrikaConnectPage} />
       <Route path="/assets" component={AssetsPage} />
       <Route path="/assets/:id" component={AssetDetailsPage} />
       <Route path="/hr/assets" component={AssetsPage} />
