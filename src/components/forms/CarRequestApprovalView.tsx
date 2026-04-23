@@ -374,38 +374,31 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                 </div>
 
                 {/* ACTIONS */}
-                <div className="no-print flex justify-between items-center p-6 border-t bg-gray-50">
-                    <div className="flex gap-2">
-                        {isRequestApproved && (
-                            <>
-                                <Button variant="outline" size="sm" onClick={handlePrint} disabled={isPrintingForm || isLoading}>
-                                    {(isPrintingForm || isLoading) && <Loader2 size={16} className="mr-2 animate-spin" />}
-                                    <Printer size={16} className="mr-2" /> Print Form
-                                </Button>
-                                <Button variant="outline" size="sm" onClick={handleDownloadPdf} disabled={isExportingPdf || isLoading}>
-                                    {(isExportingPdf || isLoading) && <Loader2 size={16} className="mr-2 animate-spin" />}
-                                    <Download size={16} className="mr-2" /> Download PDF
-                                </Button>
-                            </>
-                        )}
+                {isRequestApproved && (
+                    <div className="no-print flex gap-2 p-6 border-t bg-gray-50">
+                        <Button variant="outline" size="sm" onClick={handlePrint} disabled={isPrintingForm || isLoading}>
+                            {(isPrintingForm || isLoading) && <Loader2 size={16} className="mr-2 animate-spin" />}
+                            <Printer size={16} className="mr-2" /> Print Form
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={handleDownloadPdf} disabled={isExportingPdf || isLoading}>
+                            {(isExportingPdf || isLoading) && <Loader2 size={16} className="mr-2 animate-spin" />}
+                            <Download size={16} className="mr-2" /> Download PDF
+                        </Button>
                     </div>
-
-                    <div className="flex gap-2">
-                        {!approvalSectionIsReadOnly && (
-                            <>
-                                <Button variant="destructive" size="sm" onClick={() => setShowRejectDialog(true)} disabled={isLoading}>Reject</Button>
-                                <Button
-                                    className="bg-green-600 hover:bg-green-700"
-                                    size="sm"
-                                    onClick={() => onApprove({ comments: approvalComments, signatureFile: signatureFile || undefined })}
-                                    disabled={isLoading}
-                                >
-                                    Approve & Sign
-                                </Button>
-                            </>
-                        )}
+                )}
+                {!approvalSectionIsReadOnly && (
+                    <div className="no-print flex gap-2 p-6 border-t bg-gray-50">
+                        <Button variant="destructive" size="sm" onClick={() => setShowRejectDialog(true)} disabled={isLoading}>Reject</Button>
+                        <Button
+                            className="bg-green-600 hover:bg-green-700"
+                            size="sm"
+                            onClick={() => onApprove({ comments: approvalComments, signatureFile: signatureFile || undefined })}
+                            disabled={isLoading}
+                        >
+                            Approve & Sign
+                        </Button>
                     </div>
-                </div>
+                )}
 
                 <div className="text-center text-[10px] text-gray-400 py-4 border-t">
                     <p>www.centrika.rw | Centrika Ltd | Delivering Tomorrow's Solutions Today</p>

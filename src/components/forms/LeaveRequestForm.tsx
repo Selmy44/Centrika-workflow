@@ -926,52 +926,52 @@ export default function LeaveRequestForm({
 
         {/* ACTIONS & FOOTER */}
         <div className="no-print flex justify-between items-center px-6 py-4 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c] gap-4 mt-4">
-          <div className="flex gap-2">
-            {requestData?.status === "approved" && (
-              <>
-                <Button variant="outline" disabled={isSubmitting || isPrintingForm} onClick={handlePrint} className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600">
-                  {(isSubmitting || isPrintingForm) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  <Printer size={16} className="mr-1" /> Print Form
-                </Button>
-                <Button 
-                  variant="outline" 
-                  disabled={isSubmitting || isExportingPdf}
-                  onClick={handleDownloadPdf}
-                  className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600"
-                >
-                  {(isSubmitting || isExportingPdf) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  <Download size={16} className="mr-1" /> Download PDF
-                </Button>
-              </>
-            )}
-          </div>
-          <div className="flex gap-2">
-            {isApprover && !isReadOnly && requestData?.status !== "rejected" && (
+          {requestData?.status === "approved" && (
+            <div className="flex gap-2">
+              <Button variant="outline" disabled={isSubmitting || isPrintingForm} onClick={handlePrint} className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600">
+                {(isSubmitting || isPrintingForm) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Printer size={16} className="mr-1" /> Print Form
+              </Button>
               <Button 
-                variant="destructive" 
-                onClick={() => setShowRejectDialog(true)}
-                className="bg-red-600 hover:bg-red-700 text-white font-semibold"
+                variant="outline" 
+                disabled={isSubmitting || isExportingPdf}
+                onClick={handleDownloadPdf}
+                className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600"
               >
-                Reject Request
+                {(isSubmitting || isExportingPdf) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Download size={16} className="mr-1" /> Download PDF
               </Button>
-            )}
-            {isApprover && !isReadOnly && requestData?.status !== "rejected" && (
-              <Button disabled={isLoading} onClick={() => onApprove?.({ comments: approvalComments, signatureFile: approverSignature, selectedHR })} className="bg-green-600 hover:bg-green-700">
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Approve
-              </Button>
-            )}
+            </div>
+          )}
+          {requestData?.status !== "approved" && (
+            <div className="flex gap-2 w-full">
+              {isApprover && !isReadOnly && requestData?.status !== "rejected" && (
+                <>
+                  <Button 
+                    variant="destructive" 
+                    onClick={() => setShowRejectDialog(true)}
+                    className="bg-red-600 hover:bg-red-700 text-white font-semibold"
+                  >
+                    Reject Request
+                  </Button>
+                  <Button disabled={isLoading} onClick={() => onApprove?.({ comments: approvalComments, signatureFile: approverSignature, selectedHR })} className="bg-green-600 hover:bg-green-700">
+                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Approve
+                  </Button>
+                </>
+              )}
 
-            {!isApprover && !isReadOnly && requestData?.status !== "rejected" && (
-              <>
-                <Button variant="outline" disabled={isSubmitting} onClick={handleSaveAsDraft} className="border-blue-400 dark:border-[#3b6dae]/50">Save Draft</Button>
-                <Button disabled={isSubmitting} onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700">
-                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Submit Request
-                </Button>
-              </>
-            )}
-          </div>
+              {!isApprover && !isReadOnly && requestData?.status !== "rejected" && (
+                <>
+                  <Button variant="outline" disabled={isSubmitting} onClick={handleSaveAsDraft} className="border-blue-400 dark:border-[#3b6dae]/50">Save Draft</Button>
+                  <Button disabled={isSubmitting} onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700">
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Submit Request
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="text-center text-xs text-gray-600 dark:text-slate-400 py-3 border-t border-gray-200 space-y-1">

@@ -475,53 +475,49 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
                 </div>
 
                 {/* ===== ACTIONS ===== */}
-                <div className="no-print flex justify-between items-center px-6 py-5 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c] gap-4 mb-4">
-                    {isRequestApproved && (
-                        <div className="flex gap-2">
-                            <Button
-                                variant="outline"
-                                disabled={isLoading || isPrintingForm}
-                                onClick={handlePrint}
-                                className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600 h-9"
-                            >
-                                {(isLoading || isPrintingForm) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                <Printer size={16} className="mr-1" /> Print Form
-                            </Button>
-                            <Button
-                                variant="outline"
-                                disabled={isLoading || isExportingPdf}
-                                onClick={handleDownloadPdf}
-                                className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600 h-9"
-                            >
-                                {(isLoading || isExportingPdf) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                <Download size={16} className="mr-1" /> Download PDF
-                            </Button>
-                        </div>
-                    )}
-                    <div className="flex gap-2">
-                        {!approvalSectionIsReadOnly && (
-                            <>
-                                <Button
-                                    variant="outline"
-                                    disabled={isLoading}
-                                    onClick={() => setShowRejectDialog(true)}
-                                    className="border-red-400 text-red-600 hover:bg-red-50 h-9 font-bold tracking-tight"
-                                >
-                                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    REJECT REQUEST
-                                </Button>
-                                <Button
-                                    disabled={isLoading}
-                                    onClick={() => onApprove({ comments: approvalComments, signatureFile: signatureFile || undefined })}
-                                    className="bg-green-600 hover:bg-green-700 h-9 font-bold px-8 tracking-tight transition-all"
-                                >
-                                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    APPROVE {signatureFile ? "& SIGN" : "REQUEST"}
-                                </Button>
-                            </>
-                        )}
+                {isRequestApproved && (
+                    <div className="no-print flex gap-2 px-6 py-5 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c] mb-4">
+                        <Button
+                            variant="outline"
+                            disabled={isLoading || isPrintingForm}
+                            onClick={handlePrint}
+                            className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600 h-9"
+                        >
+                            {(isLoading || isPrintingForm) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            <Printer size={16} className="mr-1" /> Print Form
+                        </Button>
+                        <Button
+                            variant="outline"
+                            disabled={isLoading || isExportingPdf}
+                            onClick={handleDownloadPdf}
+                            className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600 h-9"
+                        >
+                            {(isLoading || isExportingPdf) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            <Download size={16} className="mr-1" /> Download PDF
+                        </Button>
                     </div>
-                </div>
+                )}
+                {!approvalSectionIsReadOnly && (
+                    <div className="no-print flex gap-2 px-6 py-5 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c] mb-4">
+                        <Button
+                            variant="outline"
+                            disabled={isLoading}
+                            onClick={() => setShowRejectDialog(true)}
+                            className="border-red-400 text-red-600 hover:bg-red-50 h-9 font-bold tracking-tight"
+                        >
+                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            REJECT REQUEST
+                        </Button>
+                        <Button
+                            disabled={isLoading}
+                            onClick={() => onApprove({ comments: approvalComments, signatureFile: signatureFile || undefined })}
+                            className="bg-green-600 hover:bg-green-700 h-9 font-bold px-8 tracking-tight transition-all"
+                        >
+                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            APPROVE {signatureFile ? "& SIGN" : "REQUEST"}
+                        </Button>
+                    </div>
+                )}
 
                 {/* ===== REJECT DIALOG ===== */}
                 <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
