@@ -1,3 +1,11 @@
+# Declare all build args
+ARG VITE_API_URL
+ARG VITE_OAUTH_PORTAL_URL
+ARG VITE_ANALYTICS_ENDPOINT
+ARG VITE_ANALYTICS_WEBSITE_ID
+ARG VITE_APP_TITLE
+ARG VITE_APP_LOGO
+
 # ==================================
 # Stage 1: Build the Vite application
 # ==================================
