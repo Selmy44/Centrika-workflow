@@ -199,7 +199,6 @@ class SDKServer {
       if (
         !isNonEmptyString(openId)
       ) {
-        console.warn(`[Auth] Session validation failed. openId: ${Boolean(openId)}`);
         return null;
       }
 
@@ -209,7 +208,6 @@ class SDKServer {
         name: typeof name === 'string' ? name : "User",
       };
     } catch (error) {
-      console.warn("[Auth] Session verification failed (JWT error)", String(error));
       return null;
     }
   }
@@ -263,7 +261,6 @@ class SDKServer {
         });
         user = await db.getUserByOpenId(userInfo.openId);
       } catch (error) {
-        console.error("[Auth] Failed to sync user from OAuth:", error);
         throw ForbiddenError("User not found");
       }
     }
