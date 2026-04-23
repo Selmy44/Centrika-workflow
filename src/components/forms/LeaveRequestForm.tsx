@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer } from "lucide-react";
+import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
@@ -17,7 +17,7 @@ import SingleDatePicker from "@/components/SingleDatePicker";
 import { getLeaveTypeConfig } from "@/lib/leaveTypeConfig";
 import { LeaveBalanceCalculator } from "./shared/LeaveBalanceCalculator";
 import { SignaturePad } from "@/components/SignaturePad";
-import { base64ToFile } from "@/lib/fileUtils";
+import { base64ToFile, fileToBase64 } from "@/lib/fileUtils";
 
 interface LeaveRequestFormProps {
   requestId?: number;
@@ -232,6 +232,7 @@ export default function LeaveRequestForm({
   const updateLeave = (trpc as any).requests.updateLeaveRequest.useMutation();
   const submitRequestMutation = trpc.requests.submitRequest.useMutation();
   const storeFormData = (trpc as any).requests.storeLeaveFormData.useMutation();
+  const uploadAttachment = (trpc as any).requests.uploadAttachment.useMutation();
 
   const handleSaveAsDraft = async () => {
     setIsSubmitting(true);
@@ -267,6 +268,26 @@ export default function LeaveRequestForm({
       }
 
       if (requestId) {
+        let finalSupportingDocUrl = form.supportingDocumentUrl;
+        
+        // Handle file upload if a new file is selected
+        if (form.supportingDocument) {
+          try {
+            const base64 = await fileToBase64(form.supportingDocument);
+            const uploadResult = await uploadAttachment.mutateAsync({
+              requestId: requestId,
+              fileName: form.supportingDocument.name,
+              fileData: base64,
+              mimeType: form.supportingDocument.type,
+              attachmentType: "supporting_document",
+            });
+            finalSupportingDocUrl = uploadResult.fileUrl;
+          } catch (e) {
+            console.error("Failed to upload supporting document", e);
+            toast.error("Draft saved, but failed to upload attachment");
+          }
+        }
+
         // Store the full form data JSON for draft forms too
         try {
           await storeFormData.mutateAsync({
@@ -277,6 +298,7 @@ export default function LeaveRequestForm({
               parentalLeaveType: form.leaveType === "parental" ? (resolvedLeaveType === "maternity" ? "maternity" : "paternity") : "",
               employeeSignature: undefined, // Can't serialize File objects
               supportingDocument: undefined,
+              supportingDocumentUrl: finalSupportingDocUrl,
             },
           });
         } catch (e) {
@@ -332,6 +354,25 @@ export default function LeaveRequestForm({
       }
 
       if (requestId) {
+        let finalSupportingDocUrl = form.supportingDocumentUrl;
+        
+        // Handle file upload if a new file is selected
+        if (form.supportingDocument) {
+          try {
+            const base64 = await fileToBase64(form.supportingDocument);
+            const uploadResult = await uploadAttachment.mutateAsync({
+              requestId: requestId,
+              fileName: form.supportingDocument.name,
+              fileData: base64,
+              mimeType: form.supportingDocument.type,
+              attachmentType: "supporting_document",
+            });
+            finalSupportingDocUrl = uploadResult.fileUrl;
+          } catch (e) {
+            console.error("Failed to upload supporting document", e);
+          }
+        }
+
         await submitRequestMutation.mutateAsync({
           id: requestId,
           initialApproverId: parseInt(form.reportingManager),
@@ -347,6 +388,7 @@ export default function LeaveRequestForm({
               parentalLeaveType: form.leaveType === "parental" ? (resolvedLeaveType === "maternity" ? "maternity" : "paternity") : "",
               employeeSignature: undefined, // Can't serialize File objects
               supportingDocument: undefined,
+              supportingDocumentUrl: finalSupportingDocUrl,
             },
           });
         } catch (e) {
@@ -619,6 +661,17 @@ export default function LeaveRequestForm({
                     />
                   )}
                   {form.supportingDocument && <p className="text-xs text-green-600 font-semibold">✓ {form.supportingDocument.name}</p>}
+                  {form.supportingDocumentUrl && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <p className="text-xs text-blue-600 font-medium">Attached: Document</p>
+                      <a href={form.supportingDocumentUrl} target="_blank" rel="noopener noreferrer">
+                        <Button size="sm" variant="outline" className="h-7 py-0 px-2 text-[10px] border-blue-200">
+                          <Eye size={12} className="mr-1" />
+                          View
+                        </Button>
+                      </a>
+                    </div>
+                  )}
                 </div>
               </Row>
             )}

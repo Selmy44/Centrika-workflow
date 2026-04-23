@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer } from "lucide-react";
+import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer, Car, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -20,6 +20,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { SignaturePad } from "@/components/SignaturePad";
+import { fileToBase64 } from "@/lib/fileUtils";
 import { base64ToFile } from "@/lib/fileUtils";
 
 interface CarRequestFormProps {
@@ -52,6 +53,8 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
     signaturePreview: "",
     signatureFile: null as File | null,
     signatureMethod: "draw" as "upload" | "draw",
+    supportingDocument: null as File | null,
+    supportingDocumentUrl: "",
   });
 
   const { data: drivers = [] } = trpc.requests.getAvailableDrivers.useQuery(undefined, {
@@ -73,6 +76,7 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
   const updateCar = (trpc as any).requests.updateCarRequest.useMutation();
   const submitRequest = trpc.requests.submitRequest.useMutation();
   const storeFormData = trpc.requests.storeCarFormData.useMutation();
+  const uploadAttachment = (trpc as any).requests.uploadAttachment.useMutation();
 
   // Merge saved form data when available
   useEffect(() => {
@@ -85,6 +89,7 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
         employeeSignatureUrl: d.employeeSignatureUrl || prev.employeeSignatureUrl,
         signatureFile: null, // Don't restore file objects
         signaturePreview: d.signaturePreview || prev.signaturePreview,
+        supportingDocumentUrl: d.supportingDocumentUrl || prev.supportingDocumentUrl,
       }));
     }
   }, [savedFormData.data]);
@@ -160,18 +165,42 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
         requestId = requestData.id;
       } else {
         // Create new request
-        const request = await createCar.mutateAsync(payload);
-        requestId = request.id;
+        const created = await createCar.mutateAsync(payload);
+        requestId = (created as any)?.id as number;
       }
-
-      // Store form data for both draft and submitted forms
-      await storeFormData.mutateAsync({
-        requestId: requestId,
-        formData: {
-          ...form,
-          signatureFile: undefined, // Non-serializable
+      
+      if (requestId) {
+        let finalSupportingDocUrl = form.supportingDocumentUrl;
+        
+        // Handle file upload if a new file is selected
+        if (form.supportingDocument) {
+          try {
+            const base64 = await fileToBase64(form.supportingDocument);
+            const uploadResult = await uploadAttachment.mutateAsync({
+              requestId: requestId,
+              fileName: form.supportingDocument.name,
+              fileData: base64,
+              mimeType: form.supportingDocument.type,
+              attachmentType: "supporting_document",
+            });
+            finalSupportingDocUrl = uploadResult.fileUrl;
+          } catch (e) {
+            console.error("Failed to upload supporting document", e);
+          }
         }
-      });
+
+        try {
+          await storeFormData.mutateAsync({
+            requestId: requestId,
+            formData: { 
+              ...form, 
+              signatureFile: null, 
+              supportingDocument: null, 
+              supportingDocumentUrl: finalSupportingDocUrl 
+            },
+          });
+        } catch (e) { console.error("Failed to store form data", e); }
+      }
 
       if (submit) {
         // Car requests auto-route to HR — no initialApproverId needed
@@ -378,6 +407,33 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
                   className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs"
                 />
                 <span className="text-sm font-medium text-gray-600 dark:text-slate-400">Person(s)</span>
+              </div>
+            </Row>
+            <Row label="3.4 Supporting Document">
+              <div className="space-y-2">
+                {!isReadOnly && (
+                  <input
+                    type="file"
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) {
+                        setForm({ ...form, supportingDocument: e.target.files[0] });
+                      }
+                    }}
+                    className="text-xs"
+                  />
+                )}
+                {form.supportingDocument && <p className="text-xs text-green-600 font-semibold">✓ {form.supportingDocument.name}</p>}
+                {form.supportingDocumentUrl && (
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="text-xs text-blue-600 font-medium">Attached: Document</p>
+                    <a href={form.supportingDocumentUrl} target="_blank" rel="noopener noreferrer">
+                      <Button size="sm" variant="outline" className="h-7 py-0 px-2 text-[10px] border-blue-200">
+                        <Eye size={12} className="mr-1" />
+                        View
+                      </Button>
+                    </a>
+                  </div>
+                )}
               </div>
             </Row>
           </Section>

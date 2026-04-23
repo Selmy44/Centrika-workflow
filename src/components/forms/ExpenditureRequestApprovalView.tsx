@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer } from "lucide-react";
+import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -265,9 +265,32 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
                         )}
                     </Section>
 
-                    {/* 3. EMPLOYEE SIGNATURE */}
-                    <Section title="3. EMPLOYEE SIGNATURE">
-                        <Row label="3.1 Employee Signature">
+                    <Section title="3. SUPPORTING DOCUMENT">
+                        <Row label="3.1 Attachment">
+                            <div className="flex items-center gap-4">
+                                {formDataDynamic?.supportingDocumentUrl ? (
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm text-green-600 font-medium">Attached: Document</span>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => window.open(formDataDynamic.supportingDocumentUrl, "_blank")}
+                                            className="h-8 px-3 text-xs flex items-center gap-1.5 border-blue-200 hover:bg-blue-50"
+                                        >
+                                            <Eye size={14} />
+                                            View
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <p className="text-xs italic text-gray-500 py-2">No supporting document attached</p>
+                                )}
+                            </div>
+                        </Row>
+                    </Section>
+
+                    {/* 4. EMPLOYEE SIGNATURE */}
+                    <Section title="4. EMPLOYEE SIGNATURE">
+                        <Row label="4.1 Employee Signature">
                             <div className="mt-1 mb-2">
                                 {formDataDynamic?.employeeSignatureUrl ? (
                                     <div className="p-2 border border-blue-200 dark:border-[#3b6dae]/30 rounded inline-block bg-white dark:bg-[#1f426b]">
@@ -280,11 +303,11 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
                         </Row>
                     </Section>
 
-                    {/* 4. APPROVAL WORKFLOW */}
-                    <Section title="4. APPROVAL WORKFLOW">
+                    {/* 5. APPROVAL WORKFLOW */}
+                    <Section title="5. APPROVAL WORKFLOW">
                         {/* Always show previous approvals if they exist */}
                         {formDataDynamic?.managerSignatureUrl && (
-                            <Row label="4.1 Line Manager / HOD">
+                            <Row label="5.1 Line Manager / HOD">
                                 <div className="mt-2">
                                     <p className="text-xs text-gray-500 mb-1">Approved by HOD:</p>
                                     <img src={formDataDynamic.managerSignatureUrl} alt="HOD Signature" className="h-10 object-contain border border-blue-200 dark:border-[#3b6dae]/30 rounded p-1 bg-white dark:bg-[#1f426b]" />
@@ -292,7 +315,7 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
                             </Row>
                         )}
                         {formDataDynamic?.hrSignatureUrl && (
-                            <Row label="4.2 HR Review">
+                            <Row label="5.2 HR Review">
                                 <div className="mt-2">
                                     <p className="text-xs text-gray-500 mb-1">Approved by HR:</p>
                                     <img src={formDataDynamic.hrSignatureUrl} alt="HR Signature" className="h-10 object-contain border border-blue-200 dark:border-[#3b6dae]/30 rounded p-1 bg-white dark:bg-[#1f426b]" />
@@ -300,7 +323,7 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
                             </Row>
                         )}
                         {formDataDynamic?.financeSignatureUrl && (
-                            <Row label="4.3 Head of Finance">
+                            <Row label="5.3 Head of Finance">
                                 <div className="mt-2">
                                     <p className="text-xs text-gray-500 mb-1">Approved by Head of Finance:</p>
                                     <img src={formDataDynamic.financeSignatureUrl} alt="Finance Signature" className="h-10 object-contain border border-blue-200 dark:border-[#3b6dae]/30 rounded p-1 bg-white dark:bg-[#1f426b]" />
@@ -308,7 +331,7 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
                             </Row>
                         )}
                         {formDataDynamic?.ceoSignatureUrl && (
-                            <Row label="4.3 CEO / MD">
+                            <Row label="5.4 CEO / MD">
                                 <div className="mt-2">
                                     <p className="text-xs text-gray-500 mb-1">Final Approval by CEO/MD:</p>
                                     <img src={formDataDynamic.ceoSignatureUrl} alt="CEO Signature" className="h-10 object-contain border border-blue-200 dark:border-[#3b6dae]/30 rounded p-1 bg-white dark:bg-[#1f426b]" />

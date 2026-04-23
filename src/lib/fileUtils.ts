@@ -16,3 +16,19 @@ export const base64ToFile = (base64: string, filename: string): File => {
   }
   return new File([u8arr], filename, { type: mime });
 };
+/**
+ * Convert File object to base64 string
+ */
+export const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      const result = reader.result as string;
+      // Remove the data:mime/type;base64, prefix
+      const base64 = result.split(",")[1];
+      resolve(base64);
+    };
+    reader.onerror = (error) => reject(error);
+  });
+};

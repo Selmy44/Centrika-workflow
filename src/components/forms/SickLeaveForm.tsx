@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer, AlertCircle } from "lucide-react";
+import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer, AlertCircle, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select";
 import { LeaveBalanceCalculator } from "./shared/LeaveBalanceCalculator";
 import { SignaturePad } from "@/components/SignaturePad";
-import { base64ToFile } from "@/lib/fileUtils";
+import { base64ToFile, fileToBase64 } from "@/lib/fileUtils";
 
 interface Props {
   requestData?: any;
@@ -62,6 +62,7 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
     hospitalName: "",
     doctorName: "",
     medicalDocuments: [] as File[],
+    medicalDocumentUrls: [] as string[],
     contactDuringLeave: "",
     leaveDaysEntitled: "",
     leaveDaysTaken: "",
@@ -88,6 +89,7 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
   const createLeave = trpc.requests.createLeaveRequest.useMutation();
   const submitRequest = trpc.requests.submitRequest.useMutation();
   const storeFormData = (trpc as any).requests.storeLeaveFormData.useMutation();
+  const uploadAttachment = (trpc as any).requests.uploadAttachment.useMutation();
 
   // Fetch saved form data for draft/read-only views
   const savedFormData = (trpc as any).requests.getLeaveFormData.useQuery(
@@ -191,11 +193,34 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
       const requestId = (created as any)?.id as number;
 
       if (requestId) {
+        let finalUrls = [...(form.medicalDocumentUrls || [])];
+        
+        // Upload new documents if any
+        if (form.medicalDocuments.length > 0) {
+          try {
+            const uploadPromises = form.medicalDocuments.map(async (doc) => {
+              const base64 = await fileToBase64(doc);
+              const result = await uploadAttachment.mutateAsync({
+                requestId,
+                fileName: doc.name,
+                fileData: base64,
+                mimeType: doc.type,
+                attachmentType: "supporting_document",
+              });
+              return result.fileUrl;
+            });
+            const newUrls = await Promise.all(uploadPromises);
+            finalUrls = [...finalUrls, ...newUrls];
+          } catch (e) {
+            console.error("Failed to upload medical documents", e);
+          }
+        }
+
         try {
           // Store form data for both draft and submitted forms
           await storeFormData.mutateAsync({
             requestId: requestId,
-            formData: { ...form, employeeSignature: undefined, leaveType: "sick" },
+            formData: { ...form, employeeSignature: undefined, medicalDocuments: undefined, medicalDocumentUrls: finalUrls, leaveType: "sick" },
           });
         } catch (e) { console.error("Failed to store form data", e); }
 
@@ -511,6 +536,27 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
                     <ul className="text-xs text-gray-600 dark:text-slate-400 space-y-0.5">
                       {form.medicalDocuments.map((doc, idx) => (
                         <li key={idx} className="ml-3">• {doc.name}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {form.medicalDocumentUrls && form.medicalDocumentUrls.length > 0 && (
+                  <div className="space-y-1 mt-2">
+                    <p className="text-xs text-blue-600 font-semibold">Attached Documents:</p>
+                    <ul className="space-y-1">
+                      {form.medicalDocumentUrls.map((url, idx) => (
+                        <li key={idx} className="flex items-center gap-2">
+                          <span className="text-[10px] text-gray-500">Document {idx + 1}</span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => window.open(url, "_blank")}
+                            className="h-6 px-2 text-[10px] flex items-center gap-1 border-blue-200 hover:bg-blue-50"
+                          >
+                            <Eye size={10} />
+                            View
+                          </Button>
+                        </li>
                       ))}
                     </ul>
                   </div>

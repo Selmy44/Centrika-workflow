@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer } from "lucide-react";
+import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -205,8 +205,31 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                         </Row>
                     </Section>
 
-                    <Section title="3. EMPLOYEE SIGNATURE">
-                        <Row label="3.1 Signature">
+                    <Section title="3. SUPPORTING DOCUMENT">
+                        <Row label="3.1 Attachment">
+                            <div className="flex items-center gap-4">
+                                {formDataDynamic?.supportingDocumentUrl ? (
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm text-green-600 font-medium">Attached: Document</span>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => window.open(formDataDynamic.supportingDocumentUrl, "_blank")}
+                                            className="h-8 px-3 text-xs flex items-center gap-1.5 border-blue-200 hover:bg-blue-50"
+                                        >
+                                            <Eye size={14} />
+                                            View
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <p className="text-xs italic text-gray-500 py-2">No supporting document attached</p>
+                                )}
+                            </div>
+                        </Row>
+                    </Section>
+
+                    <Section title="4. EMPLOYEE SIGNATURE">
+                        <Row label="4.1 Signature">
                             {formDataDynamic?.employeeSignatureUrl ? (
                                 <img src={formDataDynamic.employeeSignatureUrl} alt="Employee" className="h-10 object-contain border rounded p-1" />
                             ) : (
@@ -215,10 +238,10 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                         </Row>
                     </Section>
 
-                    <Section title="4. APPROVAL WORKFLOW">
+                    <Section title="5. APPROVAL WORKFLOW">
                         {/* HOD / Manager */}
                         {formDataDynamic?.managerSignatureUrl && (
-                            <Row label="4.1 Line Manager / HOD">
+                            <Row label="5.1 Line Manager / HOD">
                                 <div className="py-1">
                                     <p className="text-[10px] font-bold text-gray-400 mb-1">APPROVED BY HOD:</p>
                                     <img src={formDataDynamic.managerSignatureUrl} alt="HOD" className="h-10 object-contain border rounded p-1" />
@@ -227,7 +250,7 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                         )}
 
                         {/* HR */}
-                        <Row label="4.2 HR Approval">
+                        <Row label="5.2 HR Approval">
                             {formDataDynamic?.hrSignatureUrl ? (
                                 <div className="py-1">
                                     <p className="text-[10px] font-bold text-gray-400 mb-1">APPROVED BY HR:</p>

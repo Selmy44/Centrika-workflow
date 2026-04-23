@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer } from "lucide-react";
+import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select";
 import { LeaveBalanceCalculator } from "./shared/LeaveBalanceCalculator";
 import { SignaturePad } from "@/components/SignaturePad";
-import { base64ToFile } from "@/lib/fileUtils";
+import { base64ToFile, fileToBase64 } from "@/lib/fileUtils";
 
 interface Props {
   requestData?: any;
@@ -67,6 +67,8 @@ export default function PersonalLeaveForm({ requestData, isReadOnly = false, onS
     employeeSignatureUrl: "" as string,
     signatureDate: new Date().toISOString().split("T")[0],
     signatureMethod: "draw" as "upload" | "draw",
+    supportingDocument: null as File | null,
+    supportingDocumentUrl: "",
   });
 
   const { data: heads = [] } = trpc.users.listHeads.useQuery(undefined, {
@@ -85,6 +87,7 @@ export default function PersonalLeaveForm({ requestData, isReadOnly = false, onS
   const createLeave = trpc.requests.createLeaveRequest.useMutation();
   const submitRequest = trpc.requests.submitRequest.useMutation();
   const storeFormData = (trpc as any).requests.storeLeaveFormData.useMutation();
+  const uploadAttachment = (trpc as any).requests.uploadAttachment.useMutation();
 
   // Fetch saved form data for draft/read-only views
   const savedFormData = (trpc as any).requests.getLeaveFormData.useQuery(
@@ -182,13 +185,32 @@ export default function PersonalLeaveForm({ requestData, isReadOnly = false, onS
       });
 
       const requestId = (created as any)?.id as number;
-
+      
       if (requestId) {
+        let finalSupportingDocUrl = form.supportingDocumentUrl;
+        
+        // Handle file upload if a new file is selected
+        if (form.supportingDocument) {
+          try {
+            const base64 = await fileToBase64(form.supportingDocument);
+            const uploadResult = await uploadAttachment.mutateAsync({
+              requestId: requestId,
+              fileName: form.supportingDocument.name,
+              fileData: base64,
+              mimeType: form.supportingDocument.type,
+              attachmentType: "supporting_document",
+            });
+            finalSupportingDocUrl = uploadResult.fileUrl;
+          } catch (e) {
+            console.error("Failed to upload supporting document", e);
+          }
+        }
+
         try {
           // Store form data for both draft and submitted forms
           await storeFormData.mutateAsync({
             requestId: requestId,
-            formData: { ...form, employeeSignature: undefined, leaveType: "personal" },
+            formData: { ...form, employeeSignature: undefined, supportingDocument: undefined, supportingDocumentUrl: finalSupportingDocUrl, leaveType: "personal" },
           });
         } catch (e) { console.error("Failed to store form data", e); }
 
@@ -461,6 +483,33 @@ export default function PersonalLeaveForm({ requestData, isReadOnly = false, onS
                 placeholder="How can you be contacted during your absence? Provide alternative contact or person covering for you..."
                 className="min-h-20 border-blue-300 dark:border-[#3b6dae]/40 text-xs"
               />
+            </Row>
+            <Row label="3.3 Supporting Document">
+              <div className="space-y-2">
+                {!isReadOnly && (
+                  <input
+                    type="file"
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) {
+                        setForm({ ...form, supportingDocument: e.target.files[0] });
+                      }
+                    }}
+                    className="text-xs"
+                  />
+                )}
+                {form.supportingDocument && <p className="text-xs text-green-600 font-semibold">✓ {form.supportingDocument.name}</p>}
+                {form.supportingDocumentUrl && (
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="text-xs text-blue-600 font-medium">Attached: Document</p>
+                    <a href={form.supportingDocumentUrl} target="_blank" rel="noopener noreferrer">
+                      <Button size="sm" variant="outline" className="h-7 py-0 px-2 text-[10px] border-blue-200">
+                        <Eye size={12} className="mr-1" />
+                        View
+                      </Button>
+                    </a>
+                  </div>
+                )}
+              </div>
             </Row>
           </Section>
 
