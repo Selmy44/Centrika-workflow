@@ -70,7 +70,7 @@ export default function Requests() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 p-4 lg:p-6">
+      <div className="space-y-4 p-3 sm:space-y-6 sm:p-4 lg:p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-[#3b6dae] dark:text-[#c79d2d]">My Requests</h1>
@@ -84,7 +84,7 @@ export default function Requests() {
                 onChange={setSearchTerm}
               />
             </div>
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               <CreateRequestDialog />
             </div>
           </div>
@@ -100,19 +100,19 @@ export default function Requests() {
           </Card>
         ) : requests && requests.length > 0 ? (
           filteredRequests.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-3 sm:space-y-4">
               {filteredRequests.map((request: any) => (
                 <Card key={request.id} className="bg-card border-border">
-                  <CardContent className="pt-6">
-                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                       <Link href={`/requests/${request.id}`} className="flex-1 min-w-0">
-                        <div className="flex items-start gap-4 cursor-pointer hover:opacity-80 transition-opacity">
-                          <div className="p-2 bg-muted rounded-lg flex-shrink-0">
+                        <div className="flex items-start gap-3 sm:gap-4 cursor-pointer hover:opacity-80 transition-opacity">
+                          <div className="p-2 bg-muted rounded-lg shrink-0">
                             <RequestIcon type={request.type} />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-foreground truncate">{request.title}</h3>
-                            <p className="text-sm text-muted-foreground mt-1">
+                            <h3 className="font-semibold text-foreground text-sm sm:text-base truncate">{request.title}</h3>
+                            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                               {request.type.charAt(0).toUpperCase() + request.type.slice(1)} Request
                             </p>
                             <p className="text-xs text-muted-foreground mt-2">
@@ -121,8 +121,8 @@ export default function Requests() {
                           </div>
                         </div>
                       </Link>
-                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 flex-shrink-0">
-                        <div className="flex-shrink-0">
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 md:shrink-0">
+                        <div className="shrink-0">
                           <StatusBadge status={request.status} />
                         </div>
                         {request.status === "draft" && (
@@ -149,7 +149,7 @@ export default function Requests() {
                             }}
                           >
                             <Trash2 size={16} className="mr-1" />
-                            <span className="hidden sm:inline">Cancel</span>
+                            Cancel
                           </Button>
                         )}
                       </div>

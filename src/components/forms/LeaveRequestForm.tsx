@@ -18,6 +18,7 @@ import { getLeaveTypeConfig } from "@/lib/leaveTypeConfig";
 import { LeaveBalanceCalculator } from "./shared/LeaveBalanceCalculator";
 import { SignaturePad } from "@/components/SignaturePad";
 import { base64ToFile, fileToBase64 } from "@/lib/fileUtils";
+import { exportFormToPdf, getActiveFormElement, printFormElement } from "@/lib/formExport";
 
 interface LeaveRequestFormProps {
   requestId?: number;
@@ -89,6 +90,8 @@ export default function LeaveRequestForm({
   const [approverSignatureMethod, setApproverSignatureMethod] = useState<"upload" | "draw">("draw");
   const [approverSignatureFileId, setApproverSignatureFileId] = useState<number | null>(null);
   const [selectedHR, setSelectedHR] = useState("");
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [isPrintingForm, setIsPrintingForm] = useState(false);
 
   const headsOfDept = trpc.users.listHeads.useQuery();
   const hrUsers = trpc.users.getHRUsers.useQuery();
@@ -233,6 +236,45 @@ export default function LeaveRequestForm({
   const submitRequestMutation = trpc.requests.submitRequest.useMutation();
   const storeFormData = (trpc as any).requests.storeLeaveFormData.useMutation();
   const uploadAttachment = (trpc as any).requests.uploadAttachment.useMutation();
+
+  const handlePrint = () => {
+    const formElement = getActiveFormElement();
+    if (!formElement) {
+      toast.error("Form content not found for printing");
+      return;
+    }
+    try {
+      setIsPrintingForm(true);
+      printFormElement({
+        element: formElement,
+        title: `${(config.title || "Leave Request").replace(/\s+/g, " ").trim()} - ${form.documentId || "Document"}`,
+      });
+    } catch {
+      toast.error("Unable to open print view");
+    } finally {
+      setIsPrintingForm(false);
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    const formElement = getActiveFormElement();
+    if (!formElement) {
+      toast.error("Form content not found for export");
+      return;
+    }
+    try {
+      setIsExportingPdf(true);
+      await exportFormToPdf({
+        element: formElement,
+        fileName: `${(config.title || "leave-request").toLowerCase().replace(/\s+/g, "-")}-${form.documentId || Date.now()}.pdf`,
+      });
+      toast.success("PDF downloaded successfully");
+    } catch {
+      toast.error("Failed to generate PDF");
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
 
   const handleSaveAsDraft = async () => {
     setIsSubmitting(true);
@@ -685,7 +727,7 @@ export default function LeaveRequestForm({
                         <input
                           type="radio"
                           checked={form.signatureMethod === "draw"}
-                          onChange={() => setForm({ ...form, signatureMethod: "draw", employeeSignature: null, employeeSignatureUrl: "" })}
+                          onChange={() => setForm({ ...form, signatureMethod: "draw", employeeSignature: null })}
                           className="w-4 h-4 accent-blue-600"
                         />
                         <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600">Draw Signature</span>
@@ -694,7 +736,7 @@ export default function LeaveRequestForm({
                         <input
                           type="radio"
                           checked={form.signatureMethod === "upload"}
-                          onChange={() => setForm({ ...form, signatureMethod: "upload", employeeSignature: null, employeeSignatureUrl: "" })}
+                          onChange={() => setForm({ ...form, signatureMethod: "upload", employeeSignature: null })}
                           className="w-4 h-4 accent-blue-600"
                         />
                         <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600">Upload Image</span>
@@ -730,7 +772,7 @@ export default function LeaveRequestForm({
                       />
                     )}
                     
-                    {form.employeeSignatureUrl && form.signatureMethod === "upload" && (
+                    {form.employeeSignatureUrl && (
                        <div className="mt-2 animate-in zoom-in duration-300">
                           <img src={form.employeeSignatureUrl} alt="sig" className="h-16 object-contain border-2 border-blue-100 rounded-xl p-2 bg-white" />
                        </div>
@@ -883,23 +925,22 @@ export default function LeaveRequestForm({
         </div>
 
         {/* ACTIONS & FOOTER */}
-        <div className="flex justify-between items-center px-6 py-4 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c] gap-4 mt-4">
+        <div className="no-print flex justify-between items-center px-6 py-4 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c] gap-4 mt-4">
           <div className="flex gap-2">
             {requestData?.status === "approved" && (
               <>
-                <Button variant="outline" disabled={isSubmitting} onClick={() => window.print()} className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600">
-                  <Printer size={16} className="mr-1" /> Print
+                <Button variant="outline" disabled={isSubmitting || isPrintingForm} onClick={handlePrint} className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600">
+                  {(isSubmitting || isPrintingForm) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  <Printer size={16} className="mr-1" /> Print Form
                 </Button>
                 <Button 
                   variant="outline" 
-                  disabled={isSubmitting} 
-                  onClick={() => {
-                    toast.info("Preparing your document for download... Please select 'Save as PDF' in the print menu.");
-                    setTimeout(() => window.print(), 1000);
-                  }} 
+                  disabled={isSubmitting || isExportingPdf}
+                  onClick={handleDownloadPdf}
                   className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600"
                 >
-                  <Download size={16} className="mr-1" /> Download
+                  {(isSubmitting || isExportingPdf) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  <Download size={16} className="mr-1" /> Download PDF
                 </Button>
               </>
             )}

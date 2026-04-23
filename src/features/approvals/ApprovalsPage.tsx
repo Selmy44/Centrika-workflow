@@ -347,22 +347,22 @@ export default function Approvals() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 p-4 lg:p-6">
+      <div className="space-y-4 p-3 sm:space-y-6 sm:p-4 lg:p-6">
         {/* Header section */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-[#3b6dae] dark:text-[#c79d2d]">Approvals</h1>
-            <p className="text-muted-foreground mt-2">Review and manage employee requests</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#3b6dae] dark:text-[#c79d2d]">Approvals</h1>
+            <p className="text-muted-foreground mt-1 sm:mt-2 text-sm">Review and manage employee requests</p>
           </div>
 
           {/* Modern compact search bar on the right */}
           {!isLoading && allRequests.length > 0 && (
-            <div className="relative">
+            <div className="relative w-full sm:w-auto">
               <Input
                 placeholder="Search requests..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-48 h-10 pl-10 text-sm rounded-lg border border-border bg-muted/50 focus:bg-background transition-colors"
+                className="h-10 w-full sm:w-64 pl-10 text-sm rounded-lg border border-border bg-muted/50 focus:bg-background transition-colors"
               />
               <svg className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -372,12 +372,13 @@ export default function Approvals() {
         </div>
 
         {/* Status filter tabs */}
-        <div className="flex gap-2 border-b border-border pb-0">
+        <div className="overflow-x-auto border-b border-border pb-0 -mx-3 px-3 sm:mx-0 sm:px-0">
+          <div className="flex gap-2 min-w-max">
           {(["all", "pending", "approved", "rejected"] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors border-b-2 -mb-px ${
+              className={`px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium rounded-t-lg transition-colors border-b-2 -mb-px whitespace-nowrap ${
                 activeTab === tab
                   ? "border-blue-600 text-blue-600 bg-blue-50/50"
                   : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -391,6 +392,7 @@ export default function Approvals() {
               </span>
             </button>
           ))}
+          </div>
         </div>
 
         {isLoading ? (
@@ -420,18 +422,18 @@ export default function Approvals() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {filteredRequests.map((request: any) => (
               <Card key={request.id} className="bg-card border-border hover:border-accent transition-colors">
-                <CardContent className="pt-6">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-4 flex-1">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-start gap-3 sm:gap-4">
                       <div className="p-2 bg-muted rounded-lg">{getRequestIcon(request.type)}</div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-4 mb-2">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between mb-2">
                           <div>
-                            <h3 className="font-semibold text-foreground">{request.title}</h3>
-                            <p className="text-sm text-muted-foreground mt-1">
+                            <h3 className="font-semibold text-foreground text-sm sm:text-base">{request.title}</h3>
+                            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                               {request.type.charAt(0).toUpperCase() + request.type.slice(1)} Request
                             </p>
                           </div>
@@ -448,7 +450,7 @@ export default function Approvals() {
                           </div>
                         )}
 
-                        <div className="flex items-center gap-4 mt-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 mt-3">
                           <p className="text-xs text-muted-foreground">
                             Request ID: #{request.id}
                           </p>
@@ -462,7 +464,7 @@ export default function Approvals() {
                           <Button
                             variant="default"
                             size="sm"
-                            className={request.status === "pending" ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-600 hover:bg-gray-700"}
+                            className={`w-full sm:w-auto ${request.status === "pending" ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-600 hover:bg-gray-700"}`}
                             onClick={() => {
                               setSelectedRequest(request);
                               setShowFullFormDialog(true);
@@ -679,16 +681,16 @@ export default function Approvals() {
 
         {/* Full Form - Display as proper modal with navbar header */}
         {showFullFormDialog && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg shadow-2xl w-full max-w-7xl h-[95vh] flex flex-col relative">
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-0 sm:p-4">
+            <div className="bg-white rounded-none sm:rounded-lg shadow-2xl w-full max-w-7xl h-dvh sm:h-[95vh] flex flex-col relative">
               {/* Navbar Header - Fixed at top */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50 sticky top-0 z-20">
-                <h2 className="text-lg font-semibold text-foreground">
+              <div className="flex items-center justify-between gap-3 px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-200 bg-gray-50 sticky top-0 z-20">
+                <h2 className="text-sm sm:text-lg font-semibold text-foreground truncate">
                   {selectedRequest?.title}
                 </h2>
                 <button
                   onClick={() => setShowFullFormDialog(false)}
-                  className="p-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-bold text-2xl w-10 h-10 flex items-center justify-center"
+                  className="p-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-bold text-xl sm:text-2xl w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center shrink-0"
                 >
                   ✕
                 </button>

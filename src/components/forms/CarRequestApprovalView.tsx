@@ -17,6 +17,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { exportFormToPdf, getActiveFormElement, printFormElement } from "@/lib/formExport";
 
 const base64ToFile = (base64: string, filename: string) => {
     try {
@@ -53,6 +54,8 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
     const [signatureMethod, setSignatureMethod] = useState<"upload" | "draw">("draw");
     const [rejectReason, setRejectReason] = useState("");
     const [showRejectDialog, setShowRejectDialog] = useState(false);
+    const [isExportingPdf, setIsExportingPdf] = useState(false);
+    const [isPrintingForm, setIsPrintingForm] = useState(false);
 
     const isRequestApproved = requestData?.status === "approved";
     const isRequestRejected = requestData?.status === "rejected";
@@ -82,12 +85,48 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
     const car = data?.carDetails as any;
     const employee = data?.employee as any;
 
+    const handlePrint = () => {
+        const formElement = getActiveFormElement();
+        if (!formElement) {
+            toast.error("Form content not found for printing");
+            return;
+        }
+        try {
+            setIsPrintingForm(true);
+            printFormElement({ element: formElement, title: `Car Request #${requestData?.id || ""}` });
+        } catch {
+            toast.error("Unable to open print view");
+        } finally {
+            setIsPrintingForm(false);
+        }
+    };
+
+    const handleDownloadPdf = async () => {
+        const formElement = getActiveFormElement();
+        if (!formElement) {
+            toast.error("Form content not found for export");
+            return;
+        }
+        try {
+            setIsExportingPdf(true);
+            await exportFormToPdf({
+                element: formElement,
+                fileName: `car-request-${requestData?.id || Date.now()}.pdf`,
+            });
+            toast.success("PDF downloaded successfully");
+        } catch {
+            toast.error("Failed to generate PDF");
+        } finally {
+            setIsExportingPdf(false);
+        }
+    };
+
     return (
         <div className="w-full bg-white dark:bg-[#1f426b] text-black dark:text-slate-100 px-10 leave-form-container relative dark:border-[#2b6cb0]/30">
             {/* CLOSE/BACK BUTTON */}
             <button
                 onClick={() => onBack ? onBack() : (onClose ? onClose() : window.history.back())}
-                className="absolute top-4 right-4 p-2 hover:bg-gray-100 dark:bg-[#295482] rounded-lg transition"
+                className="no-print absolute top-4 right-4 p-2 hover:bg-gray-100 dark:bg-[#295482] rounded-lg transition"
                 title="Close form"
             >
                 <svg className="w-6 h-6 text-gray-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -335,12 +374,18 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                 </div>
 
                 {/* ACTIONS */}
-                <div className="flex justify-between items-center p-6 border-t bg-gray-50">
+                <div className="no-print flex justify-between items-center p-6 border-t bg-gray-50">
                     <div className="flex gap-2">
                         {isRequestApproved && (
                             <>
-                                <Button variant="outline" size="sm" onClick={() => window.print()}><Printer size={16} className="mr-2" /> Print</Button>
-                                <Button variant="outline" size="sm" onClick={() => window.print()}><Download size={16} className="mr-2" /> Download</Button>
+                                <Button variant="outline" size="sm" onClick={handlePrint} disabled={isPrintingForm || isLoading}>
+                                    {(isPrintingForm || isLoading) && <Loader2 size={16} className="mr-2 animate-spin" />}
+                                    <Printer size={16} className="mr-2" /> Print Form
+                                </Button>
+                                <Button variant="outline" size="sm" onClick={handleDownloadPdf} disabled={isExportingPdf || isLoading}>
+                                    {(isExportingPdf || isLoading) && <Loader2 size={16} className="mr-2 animate-spin" />}
+                                    <Download size={16} className="mr-2" /> Download PDF
+                                </Button>
                             </>
                         )}
                     </div>

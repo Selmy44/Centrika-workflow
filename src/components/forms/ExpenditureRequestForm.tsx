@@ -438,7 +438,7 @@ export default function ExpenditureRequestForm({ requestData, isReadOnly = false
                     <input
                       type="radio"
                       checked={form.signatureMethod === "draw"}
-                      onChange={() => setForm({ ...form, signatureMethod: "draw", signatureFile: null, employeeSignatureUrl: "" })}
+                      onChange={() => setForm({ ...form, signatureMethod: "draw", signatureFile: null })}
                       className="w-4 h-4 accent-blue-600"
                     />
                     <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600">Draw Signature</span>
@@ -447,7 +447,7 @@ export default function ExpenditureRequestForm({ requestData, isReadOnly = false
                     <input
                       type="radio"
                       checked={form.signatureMethod === "upload"}
-                      onChange={() => setForm({ ...form, signatureMethod: "upload", signatureFile: null, employeeSignatureUrl: "" })}
+                      onChange={() => setForm({ ...form, signatureMethod: "upload", signatureFile: null })}
                       className="w-4 h-4 accent-blue-600"
                     />
                     <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600">Upload Image</span>
@@ -489,7 +489,7 @@ export default function ExpenditureRequestForm({ requestData, isReadOnly = false
                   />
                 )}
                 
-                {form.employeeSignatureUrl && form.signatureMethod === "upload" && (
+                {form.employeeSignatureUrl && (
                    <div className="mt-2 animate-in zoom-in duration-300">
                       <img src={form.employeeSignatureUrl} alt="sig" className="h-16 object-contain border-2 border-blue-100 rounded-xl p-2 bg-white text-black" />
                    </div>
