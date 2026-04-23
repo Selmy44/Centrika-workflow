@@ -1,48 +1,42 @@
-# Build stage
-FROM node:20-alpine AS builder
+# ==================================
+# Stage 1: Build the Vite application
+# ==================================
 
-# Set build arguments for Vite
-ARG VITE_API_URL
-ARG VITE_OAUTH_PORTAL_URL
-ARG VITE_ANALYTICS_ENDPOINT
-ARG VITE_ANALYTICS_WEBSITE_ID
-ARG VITE_APP_TITLE
-ARG VITE_APP_LOGO
+# Use a lightweight Node.js image for building (customizable via ARG)
+FROM dhi.io/node:24-alpine3.22-dev AS builder
 
-# Set environment variables for Vite
-ENV VITE_API_URL=$VITE_API_URL
-ENV VITE_OAUTH_PORTAL_URL=$VITE_OAUTH_PORTAL_URL
-ENV VITE_ANALYTICS_ENDPOINT=$VITE_ANALYTICS_ENDPOINT
-ENV VITE_ANALYTICS_WEBSITE_ID=$VITE_ANALYTICS_WEBSITE_ID
-ENV VITE_APP_TITLE=$VITE_APP_TITLE
-ENV VITE_APP_LOGO=$VITE_APP_LOGO
-
+# Set the working directory inside the container
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy package-related files first to leverage Docker's caching mechanism
+COPY package.json package-lock.json* ./
 
-# Install dependencies
-RUN npm install
+# Install project dependencies using npm ci (ensures a clean, reproducible install)
+RUN --mount=type=cache,target=/root/.npm npm ci
 
-# Copy source code
+# Copy the rest of the application source code into the container
 COPY . .
 
-# Build the application
-RUN npm run build
+# =========================================
+# Stage 2: Prepare Nginx to Serve Static Files
+# =========================================
 
-# Production stage
-FROM nginx:alpine
+FROM dhi.io/nginx:1.28.0-alpine3.21-dev AS runner
 
-# Copy build output to nginx public folder
-COPY --from=builder /app/dist /usr/share/nginx/html
+# Copy custom Nginx config
+COPY nginx.conf /etc/nginx/nginx.conf
 
-# Copy custom nginx config for SPA routing
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy the static build output from the build stage to Nginx's default HTML serving directory
+COPY --chown=nginx:nginx --from=builder /app/dist /usr/share/nginx/html
 
-# Expose port
-EXPOSE 80
+# Use a non-root user for security best practices
+USER nginx
 
-# Run nginx
-CMD ["nginx", "-g", "daemon off;"]
 
+# Expose port 8080 to allow HTTP traffic
+# Note: The default NGINX container now listens on port 8080 instead of 80 
+EXPOSE 8080
+
+# Start Nginx directly with custom config
+ENTRYPOINT ["nginx", "-c", "/etc/nginx/nginx.conf"]
+CMD ["-g", "daemon off;"]
