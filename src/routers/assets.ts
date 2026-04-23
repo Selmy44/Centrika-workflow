@@ -87,8 +87,8 @@ export const assetsRouter = router({
       location: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      if (ctx.user.role !== "admin" && ctx.user.role !== "hr") {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Only Admin or HR can create assets" });
+      if (ctx.user.role !== "admin" && ctx.user.role !== "hr" && ctx.user.role !== "head_of_department") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Only Admin, HR, or Head of Department can register assets" });
       }
 
       const asset = await prisma.asset.create({
