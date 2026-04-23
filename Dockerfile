@@ -17,6 +17,9 @@ RUN --mount=type=cache,target=/root/.npm npm ci
 # Copy the rest of the application source code into the container
 COPY . .
 
+# Build the React.js application (outputs to /app/dist)
+RUN npm run build
+
 # =========================================
 # Stage 2: Prepare Nginx to Serve Static Files
 # =========================================
