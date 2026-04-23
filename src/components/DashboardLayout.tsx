@@ -521,7 +521,7 @@ function DashboardLayoutContent({
             {/* Left Header Area */}
             <div className="flex-1 flex items-center justify-between px-2 sm:px-4 lg:px-8 gap-2 sm:gap-4">
               <div className="flex items-center gap-1 sm:gap-2 md:gap-4 min-w-0">
-                <SidebarTrigger className="lg:hidden h-7 w-7 sm:h-8 sm:w-8 border shadow-xs shrink-0 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 text-xs" />
+                <SidebarTrigger className="h-7 w-7 sm:h-8 sm:w-8 border shadow-xs shrink-0 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 text-xs" />
                 <div className="flex items-center gap-1 sm:gap-2 min-w-0">
                   <span className="h-4 sm:h-5 w-0.5 sm:w-1 bg-[#3b6dae] dark:bg-[#c79d2d] rounded-full shrink-0" />
                   <h2 className="text-xs md:text-sm font-black text-[#3b6dae] dark:text-[#c79d2d] uppercase tracking-[0.1em] md:tracking-[0.2em] opacity-80 truncate">

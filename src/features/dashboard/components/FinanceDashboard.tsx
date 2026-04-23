@@ -96,7 +96,7 @@ export const FinanceDashboard = () => {
           <h1 className="flex items-center gap-2 text-2xl font-black text-[#3b6dae] dark:text-[#c79d2d]">
             Finance Command Center
             <Badge variant="outline" className="border-emerald-500/30 text-[10px] font-bold uppercase tracking-widest text-emerald-500">
-              Fiscal Pulse
+              Fiscal Overview
             </Badge>
           </h1>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">

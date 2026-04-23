@@ -165,7 +165,7 @@ export const HRDashboard = () => {
           <Card className="flex-1 rounded-[1rem] border-slate-100 dark:border-white/10 bg-white dark:bg-slate-900/60 overflow-hidden shadow-xl">
              <CardHeader className="p-8 pb-4 border-b border-border/10 flex flex-row items-center justify-between">
                 <div>
-                   <CardTitle className="text-lg font-black text-slate-800 dark:text-white">Recent Workforce Pulse</CardTitle>
+                   <CardTitle className="text-lg font-black text-slate-800 dark:text-white">Recent Activities</CardTitle>
                    <CardDescription className="text-xs">Live events from the employee lifecycle.</CardDescription>
                 </div>
                 <Link href="/hr/reports">
