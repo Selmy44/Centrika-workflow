@@ -32,6 +32,7 @@ async function main() {
   // 2. Seed Initial Users
   const adminPassword = await bcrypt.hash("Rwanda@123", 10);
   const userPassword = await bcrypt.hash("Centrika@2024", 10);
+  const newUserPassword = await bcrypt.hash("Rwanda@123", 10);
 
   const users = [
     {
@@ -46,17 +47,51 @@ async function main() {
       email: "snshuti@centrika.rw",
       name: "",
       password: adminPassword,
-      role: "ceo_md",
+      role: "admin",
       status: "Active",
-      departmentName: "Operations",
+      departmentName: "Engineering",
     },
     {
-      email: "sebagabomoses25@gmail.com",
-      name: "Devops Moses",
+      email: "dmbabazi@centrika.rw",
+      name: "Doreen MBABAZI",
       password: userPassword,
       role: "hr",
       status: "Active",
       departmentName: "Human Resources",
+    },
+    {
+      email: "gagaba@centrika.rw",
+      name: "Gad AGABA",
+      password: newUserPassword,
+      role: "head_of_department",
+      status: "Active",
+      departmentName: "Engineering",
+    },
+    {
+      email: "ehitimana@centrika.rw",
+      name: "Ed HITIMANA",
+      password: newUserPassword,
+      role: "user",
+      status: "Active",
+      departmentName: "Engineering",
+      position: "Project Manager",
+    },
+    {
+      email: "muwamahoro@centrika.rw",
+      name: "Munira UWAMAHORO",
+      password: newUserPassword,
+      role: "user",
+      status: "Active",
+      departmentName: "Engineering",
+      position: "QA Engineer",
+    },
+    {
+      email: "otuyishime@centrika.rw",
+      name: "Odilon TUYISHIME",
+      password: newUserPassword,
+      role: "head_of_department",
+      status: "Active",
+      departmentName: "Operations",
     },
   ];
 
@@ -71,6 +106,7 @@ async function main() {
       update: {
         role: user.role as any,
         departmentId: dept?.id,
+        position: (user as any).position,
       },
       create: {
         email: user.email,
@@ -81,6 +117,7 @@ async function main() {
         openId: openId,
         loginMethod: "email",
         departmentId: dept?.id,
+        position: (user as any).position,
       },
     });
     console.log(`✅ User: ${user.email} (${user.role})`);
