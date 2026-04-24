@@ -66,6 +66,19 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
     retry: 1,
   });
 
+  const { data: heads = [] } = trpc.users.listHeads.useQuery(undefined, {
+    staleTime: Infinity,
+    gcTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1,
+  });
+
+  const uniqueHeads = Array.from(
+    new Map(heads.map((h: any) => [h.id, h])).values()
+  );
+
   // Fetch saved form data for draft/read-only views
   const savedFormData = (trpc as any).requests.getCarFormData.useQuery(
     { requestId: requestData?.id || 0 },
