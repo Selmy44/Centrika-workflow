@@ -112,7 +112,14 @@ export default function Settings() {
       setNewPassword("");
       setConfirmPassword("");
     } catch (error: any) {
-      toast.error(error.message || "Failed to change password");
+      // Format validation errors
+      if (error.data?.zodError?.fieldErrors) {
+        const errors = error.data.zodError.fieldErrors;
+        const messages = Object.values(errors).flat() as string[];
+        toast.error(messages[0] || "Failed to change password");
+      } else {
+        toast.error(error.message || "Failed to change password");
+      }
     }
   };
 
