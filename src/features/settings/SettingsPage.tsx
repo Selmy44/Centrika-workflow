@@ -36,7 +36,7 @@ import {
 
 export default function Settings() {
   const { user, isAuthenticated, hasRole } = useAuth();
-  const utils = trpc.useUtils();
+  const utils = (trpc as any).useUtils();
 
   // --- Profile State ---
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -56,15 +56,15 @@ export default function Settings() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
 
   // --- Data ---
-  const { data: managers = [] } = trpc.users.listHeads.useQuery();
+  const { data: managers = [] } = (trpc as any).users.listHeads.useQuery();
   const { data: departments = [] } = (trpc as any).employees.getDepartments.useQuery();
 
   // Mutations
-  const updateProfileMutation = trpc.auth.updateProfile.useMutation();
-  const changePasswordMutation = trpc.auth.changePassword.useMutation();
-  const updateSettingsMutation = trpc.auth.updateSettings.useMutation();
+  const updateProfileMutation = (trpc as any).auth.updateProfile.useMutation();
+  const changePasswordMutation = (trpc as any).auth.changePassword.useMutation();
 
   const handleUpdateProfile = async () => {
     try {
@@ -101,8 +101,14 @@ export default function Settings() {
   };
 
   const handleChangePassword = async () => {
+    setPasswordErrors({});
+    const required: Record<string, string> = {};
+    if (!currentPassword) required.currentPassword = "Current password is required";
+    if (!newPassword) required.newPassword = "New password is required";
+    if (!confirmPassword) required.confirmPassword = "Please confirm your new password";
+    if (Object.keys(required).length) { setPasswordErrors(required); return; }
     if (newPassword !== confirmPassword) {
-      toast.error("Passwords do not match");
+      setPasswordErrors({ confirmPassword: "Passwords do not match" });
       return;
     }
     try {
@@ -112,7 +118,22 @@ export default function Settings() {
       setNewPassword("");
       setConfirmPassword("");
     } catch (error: any) {
-      toast.error(error.message || "Failed to change password");
+      // tRPC wraps Zod issues at error.data.zodError.issues
+      const issues: Array<{ path: string[]; message: string }> =
+        error?.data?.zodError?.issues ??
+        error?.shape?.data?.zodError?.issues ??
+        (Array.isArray(error?.data) ? error.data : null);
+
+      if (issues?.length) {
+        const fieldErrors: Record<string, string> = {};
+        issues.forEach((issue) => {
+          const field = issue.path?.[0] as string | undefined;
+          if (field && !fieldErrors[field]) fieldErrors[field] = issue.message;
+        });
+        setPasswordErrors(fieldErrors);
+      } else {
+        toast.error(error.message || "Failed to change password");
+      }
     }
   };
 
@@ -127,45 +148,40 @@ export default function Settings() {
           </div>
 
           <Tabs defaultValue="profile" className="space-y-6">
-            <TabsList className="bg-white/40 border border-[#3b6dae]/5 p-1 rounded-xl h-12 backdrop-blur-md inline-flex">
-              <TabsTrigger value="profile" className="px-4 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-[#3b6dae] data-[state=active]:text-white transition-all rounded-lg h-full">
+            <TabsList className="bg-white/40 border border-[#3b6dae]/5 p-1 rounded-xl h-auto backdrop-blur-md flex flex-wrap w-full md:w-auto md:inline-flex md:h-12">
+              <TabsTrigger value="profile" className="flex-1 md:flex-none px-4 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-[#3b6dae] data-[state=active]:text-white transition-all rounded-lg h-10 md:h-full">
                 <User size={14} />
                 Profile
               </TabsTrigger>
 
-              <TabsTrigger value="security" className="px-4 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-[#3b6dae] data-[state=active]:text-white transition-all rounded-lg h-full">
+              <TabsTrigger value="security" className="flex-1 md:flex-none px-4 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-[#3b6dae] data-[state=active]:text-white transition-all rounded-lg h-10 md:h-full">
                 <Lock size={14} />
                 Security
               </TabsTrigger>
-              <TabsTrigger value="documents" className="px-4 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-[#3b6dae] data-[state=active]:text-white transition-all rounded-lg h-full">
+              <TabsTrigger value="documents" className="flex-1 md:flex-none px-4 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-[#3b6dae] data-[state=active]:text-white transition-all rounded-lg h-10 md:h-full">
                 <FileText size={14} />
                 Documents
               </TabsTrigger>
-              {user.role === 'admin' && (
-                <TabsTrigger value="system" className="px-4 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-[#3b6dae] data-[state=active]:text-white transition-all rounded-lg h-full">
-                  <SettingsIcon size={12} /> System
-                </TabsTrigger>
-              )}
             </TabsList>
 
             <TabsContent value="profile" className="space-y-4 focus-visible:outline-none">
-              <div className="flex items-center justify-between pb-2">
+              <div className="flex flex-col md:flex-row  gap-4 items-center justify-between pb-2">
                 <div>
                   <h2 className="text-xl font-bold tracking-tight text-[#3b6dae]">Personal Information</h2>
                   <p className="text-xs text-muted-foreground">Manage your personal details and contact information.</p>
                 </div>
                 {!isEditingProfile ? (
-                  <Button onClick={() => setIsEditingProfile(true)} className="bg-[#3b6dae] hover:bg-[#2d5385] text-white">
+                  <Button onClick={() => setIsEditingProfile(true)} className="bg-[#3b6dae] w-full md:w-auto hover:bg-[#2d5385] text-white">
                     <Pencil className="w-4 h-4 mr-2" />
                     Edit Profile
                   </Button>
                 ) : (
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" onClick={() => setIsEditingProfile(false)} className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700">
+                  <div className="flex justify-end flex-col w-full gap-2 md:flex-row items-center gap-2">
+                    <Button variant="outline" onClick={() => setIsEditingProfile(false)} className="border-red-200 text-red-600 hover:bg-red-50 w-full md:w-auto hover:text-red-700">
                       <X className="w-4 h-4 mr-2" />
                       Cancel
                     </Button>
-                    <Button onClick={handleUpdateProfile} disabled={updateProfileMutation.isPending} className="bg-green-600 hover:bg-green-700 text-white">
+                    <Button onClick={handleUpdateProfile} disabled={updateProfileMutation.isPending} className="bg-green-600 hover:bg-green-700 w-full md:w-auto text-white">
                       {updateProfileMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
                       Save Changes
                     </Button>
@@ -180,7 +196,7 @@ export default function Settings() {
                     <div className="flex flex-col items-center gap-4">
                       <div className="relative group">
                         <Avatar className="h-32 w-32 border-4 border-slate-50 shadow-md">
-                          <AvatarImage src={user.profileImage ?? undefined} className="object-cover" />
+                          <AvatarImage src={profileImage || user.profileImage || undefined} className="object-cover" />
                           <AvatarFallback className="bg-[#3b6dae] text-white text-4xl font-black">
                             {user.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
                           </AvatarFallback>
@@ -281,7 +297,7 @@ export default function Settings() {
                       <div className="space-y-1.5">
                         <Label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Date of Employment</Label>
                         {isEditingProfile ? (
-                          <Input type="date" value={editDateOfEmployment} onChange={(e) => setEditDateOfEmployment(e.target.value)} className="h-10 border-slate-200 font-medium focus:border-[#3b6dae]/50" />
+                          <SingleDatePicker value={editDateOfEmployment} onChange={setEditDateOfEmployment} label="Select Date" className="h-10 border-slate-200 font-medium" />
                         ) : (
                           <div className="h-10 flex items-center text-slate-900 font-medium px-1">
                             {user.dateOfEmployment ? new Date(user.dateOfEmployment).toLocaleDateString() : "—"}
@@ -328,19 +344,28 @@ export default function Settings() {
 
 
 
-            <TabsContent value="security" className="space-y-6 focus-visible:outline-none">
+            <TabsContent value="security" className="space-y-6 flex items-center justify-center focus-visible:outline-none">
               <Card className="bg-white/50 border-[#3b6dae]/5 rounded-xl shadow-sm max-w-2xl">
                 <CardHeader className="bg-[#3b6dae]/5 border-b border-[#3b6dae]/5 py-3">
                   <CardTitle className="text-[#3b6dae] text-lg font-black uppercase tracking-tighter">Credential Management</CardTitle>
                 </CardHeader>
                 <CardContent className="p-6 space-y-4">
                   <p className="text-xs font-bold text-muted-foreground uppercase">Update your account password regularly to maintain security.</p>
-                  <div className="space-y-2">
-                    <PasswordInput label="Current Password" value={currentPassword} onChange={setCurrentPassword} />
-                    <PasswordInput label="New Password" value={newPassword} onChange={setNewPassword} />
-                    <PasswordInput label="Confirm Password" value={confirmPassword} onChange={setConfirmPassword} />
+                  <div className="space-y-3">
+                    <div>
+                      <PasswordInput label="Current Password" value={currentPassword} onChange={(v) => { setCurrentPassword(v); setPasswordErrors((e) => ({ ...e, currentPassword: "" })); }} />
+                      {passwordErrors.currentPassword && <p className="text-xs text-red-500 mt-1 font-medium">{passwordErrors.currentPassword}</p>}
+                    </div>
+                    <div>
+                      <PasswordInput label="New Password" value={newPassword} onChange={(v) => { setNewPassword(v); setPasswordErrors((e) => ({ ...e, newPassword: "" })); }} />
+                      {passwordErrors.newPassword && <p className="text-xs text-red-500 mt-1 font-medium">{passwordErrors.newPassword}</p>}
+                    </div>
+                    <div>
+                      <PasswordInput label="Confirm Password" value={confirmPassword} onChange={(v) => { setConfirmPassword(v); setPasswordErrors((e) => ({ ...e, confirmPassword: "" })); }} />
+                      {passwordErrors.confirmPassword && <p className="text-xs text-red-500 mt-1 font-medium">{passwordErrors.confirmPassword}</p>}
+                    </div>
                   </div>
-                  <Button onClick={handleChangePassword} disabled={changePasswordMutation.isPending} className="bg-[#3b6dae] hover:bg-[#2d5385] h-11 px-8 rounded-xl font-black uppercase text-[11px] tracking-widest shadow-lg shadow-[#3b6dae]/20 transition-all">
+                  <Button onClick={handleChangePassword} disabled={changePasswordMutation.isPending} className="bg-[#3b6dae] hover:bg-[#2d5385] w-full md:w-auto  px-8 rounded-xl font-black uppercase text-[11px] tracking-widest shadow-lg shadow-[#3b6dae]/20 transition-all">
                     Update Password
                   </Button>
                 </CardContent>
@@ -391,45 +416,6 @@ export default function Settings() {
               </Card>
             </TabsContent>
 
-            {hasRole("admin") && (
-              <TabsContent value="system" className="space-y-6 focus-visible:outline-none">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <Card className="bg-white/50 border-[#3b6dae]/5 rounded-3xl overflow-hidden">
-                    <CardHeader className="bg-[#3b6dae]/5 border-b border-[#3b6dae]/5 py-6">
-                      <CardTitle className="text-[#3b6dae] text-sm font-black uppercase tracking-widest">Policy Engine</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-6 space-y-5">
-                      <div className="flex justify-between items-center bg-white/40 p-3 rounded-xl border border-[#3b6dae]/5">
-                        <Label className="text-[10px] font-black text-[#3b6dae]/60 uppercase tracking-widest">Global Annual Cycle</Label>
-                        <Input defaultValue="18" className="w-16 h-8 text-center font-black bg-white border-[#3b6dae]/10 rounded-lg text-xs" />
-                      </div>
-                      <div className="flex justify-between items-center bg-white/40 p-3 rounded-xl border border-[#3b6dae]/5">
-                        <Label className="text-[10px] font-black text-[#3b6dae]/60 uppercase tracking-widest">Sick Leave Quota</Label>
-                        <Input defaultValue="12" className="w-16 h-8 text-center font-black bg-white border-[#3b6dae]/10 rounded-lg text-xs" />
-                      </div>
-                      <Button variant="outline" size="sm" className="w-full h-10 border-[#3b6dae]/10 text-[#3b6dae] font-black uppercase text-[9px] tracking-[0.2em] rounded-xl transition-all">Push Policy Update</Button>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="bg-white/50 border-[#3b6dae]/5 rounded-3xl overflow-hidden">
-                    <CardHeader className="bg-[#3b6dae]/5 border-b border-[#3b6dae]/5 py-6">
-                      <CardTitle className="text-[#3b6dae] text-sm font-black uppercase tracking-widest">Environment Info</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-6 space-y-4">
-                      <div className="flex justify-between border-b border-[#3b6dae]/5 pb-3">
-                        <span className="text-[10px] font-black text-[#3b6dae]/40 uppercase tracking-widest">Kernel Version</span>
-                        <span className="font-black text-[#3b6dae] text-xs">v2.1.w-ULTRA</span>
-                      </div>
-                      <div className="flex justify-between border-b border-[#3b6dae]/5 pb-3">
-                        <span className="text-[10px] font-black text-[#3b6dae]/40 uppercase tracking-widest">Production State</span>
-                        <Badge variant="outline" className="text-[9px] font-black bg-[#3b6dae]/10 text-[#3b6dae] border-none px-2 rounded-lg">OPERATIONAL</Badge>
-                      </div>
-                      <Button variant="ghost" className="w-full justify-start text-[10px] font-black text-[#c79d2d] hover:bg-blue-500/5 uppercase tracking-widest px-0">Diagnostic Stream View <ArrowRight size={10} className="ml-2" /></Button>
-                    </CardContent>
-                  </Card>
-                </div>
-              </TabsContent>
-            )}
           </Tabs>
       </div>
     </DashboardLayout>
@@ -441,7 +427,7 @@ function DocumentUploadForm() {
   const [name, setName] = useState("");
   const [category, setCategory] = useState("ID_PASSPORT");
   const [file, setFile] = useState<File | null>(null);
-  const utils = trpc.useUtils();
+  const utils = (trpc as any).useUtils();
 
   const uploadMutation = (trpc as any).hr.uploadDocument.useMutation({
     onSuccess: () => {
@@ -519,7 +505,7 @@ function DocumentUploadForm() {
       </div>
       <div className="space-y-1.5">
         <Label className="text-[9px] font-black text-[#3b6dae]/40 uppercase tracking-widest">File selection</Label>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col md:flex-row items-center gap-2">
           <Input 
             type="file" 
             onChange={(e) => setFile(e.target.files?.[0] || null)}
@@ -528,7 +514,7 @@ function DocumentUploadForm() {
           <Button 
             onClick={handleUpload} 
             disabled={uploadMutation.isPending}
-            className="bg-[#3b6dae] hover:bg-[#2d5385] h-9 px-4 rounded-lg font-black uppercase text-[9px]"
+            className="bg-[#3b6dae] hover:bg-[#2d5385] h-9 px-4 w-full md:w-auto rounded-lg font-black uppercase text-[9px]"
           >
             {uploadMutation.isPending ? <Loader2 className="animate-spin h-3 w-3" /> : "Upload"}
           </Button>
@@ -657,7 +643,7 @@ function UserDocumentsTable() {
   const { user } = useAuth();
   const [selectedDoc, setSelectedDoc] = useState<any>(null);
   const [deleteDocId, setDeleteDocId] = useState<number | null>(null);
-  const utils = trpc.useUtils();
+  const utils = (trpc as any).useUtils();
   const { data: documents, isLoading } = (trpc as any).hr.listDocuments.useQuery(
     { userId: user?.id || 0 },
     { enabled: !!user?.id }
@@ -722,8 +708,8 @@ function UserDocumentsTable() {
     <>
       <div className="space-y-2">
         {documents.map((doc: any) => (
-          <div key={doc.id} className="flex items-center justify-between p-3 bg-white/40 rounded-xl border border-[#3b6dae]/5 hover:bg-white/60 transition-all">
-            <div className="flex items-center gap-3">
+          <div key={doc.id} className="flex flex-col md:flex-row items-center justify-between p-3 bg-white/40 rounded-xl border border-[#3b6dae]/5 hover:bg-white/60 transition-all">
+            <div className="flex flex-col md:flex-row items-center gap-3">
               <div className="h-8 w-8 bg-[#3b6dae]/10 rounded-lg flex items-center justify-center text-[#3b6dae]">
                 <FileText size={16} />
               </div>
@@ -780,7 +766,7 @@ function AllEmployeesDocumentsTable() {
   const [searchUser, setSearchUser] = useState("");
   const [selectedDoc, setSelectedDoc] = useState<any>(null);
   const [deleteDocId, setDeleteDocId] = useState<number | null>(null);
-  const utils = trpc.useUtils();
+  const utils = (trpc as any).useUtils();
   
   const { data: documents, isLoading } = (trpc as any).hr.listAllDocuments.useQuery(
     { status: "", category: "" },
@@ -828,11 +814,11 @@ function AllEmployeesDocumentsTable() {
   if (!hasRole("admin") && !hasRole("hr") && !hasRole("head_of_department") && !hasRole("ceo_md")) return null;
   if (isLoading) return <Loader2 className="animate-spin h-8 w-8 mx-auto text-[#3b6dae]" />;
 
-  const filteredDocuments = documents?.filter((doc: any) => 
-    !searchUser || doc.user?.name?.toLowerCase().includes(searchUser.toLowerCase())
-  ) || [];
+  const filteredDocuments = (documents || []).filter((doc: any) =>
+    !searchUser.trim() || doc.user?.name?.toLowerCase().includes(searchUser.toLowerCase())
+  );
 
-  if (!filteredDocuments || filteredDocuments.length === 0) {
+  if (!documents || documents.length === 0) {
     return (
       <div className="text-center py-10 bg-white/30 rounded-2xl border-2 border-dashed border-[#3b6dae]/5">
         <FileText className="mx-auto h-10 w-10 text-[#3b6dae]/20 mb-2" />
@@ -846,9 +832,12 @@ function AllEmployeesDocumentsTable() {
       <div className="space-y-3">
         <Input placeholder="Search by employee name..." value={searchUser} onChange={(e) => setSearchUser(e.target.value)} className="h-9 bg-white border-[#3b6dae]/10 text-xs" />
         <div className="space-y-2">
+          {filteredDocuments.length === 0 && (
+            <p className="text-center text-[10px] font-bold text-[#3b6dae]/40 uppercase tracking-widest py-6">No results for "{searchUser}"</p>
+          )}
           {filteredDocuments.map((doc: any) => (
-            <div key={doc.id} className="flex items-center justify-between p-3 bg-white/40 rounded-xl border border-[#3b6dae]/5 hover:bg-white/60 transition-all">
-              <div className="flex items-center gap-3 flex-1">
+            <div key={doc.id} className="flex flex-col md:flex-row items-center justify-between p-3 bg-white/40 rounded-xl border border-[#3b6dae]/5 hover:bg-white/60 transition-all">
+              <div className="flex flex-col md:flex-row items-center gap-3 flex-1">
                 <div className="h-8 w-8 bg-[#3b6dae]/10 rounded-lg flex items-center justify-center text-[#3b6dae] shrink-0"><FileText size={16} /></div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
