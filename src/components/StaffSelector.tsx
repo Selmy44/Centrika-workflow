@@ -35,7 +35,7 @@ export function StaffSelector({ selectedStaffIds, onChange }: StaffSelectorProps
   const [search, setSearch] = React.useState("");
 
   const { data: staffResults, isLoading } = trpc.suggestions.searchStaff.useQuery(
-    { search: search.length >= 2 ? search : undefined },
+    { search: search.length >= 1 ? search : undefined },
     { enabled: true }
   );
 
@@ -112,7 +112,7 @@ export function StaffSelector({ selectedStaffIds, onChange }: StaffSelectorProps
             />
             <CommandList className="max-h-[300px]">
               <CommandEmpty className="p-4 text-center text-xs font-bold text-slate-400 border-t border-slate-100 dark:border-slate-800">
-                {isLoading ? "Searching..." : search.length < 2 ? "Type at least 2 letters..." : "No staff found."}
+                {isLoading ? "Searching..." : search.length < 1 ? "Type to search..." : "No staff found."}
               </CommandEmpty>
               <CommandGroup>
                 {staffResults?.map((staff) => (

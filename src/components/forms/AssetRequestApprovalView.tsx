@@ -144,7 +144,7 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
     };
 
     return (
-        <div className="w-full bg-white dark:bg-[#1f426b] text-black dark:text-slate-100 px-10 leave-form-container relative dark:border-[#2b6cb0]/30">
+        <div className="w-full bg-white dark:bg-[#1f426b] text-black dark:text-slate-100 px-3 md:px-10 leave-form-container relative dark:border-[#2b6cb0]/30">
 
             {/* CLOSE/BACK BUTTON */}
             <button
@@ -159,33 +159,33 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
 
             <div>
                 {/* ===== HEADER WITH LOGO AND CONTACT INFO ===== */}
-                <div className="flex justify-between items-start px-8 py-6 gap-12">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-start px-3 md:px-8 py-4 md:py-6 gap-4 md:gap-12">
                     <div className="shrink-0">
                         <img
                             src="/logo/centrikaLogo.png"
                             alt="Centrika Logo"
-                            className="h-32 w-auto"
+                            className="h-14 md:h-32 w-auto"
                         />
                     </div>
-                    <div className="text-sm flex-1 flex justify-end">
-                        <div className="flex flex-col gap-3 items-start text-blue-600">
-                            <div className="flex items-center gap-2">
-                                <Phone size={16} />
-                                <span className="font-semibold">+250 788 123 099</span>
+                    <div className="text-xs md:text-sm flex-1 flex justify-start md:justify-end">
+                        <div className="flex flex-col gap-2 md:gap-3 items-start text-blue-600">
+                            <div className="flex items-center gap-2 min-w-0">
+                                <Phone size={14} className="shrink-0 md:w-[16px] md:h-[16px]" />
+                                <span className="font-semibold truncate text-[11px] md:text-sm">+250 788 123 099</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <Mail size={16} />
-                                <span className="font-semibold">info@centrika.rw</span>
+                            <div className="flex items-center gap-2 min-w-0">
+                                <Mail size={14} className="shrink-0 md:w-[16px] md:h-[16px]" />
+                                <span className="font-semibold truncate text-[11px] md:text-sm">info@centrika.rw</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <Globe size={16} />
-                                <span className="font-semibold">www.centrika.rw</span>
+                            <div className="flex items-center gap-2 min-w-0">
+                                <Globe size={14} className="shrink-0 md:w-[16px] md:h-[16px]" />
+                                <span className="font-semibold truncate text-[11px] md:text-sm">www.centrika.rw</span>
                             </div>
                             <div className="flex items-start gap-2">
-                                <MapPin size={16} className="shrink-0 mt-0.5" />
-                                <div className="flex flex-col">
-                                    <span className="font-semibold">Room F002, 2nd Floor, CHIC Building,</span>
-                                    <span className="font-semibold">Plot 1007, KN2 Kigali-Rwanda</span>
+                                <MapPin size={14} className="shrink-0 mt-0.5 md:w-[16px] md:h-[16px]" />
+                                <div className="flex flex-col gap-0.5">
+                                    <span className="font-semibold text-[10px] md:text-sm leading-tight">Room F002, 2nd Floor, CHIC Building,</span>
+                                    <span className="font-semibold text-[10px] md:text-sm leading-tight">Plot 1007, KN2 Kigali-Rwanda</span>
                                 </div>
                             </div>
                         </div>
@@ -215,7 +215,7 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
                 )}
 
                 {/* ===== REQUEST HEADER SECTION ===== */}
-                <div className="grid grid-cols-4 gap-3 px-6 py-3 text-sm items-end">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 px-3 md:px-6 py-2 md:py-3 text-xs md:text-sm items-end">
                     <div>
                         <p className="font-semibold text-blue-600 mb-1 text-xs uppercase">Department</p>
                         <div className="flex gap-0 items-center">
@@ -476,7 +476,7 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
 
                 {/* ===== ACTIONS ===== */}
                 {isRequestApproved && (
-                    <div className="no-print flex gap-2 px-6 py-5 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c] mb-4">
+                    <div className="no-print flex flex-col sm:flex-row gap-2 px-3 md:px-6 py-4 md:py-5 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c] mb-4">
                         <Button
                             variant="outline"
                             disabled={isLoading || isPrintingForm}
@@ -498,7 +498,7 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
                     </div>
                 )}
                 {!approvalSectionIsReadOnly && (
-                    <div className="no-print flex gap-2 px-6 py-5 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c] mb-4">
+                    <div className="no-print flex flex-col sm:flex-row gap-2 px-3 md:px-6 py-4 md:py-5 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c] mb-4">
                         <Button
                             variant="outline"
                             disabled={isLoading}
@@ -594,11 +594,11 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
     return (
-        <div className="grid grid-cols-[240px_1fr] border-b border-[#3b6dae] items-stretch">
-            <div className="px-3 py-2 font-semibold border-r border-[#3b6dae] bg-blue-50/50 text-[#3b6dae] text-[11px] flex items-center">
+        <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] border-b border-[#3b6dae] items-stretch gap-0">
+            <div className="px-2 md:px-3 py-1.5 md:py-2 font-semibold md:border-r border-[#3b6dae] bg-blue-50/50 text-[#3b6dae] text-[10px] md:text-[11px] flex items-center">
                 {label}
             </div>
-            <div className="px-3 py-1.5 flex items-center">{children}</div>
+            <div className="px-2 md:px-3 py-1.5 flex items-center">{children}</div>
         </div>
     );
 }

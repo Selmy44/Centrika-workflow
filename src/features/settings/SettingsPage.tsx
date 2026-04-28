@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   User, Mail, Shield, Calendar, Loader2, Upload, Building2,
   Users, FileText, Bell, Eye, Database, Lock, Settings as SettingsIcon,
-  Clock, Key, ArrowRight, Pencil, Save, X, Phone, Download, Trash2
+  Clock, Key, ArrowRight, Pencil, Save, X, Phone, Download, Trash2, Search
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
@@ -555,7 +555,19 @@ function DocumentViewer({ doc, onClose, onDownload }: { doc: any; onClose: () =>
           setBlobUrl(safeUrl); // Fallback
         });
     } else {
-      setBlobUrl(safeUrl);
+      // Fetch external URL as blob to bypass Content-Disposition: attachment
+      fetch(safeUrl)
+        .then(res => res.blob())
+        .then(blob => {
+          const isPdf = safeUrl.toLowerCase().includes('.pdf');
+          const finalBlob = isPdf ? new Blob([blob], { type: 'application/pdf' }) : blob;
+          const url = URL.createObjectURL(finalBlob);
+          setBlobUrl(url);
+        })
+        .catch(err => {
+          console.error("Failed to fetch document as blob:", err);
+          setBlobUrl(safeUrl); // Fallback to direct URL if CORS fails
+        });
     }
     return () => {
       if (blobUrl && blobUrl.startsWith("blob:")) {
@@ -834,7 +846,19 @@ function AllEmployeesDocumentsTable() {
   return (
     <>
       <div className="space-y-3">
-        <Input placeholder="Search by employee name..." value={searchUser} onChange={(e) => setSearchUser(e.target.value)} className="h-9 bg-white border-[#3b6dae]/10 text-xs" />
+        {/* Premium animated search bar */}
+        <div className="relative group transition-all duration-300 z-10 w-full">
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-[#3b6dae] to-[#c79d2d] rounded-xl blur opacity-0 group-hover:opacity-20 group-focus-within:opacity-30 transition duration-500"></div>
+          <div className="relative flex items-center">
+            <Search className="absolute left-3.5 w-4 h-4 text-slate-400 group-focus-within:text-[#3b6dae] transition-colors z-10" />
+            <Input
+              placeholder="Search by employee name..."
+              className="w-full h-10 pl-10 pr-4 text-xs font-semibold rounded-xl border border-slate-200/60 dark:border-slate-800/60 bg-white dark:bg-slate-900/50 backdrop-blur-md shadow-sm focus:bg-white dark:focus:bg-slate-900 transition-all duration-300 focus:ring-2 focus:ring-[#3b6dae]/20 focus:border-[#3b6dae]/40"
+              value={searchUser}
+              onChange={(e) => setSearchUser(e.target.value)}
+            />
+          </div>
+        </div>
         <div className="space-y-2">
           {filteredDocuments.length === 0 && (
             <p className="text-center text-[10px] font-bold text-[#3b6dae]/40 uppercase tracking-widest py-6">No results for "{searchUser}"</p>

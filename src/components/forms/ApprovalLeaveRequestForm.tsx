@@ -90,7 +90,7 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
   // Show loading state while form data is being fetched
   if (formLoading) {
     return (
-      <div className="w-full bg-white dark:bg-[#1f426b] text-black dark:text-slate-100 px-8 py-6 space-y-6">
+      <div className="w-full bg-white dark:bg-[#1f426b] text-black dark:text-slate-100 px-3 md:px-8 py-4 md:py-6 space-y-4 md:space-y-6">
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
             <div className="inline-block mb-4">
@@ -104,15 +104,15 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
   }
 
   return (
-    <div className="w-full bg-white dark:bg-[#1f426b] text-black dark:text-slate-100 px-8 py-6 space-y-6">
+    <div className="w-full bg-white dark:bg-[#1f426b] text-black dark:text-slate-100 px-3 md:px-8 py-4 md:py-6 space-y-4 md:space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-start pb-6 border-b-2 border-blue-300 dark:border-[#3b6dae]/40">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start pb-4 md:pb-6 border-b-2 border-blue-300 dark:border-[#3b6dae]/40 gap-2">
         <div>
-          <h1 className="text-2xl font-bold text-blue-600">Leave Request Approval Form</h1>
-          <p className="text-sm text-gray-600 dark:text-slate-400 mt-1">{getApprovalLevelLabel()}</p>
+          <h1 className="text-lg md:text-2xl font-bold text-blue-600">Leave Request Approval Form</h1>
+          <p className="text-xs md:text-sm text-gray-600 dark:text-slate-400 mt-1">{getApprovalLevelLabel()}</p>
           {submittedFormData && <p className="text-xs text-green-600 mt-1">✓ Form loaded from employee submission</p>}
         </div>
-        <div className="text-right">
+        <div className="sm:text-right">
           <p className="text-xs text-gray-500">Request ID: #{request?.id}</p>
           <p className="text-xs text-gray-500">Submitted: {new Date(request?.createdAt).toLocaleDateString()}</p>
         </div>
@@ -122,7 +122,7 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
       <div className="bg-blue-50 border border-blue-200 dark:border-[#3b6dae]/30 rounded-lg p-4">
         <h2 className="font-bold text-blue-700 mb-3">EMPLOYEE INFORMATION</h2>
         <p className="text-xs text-blue-600 mb-3">From employee's submitted form</p>
-        <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 text-sm">
           <div>
             <label className="text-xs text-gray-600 dark:text-slate-400 font-semibold">Employee Name</label>
             <p className="text-foreground font-medium">{submittedFormData?.employeeName || request?.user?.name || "N/A"}</p>
@@ -154,7 +154,7 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
       <div className="border border-gray-300 rounded-lg p-4">
         <h2 className="font-bold text-blue-700 mb-3">LEAVE REQUEST DETAILS</h2>
         <p className="text-xs text-gray-600 dark:text-slate-400 mb-3">Exact data from employee's submission</p>
-        <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 text-sm">
           <div>
             <label className="text-xs text-gray-600 dark:text-slate-400 font-semibold">Leave Type</label>
             <p className="text-foreground font-medium capitalize">{submittedFormData?.leaveType || "N/A"}</p>
@@ -171,7 +171,7 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
             <label className="text-xs text-gray-600 dark:text-slate-400 font-semibold">Leave Days Requested</label>
             <p className="text-foreground font-medium">{submittedFormData?.leaveDaysRequested || "N/A"}</p>
           </div>
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <label className="text-xs text-gray-600 dark:text-slate-400 font-semibold">Reason/Description</label>
             <p className="text-foreground font-medium">{submittedFormData?.reason || request?.description || "N/A"}</p>
           </div>
@@ -216,7 +216,7 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
             {/* Signature Section */}
             <div>
               <label className="text-sm font-semibold text-gray-700">Your Signature</label>
-              <div className="flex gap-4 my-2">
+              <div className="flex flex-wrap gap-3 md:gap-4 my-2">
                 <label className="flex items-center gap-2 cursor-pointer group">
                   <input
                     type="radio"
@@ -316,7 +316,7 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
             )}
 
             {/* Action Buttons */}
-            <div className="flex gap-3 pt-4 border-t border-yellow-200">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-4 border-t border-yellow-200">
               <Button
                 variant="outline"
                 onClick={() => setShowRejectForm(true)}
@@ -326,7 +326,7 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
                 Reject Request
               </Button>
               <Button
-                className="bg-green-600 hover:bg-green-700 ml-auto"
+                className="bg-green-600 hover:bg-green-700 sm:ml-auto"
                 onClick={() => onApprove(approvalComments, signatureFile)}
                 disabled={isLoading || !signatureFile}
               >

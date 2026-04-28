@@ -42,9 +42,6 @@ export default function OtpVerification({ email, onBack }: OtpVerificationProps)
         } catch (err) {
           console.warn("Auth refetch failed, proceeding anyway");
         }
-        setTimeout(() => {
-          window.location.href = "/";
-        }, 500);
       }
     } catch (error: any) {
       toast.error(error.message || "Invalid OTP");

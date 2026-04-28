@@ -1,7 +1,16 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFoundPage from "./features/common/pages/NotFoundPage";
-import { Route, Switch } from "wouter";
+import { Route, Switch, useLocation } from "wouter";
+import { useEffect } from "react";
+
+function Redirect({ to }: { to: string }) {
+  const [, navigate] = useLocation();
+  useEffect(() => {
+    navigate(to, { replace: true });
+  }, [navigate, to]);
+  return null;
+}
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { useAuth } from "./_core/hooks/useAuth";
@@ -68,6 +77,8 @@ function Router() {
   // If authenticated, show protected routes
   return (
     <Switch>
+      <Route path="/login"><Redirect to="/" /></Route>
+      <Route path="/otp-login"><Redirect to="/" /></Route>
       <Route path="/" component={DashboardPage} />
       <Route path="/requests" component={RequestsPage} />
       <Route path="/requests/:id" component={RequestDetailPage} />

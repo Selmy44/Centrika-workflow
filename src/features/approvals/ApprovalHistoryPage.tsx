@@ -143,21 +143,21 @@ export default function ApprovalHistory() {
               {filteredRequests.map((request: any) => (
                 <Card key={request.id} className="bg-card border-border hover:border-accent transition-colors">
                   <CardContent className="pt-4 pb-4">
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className="p-2 bg-muted rounded-lg">{getRequestIcon(request.type)}</div>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="flex items-start sm:items-center gap-3 flex-1">
+                        <div className="p-2 bg-muted rounded-lg shrink-0">{getRequestIcon(request.type)}</div>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-foreground truncate">{request.title}</p>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-xs sm:text-sm text-muted-foreground">
                             {request.type.charAt(0).toUpperCase() + request.type.slice(1)} • {formatDateTime(request.createdAt)}
                           </p>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3">
-                        <div className="text-right">
+                      <div className="flex flex-row sm:flex-row items-center justify-between sm:justify-end gap-3 w-full sm:w-auto mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-border">
+                        <div className="text-left sm:text-right">
                           <p className="text-xs text-muted-foreground">Reviewed on</p>
-                          <p className="text-sm font-medium text-foreground">
+                          <p className="text-xs sm:text-sm font-medium text-foreground">
                             {request.approvalDate ? formatDateTime(request.approvalDate) : "N/A"}
                           </p>
                         </div>

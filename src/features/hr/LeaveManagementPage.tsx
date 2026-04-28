@@ -109,14 +109,18 @@ const LeaveManagementPage = () => {
               <TabsContent value="requests" className="space-y-4">
                 <Card className="rounded-2xl border-border/50 bg-white/50 backdrop-blur-sm">
                   <CardContent className="flex flex-wrap items-center gap-4 p-4">
-                    <div className="relative min-w-55 flex-1">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                      <Input
-                        placeholder="Search employee, department, or leave type..."
-                        className="rounded-xl border-border/50 pl-10"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                      />
+                    {/* Premium animated search bar */}
+                    <div className="relative group transition-all duration-300 z-10 flex-1 min-w-55 max-w-lg">
+                      <div className="absolute -inset-0.5 bg-gradient-to-r from-[#3b6dae] to-[#c79d2d] rounded-xl blur opacity-0 group-hover:opacity-20 group-focus-within:opacity-30 transition duration-500"></div>
+                      <div className="relative flex items-center">
+                        <Search className="absolute left-3.5 w-4 h-4 text-slate-400 group-focus-within:text-[#3b6dae] transition-colors z-10" />
+                        <Input
+                          placeholder="Search employee, department, or leave type..."
+                          className="w-full h-10 pl-10 pr-4 text-xs font-semibold rounded-xl border border-slate-200/60 dark:border-slate-800/60 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md shadow-sm focus:bg-white dark:focus:bg-slate-900 transition-all duration-300 focus:ring-2 focus:ring-[#3b6dae]/20 focus:border-[#3b6dae]/40"
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Filter size={16} className="text-slate-400" />

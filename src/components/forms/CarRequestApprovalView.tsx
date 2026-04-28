@@ -122,7 +122,7 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
     };
 
     return (
-        <div className="w-full bg-white dark:bg-[#1f426b] text-black dark:text-slate-100 px-10 leave-form-container relative dark:border-[#2b6cb0]/30">
+        <div className="w-full bg-white dark:bg-[#1f426b] text-black dark:text-slate-100 px-3 md:px-10 leave-form-container relative dark:border-[#2b6cb0]/30">
             {/* CLOSE/BACK BUTTON */}
             <button
                 onClick={() => onBack ? onBack() : (onClose ? onClose() : window.history.back())}
@@ -136,29 +136,29 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
 
             <div>
                 {/* HEADER SECTION */}
-                <div className="flex justify-between items-start px-8 py-6 gap-12">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-start px-3 md:px-8 py-4 md:py-6 gap-4 md:gap-12">
                     <div className="shrink-0">
-                        <img src="/logo/centrikaLogo.png" alt="Centrika Logo" className="h-32 w-auto" />
+                        <img src="/logo/centrikaLogo.png" alt="Centrika Logo" className="h-14 md:h-32 w-auto" />
                     </div>
-                    <div className="text-sm flex-1 flex justify-end">
-                        <div className="flex flex-col gap-3 items-start">
-                            <div className="flex items-center gap-2">
-                                <Phone size={16} className="text-blue-600" />
-                                <span className="text-blue-600 font-semibold">+250 788 123 099</span>
+                    <div className="text-xs md:text-sm flex-1 flex justify-start md:justify-end">
+                        <div className="flex flex-col gap-2 md:gap-3 items-start">
+                            <div className="flex items-center gap-2 min-w-0">
+                                <Phone size={14} className="text-blue-600 shrink-0 md:w-[16px] md:h-[16px]" />
+                                <span className="text-blue-600 font-semibold truncate text-[11px] md:text-sm">+250 788 123 099</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <Mail size={16} className="text-blue-600" />
-                                <span className="text-blue-600 font-semibold">info@centrika.rw</span>
+                            <div className="flex items-center gap-2 min-w-0">
+                                <Mail size={14} className="text-blue-600 shrink-0 md:w-[16px] md:h-[16px]" />
+                                <span className="text-blue-600 font-semibold truncate text-[11px] md:text-sm">info@centrika.rw</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <Globe size={16} className="text-blue-600" />
-                                <span className="text-blue-600 font-semibold">www.centrika.rw</span>
+                            <div className="flex items-center gap-2 min-w-0">
+                                <Globe size={14} className="text-blue-600 shrink-0 md:w-[16px] md:h-[16px]" />
+                                <span className="text-blue-600 font-semibold truncate text-[11px] md:text-sm">www.centrika.rw</span>
                             </div>
                             <div className="flex items-start gap-2">
-                                <MapPin size={16} className="text-blue-600 shrink-0 mt-0.5" />
-                                <div className="flex flex-col">
-                                    <span className="text-blue-600 font-semibold">Room F002, 2nd Floor, CHIC Building,</span>
-                                    <span className="text-blue-600 font-semibold">Plot 1007, KN2 Kigali-Rwanda</span>
+                                <MapPin size={14} className="text-blue-600 shrink-0 mt-0.5 md:w-[16px] md:h-[16px]" />
+                                <div className="flex flex-col gap-0.5">
+                                    <span className="text-blue-600 font-semibold text-[10px] md:text-sm leading-tight">Room F002, 2nd Floor, CHIC Building,</span>
+                                    <span className="text-blue-600 font-semibold text-[10px] md:text-sm leading-tight">Plot 1007, KN2 Kigali-Rwanda</span>
                                 </div>
                             </div>
                         </div>
@@ -188,7 +188,7 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                 )}
 
                 {/* HEADER INFO */}
-                <div className="grid grid-cols-4 gap-3 px-6 py-3 text-sm items-end border-b border-gray-200">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 px-3 md:px-6 py-2 md:py-3 text-xs md:text-sm items-end border-b border-gray-200">
                     <div>
                         <p className="font-semibold text-blue-600 mb-1 text-xs">Department</p>
                         <Input value={employee?.department || "N/A"} disabled className="h-7 text-xs bg-gray-50" />
@@ -244,31 +244,8 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                         </Row>
                     </Section>
 
-                    <Section title="3. SUPPORTING DOCUMENT">
-                        <Row label="3.1 Attachment">
-                            <div className="flex items-center gap-4">
-                                {formDataDynamic?.supportingDocumentUrl ? (
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-sm text-green-600 font-medium">Attached: Document</span>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => window.open(formDataDynamic.supportingDocumentUrl, "_blank")}
-                                            className="h-8 px-3 text-xs flex items-center gap-1.5 border-blue-200 hover:bg-blue-50"
-                                        >
-                                            <Eye size={14} />
-                                            View
-                                        </Button>
-                                    </div>
-                                ) : (
-                                    <p className="text-xs italic text-gray-500 py-2">No supporting document attached</p>
-                                )}
-                            </div>
-                        </Row>
-                    </Section>
-
-                    <Section title="4. EMPLOYEE SIGNATURE">
-                        <Row label="4.1 Signature">
+                    <Section title="3. EMPLOYEE SIGNATURE">
+                        <Row label="3.1 Signature">
                             {formDataDynamic?.employeeSignatureUrl ? (
                                 <img src={formDataDynamic.employeeSignatureUrl} alt="Employee" className="h-10 object-contain border rounded p-1" />
                             ) : (
@@ -277,10 +254,10 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                         </Row>
                     </Section>
 
-                    <Section title="5. APPROVAL WORKFLOW">
+                    <Section title="4. APPROVAL WORKFLOW">
                         {/* HOD / Manager */}
                         {formDataDynamic?.managerSignatureUrl && (
-                            <Row label="5.1 Line Manager / HOD">
+                            <Row label="4.1 Line Manager / HOD">
                                 <div className="py-1">
                                     <p className="text-[10px] font-bold text-gray-400 mb-1">APPROVED BY HOD:</p>
                                     <img src={formDataDynamic.managerSignatureUrl} alt="HOD" className="h-10 object-contain border rounded p-1" />
@@ -289,7 +266,7 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                         )}
 
                         {/* HR */}
-                        <Row label="5.2 HR Approval">
+                        <Row label="4.2 HR Approval">
                             {formDataDynamic?.hrSignatureUrl ? (
                                 <div className="py-1">
                                     <p className="text-[10px] font-bold text-gray-400 mb-1">APPROVED BY HR:</p>
@@ -375,7 +352,7 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
 
                 {/* ACTIONS */}
                 {isRequestApproved && (
-                    <div className="no-print flex gap-2 p-6 border-t bg-gray-50">
+                    <div className="no-print flex flex-col sm:flex-row gap-2 p-3 md:p-6 border-t bg-gray-50">
                         <Button variant="outline" size="sm" onClick={handlePrint} disabled={isPrintingForm || isLoading}>
                             {(isPrintingForm || isLoading) && <Loader2 size={16} className="mr-2 animate-spin" />}
                             <Printer size={16} className="mr-2" /> Print Form
@@ -387,7 +364,7 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                     </div>
                 )}
                 {!approvalSectionIsReadOnly && (
-                    <div className="no-print flex gap-2 p-6 border-t bg-gray-50">
+                    <div className="no-print flex flex-col sm:flex-row gap-2 p-3 md:p-6 border-t bg-gray-50">
                         <Button variant="destructive" size="sm" onClick={() => setShowRejectDialog(true)} disabled={isLoading}>Reject</Button>
                         <Button
                             className="bg-green-600 hover:bg-green-700"
@@ -471,9 +448,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
     return (
-        <div className="grid grid-cols-[200px_1fr] border-b border-gray-100">
-            <div className="px-4 py-3 bg-blue-50/30 border-r border-gray-100 text-[11px] font-bold text-gray-500 uppercase flex items-center">{label}</div>
-            <div className="px-4 py-2">{children}</div>
+        <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] border-b border-gray-100 gap-0">
+            <div className="px-2 md:px-4 py-2 md:py-3 bg-blue-50/30 md:border-r border-gray-100 text-[10px] md:text-[11px] font-bold text-gray-500 uppercase flex items-center">{label}</div>
+            <div className="px-2 md:px-4 py-1.5 md:py-2">{children}</div>
         </div>
     );
 }

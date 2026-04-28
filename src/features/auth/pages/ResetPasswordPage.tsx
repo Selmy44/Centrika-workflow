@@ -9,9 +9,11 @@ import { trpc } from "@/lib/trpc";
 
 export default function ResetPasswordPage() {
   const [, navigate] = useLocation();
-  const [match, params] = useRoute("/reset-password?token=:token");
-  const token = params?.token as string | undefined;
+  const [match] = useRoute("/reset-password");
   
+  // Extract token from query parameters
+  const searchParams = new URLSearchParams(window.location.search);
+  const token = searchParams.get("token");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isResetting, setIsResetting] = useState(false);

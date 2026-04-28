@@ -143,7 +143,7 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
     };
 
     return (
-        <div className="w-full bg-white dark:bg-[#1f426b] text-black dark:text-slate-100 px-10 leave-form-container relative dark:border-[#2b6cb0]/30">
+        <div className="w-full bg-white dark:bg-[#1f426b] text-black dark:text-slate-100 px-3 md:px-10 leave-form-container relative dark:border-[#2b6cb0]/30">
 
             {/* CLOSE/BACK BUTTON */}
             <button
@@ -158,33 +158,33 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
 
             <div>
                 {/* ===== HEADER WITH LOGO AND CONTACT INFO ===== */}
-                <div className="flex justify-between items-start px-8 py-6 gap-12">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-start px-3 md:px-8 py-4 md:py-6 gap-4 md:gap-12">
                     <div className="shrink-0">
                         <img
                             src="/logo/centrikaLogo.png"
                             alt="Centrika Logo"
-                            className="h-32 w-auto"
+                            className="h-14 md:h-32 w-auto"
                         />
                     </div>
-                    <div className="text-sm flex-1 flex justify-end">
-                        <div className="flex flex-col gap-3 items-start">
-                            <div className="flex items-center gap-2">
-                                <Phone size={16} className="text-blue-600" />
-                                <span className="text-blue-600 font-semibold">+250 788 123 099</span>
+                    <div className="text-xs md:text-sm flex-1 flex justify-start md:justify-end">
+                        <div className="flex flex-col gap-2 md:gap-3 items-start">
+                            <div className="flex items-center gap-2 min-w-0">
+                                <Phone size={14} className="text-blue-600 shrink-0 md:w-[16px] md:h-[16px]" />
+                                <span className="text-blue-600 font-semibold truncate text-[11px] md:text-sm">+250 788 123 099</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <Mail size={16} className="text-blue-600" />
-                                <span className="text-blue-600 font-semibold">info@centrika.rw</span>
+                            <div className="flex items-center gap-2 min-w-0">
+                                <Mail size={14} className="text-blue-600 shrink-0 md:w-[16px] md:h-[16px]" />
+                                <span className="text-blue-600 font-semibold truncate text-[11px] md:text-sm">info@centrika.rw</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <Globe size={16} className="text-blue-600" />
-                                <span className="text-blue-600 font-semibold">www.centrika.rw</span>
+                            <div className="flex items-center gap-2 min-w-0">
+                                <Globe size={14} className="text-blue-600 shrink-0 md:w-[16px] md:h-[16px]" />
+                                <span className="text-blue-600 font-semibold truncate text-[11px] md:text-sm">www.centrika.rw</span>
                             </div>
                             <div className="flex items-start gap-2">
-                                <MapPin size={16} className="text-blue-600 shrink-0 mt-0.5" />
-                                <div className="flex flex-col">
-                                    <span className="text-blue-600 font-semibold">Room F002, 2nd Floor, CHIC Building,</span>
-                                    <span className="text-blue-600 font-semibold">Plot 1007, KN2 Kigali-Rwanda</span>
+                                <MapPin size={14} className="text-blue-600 shrink-0 mt-0.5 md:w-[16px] md:h-[16px]" />
+                                <div className="flex flex-col gap-0.5">
+                                    <span className="text-blue-600 font-semibold text-[10px] md:text-sm leading-tight">Room F002, 2nd Floor, CHIC Building,</span>
+                                    <span className="text-blue-600 font-semibold text-[10px] md:text-sm leading-tight">Plot 1007, KN2 Kigali-Rwanda</span>
                                 </div>
                             </div>
                         </div>
@@ -214,7 +214,7 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
                 )}
 
                 {/* ===== REQUEST HEADER SECTION ===== */}
-                <div className="grid grid-cols-4 gap-3 px-6 py-3 text-sm items-end">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 px-3 md:px-6 py-2 md:py-3 text-xs md:text-sm items-end">
                     <div>
                         <p className="font-semibold text-blue-600 mb-1 text-xs">Department</p>
                         <div className="flex gap-0 items-center">
@@ -492,7 +492,7 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
 
                 {/* ===== ACTIONS ===== */}
                 {isRequestApproved && (
-                    <div className="no-print flex gap-2 px-6 py-4 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c]">
+                    <div className="no-print flex flex-col sm:flex-row gap-2 px-3 md:px-6 py-3 md:py-4 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c]">
                         <Button
                             variant="outline"
                             disabled={isLoading || isPrintingForm}
@@ -514,7 +514,7 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
                     </div>
                 )}
                 {!approvalSectionIsReadOnly && (
-                    <div className="no-print flex gap-2 px-6 py-4 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c]">
+                    <div className="no-print flex flex-col sm:flex-row flex-wrap gap-2 px-3 md:px-6 py-3 md:py-4 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c]">
                         <Button
                             variant="outline"
                             disabled={isLoading}
@@ -631,11 +631,11 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
     return (
-        <div className="grid grid-cols-[220px_1fr] border-b border-[#3b6dae]">
-            <div className="px-3 py-2 font-medium border-r border-[#3b6dae] bg-blue-100 text-[#3b6dae] text-xs">
+        <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] border-b border-[#3b6dae] gap-0">
+            <div className="px-2 md:px-3 py-1.5 md:py-2 font-medium md:border-r border-[#3b6dae] bg-blue-100 text-[#3b6dae] text-[10px] md:text-xs">
                 {label}
             </div>
-            <div className="px-3 py-1">{children}</div>
+            <div className="px-2 md:px-3 py-1">{children}</div>
         </div>
     );
 }

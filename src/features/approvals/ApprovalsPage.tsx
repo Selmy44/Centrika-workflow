@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
 import { formatDateTime } from "@/lib/dateFormatter";
-import { Loader2, FileText, Car, DollarSign, CheckCircle, XCircle, Clock, Eye, Package } from "lucide-react";
+import { Loader2, FileText, Car, DollarSign, CheckCircle, XCircle, Clock, Eye, Package, Search } from "lucide-react";
 import { Link, useSearch } from "wouter";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
@@ -355,19 +355,20 @@ export default function Approvals() {
             <p className="text-muted-foreground mt-1 sm:mt-2 text-sm">Review and manage employee requests</p>
           </div>
 
-          {/* Modern compact search bar on the right */}
+          {/* Premium animated search bar on the right */}
           {!isLoading && allRequests.length > 0 && (
-            <div className="relative w-full sm:w-auto">
+          <div className="relative group transition-all duration-300 z-10 w-full md:w-64 shrink-0 focus-within:w-full md:focus-within:w-80">
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-[#3b6dae] to-[#c79d2d] rounded-xl blur opacity-0 group-hover:opacity-20 group-focus-within:opacity-30 transition duration-500"></div>
+            <div className="relative flex items-center">
+              <Search className="absolute left-3.5 w-4 h-4 text-slate-400 group-focus-within:text-[#3b6dae] transition-colors z-10" />
               <Input
                 placeholder="Search requests..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="h-10 w-full sm:w-64 pl-10 text-sm rounded-lg border border-border bg-muted/50 focus:bg-background transition-colors"
+                className="w-full h-10 pl-10 pr-4 text-xs font-semibold rounded-xl border border-slate-200/60 dark:border-slate-800/60 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md shadow-sm focus:bg-white dark:focus:bg-slate-900 transition-all duration-300 focus:ring-2 focus:ring-[#3b6dae]/20 focus:border-[#3b6dae]/40"
               />
-              <svg className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
             </div>
+          </div>
           )}
         </div>
 

@@ -653,16 +653,7 @@ export default function LeaveRequestForm({
                 )}
               </div>
             </Row>
-            <Row label="2.5 Additional Contact Notes">
-              <Textarea
-                value={form.contactDuringLeave}
-                onChange={(e) => setForm({ ...form, contactDuringLeave: e.target.value })}
-                disabled={effectiveIsReadOnly}
-                placeholder="Optional: additional contact info or notes during your leave..."
-                className="min-h-12 border-blue-300 dark:border-[#3b6dae]/40 text-xs"
-              />
-            </Row>
-            <Row label="2.6 Will you be outside the country?">
+            <Row label="2.5 Will you be outside the country?">
               <div className="flex gap-4">
                 <label className="flex items-center gap-2 text-xs">
                   <input
@@ -925,9 +916,9 @@ export default function LeaveRequestForm({
         </div>
 
         {/* ACTIONS & FOOTER */}
-        <div className="no-print flex justify-between items-center px-6 py-4 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c] gap-4 mt-4">
+        <div className="no-print flex flex-col sm:flex-row justify-between items-stretch sm:items-center px-3 md:px-6 py-4 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c] gap-3 md:gap-4 mt-4">
           {requestData?.status === "approved" && (
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2 w-full">
               <Button variant="outline" disabled={isSubmitting || isPrintingForm} onClick={handlePrint} className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600">
                 {(isSubmitting || isPrintingForm) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 <Printer size={16} className="mr-1" /> Print Form
@@ -944,7 +935,7 @@ export default function LeaveRequestForm({
             </div>
           )}
           {requestData?.status !== "approved" && (
-            <div className="flex gap-2 w-full">
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:justify-end">
               {isApprover && !isReadOnly && requestData?.status !== "rejected" && (
                 <>
                   <Button 

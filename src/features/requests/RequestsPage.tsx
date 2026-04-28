@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
 import { formatDateTime } from "@/lib/dateFormatter";
-import { Loader2, FileText, Car, DollarSign, RefreshCw, CheckCircle2, XCircle, Clock, Trash2, Package, Edit } from "lucide-react";
+import { Loader2, FileText, Car, DollarSign, RefreshCw, CheckCircle2, XCircle, Clock, Trash2, Package, Edit, Search } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
@@ -76,13 +76,19 @@ export default function Requests() {
             <h1 className="text-2xl md:text-3xl font-bold text-[#3b6dae] dark:text-[#c79d2d]">My Requests</h1>
             <p className="text-muted-foreground mt-2 text-sm">View and manage all your requests</p>
           </div>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
-            <div className="flex-1 sm:flex-none">
-              <SearchInput
-                placeholder="Search requests..."
-                value={searchTerm}
-                onChange={setSearchTerm}
-              />
+          <div className="flex flex-col sm:flex-row items-stretch gap-3 w-full sm:w-auto">
+            {/* Premium animated search bar on the right */}
+            <div className="relative group transition-all duration-300 z-10 w-full sm:w-64 shrink-0 focus-within:w-full sm:focus-within:w-80">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-[#3b6dae] to-[#c79d2d] rounded-xl blur opacity-0 group-hover:opacity-20 group-focus-within:opacity-30 transition duration-500"></div>
+              <div className="relative flex items-center">
+                <Search className="absolute left-3.5 w-4 h-4 text-slate-400 group-focus-within:text-[#3b6dae] transition-colors z-10" />
+                <Input
+                  placeholder="Search requests..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full h-10 pl-10 pr-4 text-xs font-semibold rounded-xl border border-slate-200/60 dark:border-slate-800/60 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md shadow-sm focus:bg-white dark:focus:bg-slate-900 transition-all duration-300 focus:ring-2 focus:ring-[#3b6dae]/20 focus:border-[#3b6dae]/40"
+                />
+              </div>
             </div>
             <div className="shrink-0">
               <CreateRequestDialog />

@@ -74,9 +74,6 @@ export default function Login() {
       await utils.auth.me.invalidate();
       toast.dismiss();
       toast.success(`Signed in as ${role.replace(/_/g, " ")}!`);
-      setTimeout(() => {
-        window.location.href = "/";
-      }, 500);
     } catch (error) {
       toast.dismiss();
       toast.error("Failed to sign in");

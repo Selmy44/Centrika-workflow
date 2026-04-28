@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Send, Loader2, Trash2, MoreVertical, Paperclip, FileText, Play, CheckCircle2, Users } from "lucide-react";
+import { Send, Loader2, Trash2, MoreVertical, Paperclip, FileText, Play, CheckCircle2, Heart, Smile } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -21,6 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import EmojiPicker, { Theme } from "emoji-picker-react";
 
 function formatTime(date: string | Date | undefined) {
   if (!date) return "";
@@ -45,9 +46,8 @@ export function ThreadView({ suggestionId }: { suggestionId: number }) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const utils = trpc.useContext();
-
-  const commonEmojis = ["😊", "👍", "🔥", "❤️", "📍", "📅", "✅", "💡", "🚀", "📢", "🤝", "🙏"];
 
   const { data: suggestion, isLoading, isError, error } = trpc.suggestions.getById.useQuery(
     { id: suggestionId },
@@ -59,6 +59,20 @@ export function ThreadView({ suggestionId }: { suggestionId: number }) {
       utils.suggestions.getUnreadCount.invalidate();
       utils.suggestions.listInbox.invalidate();
       utils.suggestions.listMyFeedback.invalidate();
+    },
+  });
+
+  const toggleLikeMutation = trpc.suggestions.toggleLike.useMutation({
+    onSuccess: () => {
+      utils.suggestions.getById.invalidate({ id: suggestionId });
+      utils.suggestions.listInbox.invalidate();
+      utils.suggestions.listMyFeedback.invalidate();
+    },
+  });
+
+  const toggleReplyLikeMutation = trpc.suggestions.toggleReplyLike.useMutation({
+    onSuccess: () => {
+      utils.suggestions.getById.invalidate({ id: suggestionId });
     },
   });
 
@@ -118,6 +132,12 @@ export function ThreadView({ suggestionId }: { suggestionId: number }) {
       attachments: attachments.length > 0 ? attachments : undefined
     });
     setAttachments([]);
+    setShowEmojiPicker(false);
+  };
+
+  const handleEmojiClick = (emojiData: any) => {
+    setReplyText((prev) => prev + emojiData.emoji);
+    inputRef.current?.focus();
   };
 
   const uploadMutation = trpc.requests.uploadAttachment.useMutation();
@@ -195,19 +215,25 @@ export function ThreadView({ suggestionId }: { suggestionId: number }) {
   const allMessages = [
     {
       id: sug.id,
+      type: 'suggestion' as const,
       content: sug.content,
       createdAt: sug.createdAt,
       userId: sug.userId,
       user: sug.user,
-      attachments: (sug as any).attachments || []
+      attachments: (sug as any).attachments || [],
+      likeCount: (sug as any)._count?.likes || 0,
+      isLiked: ((sug as any).likes?.length || 0) > 0,
     },
     ...(sug.replies || []).map((r: any) => ({
       id: r.id,
+      type: 'reply' as const,
       content: r.content,
       createdAt: r.createdAt,
       userId: r.userId,
       user: r.user,
-      attachments: r.attachments || []
+      attachments: r.attachments || [],
+      likeCount: r._count?.likes || 0,
+      isLiked: (r.likes?.length || 0) > 0,
     })),
   ];
 
@@ -271,7 +297,7 @@ export function ThreadView({ suggestionId }: { suggestionId: number }) {
 
           return (
             <div
-              key={msg.id}
+              key={`${msg.type}-${msg.id}`}
               className={`flex items-end gap-2 ${isMe ? "justify-end" : "justify-start"}`}
             >
               {/* Other person's avatar */}
@@ -350,11 +376,46 @@ export function ThreadView({ suggestionId }: { suggestionId: number }) {
                     )}
                   </div>
                 </div>
+
+                {/* Like Button under each message */}
+                <div className={`flex items-center gap-1 mt-0.5 ${isMe ? "justify-end pr-1" : "pl-1"}`}>
+                  <button
+                    onClick={() => {
+                      if (msg.type === 'suggestion') {
+                        toggleLikeMutation.mutate({ suggestionId: msg.id });
+                      } else {
+                        toggleReplyLikeMutation.mutate({ replyId: msg.id });
+                      }
+                    }}
+                    className={`flex items-center gap-1 text-[10px] font-semibold transition-all duration-200 px-1.5 py-0.5 rounded-full ${
+                      msg.isLiked
+                        ? "text-red-500"
+                        : `${isMe ? "text-slate-400" : "text-slate-400"} hover:text-red-400`
+                    }`}
+                  >
+                    <Heart size={11} className={msg.isLiked ? "fill-red-500" : ""} />
+                    {msg.likeCount > 0 && <span>{msg.likeCount}</span>}
+                  </button>
+                </div>
               </div>
             </div>
           );
         })}
       </div>
+
+      {/* Emoji Picker */}
+      {showEmojiPicker && (
+        <div className="shrink-0 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 z-30">
+          <EmojiPicker
+            onEmojiClick={handleEmojiClick}
+            theme={Theme.LIGHT}
+            width="100%"
+            height={280}
+            searchPlaceholder="Search emojis..."
+            previewConfig={{ showPreview: false }}
+          />
+        </div>
+      )}
 
       {/* Input Area */}
       <div className="shrink-0 px-3 py-2.5 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
@@ -378,24 +439,23 @@ export function ThreadView({ suggestionId }: { suggestionId: number }) {
               <button
                 type="button"
                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-[#3b6dae] transition-colors"
+                className={`w-8 h-8 flex items-center justify-center transition-colors rounded-full ${
+                  showEmojiPicker
+                    ? "text-[#3b6dae] bg-[#3b6dae]/10"
+                    : "text-slate-400 hover:text-[#3b6dae]"
+                }`}
               >
-                😊
+                <Smile size={18} />
               </button>
-              {showEmojiPicker && (
-                <div className="absolute bottom-12 left-0 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl flex flex-wrap gap-1 w-[200px] z-50 animate-in zoom-in-95">
-                  {commonEmojis.map(emoji => (
-                    <button key={emoji} type="button" onClick={() => { setReplyText(p => p + emoji); setShowEmojiPicker(false); }} className="w-8 h-8 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg">{emoji}</button>
-                  ))}
-                </div>
-              )}
 
               <input
+                ref={inputRef}
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
                 placeholder="Message..."
                 disabled={replyMutation.isPending || isUploading}
                 className="flex-1 h-10 px-2 text-[13px] font-medium bg-transparent border-none focus:outline-none placeholder:text-slate-400"
+                onFocus={() => setShowEmojiPicker(false)}
               />
 
               {/* Attachment Button */}

@@ -26,7 +26,7 @@ export default function LeaveBalance() {
   if (!leaveBalance) {
     return (
       <DashboardLayout>
-        <div className="p-8">
+        <div className="p-4 md:p-8">
           <div className="text-center space-y-4">
             <AlertCircle className="h-12 w-12 text-orange-500 mx-auto" />
             <h1 className="text-2xl font-semibold">No Leave Balance Found</h1>
@@ -57,7 +57,7 @@ export default function LeaveBalance() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-8 p-8">
+      <div className="space-y-6 md:space-y-8 p-4 md:p-8">
         {/* Header */}
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-[#3b6dae] dark:text-[#c79d2d]">

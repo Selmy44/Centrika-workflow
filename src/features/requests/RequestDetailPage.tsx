@@ -88,7 +88,7 @@ export default function RequestDetail() {
         {requestData && (
           <Dialog open={showModal} onOpenChange={handleCloseModal}>
             <DialogContent
-              className="w-[70vw]! max-w-225! max-h-[90vh]! overflow-y-auto! p-0! flex! flex-col! gap-0!"
+              className="w-full! h-dvh! md:h-auto! md:w-[70vw]! max-w-225! md:max-h-[90vh]! overflow-y-auto! p-0! flex! flex-col! gap-0! rounded-none! md:rounded-lg!"
             >
               <DialogHeader className="sr-only">
                 <DialogTitle>View Request</DialogTitle>

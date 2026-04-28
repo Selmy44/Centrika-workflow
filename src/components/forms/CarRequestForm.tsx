@@ -45,6 +45,7 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
     driverName: "",
     carInfo: "",
     department: "",
+    reportingManager: "",
     employeeName: "",
     dateOfEmployment: "",
     staffId: "",
@@ -238,36 +239,36 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
 
       <div>
         {/* ===== HEADER WITH LOGO AND CONTACT INFO ===== */}
-        <div className="flex justify-between items-start px-6 py-3 gap-8">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-start px-3 md:px-6 py-3 gap-4 md:gap-8">
           {/* LEFT: LOGO */}
           <div className="shrink-0">
             <img
               src="/logo/centrikaLogo.png"
               alt="Centrika Logo"
-              className="h-20 w-auto"
+              className="h-14 md:h-20 w-auto"
             />
           </div>
 
           {/* RIGHT: CONTACT INFO WITH ICONS - STACKED VERTICALLY */}
-          <div className="text-sm flex-1 flex justify-end">
-            <div className="flex flex-col gap-3 items-start">
-              <div className="flex items-center gap-2">
-                <Phone size={16} className="text-blue-600" />
-                <span className="text-blue-600 font-semibold">+250 788 123 099</span>
+          <div className="text-xs md:text-sm flex-1 flex justify-start md:justify-end">
+            <div className="flex flex-col gap-2 md:gap-3 items-start">
+              <div className="flex items-center gap-2 min-w-0">
+                <Phone size={14} className="text-blue-600 shrink-0 md:w-[16px] md:h-[16px]" />
+                <span className="text-blue-600 font-semibold truncate text-[11px] md:text-sm">+250 788 123 099</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Mail size={16} className="text-blue-600" />
-                <span className="text-blue-600 font-semibold">info@centrika.rw</span>
+              <div className="flex items-center gap-2 min-w-0">
+                <Mail size={14} className="text-blue-600 shrink-0 md:w-[16px] md:h-[16px]" />
+                <span className="text-blue-600 font-semibold truncate text-[11px] md:text-sm">info@centrika.rw</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Globe size={16} className="text-blue-600" />
-                <span className="text-blue-600 font-semibold">www.centrika.rw</span>
+              <div className="flex items-center gap-2 min-w-0">
+                <Globe size={14} className="text-blue-600 shrink-0 md:w-[16px] md:h-[16px]" />
+                <span className="text-blue-600 font-semibold truncate text-[11px] md:text-sm">www.centrika.rw</span>
               </div>
               <div className="flex items-start gap-2">
-                <MapPin size={16} className="text-blue-600 shrink-0 mt-0.5" />
-                <div className="flex flex-col">
-                  <span className="text-blue-600 font-semibold">Room F002, 2nd Floor, CHIC Building,</span>
-                  <span className="text-blue-600 font-semibold">Plot 1007, KN2 Kigali-Rwanda</span>
+                <MapPin size={14} className="text-blue-600 shrink-0 mt-0.5 md:w-[16px] md:h-[16px]" />
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-blue-600 font-semibold text-[10px] md:text-sm leading-tight">Room F002, 2nd Floor, CHIC Building,</span>
+                  <span className="text-blue-600 font-semibold text-[10px] md:text-sm leading-tight">Plot 1007, KN2 Kigali-Rwanda</span>
                 </div>
               </div>
             </div>
@@ -422,33 +423,6 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
                 <span className="text-sm font-medium text-gray-600 dark:text-slate-400">Person(s)</span>
               </div>
             </Row>
-            <Row label="3.4 Supporting Document">
-              <div className="space-y-2">
-                {!isReadOnly && (
-                  <input
-                    type="file"
-                    onChange={(e) => {
-                      if (e.target.files?.[0]) {
-                        setForm({ ...form, supportingDocument: e.target.files[0] });
-                      }
-                    }}
-                    className="text-xs"
-                  />
-                )}
-                {form.supportingDocument && <p className="text-xs text-green-600 font-semibold">✓ {form.supportingDocument.name}</p>}
-                {form.supportingDocumentUrl && (
-                  <div className="flex items-center gap-2 mt-1">
-                    <p className="text-xs text-blue-600 font-medium">Attached: Document</p>
-                    <a href={form.supportingDocumentUrl} target="_blank" rel="noopener noreferrer">
-                      <Button size="sm" variant="outline" className="h-7 py-0 px-2 text-[10px] border-blue-200">
-                        <Eye size={12} className="mr-1" />
-                        View
-                      </Button>
-                    </a>
-                  </div>
-                )}
-              </div>
-            </Row>
           </Section>
 
           {/* 4. DRIVER & VEHICLE */}
@@ -566,7 +540,7 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
         </div>
 
         {/* ===== ACTIONS ===== */}
-        <div className="flex justify-between items-center px-6 py-4 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c] gap-4 mt-6">
+        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center px-3 md:px-6 py-3 md:py-4 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c] gap-2 md:gap-4 mt-6">
           <div className="flex gap-2">
             {/* Action buttons hidden until approved */}
           </div>
@@ -614,13 +588,13 @@ function Section({ title, children, className = "" }: { title: string, children:
 
 function Row({ label, children, colSpan = false }: { label: React.ReactNode, children: React.ReactNode, colSpan?: boolean }) {
   return (
-    <div className={`grid ${colSpan ? 'grid-cols-1' : 'grid-cols-[220px_1fr]'} border-b border-blue-400 dark:border-[#3b6dae]/50`}>
+    <div className={`grid ${colSpan ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-[220px_1fr]'} border-b border-blue-400 dark:border-[#3b6dae]/50 gap-0`}>
       {!colSpan && (
-        <div className="px-3 py-2 font-medium border-r border-blue-400 dark:border-[#3b6dae]/50 bg-blue-100 text-[#3b6dae] text-xs flex items-center">
+        <div className="px-2 md:px-3 py-1.5 md:py-2 font-medium md:border-r border-blue-400 dark:border-[#3b6dae]/50 bg-blue-100 text-[#3b6dae] text-[10px] md:text-xs flex items-center">
           {label}
         </div>
       )}
-      <div className="px-3 py-1 flex items-center">{children}</div>
+      <div className="px-2 md:px-3 py-1 flex items-center">{children}</div>
     </div>
   );
 }

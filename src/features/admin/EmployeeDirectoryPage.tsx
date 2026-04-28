@@ -89,9 +89,18 @@ export default function EmployeeDirectory() {
         </div>
 
         <div className="flex flex-col gap-4 md:flex-row">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-            <Input placeholder="Search by name, email, or staff ID..." className="bg-white pl-10 dark:bg-slate-700" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+          {/* Premium animated search bar */}
+          <div className="relative group transition-all duration-300 z-10 flex-1 max-w-md">
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-[#3b6dae] to-[#c79d2d] rounded-xl blur opacity-0 group-hover:opacity-20 group-focus-within:opacity-30 transition duration-500"></div>
+            <div className="relative flex items-center">
+              <Search className="absolute left-3.5 w-4 h-4 text-slate-400 group-focus-within:text-[#3b6dae] transition-colors z-10" />
+              <Input 
+                placeholder="Search by name, email, or staff ID..." 
+                className="w-full h-11 pl-10 pr-4 text-sm font-medium rounded-xl border border-slate-200/60 dark:border-slate-800/60 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md shadow-sm focus:bg-white dark:focus:bg-slate-900 transition-all duration-300 focus:ring-2 focus:ring-[#3b6dae]/20 focus:border-[#3b6dae]/40" 
+                value={searchTerm} 
+                onChange={(e) => setSearchTerm(e.target.value)} 
+              />
+            </div>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant={selectedDeptId === null ? "default" : "outline"} onClick={() => setSelectedDeptId(null)} size="sm">
