@@ -36,16 +36,14 @@ async function main() {
   }
 
   // 2. Seed Initial Users
-  const adminPassword = await bcrypt.hash("Rwanda@123", 10);
-  const userPassword = await bcrypt.hash("Rwanda@123", 10);
-  const newUserPassword = await bcrypt.hash("Rwanda@123", 10);
+  const hashedPassword = await bcrypt.hash("Rwanda@123", 10);
   const todayDate = getTodayDate();
 
   const users = [
     {
       email: "snshuti@centrika.rw",
       name: "Selmy Nshuti",
-      password: adminPassword,
+      password: hashedPassword,
       role: "admin",
       status: "Active",
       departmentName: "Tech Engineering",
@@ -54,7 +52,7 @@ async function main() {
     {
       email: "dmbabazi@centrika.rw",
       name: "Doreen Mbabazi",
-      password: userPassword,
+      password: hashedPassword,
       role: "head_of_department",
       additionalRoles: "hr",
       status: "Active",
@@ -64,7 +62,7 @@ async function main() {
     {
       email: "pndabarasa@centrika.rw",
       name: "Patrick Ndabarasa",
-      password: newUserPassword,
+      password: hashedPassword,
       role: "head_of_department",
       additionalRoles: "head_of_finance",
       status: "Active",
@@ -75,7 +73,7 @@ async function main() {
     {
       email: "gagaba@centrika.rw",
       name: "Gad Agaba",
-      password: newUserPassword,
+      password: hashedPassword,
       role: "head_of_department",
       status: "Active",
       departmentName: "Tech Engineering",
@@ -85,7 +83,7 @@ async function main() {
     {
       email: "ehitimana@centrika.rw",
       name: "Ed Hitimana",
-      password: newUserPassword,
+      password: hashedPassword,
       role: "user",
       status: "Active",
       departmentName: "Tech Engineering",
@@ -95,7 +93,7 @@ async function main() {
     {
       email: "msebagabo@centrika.rw",
       name: "Moses Sebagabo",
-      password: adminPassword,
+      password: hashedPassword,
       role: "admin",
       status: "Active",
       departmentName: "Tech Engineering",
@@ -104,7 +102,7 @@ async function main() {
     {
       email: "muwamahoro@centrika.rw",
       name: "Munira Uwamahoro",
-      password: newUserPassword,
+      password: hashedPassword,
       role: "user",
       status: "Active",
       departmentName: "Tech Engineering",
@@ -114,7 +112,7 @@ async function main() {
     {
       email: "otuyishime@centrika.rw",
       name: "Odilon Tuyishime",
-      password: newUserPassword,
+      password: hashedPassword,
       role: "head_of_department",
       status: "Active",
       departmentName: "Operations",
@@ -124,7 +122,7 @@ async function main() {
     {
       email: "tngassa@centrika.rw",
       name: "Tresor Ngassa",
-      password: newUserPassword,
+      password: hashedPassword,
       role: "ceo_md",
       status: "Active",
       departmentName: "Administration",
@@ -134,7 +132,7 @@ async function main() {
     {
       email: "ekamanzi@centrika.rw",
       name: "Eric Kamanzi",
-      password: newUserPassword,
+      password: hashedPassword,
       role: "ceo_md",
       status: "Active",
       departmentName: "Administration",
