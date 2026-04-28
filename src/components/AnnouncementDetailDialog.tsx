@@ -114,7 +114,7 @@ export function AnnouncementDetailDialog({ announcementId, isOpen, onClose }: An
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="w-[95vw] sm:max-w-2xl h-[90vh] md:h-[85vh] md:max-h-[800px] bg-white dark:bg-slate-950 border-none rounded-3xl p-0 overflow-hidden shadow-2xl flex flex-col">
+      <DialogContent showCloseButton={false} className="w-[95vw] sm:max-w-2xl h-[90vh] md:h-[85vh] md:max-h-[800px] bg-white dark:bg-slate-950 border-none rounded-3xl p-0 overflow-hidden shadow-2xl flex flex-col">
         {/* Decorative ambient light */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#3b6dae]/10 to-[#c79d2d]/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
         
