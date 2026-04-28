@@ -28,6 +28,7 @@ export const announcementsRouter = router({
             name: true,
             role: true,
             position: true,
+            profileImage: true,
           },
         },
         department: {
@@ -37,7 +38,11 @@ export const announcementsRouter = router({
           }
         },
         _count: {
-          select: { comments: true }
+          select: { comments: true, likes: true }
+        },
+        likes: {
+          where: { userId: ctx.user.id },
+          select: { id: true }
         }
       },
       orderBy: {
@@ -266,11 +271,18 @@ export const announcementsRouter = router({
         where: { id: input.id },
         include: {
           author: {
-            select: { id: true, name: true, role: true, position: true },
+            select: { id: true, name: true, role: true, position: true, profileImage: true },
           },
           department: {
             select: { id: true, name: true },
           },
+          _count: {
+            select: { comments: true, likes: true }
+          },
+          likes: {
+            where: { userId: ctx.user.id },
+            select: { id: true }
+          }
         },
       });
 
@@ -290,6 +302,13 @@ export const announcementsRouter = router({
           user: {
             select: { id: true, name: true, role: true, position: true, profileImage: true },
           },
+          _count: {
+            select: { likes: true }
+          },
+          likes: {
+            where: { userId: ctx.user.id },
+            select: { id: true }
+          }
         },
         orderBy: { createdAt: "asc" },
       });
@@ -377,5 +396,57 @@ export const announcementsRouter = router({
       }
 
       return comment;
+    }),
+
+  toggleLike: protectedProcedure
+    .input(z.object({ announcementId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const existing = await prisma.announcementLike.findUnique({
+        where: {
+          announcementId_userId: {
+            announcementId: input.announcementId,
+            userId: ctx.user.id
+          }
+        }
+      });
+      
+      if (existing) {
+        await prisma.announcementLike.delete({ where: { id: existing.id } });
+        return { liked: false };
+      } else {
+        await prisma.announcementLike.create({
+          data: {
+            announcementId: input.announcementId,
+            userId: ctx.user.id
+          }
+        });
+        return { liked: true };
+      }
+    }),
+
+  toggleCommentLike: protectedProcedure
+    .input(z.object({ commentId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const existing = await prisma.announcementCommentLike.findUnique({
+        where: {
+          commentId_userId: {
+            commentId: input.commentId,
+            userId: ctx.user.id
+          }
+        }
+      });
+      
+      if (existing) {
+        await prisma.announcementCommentLike.delete({ where: { id: existing.id } });
+        return { liked: false };
+      } else {
+        await prisma.announcementCommentLike.create({
+          data: {
+            commentId: input.commentId,
+            userId: ctx.user.id
+          }
+        });
+        return { liked: true };
+      }
     }),
 });

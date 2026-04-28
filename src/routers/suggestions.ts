@@ -131,8 +131,10 @@ export const suggestionsRouter = router({
       },
       include: {
         user: { select: { id: true, name: true, role: true, position: true, profileImage: true, department: { select: { name: true } } } },
-        replies: { include: { user: { select: { id: true, name: true, position: true, profileImage: true } } }, orderBy: { createdAt: 'asc' } },
-        notifications: { where: { userId: ctx.user.id } }
+        replies: { include: { user: { select: { id: true, name: true, position: true, profileImage: true } }, _count: { select: { likes: true } }, likes: { where: { userId: ctx.user.id }, select: { id: true } } }, orderBy: { createdAt: 'asc' } },
+        notifications: { where: { userId: ctx.user.id } },
+        _count: { select: { likes: true } },
+        likes: { where: { userId: ctx.user.id }, select: { id: true } }
       }
     });
 
@@ -165,12 +167,16 @@ export const suggestionsRouter = router({
           replies: {
             include: {
               user: { select: { id: true, name: true, position: true, profileImage: true } },
-              attachments: true
+              attachments: true,
+              _count: { select: { likes: true } },
+              likes: { where: { userId: ctx.user.id }, select: { id: true } }
             },
             orderBy: { createdAt: 'asc' }
           },
           notifications: { where: { userId: ctx.user.id } },
           attachments: true,
+          _count: { select: { likes: true } },
+          likes: { where: { userId: ctx.user.id }, select: { id: true } },
           readStatuses: {
             include: {
               user: { select: { id: true, name: true } }
@@ -198,8 +204,10 @@ export const suggestionsRouter = router({
       },
       include: {
         user: { select: { id: true, name: true, role: true, position: true, profileImage: true, department: { select: { name: true } } } },
-        replies: { include: { user: { select: { id: true, name: true, position: true, profileImage: true } } }, orderBy: { createdAt: 'asc' } },
-        notifications: { where: { userId: ctx.user.id } }
+        replies: { include: { user: { select: { id: true, name: true, position: true, profileImage: true } }, _count: { select: { likes: true } }, likes: { where: { userId: ctx.user.id }, select: { id: true } } }, orderBy: { createdAt: 'asc' } },
+        notifications: { where: { userId: ctx.user.id } },
+        _count: { select: { likes: true } },
+        likes: { where: { userId: ctx.user.id }, select: { id: true } }
       }
     });
 
@@ -397,5 +405,49 @@ export const suggestionsRouter = router({
       return prisma.suggestion.delete({
         where: { id: input.id },
       });
+    }),
+
+  toggleLike: protectedProcedure
+    .input(z.object({ suggestionId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const existing = await prisma.suggestionLike.findUnique({
+        where: {
+          suggestionId_userId: {
+            suggestionId: input.suggestionId,
+            userId: ctx.user.id
+          }
+        }
+      });
+      if (existing) {
+        await prisma.suggestionLike.delete({ where: { id: existing.id } });
+        return { liked: false };
+      } else {
+        await prisma.suggestionLike.create({
+          data: { suggestionId: input.suggestionId, userId: ctx.user.id }
+        });
+        return { liked: true };
+      }
+    }),
+
+  toggleReplyLike: protectedProcedure
+    .input(z.object({ replyId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const existing = await prisma.suggestionReplyLike.findUnique({
+        where: {
+          replyId_userId: {
+            replyId: input.replyId,
+            userId: ctx.user.id
+          }
+        }
+      });
+      if (existing) {
+        await prisma.suggestionReplyLike.delete({ where: { id: existing.id } });
+        return { liked: false };
+      } else {
+        await prisma.suggestionReplyLike.create({
+          data: { replyId: input.replyId, userId: ctx.user.id }
+        });
+        return { liked: true };
+      }
     }),
 });

@@ -19,17 +19,17 @@ async function seedUsers() {
     {
       email: "snshuti@centrika.rw", 
       name: "Selmy Nshuti", 
-      password: "Centrika@2024",
+      password: "Rwanda@123",
       role: "admin" as const,
-      phoneNumber: "+250-788-123-456",
+      phoneNumber: "+250-781-674-354",
       location: "Kigali, Rwanda",
       status: "Active",
       departmentId: 1, // Engineering
     },
     {
       email: "tngassa@centrika.rw",
-      name: "Théophile NGASSA",
-      password: "Centrika@2024",
+      name: "Trésor NGASSA",
+      password: "Rwanda@123",
       role: "ceo_md" as const,
       phoneNumber: "+250-788-234-567",
       location: "Kigali, Rwanda",
@@ -37,9 +37,9 @@ async function seedUsers() {
       departmentId: 5, // Operations
     },
     {
-      email: "employee1@centrika.rw",
-      name: "John Employee",
-      password: "Centrika@2024",
+      email: "ehitimana1@centrika.rw",
+      name: "Ed HITIMANA",
+      password: "Rwanda@123",
       role: "user" as const,
       phoneNumber: "+250-788-345-678",
       location: "Kigali, Rwanda",
