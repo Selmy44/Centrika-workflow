@@ -112,10 +112,10 @@ export function LeaveBalanceCalculator({
       
       {/* ----------------- PART 1: LEAVE SUMMARY ----------------- */}
       <div className="rounded-xl border border-blue-100 dark:border-blue-900 bg-white dark:bg-[#1f426b] overflow-hidden shadow-sm">
-        <div className="bg-blue-600 px-4 py-2.5 flex items-center gap-2 text-white">
+        <div className="bg-blue-600 px-4 py-2.5 flex flex-col md:flex-row items-center gap-2 text-white">
           <History className="w-4 h-4 opacity-90" />
           <h3 className="text-sm font-semibold tracking-wide">Your Leave Summary</h3>
-          <span className="text-[9px] bg-white text-blue-600 dark:bg-blue-900/40 dark:text-blue-200 px-2 py-0.5 rounded-full ml-auto uppercase tracking-wider font-bold shadow-sm border border-blue-100 dark:border-white/10">
+          <span className="text-[9px] bg-white text-blue-600 dark:bg-blue-900/40 dark:text-blue-200 px-2 py-0.5 rounded-full md:ml-auto uppercase tracking-wider font-bold shadow-sm border border-blue-100 dark:border-white/10">
             Auto-Synced
           </span>
         </div>
@@ -142,10 +142,10 @@ export function LeaveBalanceCalculator({
 
       {/* ----------------- PART 2: LEAVE CALCULATOR ----------------- */}
       <div className="rounded-xl border border-blue-100 dark:border-blue-900 bg-gradient-to-br from-blue-50/50 to-white dark:from-slate-900 dark:to-slate-800/50 overflow-hidden shadow-sm">
-        <div className="bg-[#3b6dae] px-4 py-2.5 flex items-center gap-2 text-white">
+        <div className="bg-[#3b6dae] px-4 py-2.5 flex flex-col md:flex-row items-center gap-2 text-white">
           <Calculator className="w-4 h-4 opacity-90" />
           <h3 className="text-sm font-semibold tracking-wide">Leave Duration Calculator</h3>
-          <span className="text-[10px] text-blue-100 ml-auto flex items-center gap-1">
+          <span className="text-[10px] text-blue-100 md:ml-auto flex items-center gap-1">
             <Calendar className="w-3 h-3" /> Calendar Linked
           </span>
         </div>
