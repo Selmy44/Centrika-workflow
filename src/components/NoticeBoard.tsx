@@ -82,10 +82,10 @@ export function NoticeBoard() {
     : ROLE_COLORS.user;
 
   return (
-    <div className="space-y-4 m-4">
+    <div className="">
       {/* Header */}
-      <div className="flex items-center justify-between px-1">
-        <div className="flex items-center gap-2.5">
+      <div className="flex flex-col md:flex-row gap-2 items-center justify-between px-1">
+        <div className="flex flex-col md:flex-row items-center gap-2">
           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#3b6dae] to-[#2d5385] flex items-center justify-center shadow-lg shadow-blue-900/20">
             <Megaphone size={14} className="text-white" />
           </div>
@@ -124,23 +124,23 @@ export function NoticeBoard() {
             <p className="text-[10px] text-slate-300 mt-1">Communications will appear here</p>
           </div>
         ) : currentAnnouncement ? (
-          <div className="p-5 flex flex-col relative z-10 transition-all duration-300">
+          <div className="p-5 flex flex-col   transition-all duration-300">
             {/* Top row: Author + Date */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2.5">
-                <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${roleGradient} flex items-center justify-center text-white text-xs font-black shadow-md`}>
+            <div className="flex   items-start justify-between gap-2 mb-4">
+              <div className="flex flex-col md:flex-row md:items-center gap-2.5 min-w-0">
+                <div className={`w-9 h-9 shrink-0 rounded-xl bg-gradient-to-br ${roleGradient} flex items-center justify-center text-white text-xs font-black shadow-md`}>
                   {(currentAnnouncement.author.name ?? "A").charAt(0)}
                 </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-800 dark:text-slate-100 leading-tight flex items-center">
-                    {currentAnnouncement.author.name}
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-slate-800 dark:text-slate-100 leading-tight flex flex-wrap items-center gap-x-1.5">
+                    <span className="truncate">{currentAnnouncement.author.name}</span>
                     {currentAnnouncement.author.position && (
-                      <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 ml-1.5 opacity-80 border-l border-slate-300 dark:border-slate-700 pl-1.5">
+                      <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 opacity-80 border-l border-slate-300 dark:border-slate-700 pl-1.5 truncate">
                         {currentAnnouncement.author.position}
                       </span>
                     )}
                   </p>
-                  <div className="flex items-center gap-1.5 mt-0.5">
+                  <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
                     <span className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[8px] font-black text-white bg-gradient-to-r ${roleGradient} uppercase tracking-wider`}>
                       {ROLE_LABELS[currentAnnouncement.author.role] || currentAnnouncement.author.role}
                     </span>
@@ -158,7 +158,7 @@ export function NoticeBoard() {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-1 text-[9px] font-semibold text-slate-400 bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded-lg">
+              <div className="flex shrink-0 items-center gap-1 text-[9px] font-semibold text-slate-400 bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded-lg">
                 <Clock size={9} />
                 {timeAgo(currentAnnouncement.createdAt)}
               </div>
@@ -180,26 +180,26 @@ export function NoticeBoard() {
             </div>
 
             {/* Action Bar */}
-            <div className="flex items-center justify-between mt-auto pt-3 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex flex-col md:flex-row gap-2 items-center justify-between mt-auto pt-3 border-t border-slate-100 dark:border-slate-800">
               <button 
                 onClick={() => setSelectedDetailId(currentAnnouncement.id)}
-                className="flex items-center gap-1.5 text-[10px] font-bold text-[#c79d2d] hover:text-[#3b6dae] transition-colors bg-[#c79d2d]/5 hover:bg-[#3b6dae]/5 px-3 py-1.5 rounded-lg"
+                className="flex items-center w-full md:w-[150px] gap-1.5 text-[10px] font-bold text-[#c79d2d] hover:text-[#3b6dae] transition-colors bg-[#c79d2d]/5 hover:bg-[#3b6dae]/5 px-3 py-1.5 rounded-lg"
               >
                 <MessageCircle size={12} />
                 {currentAnnouncement._count?.comments || 0} {currentAnnouncement._count?.comments === 1 ? 'Comment' : 'Comments'}
               </button>
 
-              <div className="flex items-center gap-3">
+              <div className="flex w-full md:w-[200px] items-center justify-between gap-3">
                 <button
                   onClick={() => setSelectedDetailId(currentAnnouncement.id)}
-                  className="text-[10px] font-bold text-slate-500 hover:text-[#3b6dae] transition-colors underline decoration-slate-200 underline-offset-4 hover:decoration-[#3b6dae]/50"
+                  className="text-[10px]  font-bold text-slate-500 hover:text-[#3b6dae] transition-colors underline decoration-slate-200 underline-offset-4 hover:decoration-[#3b6dae]/50 shrink-0"
                 >
                   Read full message
                 </button>
                 {total > 1 && (
                   <button
                     onClick={() => setIsAllModalOpen(true)}
-                    className="flex items-center gap-1 text-[10px] font-black text-white bg-[#3b6dae] hover:bg-[#2d5385] px-3 py-1.5 rounded-lg transition-colors shadow-sm"
+                    className="flex items-center justify-center gap-1 text-[10px] font-black text-white bg-[#3b6dae] hover:bg-[#2d5385] px-3 py-1.5 rounded-lg transition-colors shadow-sm shrink-0"
                   >
                     View All {total}
                     <ArrowRight size={10} strokeWidth={3} />

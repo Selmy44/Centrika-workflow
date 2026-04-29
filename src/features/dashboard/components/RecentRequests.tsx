@@ -17,7 +17,7 @@ export const RecentRequests = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row gap-2 items-center justify-between">
         <div>
           <CardTitle className="flex items-center gap-2 text-[#3b6dae] dark:text-blue-400 text-sm font-black uppercase tracking-widest opacity-80">
             Recent Requests

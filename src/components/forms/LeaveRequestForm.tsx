@@ -486,11 +486,10 @@ export default function LeaveRequestForm({
         </div>
 
         {/* REQUEST HEADER SECTION - Responsive Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 px-3 md:px-6 py-2 md:py-3 text-xs md:text-sm items-end">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 lg:grid-cols-4 gap-2 md:gap-3 px-3 md:px-6 py-2 md:py-3 text-xs md:text-sm items-end">
           <div>
-            <p className="font-semibold text-blue-600 mb-1 text-[10px] md:text-xs">Department</p>
+            <p className="font-semibold text-blue-600 mb-1 text-[10px] md:text-xs">CTK</p>
             <div className="flex gap-0 items-center">
-              <span className="text-blue-600 font-bold text-[10px] md:text-xs whitespace-nowrap">CTK - </span>
               <Input value={form.department} className="w-full h-6 md:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] md:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed border-l-0" disabled />
             </div>
           </div>
@@ -536,7 +535,7 @@ export default function LeaveRequestForm({
             <Row label="2.1 Nature of Leave">
               <Input
                 value={config.title || "Annual Leave"}
-                className="w-[300px] h-8 border-blue-300 dark:border-[#3b6dae]/40 bg-gray-100 dark:bg-[#295482] text-black dark:text-slate-100 font-medium cursor-not-allowed"
+                className="w-full h-8 border-blue-300 text-[10px] dark:border-[#3b6dae]/40 bg-gray-100 dark:bg-[#295482] text-black dark:text-slate-100 font-medium cursor-not-allowed"
                 disabled
               />
             </Row>
@@ -584,7 +583,7 @@ export default function LeaveRequestForm({
 
             <Row label="2.3 Business Days Requested">
               <div className="flex items-center gap-2">
-                <Input value={calculatedBusinessDays} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs w-24 bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium text-center" />
+                <Input value={calculatedBusinessDays} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs w-24 bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 w-full  font-medium text-center" />
                 <span className="text-xs font-medium text-gray-600 dark:text-slate-400">Day(s)</span>
               </div>
             </Row>
@@ -618,7 +617,7 @@ export default function LeaveRequestForm({
                         });
                       }}
                     >
-                      <SelectTrigger className="h-8 border-blue-300 dark:border-[#3b6dae]/40 text-xs">
+                      <SelectTrigger className="h-8 w-full border-blue-300 dark:border-[#3b6dae]/40 text-xs">
                         <SelectValue placeholder="Select a backup person..." />
                       </SelectTrigger>
                       <SelectContent>
@@ -714,23 +713,23 @@ export default function LeaveRequestForm({
                 {!effectiveIsReadOnly ? (
                   <>
                     <div className="flex gap-4 mb-4">
-                      <label className="flex items-center gap-2 cursor-pointer group">
+                      <label className="flex items-center gap-2 cursor-pointer ">
                         <input
                           type="radio"
                           checked={form.signatureMethod === "draw"}
                           onChange={() => setForm({ ...form, signatureMethod: "draw", employeeSignature: null })}
                           className="w-4 h-4 accent-blue-600"
                         />
-                        <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600">Draw Signature</span>
+                        <span className="text-[8px] md:text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600">Draw Signature</span>
                       </label>
-                      <label className="flex items-center gap-2 cursor-pointer group">
+                      <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="radio"
                           checked={form.signatureMethod === "upload"}
                           onChange={() => setForm({ ...form, signatureMethod: "upload", employeeSignature: null })}
                           className="w-4 h-4 accent-blue-600"
                         />
-                        <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600">Upload Image</span>
+                        <span className="text-[8px] md:text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600">Upload Image</span>
                       </label>
                     </div>
 
@@ -765,7 +764,7 @@ export default function LeaveRequestForm({
                     
                     {form.employeeSignatureUrl && (
                        <div className="mt-2 animate-in zoom-in duration-300">
-                          <img src={form.employeeSignatureUrl} alt="sig" className="h-16 object-contain border-2 border-blue-100 rounded-xl p-2 bg-white" />
+                          <img src={form.employeeSignatureUrl} alt="sig" className="h-16 bg-white w-full md:w-auto object-contain border-2 border-blue-100 rounded-xl p-2" />
                        </div>
                     )}
                   </>
@@ -916,7 +915,7 @@ export default function LeaveRequestForm({
         </div>
 
         {/* ACTIONS & FOOTER */}
-        <div className="no-print flex flex-col sm:flex-row justify-between items-stretch sm:items-center px-3 md:px-6 py-4 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c] gap-3 md:gap-4 mt-4">
+        <div className="no-print flex flex-col sm:flex-row justify-between items-stretch sm:items-center px-3 md:px-6 py-4 md:border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c] gap-3 md:gap-4 mt-4">
           {requestData?.status === "approved" && (
             <div className="flex flex-col sm:flex-row gap-2 w-full">
               <Button variant="outline" disabled={isSubmitting || isPrintingForm} onClick={handlePrint} className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600">
@@ -1029,8 +1028,8 @@ export default function LeaveRequestForm({
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="border-t border-[#3b6dae]">
-      <div className="bg-[#3b6dae] text-white font-bold px-4 py-2 text-sm">{title}</div>
+    <div className="md:border-t border-[#3b6dae]">
+      <div className="md:bg-[#3b6dae] md:text-white font-bold px-4 py-2 text-sm">{title}</div>
       {children}
     </div>
   );
@@ -1038,9 +1037,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] border-b border-[#3b6dae] gap-0">
-      <div className="px-2 md:px-3 py-1.5 md:py-2 font-medium md:border-r border-[#3b6dae] bg-blue-100 text-[#3b6dae] text-[10px] md:text-xs md:whitespace-nowrap">{label}</div>
-      <div className="px-2 md:px-3 py-1 md:py-1 text-xs md:text-sm">{children}</div>
+    <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] md:border-b border-[#3b6dae] gap-0">
+      <div className="px-2 md:px-3 py-1.5 md:py-2 font-medium md:border-r border-[#3b6dae] md:bg-blue-100 text-[#3b6dae] text-[10px] md:text-xs md:whitespace-nowrap">{label}</div>
+      <div className="px-2 md:px-3 py-1 md:py-1  text-xs md:text-sm">{children}</div>
     </div>
   );
 }

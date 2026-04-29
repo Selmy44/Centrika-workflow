@@ -78,7 +78,7 @@ export function LeaveTypeSelector({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-96! max-h-125! p-0! gap-0! overflow-hidden! dark:bg-[#1f426b] dark:border-[#132c4a]" style={{ height: "auto" }} showCloseButton={false}>
+      <DialogContent className="p-0! gap-0! overflow-hidden! flex flex-col max-h-[90dvh] dark:bg-[#1f426b] dark:border-[#132c4a]" showCloseButton={false}>
         <Button
           onClick={() => onOpenChange(false)}
           className="absolute right-4 top-4 rounded-full w-9 h-9 p-0 flex items-center justify-center bg-[#3b6dae] hover:bg-[#2d5385] dark:bg-[#326191] dark:hover:bg-slate-700 dark:text-slate-200 text-white z-10 transition-all shadow-lg"
@@ -94,8 +94,8 @@ export function LeaveTypeSelector({
           </Label>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto px-6 py-6 flex items-center justify-center bg-white dark:bg-[#1f426b]">
-          <div className="grid grid-cols-2 gap-3 w-full max-w-xs">
+        <div className="flex-1 overflow-y-auto px-6 py-6 flex items-center bg-white justify-center pt-32 md:pt-3 dark:bg-[#1f426b]">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full">
             {leaveTypes.map((leave) => {
               const Icon = leave.icon;
 
