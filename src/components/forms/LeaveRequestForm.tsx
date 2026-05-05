@@ -508,7 +508,7 @@ export default function LeaveRequestForm({
         </div>
 
         {/* REQUEST DETAILS */}
-        <div className="border-t border-blue-400 dark:border-[#3b6dae]/50">
+        <div className="">
           <div className="bg-[#3b6dae] text-white font-bold px-4 py-2 text-sm">REQUEST DETAILS</div>
 
           {/* 1. EMPLOYEE INFORMATION */}
@@ -915,7 +915,7 @@ export default function LeaveRequestForm({
         </div>
 
         {/* ACTIONS & FOOTER */}
-        <div className="no-print flex flex-col sm:flex-row justify-between items-stretch sm:items-center px-3 md:px-6 py-4 md:border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c] gap-3 md:gap-4 mt-4">
+        <div className="no-print flex flex-col sm:flex-row justify-between items-stretch sm:items-center px-3 md:px-6 py-4 bg-gray-50 dark:bg-[#1a385c] gap-3 md:gap-4 mt-4">
           {requestData?.status === "approved" && (
             <div className="flex flex-col sm:flex-row gap-2 w-full">
               <Button variant="outline" disabled={isSubmitting || isPrintingForm} onClick={handlePrint} className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600">
@@ -1028,7 +1028,7 @@ export default function LeaveRequestForm({
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="md:border-t border-[#3b6dae]">
+    <div>
       <div className="md:bg-[#3b6dae] md:text-white font-bold px-4 py-2 text-sm">{title}</div>
       {children}
     </div>
@@ -1037,8 +1037,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] md:border-b border-[#3b6dae] gap-0">
-      <div className="px-2 md:px-3 py-1.5 md:py-2 font-medium md:border-r border-[#3b6dae] md:bg-blue-100 text-[#3b6dae] text-[10px] md:text-xs md:whitespace-nowrap">{label}</div>
+    <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-0">
+      <div className="px-2 md:px-3 py-1.5 md:py-2 font-medium md:bg-blue-100 text-[#3b6dae] text-[10px] md:text-xs md:whitespace-nowrap">{label}</div>
       <div className="px-2 md:px-3 py-1 md:py-1  text-xs md:text-sm">{children}</div>
     </div>
   );

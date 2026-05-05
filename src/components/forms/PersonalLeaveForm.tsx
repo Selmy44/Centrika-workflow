@@ -277,7 +277,7 @@ export default function PersonalLeaveForm({ requestData, isReadOnly = false, onS
         </div>
 
         {/* ===== REQUEST HEADER SECTION - Responsive Grid ===== */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-3 px-3 md:px-6 py-2 md:py-3 text-xs md:text-sm items-end">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2 sm:gap-2.5 md:gap-3 px-3 md:px-6 py-2 md:py-3 text-xs md:text-sm items-end">
           <div>
             <p className="font-semibold text-blue-600 mb-1 text-[10px] md:text-xs">Name of Department</p>
             <div className="flex gap-0 items-center">
@@ -324,7 +324,7 @@ export default function PersonalLeaveForm({ requestData, isReadOnly = false, onS
         </div>
 
         {/* ===== REQUEST DETAILS ===== */}
-        <div className="border-t border-blue-400 dark:border-[#3b6dae]/50">
+        <div className="">
           <div className="bg-[#3b6dae] text-white font-bold px-4 py-2 text-sm">REQUEST DETAILS</div>
 
           {/* 1. EMPLOYEE INFORMATION */}
@@ -630,11 +630,11 @@ export default function PersonalLeaveForm({ requestData, isReadOnly = false, onS
         </div>
 
         {/* ===== ACTIONS ===== */}
-        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center px-3 md:px-6 py-3 md:py-4 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c] gap-2 md:gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center px-3 md:px-6 py-3 md:py-4 bg-gray-50 dark:bg-[#1a385c] gap-2 md:gap-4">
           <div className="flex gap-2">
             {/* Print/Download are restricted to approved requests */}
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2">
             <Button
               variant="outline"
               disabled={isSubmitting}
@@ -669,8 +669,8 @@ export default function PersonalLeaveForm({ requestData, isReadOnly = false, onS
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="border-t border-blue-400 dark:border-[#3b6dae]/50">
-      <div className="bg-[#3b6dae] text-white font-bold px-4 py-2 text-sm">{title}</div>
+    <div>
+      <div className="md:bg-[#3b6dae] md:text-white font-bold px-4 py-2 text-sm">{title}</div>
       {children}
     </div>
   );
@@ -678,8 +678,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] border-b border-blue-400 dark:border-[#3b6dae]/50 gap-0">
-      <div className="px-2 md:px-3 py-1.5 md:py-2 font-medium md:border-r border-blue-400 dark:border-[#3b6dae]/50 bg-blue-100 text-blue-700 text-[10px] md:text-xs md:whitespace-nowrap">
+    <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-0">
+      <div className="px-2 md:px-3 py-1.5 md:py-2 font-medium md:bg-blue-100 text-blue-700 text-[10px] md:text-xs md:whitespace-nowrap">
         {label}
       </div>
       <div className="px-2 md:px-3 py-1 text-xs md:text-sm">{children}</div>

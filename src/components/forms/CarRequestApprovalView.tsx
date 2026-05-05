@@ -188,7 +188,7 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                 )}
 
                 {/* HEADER INFO */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 px-3 md:px-6 py-2 md:py-3 text-xs md:text-sm items-end border-b border-gray-200">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-2.5 md:gap-3 px-3 md:px-6 py-2 md:py-3 text-xs md:text-sm items-end border-b border-gray-200">
                     <div>
                         <p className="font-semibold text-blue-600 mb-1 text-xs">Department</p>
                         <Input value={employee?.department || "N/A"} disabled className="h-7 text-xs bg-gray-50" />
@@ -364,7 +364,7 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                     </div>
                 )}
                 {!approvalSectionIsReadOnly && (
-                    <div className="no-print flex flex-col sm:flex-row gap-2 p-3 md:p-6 border-t bg-gray-50">
+                    <div className="no-print flex flex-col gap-2 p-3 md:p-6 bg-gray-50">
                         <Button variant="destructive" size="sm" onClick={() => setShowRejectDialog(true)} disabled={isLoading}>Reject</Button>
                         <Button
                             className="bg-green-600 hover:bg-green-700"
@@ -439,8 +439,8 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
     return (
-        <div className="border-t border-[#3b6dae]/30">
-            <div className="bg-[#3b6dae] text-white font-bold px-4 py-2 text-xs uppercase tracking-wider">{title}</div>
+        <div>
+            <div className="md:bg-[#3b6dae] md:text-white font-bold px-4 py-2 text-xs uppercase tracking-wider">{title}</div>
             <div className="bg-white">{children}</div>
         </div>
     );
@@ -448,8 +448,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
     return (
-        <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] border-b border-gray-100 gap-0">
-            <div className="px-2 md:px-4 py-2 md:py-3 bg-blue-50/30 md:border-r border-gray-100 text-[10px] md:text-[11px] font-bold text-gray-500 uppercase flex items-center">{label}</div>
+        <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-0">
+            <div className="px-2 md:px-4 py-2 md:py-3 md:bg-blue-50/30 text-[10px] md:text-[11px] font-bold text-gray-500 uppercase flex items-center">{label}</div>
             <div className="px-2 md:px-4 py-1.5 md:py-2">{children}</div>
         </div>
     );

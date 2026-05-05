@@ -281,14 +281,13 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
         </div>
 
         {/* ===== REQUEST HEADER SECTION - Responsive Grid ===== */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 px-3 md:px-6 py-2 md:py-3 text-xs md:text-sm items-end">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-2.5 md:gap-3 px-3 md:px-6 py-2 md:py-3 text-xs md:text-sm items-end">
           <div>
-            <p className="font-semibold text-blue-600 mb-1 text-[10px] md:text-xs">Department</p>
+            <p className="font-semibold text-blue-600 mb-1 text-[10px] md:text-xs">CTK</p>
             <div className="flex gap-0 items-center">
-              <span className="text-blue-600 font-bold text-[10px] md:text-xs whitespace-nowrap">CTK - </span>
               <Input
-                value={form.department}
-                className="w-full h-6 md:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] md:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed border-l-0"
+                value="CTK"
+                className="w-full h-6 md:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] md:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
                 disabled
               />
             </div>
@@ -321,7 +320,7 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
         </div>
 
         {/* ===== REQUEST DETAILS ===== */}
-        <div className="border-t border-[#3b6dae]">
+        <div className="">
           <div className="bg-[#3b6dae] text-white font-bold px-4 py-2 text-sm">REQUEST DETAILS</div>
 
           {/* 1. EMPLOYEE INFORMATION */}
@@ -540,11 +539,11 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
         </div>
 
         {/* ===== ACTIONS ===== */}
-        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center px-3 md:px-6 py-3 md:py-4 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c] gap-2 md:gap-4 mt-6">
+        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center px-3 md:px-6 py-3 md:py-4 bg-gray-50 dark:bg-[#1a385c] gap-2 md:gap-4 mt-6">
           <div className="flex gap-2">
             {/* Action buttons hidden until approved */}
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2">
             <Button
               variant="outline"
               disabled={isSubmitting}
@@ -579,8 +578,8 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
 
 function Section({ title, children, className = "" }: { title: string, children: React.ReactNode, className?: string }) {
   return (
-    <div className={`border-t border-blue-400 dark:border-[#3b6dae]/50 ${className}`}>
-      <div className="bg-[#3b6dae] text-white font-bold px-4 py-2 text-sm">{title}</div>
+    <div className={className}>
+      <div className="md:bg-[#3b6dae] md:text-white font-bold px-4 py-2 text-sm">{title}</div>
       {children}
     </div>
   );
@@ -588,9 +587,9 @@ function Section({ title, children, className = "" }: { title: string, children:
 
 function Row({ label, children, colSpan = false }: { label: React.ReactNode, children: React.ReactNode, colSpan?: boolean }) {
   return (
-    <div className={`grid ${colSpan ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-[220px_1fr]'} border-b border-blue-400 dark:border-[#3b6dae]/50 gap-0`}>
+    <div className={`grid ${colSpan ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-[220px_1fr]'} gap-0`}>
       {!colSpan && (
-        <div className="px-2 md:px-3 py-1.5 md:py-2 font-medium md:border-r border-blue-400 dark:border-[#3b6dae]/50 bg-blue-100 text-[#3b6dae] text-[10px] md:text-xs flex items-center">
+        <div className="px-2 md:px-3 py-1.5 md:py-2 font-medium md:bg-blue-100 text-[#3b6dae] text-[10px] md:text-xs flex items-center">
           {label}
         </div>
       )}

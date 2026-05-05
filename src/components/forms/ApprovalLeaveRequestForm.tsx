@@ -106,7 +106,7 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
   return (
     <div className="w-full bg-white dark:bg-[#1f426b] text-black dark:text-slate-100 px-3 md:px-8 py-4 md:py-6 space-y-4 md:space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start pb-4 md:pb-6 border-b-2 border-blue-300 dark:border-[#3b6dae]/40 gap-2">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start pb-4 md:pb-6 gap-2">
         <div>
           <h1 className="text-lg md:text-2xl font-bold text-blue-600">Leave Request Approval Form</h1>
           <p className="text-xs md:text-sm text-gray-600 dark:text-slate-400 mt-1">{getApprovalLevelLabel()}</p>
@@ -316,7 +316,7 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
             )}
 
             {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-4 border-t border-yellow-200">
+            <div className="flex flex-col gap-2 pt-4">
               <Button
                 variant="outline"
                 onClick={() => setShowRejectForm(true)}
@@ -326,7 +326,7 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
                 Reject Request
               </Button>
               <Button
-                className="bg-green-600 hover:bg-green-700 sm:ml-auto"
+                className="bg-green-600 hover:bg-green-700"
                 onClick={() => onApprove(approvalComments, signatureFile)}
                 disabled={isLoading || !signatureFile}
               >

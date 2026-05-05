@@ -214,7 +214,7 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
                 )}
 
                 {/* ===== REQUEST HEADER SECTION ===== */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 px-3 md:px-6 py-2 md:py-3 text-xs md:text-sm items-end">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-2.5 md:gap-3 px-3 md:px-6 py-2 md:py-3 text-xs md:text-sm items-end">
                     <div>
                         <p className="font-semibold text-blue-600 mb-1 text-xs">Department</p>
                         <div className="flex gap-0 items-center">
@@ -492,7 +492,7 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
 
                 {/* ===== ACTIONS ===== */}
                 {isRequestApproved && (
-                    <div className="no-print flex flex-col sm:flex-row gap-2 px-3 md:px-6 py-3 md:py-4 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c]">
+                    <div className="no-print flex flex-col gap-2 px-3 md:px-6 py-3 md:py-4 bg-gray-50 dark:bg-[#1a385c]">
                         <Button
                             variant="outline"
                             disabled={isLoading || isPrintingForm}
@@ -514,7 +514,7 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
                     </div>
                 )}
                 {!approvalSectionIsReadOnly && (
-                    <div className="no-print flex flex-col sm:flex-row flex-wrap gap-2 px-3 md:px-6 py-3 md:py-4 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-gray-50 dark:bg-[#1a385c]">
+                    <div className="no-print flex flex-col flex-wrap gap-2 px-3 md:px-6 py-3 md:py-4 bg-gray-50 dark:bg-[#1a385c]">
                         <Button
                             variant="outline"
                             disabled={isLoading}
@@ -622,8 +622,8 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
     return (
-        <div className="border-t border-[#3b6dae]">
-            <div className="bg-[#3b6dae] text-white font-bold px-4 py-2 text-sm">{title}</div>
+        <div>
+            <div className="md:bg-[#3b6dae] md:text-white font-bold px-4 py-2 text-sm">{title}</div>
             {children}
         </div>
     );
@@ -631,8 +631,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
     return (
-        <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] border-b border-[#3b6dae] gap-0">
-            <div className="px-2 md:px-3 py-1.5 md:py-2 font-medium md:border-r border-[#3b6dae] bg-blue-100 text-[#3b6dae] text-[10px] md:text-xs">
+        <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-0">
+            <div className="px-2 md:px-3 py-1.5 md:py-2 font-medium md:bg-blue-100 text-[#3b6dae] text-[10px] md:text-xs">
                 {label}
             </div>
             <div className="px-2 md:px-3 py-1">{children}</div>
