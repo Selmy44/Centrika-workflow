@@ -339,7 +339,7 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
             <div>
               <label className="text-sm font-semibold text-gray-700 mb-2 block">Reason for Rejection *</label>
               <Textarea
-                placeholder="Provide a clear and professional reason for rejection (minimum 10 characters)..."
+                placeholder="Provide a reason for rejection..."
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
                 className="mt-2 border-red-300 focus:border-red-500 focus:ring-red-500 min-h-24 text-sm"
@@ -356,7 +356,7 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
                   setShowRejectForm(false);
                   setRejectReason("");
                 }}
-                disabled={isLoading}
+                disabled={false}
                 className="border-gray-300"
               >
                 Cancel
@@ -364,13 +364,13 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
               <Button
                 variant="destructive"
                 onClick={() => {
-                  if (rejectReason.trim().length >= 10) {
+                  if (rejectReason.trim().length >= 1) {
                     onReject(rejectReason);
                     setRejectReason("");
                     setShowRejectForm(false);
                   }
                 }}
-                disabled={rejectReason.trim().length < 10 || isLoading}
+                disabled={rejectReason.trim().length < 1 || isLoading}
                 className="ml-auto bg-red-600 hover:bg-red-700 text-white font-semibold"
               >
                 {isLoading ? "Processing..." : "Confirm Rejection"}

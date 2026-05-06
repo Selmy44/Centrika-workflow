@@ -532,7 +532,7 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
                             <div>
                                 <label className="text-sm font-semibold text-gray-700 mb-2 block">Rejection Reason *</label>
                                 <Textarea
-                                    placeholder="Provide a clear and professional reason for rejection (minimum 10 characters)..."
+                                    placeholder="Provide a reason for rejection..."
                                     value={rejectReason}
                                     onChange={(e) => setRejectReason(e.target.value)}
                                     className="min-h-24 text-sm border-red-300 focus:border-red-500 focus:ring-red-500"
@@ -554,9 +554,9 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
                             </Button>
                             <Button
                                 variant="destructive"
-                                disabled={rejectReason.trim().length < 10 || isLoading}
+                                disabled={rejectReason.trim().length < 1 || isLoading}
                                 onClick={() => {
-                                    if (rejectReason.trim().length >= 10) {
+                                    if (rejectReason.trim().length >= 1) {
                                         onReject(rejectReason);
                                         setRejectReason("");
                                         setShowRejectDialog(false);

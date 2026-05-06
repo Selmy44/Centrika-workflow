@@ -397,7 +397,7 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                             <Textarea
                                 value={rejectReason}
                                 onChange={(e) => setRejectReason(e.target.value)}
-                                placeholder="Provide a clear and professional reason for rejection (minimum 10 characters)..."
+                                placeholder="Provide a reason for rejection..."
                                 className="min-h-24 text-sm border-red-300 focus:border-red-500 focus:ring-red-500"
                                 maxLength={500}
                             />
@@ -417,9 +417,9 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                         </Button>
                         <Button 
                             variant="destructive" 
-                            disabled={rejectReason.trim().length < 10 || isLoading} 
+                            disabled={rejectReason.trim().length < 1 || isLoading} 
                             onClick={() => {
-                                if (rejectReason.trim().length >= 10) {
+                                if (rejectReason.trim().length >= 1) {
                                     onReject(rejectReason);
                                     setRejectReason("");
                                     setShowRejectDialog(false);
