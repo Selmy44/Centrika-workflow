@@ -192,7 +192,7 @@ export default function DepartmentManagement() {
           </Dialog>
         </div>
 
-        <div className="relative max-w-md">
+        <div className="relative w-full lg:max-w-md">
           <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
           <Input 
             className="pl-10"
@@ -202,7 +202,7 @@ export default function DepartmentManagement() {
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {isLoading ? (
             Array(3).fill(0).map((_, i) => (
               <div key={i} className="h-48 rounded-xl bg-gray-100 animate-pulse" />

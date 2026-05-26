@@ -81,7 +81,7 @@ export const FinanceDashboard = () => {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 animate-pulse">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-4 animate-pulse">
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="h-32 rounded-2xl bg-slate-200 dark:bg-slate-800" />
         ))}
@@ -118,7 +118,7 @@ export const FinanceDashboard = () => {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-4">
         <StatsCard
           title="Total Spending"
           value={`RWF ${(overview?.totalSpentRWF || 0).toLocaleString()}`}

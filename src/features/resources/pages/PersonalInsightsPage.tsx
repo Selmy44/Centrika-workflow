@@ -35,7 +35,7 @@ export function PersonalInsightsPage() {
         <p className="text-slate-500 mt-1">Personal analytics and request history overview.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
         <Card className="bg-white border-slate-200">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">

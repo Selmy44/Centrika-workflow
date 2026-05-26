@@ -114,14 +114,14 @@ export default function ExpenditureHistoryPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6 p-4 lg:p-8">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-[#3b6dae] dark:text-[#c79d2d]">Expenditure History</h1>
             <p className="mt-2 text-muted-foreground">Audit approved expenses, generate vouchers, and monitor where spending is concentrated.</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-4">
           <Card className="border-border">
             <CardContent className="p-6">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Approved Records</p>
@@ -152,7 +152,7 @@ export default function ExpenditureHistoryPage() {
           </Card>
         </div>
 
-        <div className="flex flex-col gap-4 rounded-2xl border border-border/50 bg-white/50 p-4 dark:bg-slate-900/50 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-4 rounded-2xl border border-border/50 bg-white/50 p-4 dark:bg-slate-900/50 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap items-center gap-3">
             <select aria-label="Filter by year" className="rounded-lg border border-border/50 bg-transparent px-2 py-1 text-xs font-bold" value={selectedYear} onChange={(e) => setSelectedYear(parseInt(e.target.value, 10))}>
               {[2024, 2025, 2026, 2027].map((year) => (
@@ -175,8 +175,8 @@ export default function ExpenditureHistoryPage() {
             </select>
           </div>
 
-          <div className="relative">
-            <Input placeholder="Search title, requester, category..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-9 w-full rounded-xl border-border/50 pl-9 text-xs md:w-64" />
+          <div className="relative w-full lg:w-64">
+            <Input placeholder="Search title, requester, category..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-9 w-full rounded-xl border-border/50 pl-9 text-xs" />
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           </div>
         </div>
@@ -219,7 +219,7 @@ export default function ExpenditureHistoryPage() {
                               </div>
                             </div>
 
-                            <div className="grid grid-cols-1 gap-4 border-t border-border/30 pt-4 md:grid-cols-4">
+                            <div className="grid grid-cols-1 gap-4 border-t border-border/30 pt-4 lg:grid-cols-4">
                               <MetaItem icon={<User size={14} className="text-slate-400" />} label="Requester" value={expenditure.requester?.name || "Unknown"} />
                               <MetaItem icon={<Building2 size={14} className="text-slate-400" />} label="Department" value={department} />
                               <MetaItem icon={<Tag size={14} className="text-slate-400" />} label="Category" value={category} />

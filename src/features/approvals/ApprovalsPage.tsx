@@ -236,7 +236,6 @@ export default function Approvals() {
             requestId: selectedRequest.id,
             formData: updatedFormData,
           });
-          console.log(`[Approvals] ${type} form data stored successfully`);
         } catch (storeErr) {
           console.error(`[Approvals] Failed to store ${type} form data:`, storeErr);
           toast.error("Failed to save form with signature. Please try again.");
@@ -347,9 +346,9 @@ export default function Approvals() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-4 p-3 sm:space-y-6 sm:p-4 lg:p-6">
+      <div className="space-y-4 p-3 lg:space-y-6 lg:p-6">
         {/* Header section */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-[#3b6dae] dark:text-[#c79d2d]">Approvals</h1>
             <p className="text-muted-foreground mt-1 sm:mt-2 text-sm">Review and manage employee requests</p>
@@ -357,7 +356,7 @@ export default function Approvals() {
 
           {/* Premium animated search bar on the right */}
           {!isLoading && allRequests.length > 0 && (
-          <div className="relative group transition-all duration-300 z-10 w-full md:w-64 shrink-0 focus-within:w-full md:focus-within:w-80">
+          <div className="relative group transition-all duration-300 z-10 w-full lg:w-64 shrink-0 focus-within:w-full lg:focus-within:w-80">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-[#3b6dae] to-[#c79d2d] rounded-xl blur opacity-0 group-hover:opacity-20 group-focus-within:opacity-30 transition duration-500"></div>
             <div className="relative flex items-center">
               <Search className="absolute left-3.5 w-4 h-4 text-slate-400 group-focus-within:text-[#3b6dae] transition-colors z-10" />
@@ -428,10 +427,10 @@ export default function Approvals() {
               <Card key={request.id} className="bg-card border-border hover:border-accent transition-colors">
                 <CardContent className="p-4 sm:p-6">
                   <div className="flex flex-col gap-4">
-                    <div className="flex items-start gap-3 sm:gap-4">
+                    <div className="flex items-start gap-3 lg:gap-4">
                       <div className="p-2 bg-muted rounded-lg">{getRequestIcon(request.type)}</div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between mb-2">
+                        <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between mb-2">
                           <div>
                             <h3 className="font-semibold text-foreground text-sm sm:text-base">{request.title}</h3>
                             <p className="text-xs sm:text-sm text-muted-foreground mt-1">
@@ -451,7 +450,7 @@ export default function Approvals() {
                           </div>
                         )}
 
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 mt-3">
+                        <div className="flex flex-col lg:flex-row lg:items-center gap-1 lg:gap-4 mt-3">
                           <p className="text-xs text-muted-foreground">
                             Request ID: #{request.id}
                           </p>
@@ -465,7 +464,7 @@ export default function Approvals() {
                           <Button
                             variant="default"
                             size="sm"
-                            className={`w-full sm:w-auto ${request.status === "pending" ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-600 hover:bg-gray-700"}`}
+                            className={`w-full lg:w-auto ${request.status === "pending" ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-600 hover:bg-gray-700"}`}
                             onClick={() => {
                               setSelectedRequest(request);
                               setShowFullFormDialog(true);
@@ -572,7 +571,7 @@ export default function Approvals() {
                   
                   {approverSignatureUrl && signatureMethod === "upload" && (
                     <div className="mt-2 animate-in zoom-in duration-300">
-                       <img src={approverSignatureUrl} alt="sig" className="h-16 object-contain border border-blue-100 rounded-lg p-1 bg-white" />
+                       <img src={approverSignatureUrl} alt="sig" className="h-16 object-contain rounded-lg p-1 bg-white" />
                     </div>
                   )}
                 </div>

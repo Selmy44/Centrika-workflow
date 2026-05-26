@@ -114,7 +114,7 @@ const EmployeeProfilePage = () => {
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
           {/* Left Panel — Profile Card */}
-          <Card className="sticky top-24 h-fit overflow-hidden rounded-3xl border-border/50 bg-white/60 shadow-sm backdrop-blur-xl dark:bg-slate-900/60">
+          <Card className="lg:sticky lg:top-24 h-fit overflow-hidden rounded-3xl border-border/50 bg-white/60 shadow-sm backdrop-blur-xl dark:bg-slate-900/60">
             <div className="h-24 bg-gradient-to-br from-[#3b6dae] to-indigo-700" />
             <CardContent className="-mt-12 flex flex-col items-center pt-0">
               <div className="mb-4 flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-slate-100 text-3xl font-black text-[#315693] dark:border-slate-900 dark:bg-slate-800">
@@ -262,7 +262,7 @@ const EmployeeProfilePage = () => {
 
               {/* Tab: Overview */}
               <TabsContent value="overview">
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                   <Card className="rounded-2xl border-border/50">
                     <CardHeader className="border-b border-border/30 py-4">
                       <CardTitle className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-400">
@@ -415,7 +415,7 @@ const EmployeeProfilePage = () => {
                       {leaveRequests.length ? (
                         leaveRequests.map((request: any) => (
                           <div key={request.id} className="rounded-2xl border border-border/40 bg-slate-50/80 p-4 dark:bg-slate-950/30">
-                            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                               <div>
                                 <p className="text-sm font-bold capitalize text-slate-900 dark:text-white">{request.details?.leaveType || "Leave"} leave</p>
                                 <p className="text-xs text-slate-500">
@@ -453,7 +453,7 @@ const EmployeeProfilePage = () => {
                       </div>
                     ) : documents.length ? (
                       documents.map((doc: any) => (
-                        <div key={doc.id} className="flex flex-col gap-3 rounded-2xl border border-border/40 bg-slate-50/80 p-4 dark:bg-slate-950/30 md:flex-row md:items-center md:justify-between">
+                        <div key={doc.id} className="flex flex-col gap-3 rounded-2xl border border-border/40 bg-slate-50/80 p-4 dark:bg-slate-950/30 lg:flex-row lg:items-center lg:justify-between">
                           <div className="flex items-center gap-4">
                             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-600 dark:bg-blue-900/30">
                               <FileText size={18} />

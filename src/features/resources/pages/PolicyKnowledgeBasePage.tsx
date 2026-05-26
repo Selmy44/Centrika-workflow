@@ -20,7 +20,7 @@ export function PolicyKnowledgeBasePage() {
   return (
     <DashboardLayout>
       <div className="space-y-8 p-4 lg:p-8 animate-in fade-in duration-500">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="text-2xl font-black tracking-tight text-[#3b6dae] dark:text-[#c79d2d] flex items-center gap-2">
               <BookOpen className="h-6 w-6 text-[#3b6dae]" />
@@ -28,7 +28,7 @@ export function PolicyKnowledgeBasePage() {
             </h1>
             <p className="text-sm text-slate-500 dark:text-slate-400">Access company manuals, guides, and official procedures.</p>
           </div>
-          <div className="relative w-full md:w-80">
+          <div className="relative w-full lg:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input
               placeholder="Search policies..."
@@ -50,7 +50,7 @@ export function PolicyKnowledgeBasePage() {
             <p className="text-sm text-slate-500 dark:text-slate-400">Try adjusting your search or check back later.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {filteredPolicies?.map((policy: any) => (
               <Card key={policy.id} className="rounded-2xl border-border/50 shadow-sm hover:shadow-lg transition-all duration-300 group">
                 <CardHeader>

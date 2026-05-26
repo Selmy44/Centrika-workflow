@@ -86,19 +86,19 @@ const DocumentCenterPage = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6 p-4 lg:p-8 animate-in fade-in duration-500">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="text-2xl font-black tracking-tight text-[#3b6dae] dark:text-[#c79d2d]">HR Document Center</h1>
             <p className="text-sm text-slate-500 dark:text-slate-400">Review employee records, verify documentation, and clear the compliance queue faster.</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="rounded-xl" onClick={toggleSelectAllVisible}>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto">
+            <Button variant="outline" size="sm" className="rounded-xl w-full sm:w-auto" onClick={toggleSelectAllVisible}>
               <CheckCheck size={16} className="mr-2" /> {visiblePendingIds.length && visiblePendingIds.every((id) => selectedIds.includes(id)) ? "Clear Visible" : "Select Visible Pending"}
             </Button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-4">
           <Card className="rounded-2xl border-border/50 shadow-sm">
             <CardContent className="p-6">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Pending Review</p>

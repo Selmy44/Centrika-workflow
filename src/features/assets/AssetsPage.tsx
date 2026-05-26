@@ -81,15 +81,15 @@ const AssetsPage = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6 p-4 lg:p-8 animate-in fade-in duration-500 font-sans">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="text-2xl font-black tracking-tight text-slate-800 dark:text-white">Asset Registry</h1>
             <p className="text-sm text-slate-500 dark:text-slate-400">Track, manage, and audit all company equipment and resources.</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto">
             <Button 
               onClick={() => setIsAddModalOpen(true)}
-              className="rounded-xl bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/20"
+              className="rounded-xl bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/20 w-full sm:w-auto"
             >
               <Plus size={18} className="mr-2" /> Add New Asset
             </Button>
@@ -97,7 +97,7 @@ const AssetsPage = () => {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-4">
           <Card className="relative rounded-2xl border-border/50 shadow-sm overflow-hidden group hover:shadow-md transition-shadow">
             <div className="absolute top-0 left-0 w-1 h-full bg-blue-500" />
             <CardContent className="p-6">

@@ -266,14 +266,14 @@ export default function AdminUsers() {
   return (
     <DashboardLayout>
       <div className="space-y-6 p-4 lg:p-6">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-[#3b6dae] dark:text-[#c79d2d]">User Management</h1>
             <p className="text-muted-foreground mt-2">Manage user roles and permissions</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
             {/* Premium animated search bar */}
-            <div className="relative group transition-all duration-300 z-10">
+            <div className="relative group transition-all duration-300 z-10 w-full lg:w-56 shrink-0 lg:focus-within:w-80">
               <div className="absolute -inset-0.5 bg-gradient-to-r from-[#3b6dae] to-[#c79d2d] rounded-xl blur opacity-0 group-hover:opacity-20 group-focus-within:opacity-30 transition duration-500"></div>
               <div className="relative flex items-center">
                 <svg className="absolute left-3.5 w-4 h-4 text-slate-400 group-focus-within:text-[#3b6dae] transition-colors z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -283,13 +283,13 @@ export default function AdminUsers() {
                   placeholder="Search users by name, email, department..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-56 focus:w-80 h-10 pl-10 pr-4 text-xs font-semibold rounded-xl border border-slate-200/60 dark:border-slate-800/60 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md shadow-sm focus:bg-white dark:focus:bg-slate-900 transition-all duration-300 focus:ring-2 focus:ring-[#3b6dae]/20 focus:border-[#3b6dae]/40"
+                  className="w-full lg:w-56 focus:w-full lg:focus:w-80 h-10 pl-10 pr-4 text-xs font-semibold rounded-xl border border-slate-200/60 dark:border-slate-800/60 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md shadow-sm focus:bg-white dark:focus:bg-slate-900 transition-all duration-300 focus:ring-2 focus:ring-[#3b6dae]/20 focus:border-[#3b6dae]/40"
                 />
               </div>
             </div>
             <Button
               onClick={() => setShowCreateDialog(true)}
-              className="gap-2 bg-[#3b6dae] hover:bg-[#2d5385] text-white shadow-sm transition-all focus-visible:ring-2 focus-visible:ring-[#3b6dae] focus-visible:ring-offset-2"
+              className="gap-2 bg-[#3b6dae] hover:bg-[#2d5385] text-white shadow-sm transition-all focus-visible:ring-2 focus-visible:ring-[#3b6dae] focus-visible:ring-offset-2 w-full sm:w-auto"
             >
               <User size={16} />
               Create User
@@ -297,7 +297,7 @@ export default function AdminUsers() {
             <Button
               onClick={() => setShowInviteModal(true)}
               variant="outline"
-              className="gap-2 border-[#3b6dae]/20 text-[#3b6dae] hover:bg-[#3b6dae]/5 transition-all focus-visible:ring-2 focus-visible:ring-[#3b6dae] focus-visible:ring-offset-2"
+              className="gap-2 border-[#3b6dae]/20 text-[#3b6dae] hover:bg-[#3b6dae]/5 transition-all focus-visible:ring-2 focus-visible:ring-[#3b6dae] focus-visible:ring-offset-2 w-full sm:w-auto"
             >
               <Mail size={16} />
               Invite User

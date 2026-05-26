@@ -56,6 +56,8 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
     signatureMethod: "draw" as "upload" | "draw",
     supportingDocument: null as File | null,
     supportingDocumentUrl: "",
+    managerSignatureUrl: "",
+    hrSignatureUrl: "",
   });
 
   const { data: drivers = [] } = trpc.requests.getAvailableDrivers.useQuery(undefined, {
@@ -108,6 +110,25 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
     }
   }, [savedFormData.data]);
 
+  // Merge requestData fields directly to handle cases where form submission is missing or for additional robustness
+  useEffect(() => {
+    if (requestData) {
+      setForm((prev) => ({
+        ...prev,
+        managerSignatureUrl: requestData.managerSignatureUrl || prev.managerSignatureUrl || "",
+        hrSignatureUrl: requestData.hrSignatureUrl || prev.hrSignatureUrl || "",
+        destination: requestData.carRequest?.destination || prev.destination,
+        purpose: requestData.carRequest?.purpose || prev.purpose,
+        departureDate: requestData.carRequest?.departureDate || prev.departureDate,
+        departureTime: requestData.carRequest?.departureTime || prev.departureTime,
+        passengers: requestData.carRequest?.passengers?.toString() || prev.passengers,
+        driverName: requestData.carRequest?.driverName || prev.driverName,
+        carInfo: requestData.carRequest?.carInfo || prev.carInfo,
+        reportingManager: requestData.initialApproverId?.toString() || prev.reportingManager,
+      }));
+    }
+  }, [requestData]);
+
   useEffect(() => {
     if (user && autoFillData) {
       setForm((prev) => ({
@@ -117,6 +138,7 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
         department: user.department?.name || "",
         position: user.position || "",
         dateOfEmployment: autoFillData.dateOfEmployment || "",
+        reportingManager: autoFillData.managerId ? String(autoFillData.managerId) : "",
       }));
     }
   }, [user, autoFillData]);
@@ -239,36 +261,36 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
 
       <div>
         {/* ===== HEADER WITH LOGO AND CONTACT INFO ===== */}
-        <div className="flex flex-col md:flex-row md:justify-between md:items-start px-3 md:px-6 py-3 gap-4 md:gap-8">
+        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start px-3 lg:px-6 py-3 gap-4 lg:gap-8">
           {/* LEFT: LOGO */}
           <div className="shrink-0">
             <img
               src="/logo/centrikaLogo.png"
               alt="Centrika Logo"
-              className="h-14 md:h-20 w-auto"
+              className="h-14 lg:h-20 w-auto"
             />
           </div>
 
           {/* RIGHT: CONTACT INFO WITH ICONS - STACKED VERTICALLY */}
-          <div className="text-xs md:text-sm flex-1 flex justify-start md:justify-end">
-            <div className="flex flex-col gap-2 md:gap-3 items-start">
+          <div className="text-xs lg:text-sm flex-1 flex justify-start lg:justify-end">
+            <div className="flex flex-col gap-2 lg:gap-3 items-start">
               <div className="flex items-center gap-2 min-w-0">
-                <Phone size={14} className="text-blue-600 shrink-0 md:w-[16px] md:h-[16px]" />
-                <span className="text-blue-600 font-semibold truncate text-[11px] md:text-sm">+250 788 123 099</span>
+                <Phone size={14} className="text-blue-600 shrink-0 lg:w-[16px] lg:h-[16px]" />
+                <span className="text-blue-600 font-semibold truncate text-[11px] lg:text-sm">+250 788 123 099</span>
               </div>
               <div className="flex items-center gap-2 min-w-0">
-                <Mail size={14} className="text-blue-600 shrink-0 md:w-[16px] md:h-[16px]" />
-                <span className="text-blue-600 font-semibold truncate text-[11px] md:text-sm">info@centrika.rw</span>
+                <Mail size={14} className="text-blue-600 shrink-0 lg:w-[16px] lg:h-[16px]" />
+                <span className="text-blue-600 font-semibold truncate text-[11px] lg:text-sm">info@centrika.rw</span>
               </div>
               <div className="flex items-center gap-2 min-w-0">
-                <Globe size={14} className="text-blue-600 shrink-0 md:w-[16px] md:h-[16px]" />
-                <span className="text-blue-600 font-semibold truncate text-[11px] md:text-sm">www.centrika.rw</span>
+                <Globe size={14} className="text-blue-600 shrink-0 lg:w-[16px] lg:h-[16px]" />
+                <span className="text-blue-600 font-semibold truncate text-[11px] lg:text-sm">www.centrika.rw</span>
               </div>
               <div className="flex items-start gap-2">
-                <MapPin size={14} className="text-blue-600 shrink-0 mt-0.5 md:w-[16px] md:h-[16px]" />
+                <MapPin size={14} className="text-blue-600 shrink-0 mt-0.5 lg:w-[16px] lg:h-[16px]" />
                 <div className="flex flex-col gap-0.5">
-                  <span className="text-blue-600 font-semibold text-[10px] md:text-sm leading-tight">Room F002, 2nd Floor, CHIC Building,</span>
-                  <span className="text-blue-600 font-semibold text-[10px] md:text-sm leading-tight">Plot 1007, KN2 Kigali-Rwanda</span>
+                  <span className="text-blue-600 font-semibold text-[10px] lg:text-sm leading-tight">Room F002, 2nd Floor, CHIC Building,</span>
+                  <span className="text-blue-600 font-semibold text-[10px] lg:text-sm leading-tight">Plot 1007, KN2 Kigali-Rwanda</span>
                 </div>
               </div>
             </div>
@@ -281,23 +303,23 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
         </div>
 
         {/* ===== REQUEST HEADER SECTION - Responsive Grid ===== */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-2.5 md:gap-3 px-3 md:px-6 py-2 md:py-3 text-xs md:text-sm items-end">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-2 lg:gap-3 px-3 lg:px-6 py-2 lg:py-3 text-xs lg:text-sm items-end">
           <div>
-            <p className="font-semibold text-blue-600 mb-1 text-[10px] md:text-xs">CTK</p>
+            <p className="font-semibold text-blue-600 mb-1 text-[10px] lg:text-xs">CTK</p>
             <div className="flex gap-0 items-center">
               <Input
                 value="CTK"
-                className="w-full h-6 md:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] md:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
+                className="w-full h-6 lg:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] lg:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
                 disabled
               />
             </div>
           </div>
           <div>
-            <p className="font-semibold text-blue-600 mb-1 text-[10px] md:text-xs">Date of Request</p>
+            <p className="font-semibold text-blue-600 mb-1 text-[10px] lg:text-xs">Date of Request</p>
             <Input
               type="text"
               value={new Date().toISOString().split('T')[0]}
-              className="h-6 md:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] md:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
+              className="h-6 lg:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] lg:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
               disabled
             />
           </div>
@@ -370,7 +392,8 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
                 placeholder="e.g., Kigali Downtown, Airport"
                 value={form.destination}
                 onChange={(e) => setForm({ ...form, destination: e.target.value })}
-                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs"
+                className={`border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium' : ''}`}
+                disabled={isReadOnly}
               />
             </Row>
             <Row label="2.2 Request Title (Optional)">
@@ -378,7 +401,8 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
                 placeholder="e.g., Client Meeting, Office Supply Run"
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
-                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs"
+                className={`border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium' : ''}`}
+                disabled={isReadOnly}
               />
             </Row>
             <Row label="2.3 Purpose (Optional)">
@@ -386,7 +410,8 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
                 placeholder="Describe the purpose of the trip..."
                 value={form.purpose}
                 onChange={(e) => setForm({ ...form, purpose: e.target.value })}
-                className="min-h-20 border-blue-300 dark:border-[#3b6dae]/40 text-xs"
+                className={`min-h-20 border-blue-300 dark:border-[#3b6dae]/40 text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium' : ''}`}
+                disabled={isReadOnly}
               />
             </Row>
           </Section>
@@ -398,7 +423,8 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
                 value={form.departureDate}
                 onChange={(date) => setForm({ ...form, departureDate: date })}
                 label=""
-                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-white dark:bg-[#1f426b] font-medium text-black dark:text-slate-100"
+                className={`border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs font-medium text-black dark:text-slate-100 ${isReadOnly ? 'bg-gray-100 dark:bg-[#295482] cursor-not-allowed' : 'bg-white dark:bg-[#1f426b]'}`}
+                disabled={isReadOnly}
               />
             </Row>
             <Row label="3.2 Departure Time">
@@ -406,7 +432,8 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
                 type="time"
                 value={form.departureTime}
                 onChange={(e) => setForm({ ...form, departureTime: e.target.value })}
-                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs"
+                className={`border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium' : ''}`}
+                disabled={isReadOnly}
               />
             </Row>
             <Row label="3.3 Number of Passengers">
@@ -417,7 +444,8 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
                   max="10"
                   value={form.passengers}
                   onChange={(e) => setForm({ ...form, passengers: e.target.value })}
-                  className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs"
+                  className={`border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium w-24' : ''}`}
+                  disabled={isReadOnly}
                 />
                 <span className="text-sm font-medium text-gray-600 dark:text-slate-400">Person(s)</span>
               </div>
@@ -433,8 +461,9 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
                   const driver = drivers.find((d: any) => d.name === v);
                   setForm({ ...form, driverName: v, carInfo: driver?.car || "" });
                 }}
+                disabled={isReadOnly}
               >
-                <SelectTrigger className="w-full h-10 border-blue-300 dark:border-[#3b6dae]/40 bg-white dark:bg-[#1f426b] text-black dark:text-slate-100 font-medium focus:ring-blue-500">
+                <SelectTrigger className={`w-full h-10 border-blue-300 dark:border-[#3b6dae]/40 text-black dark:text-slate-100 font-medium focus:ring-blue-500 ${isReadOnly ? 'bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium' : 'bg-white dark:bg-[#1f426b]'}`}>
                   <SelectValue placeholder="-- Select a Driver --" />
                 </SelectTrigger>
                 <SelectContent className="bg-white dark:bg-[#1f426b] border-blue-200 dark:border-[#3b6dae]/30">
@@ -461,66 +490,80 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
           <Section title="5. EMPLOYEE SIGNATURE">
             <Row label="5.1 Your Signature">
               <div className="space-y-3 w-full">
-                <div className="flex gap-4 mb-4">
-                  <label className="flex items-center gap-2 cursor-pointer group">
-                    <input
-                      type="radio"
-                      checked={form.signatureMethod === "draw"}
-                      onChange={() => setForm({ ...form, signatureMethod: "draw", signatureFile: null })}
-                      className="w-4 h-4 accent-blue-600"
-                    />
-                    <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600">Draw Signature</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer group">
-                    <input
-                      type="radio"
-                      checked={form.signatureMethod === "upload"}
-                      onChange={() => setForm({ ...form, signatureMethod: "upload", signatureFile: null })}
-                      className="w-4 h-4 accent-blue-600"
-                    />
-                    <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600">Upload Image</span>
-                  </label>
-                </div>
-
-                {form.signatureMethod === "upload" ? (
-                  <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onload = (ev) => {
-                            setForm((prev) => ({ 
-                              ...prev, 
-                              signatureFile: file, 
-                              signaturePreview: URL.createObjectURL(file),
-                              employeeSignatureUrl: ev.target?.result as string 
-                            }));
-                          };
-                          reader.readAsDataURL(file);
-                        }
-                      }}
-                      className="text-xs block w-full text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all"
-                    />
+                {isReadOnly ? (
+                  <div className="space-y-1">
+                    {form.employeeSignatureUrl ? (
+                      <div className="p-2 border border-blue-200 dark:border-[#3b6dae]/30 rounded inline-block bg-white dark:bg-[#1f426b]">
+                        <img src={form.employeeSignatureUrl} alt="Employee Signature" className="h-14 object-contain" />
+                      </div>
+                    ) : (
+                      <p className="text-xs italic text-gray-500">No signature provided</p>
+                    )}
                   </div>
                 ) : (
-                  <SignaturePad 
-                    onSave={(dataUrl) => {
-                      const file = base64ToFile(dataUrl, "signature.png");
-                      setForm({ ...form, signatureFile: file, employeeSignatureUrl: dataUrl });
-                    }}
-                    onClear={() => {
-                      setForm({ ...form, signatureFile: null, employeeSignatureUrl: "" });
-                    }}
-                  />
-                )}
-                
-                {form.employeeSignatureUrl && (
-                   <div className="mt-2 animate-in zoom-in duration-300">
-                      <img src={form.employeeSignatureUrl} alt="sig" className="h-16 object-contain border-2 border-blue-100 rounded-xl p-2 bg-white text-black" />
-                   </div>
+                  <>
+                    <div className="flex gap-4 mb-4">
+                      <label className="flex items-center gap-2 cursor-pointer group">
+                        <input
+                          type="radio"
+                          checked={form.signatureMethod === "draw"}
+                          onChange={() => setForm({ ...form, signatureMethod: "draw", signatureFile: null })}
+                          className="w-4 h-4 accent-blue-600"
+                        />
+                        <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600">Draw Signature</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer group">
+                        <input
+                          type="radio"
+                          checked={form.signatureMethod === "upload"}
+                          onChange={() => setForm({ ...form, signatureMethod: "upload", signatureFile: null })}
+                          className="w-4 h-4 accent-blue-600"
+                        />
+                        <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600">Upload Image</span>
+                      </label>
+                    </div>
+
+                    {form.signatureMethod === "upload" ? (
+                      <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onload = (ev) => {
+                                setForm((prev) => ({ 
+                                  ...prev, 
+                                  signatureFile: file, 
+                                  signaturePreview: URL.createObjectURL(file),
+                                  employeeSignatureUrl: ev.target?.result as string 
+                                }));
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                          className="text-xs block w-full text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all"
+                        />
+                      </div>
+                    ) : (
+                      <SignaturePad 
+                        onSave={(dataUrl) => {
+                          const file = base64ToFile(dataUrl, "signature.png");
+                          setForm({ ...form, signatureFile: file, employeeSignatureUrl: dataUrl });
+                        }}
+                        onClear={() => {
+                          setForm({ ...form, signatureFile: null, employeeSignatureUrl: "" });
+                        }}
+                      />
+                    )}
+                    
+                    {form.employeeSignatureUrl && (
+                      <div className="mt-2 animate-in zoom-in duration-300">
+                        <img src={form.employeeSignatureUrl} alt="sig" className="h-16 object-contain" />
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </Row>
@@ -529,40 +572,58 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
           {/* 6. APPROVAL WORKFLOW */}
           <Section title="6. APPROVAL WORKFLOW">
             <Row label="6.1 Line Manager / HOD">
-              <Input
-                value={uniqueHeads.find((h: any) => h.id === parseInt(form.reportingManager))?.name || "Not assigned"}
-                className="w-full h-8 border-blue-300 dark:border-[#3b6dae]/40 bg-gray-100 dark:bg-[#295482] text-black dark:text-slate-100 font-medium cursor-not-allowed max-w-[400px] mt-1 mb-1"
-                disabled
-              />
+              <div className="flex flex-col gap-1 w-full">
+                <Input
+                  value={uniqueHeads.find((h: any) => h.id === parseInt(form.reportingManager))?.name || "Not assigned"}
+                  className="w-full h-8 border-blue-300 dark:border-[#3b6dae]/40 bg-gray-100 dark:bg-[#295482] text-black dark:text-slate-100 font-medium cursor-not-allowed max-w-[400px] mt-1 mb-1"
+                  disabled
+                />
+                {isReadOnly && form.managerSignatureUrl && (
+                  <div className="mt-1">
+                    <p className="text-[10px] text-green-600 font-semibold mb-0.5">✓ Approved by HOD</p>
+                    <img src={form.managerSignatureUrl} alt="HOD Signature" className="h-10 object-contain" />
+                  </div>
+                )}
+              </div>
             </Row>
+            {isReadOnly && form.hrSignatureUrl && (
+              <Row label="6.2 HR Approver">
+                <div className="mt-1">
+                  <p className="text-[10px] text-green-600 font-semibold mb-0.5">✓ Approved by HR</p>
+                  <img src={form.hrSignatureUrl} alt="HR Signature" className="h-10 object-contain" />
+                </div>
+              </Row>
+            )}
           </Section>
         </div>
 
         {/* ===== ACTIONS ===== */}
-        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center px-3 md:px-6 py-3 md:py-4 bg-gray-50 dark:bg-[#1a385c] gap-2 md:gap-4 mt-6">
-          <div className="flex gap-2">
-            {/* Action buttons hidden until approved */}
+        {!isReadOnly && (
+          <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center px-3 lg:px-6 py-3 lg:py-4 bg-gray-50 dark:bg-[#1a385c] gap-2 lg:gap-4 mt-6">
+            <div className="flex gap-2">
+              {/* Action buttons hidden until approved */}
+            </div>
+            <div className="flex flex-col lg:flex-row gap-2 w-full lg:justify-end">
+              <Button
+                variant="outline"
+                disabled={isSubmitting}
+                onClick={() => handleSubmit(false)}
+                className="border-blue-400 dark:border-[#3b6dae]/50"
+              >
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save Draft
+              </Button>
+              <Button
+                disabled={isSubmitting}
+                onClick={() => handleSubmit(true)}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Submit Request
+              </Button>
+            </div>
           </div>
-          <div className="flex flex-col gap-2">
-            <Button
-              variant="outline"
-              disabled={isSubmitting}
-              onClick={() => handleSubmit(false)}
-              className="border-blue-400 dark:border-[#3b6dae]/50"
-            >
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Draft
-            </Button>
-            <Button
-              disabled={isSubmitting}
-              onClick={() => handleSubmit(true)}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Submit Request
-            </Button>
-          </div>
-        </div>
+        )}
 
         {/* ===== FOOTER ===== */}
         <div className="text-center text-xs text-gray-600 dark:text-slate-400 py-3 border-t border-gray-200 space-y-1">
@@ -579,7 +640,7 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
 function Section({ title, children, className = "" }: { title: string, children: React.ReactNode, className?: string }) {
   return (
     <div className={className}>
-      <div className="md:bg-[#3b6dae] md:text-white font-bold px-4 py-2 text-sm">{title}</div>
+      <div className="lg:bg-[#3b6dae] lg:text-white font-bold px-4 py-2 text-sm">{title}</div>
       {children}
     </div>
   );
@@ -587,13 +648,13 @@ function Section({ title, children, className = "" }: { title: string, children:
 
 function Row({ label, children, colSpan = false }: { label: React.ReactNode, children: React.ReactNode, colSpan?: boolean }) {
   return (
-    <div className={`grid ${colSpan ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-[220px_1fr]'} gap-0`}>
+    <div className={`grid ${colSpan ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-[220px_1fr]'} gap-0`}>
       {!colSpan && (
-        <div className="px-2 md:px-3 py-1.5 md:py-2 font-medium md:bg-blue-100 text-[#3b6dae] text-[10px] md:text-xs flex items-center">
+        <div className="px-2 lg:px-3 py-1.5 lg:py-2 font-medium lg:bg-blue-100 text-[#3b6dae] text-[10px] lg:text-xs flex items-center">
           {label}
         </div>
       )}
-      <div className="px-2 md:px-3 py-1 flex items-center">{children}</div>
+      <div className="px-2 lg:px-3 py-1 flex items-center">{children}</div>
     </div>
   );
 }

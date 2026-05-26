@@ -136,29 +136,29 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
 
             <div>
                 {/* HEADER SECTION */}
-                <div className="flex flex-col md:flex-row md:justify-between md:items-start px-3 md:px-8 py-4 md:py-6 gap-4 md:gap-12">
+                <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start px-3 lg:px-8 py-4 lg:py-6 gap-4 lg:gap-12">
                     <div className="shrink-0">
-                        <img src="/logo/centrikaLogo.png" alt="Centrika Logo" className="h-14 md:h-32 w-auto" />
+                        <img src="/logo/centrikaLogo.png" alt="Centrika Logo" className="h-14 lg:h-32 w-auto" />
                     </div>
-                    <div className="text-xs md:text-sm flex-1 flex justify-start md:justify-end">
-                        <div className="flex flex-col gap-2 md:gap-3 items-start">
+                    <div className="text-xs lg:text-sm flex-1 flex justify-start lg:justify-end">
+                        <div className="flex flex-col gap-2 lg:gap-3 items-start">
                             <div className="flex items-center gap-2 min-w-0">
-                                <Phone size={14} className="text-blue-600 shrink-0 md:w-[16px] md:h-[16px]" />
-                                <span className="text-blue-600 font-semibold truncate text-[11px] md:text-sm">+250 788 123 099</span>
+                                <Phone size={14} className="text-blue-600 shrink-0 lg:w-[16px] lg:h-[16px]" />
+                                <span className="text-blue-600 font-semibold truncate text-[11px] lg:text-sm">+250 788 123 099</span>
                             </div>
                             <div className="flex items-center gap-2 min-w-0">
-                                <Mail size={14} className="text-blue-600 shrink-0 md:w-[16px] md:h-[16px]" />
-                                <span className="text-blue-600 font-semibold truncate text-[11px] md:text-sm">info@centrika.rw</span>
+                                <Mail size={14} className="text-blue-600 shrink-0 lg:w-[16px] lg:h-[16px]" />
+                                <span className="text-blue-600 font-semibold truncate text-[11px] lg:text-sm">info@centrika.rw</span>
                             </div>
                             <div className="flex items-center gap-2 min-w-0">
-                                <Globe size={14} className="text-blue-600 shrink-0 md:w-[16px] md:h-[16px]" />
-                                <span className="text-blue-600 font-semibold truncate text-[11px] md:text-sm">www.centrika.rw</span>
+                                <Globe size={14} className="text-blue-600 shrink-0 lg:w-[16px] lg:h-[16px]" />
+                                <span className="text-blue-600 font-semibold truncate text-[11px] lg:text-sm">www.centrika.rw</span>
                             </div>
                             <div className="flex items-start gap-2">
-                                <MapPin size={14} className="text-blue-600 shrink-0 mt-0.5 md:w-[16px] md:h-[16px]" />
+                                <MapPin size={14} className="text-blue-600 shrink-0 mt-0.5 lg:w-[16px] lg:h-[16px]" />
                                 <div className="flex flex-col gap-0.5">
-                                    <span className="text-blue-600 font-semibold text-[10px] md:text-sm leading-tight">Room F002, 2nd Floor, CHIC Building,</span>
-                                    <span className="text-blue-600 font-semibold text-[10px] md:text-sm leading-tight">Plot 1007, KN2 Kigali-Rwanda</span>
+                                    <span className="text-blue-600 font-semibold text-[10px] lg:text-sm leading-tight">Room F002, 2nd Floor, CHIC Building,</span>
+                                    <span className="text-blue-600 font-semibold text-[10px] lg:text-sm leading-tight">Plot 1007, KN2 Kigali-Rwanda</span>
                                 </div>
                             </div>
                         </div>
@@ -188,7 +188,7 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                 )}
 
                 {/* HEADER INFO */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-2.5 md:gap-3 px-3 md:px-6 py-2 md:py-3 text-xs md:text-sm items-end border-b border-gray-200">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-2.5 lg:gap-3 px-3 lg:px-6 py-2 lg:py-3 text-xs lg:text-sm items-end border-b border-gray-200">
                     <div>
                         <p className="font-semibold text-blue-600 mb-1 text-xs">Department</p>
                         <Input value={employee?.department || "N/A"} disabled className="h-7 text-xs bg-gray-50" />
@@ -247,7 +247,7 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                     <Section title="3. EMPLOYEE SIGNATURE">
                         <Row label="3.1 Signature">
                             {formDataDynamic?.employeeSignatureUrl ? (
-                                <img src={formDataDynamic.employeeSignatureUrl} alt="Employee" className="h-10 object-contain border rounded p-1" />
+                                <img src={formDataDynamic.employeeSignatureUrl} alt="Employee" className="h-10 object-contain" />
                             ) : (
                                 <p className="text-xs italic text-gray-500">No signature</p>
                             )}
@@ -260,7 +260,7 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                             <Row label="4.1 Line Manager / HOD">
                                 <div className="py-1">
                                     <p className="text-[10px] font-bold text-gray-400 mb-1">APPROVED BY HOD:</p>
-                                    <img src={formDataDynamic.managerSignatureUrl} alt="HOD" className="h-10 object-contain border rounded p-1" />
+                                    <img src={formDataDynamic.managerSignatureUrl} alt="HOD" className="h-10 object-contain" />
                                 </div>
                             </Row>
                         )}
@@ -270,7 +270,7 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                             {formDataDynamic?.hrSignatureUrl ? (
                                 <div className="py-1">
                                     <p className="text-[10px] font-bold text-gray-400 mb-1">APPROVED BY HR:</p>
-                                    <img src={formDataDynamic.hrSignatureUrl} alt="HR" className="h-10 object-contain border rounded p-1" />
+                                    <img src={formDataDynamic.hrSignatureUrl} alt="HR" className="h-10 object-contain" />
                                 </div>
                             ) : (
                                 <p className="text-xs italic text-gray-500 py-2">Awaiting HR Review</p>
@@ -280,7 +280,7 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                         {/* YOUR APPROVAL SECTION */}
                         {!approvalSectionIsReadOnly && (
                             <div className="bg-blue-50/50 p-4 border-t border-blue-200">
-                                <h4 className="text-sm font-bold text-blue-700 mb-3">Your Decision ({user?.role?.replace(/_/g, ' ')})</h4>
+                                <h4 className="text-sm font-bold text-blue-700 mb-3">Your Decision ({(requestData?.currentApprovalLevel || user?.role || "Approver").replace(/_/g, ' ')})</h4>
                                 <div className="space-y-4">
                                     <div>
                                         <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Comments</label>
@@ -335,7 +335,7 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                                         )}
 
                                         {signaturePreview && (
-                                            <div className="mt-2 p-2 border rounded bg-white inline-block relative">
+                                            <div className="mt-2 p-2 rounded bg-white inline-block relative">
                                                 <img src={signaturePreview} alt="Preview" className="h-12 object-contain" />
                                                 <button
                                                     onClick={() => { setSignatureFile(null); setSignaturePreview(""); }}
@@ -352,7 +352,7 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
 
                 {/* ACTIONS */}
                 {isRequestApproved && (
-                    <div className="no-print flex flex-col sm:flex-row gap-2 p-3 md:p-6 border-t bg-gray-50">
+                    <div className="no-print flex flex-col lg:flex-row gap-2 p-3 md:p-6 border-t bg-gray-50 lg:justify-end">
                         <Button variant="outline" size="sm" onClick={handlePrint} disabled={isPrintingForm || isLoading}>
                             {(isPrintingForm || isLoading) && <Loader2 size={16} className="mr-2 animate-spin" />}
                             <Printer size={16} className="mr-2" /> Print Form
@@ -364,7 +364,7 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                     </div>
                 )}
                 {!approvalSectionIsReadOnly && (
-                    <div className="no-print flex flex-col gap-2 p-3 md:p-6 bg-gray-50">
+                    <div className="no-print flex flex-col lg:flex-row gap-2 p-3 md:p-6 bg-gray-50 lg:justify-end">
                         <Button variant="destructive" size="sm" onClick={() => setShowRejectDialog(true)} disabled={isLoading}>Reject</Button>
                         <Button
                             className="bg-green-600 hover:bg-green-700"
@@ -440,7 +440,7 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
     return (
         <div>
-            <div className="md:bg-[#3b6dae] md:text-white font-bold px-4 py-2 text-xs uppercase tracking-wider">{title}</div>
+            <div className="lg:bg-[#3b6dae] lg:text-white font-bold px-4 py-2 text-xs uppercase tracking-wider">{title}</div>
             <div className="bg-white">{children}</div>
         </div>
     );
@@ -448,9 +448,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
     return (
-        <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-0">
-            <div className="px-2 md:px-4 py-2 md:py-3 md:bg-blue-50/30 text-[10px] md:text-[11px] font-bold text-gray-500 uppercase flex items-center">{label}</div>
-            <div className="px-2 md:px-4 py-1.5 md:py-2">{children}</div>
+        <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr] gap-0">
+            <div className="px-2 lg:px-4 py-2 lg:py-3 lg:bg-blue-50/30 text-[10px] lg:text-[11px] font-bold text-gray-500 uppercase flex items-center">{label}</div>
+            <div className="px-2 lg:px-4 py-1.5 lg:py-2">{children}</div>
         </div>
     );
 }

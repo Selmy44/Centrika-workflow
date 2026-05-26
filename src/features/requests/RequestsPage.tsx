@@ -70,15 +70,15 @@ export default function Requests() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-4 p-3 sm:space-y-6 sm:p-4 lg:p-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="space-y-4 p-3 lg:space-y-6 lg:p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-[#3b6dae] dark:text-[#c79d2d]">My Requests</h1>
             <p className="text-muted-foreground mt-2 text-sm">View and manage all your requests</p>
           </div>
-          <div className="flex flex-col sm:flex-row items-stretch gap-3 w-full sm:w-auto">
+          <div className="flex flex-col lg:flex-row items-stretch gap-3 w-full lg:w-auto">
             {/* Premium animated search bar on the right */}
-            <div className="relative group transition-all duration-300 z-10 w-full sm:w-64 shrink-0 focus-within:w-full sm:focus-within:w-80">
+            <div className="relative group transition-all duration-300 z-10 w-full lg:w-64 shrink-0 focus-within:w-full lg:focus-within:w-80">
               <div className="absolute -inset-0.5 bg-gradient-to-r from-[#3b6dae] to-[#c79d2d] rounded-xl blur opacity-0 group-hover:opacity-20 group-focus-within:opacity-30 transition duration-500"></div>
               <div className="relative flex items-center">
                 <Search className="absolute left-3.5 w-4 h-4 text-slate-400 group-focus-within:text-[#3b6dae] transition-colors z-10" />
@@ -109,10 +109,10 @@ export default function Requests() {
             <div className="space-y-3 sm:space-y-4">
               {filteredRequests.map((request: any) => (
                 <Card key={request.id} className="bg-card border-border">
-                  <CardContent className="p-4 sm:p-6">
-                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                  <CardContent className="p-4 lg:p-6">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                       <Link href={`/requests/${request.id}`} className="flex-1 min-w-0">
-                        <div className="flex items-start gap-3 sm:gap-4 cursor-pointer hover:opacity-80 transition-opacity">
+                        <div className="flex items-start gap-3 lg:gap-4 cursor-pointer hover:opacity-80 transition-opacity">
                           <div className="p-2 bg-muted rounded-lg shrink-0">
                             <RequestIcon type={request.type} />
                           </div>
@@ -127,7 +127,7 @@ export default function Requests() {
                           </div>
                         </div>
                       </Link>
-                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 md:shrink-0">
+                      <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-2 lg:gap-3 lg:shrink-0">
                         <div className="shrink-0">
                           <StatusBadge status={request.status} />
                         </div>
@@ -136,7 +136,7 @@ export default function Requests() {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="w-full sm:w-auto text-blue-600 border-blue-500/30 hover:bg-blue-500/10"
+                              className="w-full lg:w-auto text-blue-600 border-blue-500/30 hover:bg-blue-500/10"
                             >
                               <Edit size={16} className="mr-1" />
                               Edit
@@ -147,7 +147,7 @@ export default function Requests() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="w-full sm:w-auto text-red-600 border-red-500/30 hover:bg-red-500/10"
+                            className="w-full lg:w-auto text-red-600 border-red-500/30 hover:bg-red-500/10"
                             onClick={(e) => {
                               e.preventDefault();
                               setSelectedRequest(request);

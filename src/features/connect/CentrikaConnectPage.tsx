@@ -104,7 +104,7 @@ export default function CentrikaConnectPage() {
       <div className="flex flex-col flex-1 min-h-0 p-4 md:p-8 space-y-6 animate-in fade-in duration-500">
         
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-3xl font-black text-[#3b6dae] tracking-tight flex items-center gap-3">
               <div className="p-2 bg-[#3b6dae] text-white rounded-xl shadow-lg shadow-[#3b6dae]/20">
@@ -132,7 +132,7 @@ export default function CentrikaConnectPage() {
         {/* Main Content Card */}
         <Card className="flex-1 min-h-0 border-none shadow-2xl shadow-blue-500/5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[2.5rem] flex flex-col border border-white/20">
           
-          <div className="px-8 pt-8 pb-2 border-b border-slate-100 dark:border-slate-800 shrink-0">
+          <div className="px-4 sm:px-8 pt-4 sm:pt-8 pb-2 border-b border-slate-100 dark:border-slate-800 shrink-0">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                   <TabsList className="bg-slate-100/50 dark:bg-slate-800/50 p-1 rounded-2xl border border-slate-200/50 dark:border-slate-700/30">
                     {isHead && (
@@ -147,7 +147,7 @@ export default function CentrikaConnectPage() {
                 </Tabs>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-8 custom-scrollbar">
                 {activeTab === "inbox" && (
                   <div className="space-y-4 pb-10">
                     {inboxLoading ? (

@@ -26,7 +26,22 @@ export const ProfileSummary = () => {
             </h3>
             <div className="flex items-center gap-2 mt-0.5">
                <span className="text-[7px] font-black bg-[#c79d2d] px-1 rounded-sm">
-                {user.role === 'admin' ? 'ADMIN' : [user.role, ...(user.additionalRoles ? JSON.parse(user.additionalRoles).map((r: string) => r) : [])].join(' & ').replace(/_/g, ' ').toUpperCase() || 'MEMBER'}
+                {user.role === 'admin' ? 'ADMIN' : [user.role, ...(() => {
+                  if (!user.additionalRoles) return [];
+                  if (typeof user.additionalRoles === 'string') {
+                    try {
+                      const trimmed = user.additionalRoles.trim();
+                      if (trimmed.startsWith('[')) {
+                        const parsed = JSON.parse(trimmed);
+                        return Array.isArray(parsed) ? parsed : [parsed];
+                      }
+                      return trimmed.split(',').map((r: string) => r.trim()).filter(Boolean);
+                    } catch (e) {
+                      return [user.additionalRoles];
+                    }
+                  }
+                  return Array.isArray(user.additionalRoles) ? user.additionalRoles : [];
+                })()].join(' & ').replace(/_/g, ' ').toUpperCase() || 'MEMBER'}
               </span>
               <span className="text-[7px] font-black bg-white/10 px-1 rounded-sm text-white/80 border border-white/5 flex items-center gap-0.5">
                 <Hash size={7} /> {user.staffId || "----"}

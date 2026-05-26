@@ -65,9 +65,22 @@ export function NoticeBoard() {
   }, []);
 
   const allowedPostRoles = ["admin", "hr", "head_of_department", "ceo_md"];
-  const userAdditionalRoles: string[] = user?.additionalRoles
-    ? (typeof user.additionalRoles === "string" ? JSON.parse(user.additionalRoles) : user.additionalRoles)
-    : [];
+  const userAdditionalRoles: string[] = (() => {
+    if (!user?.additionalRoles) return [];
+    if (typeof user.additionalRoles === "string") {
+      try {
+        const trimmed = user.additionalRoles.trim();
+        if (trimmed.startsWith('[')) {
+          const parsed = JSON.parse(trimmed);
+          return Array.isArray(parsed) ? parsed : [parsed];
+        }
+        return trimmed.split(',').map((r: string) => r.trim()).filter(Boolean);
+      } catch (e) {
+        return [user.additionalRoles];
+      }
+    }
+    return Array.isArray(user.additionalRoles) ? user.additionalRoles : [];
+  })();
   
   const canPostAnnouncement = user && (
     allowedPostRoles.includes(user.role) ||

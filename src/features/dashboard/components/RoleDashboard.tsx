@@ -5,6 +5,7 @@ import { RecentRequests } from "./RecentRequests";
 import { ProfileSummary } from "./ProfileSummary";
 import { PendingApprovalsWidget } from "./PendingApprovalsWidget";
 import { NoticeBoard } from "@/components/NoticeBoard";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -17,8 +18,10 @@ interface RoleDashboardProps {
 }
 
 export const RoleDashboard = ({ user }: RoleDashboardProps) => {
+  const { hasRole } = useAuth();
   const role = user?.role;
   const isManager = ["admin", "head_of_department", "hr", "head_of_finance", "ceo_md"].includes(role) || !!user?.additionalRoles;
+  const isFinance = hasRole("head_of_finance");
 
   const { data: stats, isLoading: statsLoading } = trpc.requests.getDashboardStats.useQuery(undefined, {
     staleTime: 10000,
@@ -26,7 +29,7 @@ export const RoleDashboard = ({ user }: RoleDashboardProps) => {
   });
 
   const { data: expenditures, isLoading: expendLoading } = trpc.requests.getApprovedExpenditures.useQuery(undefined, {
-    enabled: role === "head_of_finance",
+    enabled: isFinance,
     staleTime: 30000,
   });
 
@@ -44,7 +47,7 @@ export const RoleDashboard = ({ user }: RoleDashboardProps) => {
             </div>
           )}
 
-          {role === "head_of_finance" && (
+          {isFinance && (
             <Card className="bg-white/50 backdrop-blur-sm border-border/50 rounded-2xl overflow-hidden">
               <CardHeader className="bg-[#3b6dae]/5 border-b border-border/30 py-3">
                 <CardTitle className="flex items-center gap-2 text-[#3b6dae] text-base">
@@ -54,7 +57,7 @@ export const RoleDashboard = ({ user }: RoleDashboardProps) => {
                 <CardDescription className="text-[10px]">Consolidated approved expenditure tracking</CardDescription>
               </CardHeader>
               <CardContent className="pt-4 pb-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
                   {[
                     { label: "RWF Approved", value: expenditures?.rwf, color: "#3b6dae" },
                     { label: "USD Approved", value: expenditures?.usd, color: "#8C89B4" },

@@ -44,22 +44,22 @@ export default function FinancePage() {
     <DashboardLayout>
       <div className="space-y-6 p-4 lg:p-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-[#3b6dae] dark:text-[#c79d2d]">Finance Overview</h1>
             <p className="text-muted-foreground mt-2">
               Monitor expenditures and track financial operations
             </p>
           </div>
-          <div className="flex gap-3">
-            <Link href="/approvals">
-              <Button className="bg-sky-600 hover:bg-sky-700 text-white gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
+            <Link href="/approvals" className="w-full sm:w-auto">
+              <Button className="bg-sky-600 hover:bg-sky-700 text-white gap-2 w-full">
                 <ShieldCheck size={18} />
                 Handle Approvals
               </Button>
             </Link>
-            <Link href="/expenditure-history">
-              <Button variant="outline" className="flex items-center gap-2">
+            <Link href="/expenditure-history" className="w-full sm:w-auto">
+              <Button variant="outline" className="flex items-center justify-center gap-2 w-full">
                 <History size={18} />
                 View History
               </Button>
@@ -68,7 +68,7 @@ export default function FinancePage() {
         </div>
 
         {/* Finance Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
           <StatsCard 
             title="Total Requests" 
             value={stats?.totalRequests || 0} 
@@ -109,7 +109,7 @@ export default function FinancePage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <div className="p-6 bg-green-500/5 rounded-xl border border-green-500/10 hover:border-green-500/30 transition-all">
                   <p className="text-xs font-semibold text-muted-foreground mb-2 tracking-wider">RWF APPROVED</p>
                   <p className="text-3xl font-bold text-green-600">
@@ -151,7 +151,7 @@ export default function FinancePage() {
         </Card>
 
         {/* Action Callouts */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="border-border bg-card">
             <CardHeader>
               <CardTitle className="text-lg">Need to approve requests?</CardTitle>

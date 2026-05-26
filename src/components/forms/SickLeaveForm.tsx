@@ -71,6 +71,7 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
     employeeSignatureUrl: "" as string,
     signatureDate: new Date().toISOString().split("T")[0],
     signatureMethod: "draw" as "upload" | "draw",
+    managerSignatureUrl: "",
   });
 
   const { data: heads = [] } = trpc.users.listHeads.useQuery(undefined, {
@@ -109,6 +110,24 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
       }));
     }
   }, [savedFormData.data]);
+
+  // Merge requestData fields directly to handle cases where form submission is missing or for additional robustness
+  useEffect(() => {
+    if (requestData) {
+      setForm((prev) => ({
+        ...prev,
+        managerSignatureUrl: requestData.managerSignatureUrl || prev.managerSignatureUrl || "",
+        documentId: requestData.leaveRequest?.documentId || prev.documentId,
+        startDate: requestData.leaveRequest?.startDate || prev.startDate,
+        endDate: requestData.leaveRequest?.endDate || prev.endDate,
+        leaveDaysRequested: requestData.leaveRequest?.leaveDaysRequested?.toString() || prev.leaveDaysRequested,
+        leaveDaysEntitled: requestData.leaveRequest?.leaveDaysEntitled?.toString() || prev.leaveDaysEntitled,
+        leaveDaysTaken: requestData.leaveRequest?.leaveDaysTaken?.toString() || prev.leaveDaysTaken,
+        leaveDaysRemaining: requestData.leaveRequest?.leaveDaysRemaining?.toString() || prev.leaveDaysRemaining,
+        reportingManager: requestData.initialApproverId?.toString() || prev.reportingManager,
+      }));
+    }
+  }, [requestData]);
 
   useEffect(() => {
     if (user && autoFillData) {
@@ -248,33 +267,33 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
 
       <div>
         {/* ===== HEADER WITH LOGO AND CONTACT INFO ===== */}
-        <div className="flex flex-col md:flex-row md:justify-between md:items-start px-3 md:px-6 py-3 gap-4 md:gap-8">
+        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start px-3 lg:px-6 py-3 gap-4 lg:gap-8">
           <div className="shrink-0">
             <img
               src="/logo/centrikaLogo.png"
               alt="Centrika Logo"
-              className="h-14 md:h-20 w-auto"
+              className="h-14 lg:h-20 w-auto"
             />
           </div>
-          <div className="text-xs md:text-sm flex-1 flex justify-start md:justify-end">
-            <div className="flex flex-col gap-2 md:gap-3 items-start">
+          <div className="text-xs lg:text-sm flex-1 flex justify-start lg:justify-end">
+            <div className="flex flex-col gap-2 lg:gap-3 items-start">
               <div className="flex items-center gap-2 min-w-0">
-                <Phone size={14} className="text-blue-600 shrink-0 md:w-[16px] md:h-[16px]" />
-                <span className="text-blue-600 font-semibold truncate text-[11px] md:text-sm">+250 788 123 099</span>
+                <Phone size={14} className="text-blue-600 shrink-0 lg:w-[16px] lg:h-[16px]" />
+                <span className="text-blue-600 font-semibold truncate text-[11px] lg:text-sm">+250 788 123 099</span>
               </div>
               <div className="flex items-center gap-2 min-w-0">
-                <Mail size={14} className="text-blue-600 shrink-0 md:w-[16px] md:h-[16px]" />
-                <span className="text-blue-600 font-semibold truncate text-[11px] md:text-sm">info@centrika.rw</span>
+                <Mail size={14} className="text-blue-600 shrink-0 lg:w-[16px] lg:h-[16px]" />
+                <span className="text-blue-600 font-semibold truncate text-[11px] lg:text-sm">info@centrika.rw</span>
               </div>
               <div className="flex items-center gap-2 min-w-0">
-                <Globe size={14} className="text-blue-600 shrink-0 md:w-[16px] md:h-[16px]" />
-                <span className="text-blue-600 font-semibold truncate text-[11px] md:text-sm">www.centrika.rw</span>
+                <Globe size={14} className="text-blue-600 shrink-0 lg:w-[16px] lg:h-[16px]" />
+                <span className="text-blue-600 font-semibold truncate text-[11px] lg:text-sm">www.centrika.rw</span>
               </div>
               <div className="flex items-start gap-2">
-                <MapPin size={14} className="text-blue-600 shrink-0 mt-0.5 md:w-[16px] md:h-[16px]" />
+                <MapPin size={14} className="text-blue-600 shrink-0 mt-0.5 lg:w-[16px] lg:h-[16px]" />
                 <div className="flex flex-col gap-0.5">
-                  <span className="text-blue-600 font-semibold text-[10px] md:text-sm leading-tight">Room F002, 2nd Floor, CHIC Building,</span>
-                  <span className="text-blue-600 font-semibold text-[10px] md:text-sm leading-tight">Plot 1007, KN2 Kigali-Rwanda</span>
+                  <span className="text-blue-600 font-semibold text-[10px] lg:text-sm leading-tight">Room F002, 2nd Floor, CHIC Building,</span>
+                  <span className="text-blue-600 font-semibold text-[10px] lg:text-sm leading-tight">Plot 1007, KN2 Kigali-Rwanda</span>
                 </div>
               </div>
             </div>
@@ -287,47 +306,47 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
         </div>
 
         {/* ===== REQUEST HEADER SECTION - Responsive Grid ===== */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2 sm:gap-2.5 md:gap-3 px-3 md:px-6 py-2 md:py-3 text-xs md:text-sm items-end">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-2 lg:gap-3 px-3 lg:px-6 py-2 lg:py-3 text-xs lg:text-sm items-end">
           <div>
-            <p className="font-semibold text-blue-600 mb-1 text-[10px] md:text-xs">Name of Department</p>
+            <p className="font-semibold text-blue-600 mb-1 text-[10px] lg:text-xs">Name of Department</p>
             <div className="flex gap-0 items-center">
-              <span className="text-blue-600 font-bold text-[10px] md:text-xs whitespace-nowrap">CTK - </span>
+              <span className="text-blue-600 font-bold text-[10px] lg:text-xs whitespace-nowrap">CTK - </span>
               <Input
                 value={form.department}
-                className="w-full h-6 md:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] md:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed border-l-0"
+                className="w-full h-6 lg:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] lg:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed border-l-0"
                 disabled
               />
             </div>
           </div>
           <div>
-            <p className="font-semibold text-blue-600 mb-1 text-[10px] md:text-xs">Nature of Leave</p>
+            <p className="font-semibold text-blue-600 mb-1 text-[10px] lg:text-xs">Nature of Leave</p>
             <Input
               value="Sick Leave"
-              className="h-6 md:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] md:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
+              className="h-6 lg:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] lg:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
               disabled
             />
           </div>
           <div>
-            <p className="font-semibold text-blue-600 text-[10px] md:text-xs mb-1">Year</p>
+            <p className="font-semibold text-blue-600 text-[10px] lg:text-xs mb-1">Year</p>
             <Input
               value={form.year}
-              className="h-6 md:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] md:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
+              className="h-6 lg:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] lg:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
               disabled
             />
           </div>
           <div>
-            <p className="font-semibold text-blue-600 text-[10px] md:text-xs mb-1">Month</p>
+            <p className="font-semibold text-blue-600 text-[10px] lg:text-xs mb-1">Month</p>
             <Input
               value={form.month}
-              className="h-6 md:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] md:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
+              className="h-6 lg:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] lg:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
               disabled
             />
           </div>
           <div>
-            <p className="font-semibold text-blue-600 text-[10px] md:text-xs mb-1">Document ID</p>
+            <p className="font-semibold text-blue-600 text-[10px] lg:text-xs mb-1">Document ID</p>
             <Input
               value={form.documentId}
-              className="h-6 md:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] md:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
+              className="h-6 lg:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] lg:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
               disabled
             />
           </div>
@@ -393,6 +412,7 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
                 onStartDateChange={(date) => setForm({ ...form, startDate: date })}
                 onEndDateChange={(date) => setForm({ ...form, endDate: date })}
                 maxDays={365}
+                disabled={isReadOnly}
               />
             </Row>
 
@@ -438,6 +458,7 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
                     checked={form.outsideCountry === "yes"}
                     onChange={(e) => setForm({ ...form, outsideCountry: e.target.value })}
                     className="w-4 h-4"
+                    disabled={isReadOnly}
                   />
                   Yes
                 </label>
@@ -448,6 +469,7 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
                     checked={form.outsideCountry === "no"}
                     onChange={(e) => setForm({ ...form, outsideCountry: e.target.value })}
                     className="w-4 h-4"
+                    disabled={isReadOnly}
                   />
                   No
                 </label>
@@ -467,7 +489,8 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
                 value={form.illnessDescription}
                 onChange={(e) => setForm({ ...form, illnessDescription: e.target.value })}
                 placeholder="Describe your illness or medical condition..."
-                className="min-h-20 border-blue-300 dark:border-[#3b6dae]/40 text-xs"
+                className={`min-h-20 border-blue-300 dark:border-[#3b6dae]/40 text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100' : ''}`}
+                disabled={isReadOnly}
                 required
               />
             </Row>
@@ -480,6 +503,7 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
                     checked={form.visitedHospital === "yes"}
                     onChange={(e) => setForm({ ...form, visitedHospital: e.target.value })}
                     className="w-4 h-4"
+                    disabled={isReadOnly}
                   />
                   Yes
                 </label>
@@ -490,6 +514,7 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
                     checked={form.visitedHospital === "no"}
                     onChange={(e) => setForm({ ...form, visitedHospital: e.target.value })}
                     className="w-4 h-4"
+                    disabled={isReadOnly}
                   />
                   No
                 </label>
@@ -502,7 +527,8 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
                     value={form.hospitalName}
                     onChange={(e) => setForm({ ...form, hospitalName: e.target.value })}
                     placeholder="Name of hospital or healthcare facility"
-                    className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs"
+                    className={`border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium' : ''}`}
+                    disabled={isReadOnly}
                     required
                   />
                 </Row>
@@ -511,26 +537,29 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
                     value={form.doctorName}
                     onChange={(e) => setForm({ ...form, doctorName: e.target.value })}
                     placeholder="Name of attending doctor"
-                    className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs"
+                    className={`border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium' : ''}`}
+                    disabled={isReadOnly}
                   />
                 </Row>
               </>
             )}
             <Row label={`3.${form.visitedHospital === "yes" ? "5" : "3"} Medical Documents *`}>
               <div className="space-y-2 py-1">
-                <input
-                  type="file"
-                  multiple
-                  accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
-                  onChange={(e) => {
-                    if (e.target.files) {
-                      setForm({ ...form, medicalDocuments: Array.from(e.target.files) });
-                    }
-                  }}
-                  className="text-xs"
-                  required
-                />
-                {form.medicalDocuments.length > 0 && (
+                {!isReadOnly && (
+                  <input
+                    type="file"
+                    multiple
+                    accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
+                    onChange={(e) => {
+                      if (e.target.files) {
+                        setForm({ ...form, medicalDocuments: Array.from(e.target.files) });
+                      }
+                    }}
+                    className="text-xs"
+                    required={!form.medicalDocumentUrls || form.medicalDocumentUrls.length === 0}
+                  />
+                )}
+                {form.medicalDocuments && form.medicalDocuments.length > 0 && (
                   <div className="space-y-1">
                     <p className="text-xs text-green-600 font-semibold">✓ {form.medicalDocuments.length} file(s) uploaded:</p>
                     <ul className="text-xs text-gray-600 dark:text-slate-400 space-y-0.5">
@@ -572,7 +601,8 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
                 value={form.contactDuringLeave}
                 onChange={(e) => setForm({ ...form, contactDuringLeave: e.target.value })}
                 placeholder="How can you be contacted during your absence?"
-                className="min-h-20 border-blue-300 dark:border-[#3b6dae]/40 text-xs"
+                className={`min-h-20 border-blue-300 dark:border-[#3b6dae]/40 text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100' : ''}`}
+                disabled={isReadOnly}
               />
             </Row>
           </Section>
@@ -580,81 +610,101 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
           {/* 5. INITIAL APPROVAL */}
           <Section title="5. INITIAL APPROVAL">
             <Row label="5.1 Reporting Manager / HOD">
-              <Input
-                value={uniqueHeads.find((h: any) => h.id === parseInt(form.reportingManager))?.name || "Not assigned"}
-                className="w-full h-8 border-blue-300 dark:border-[#3b6dae]/40 bg-gray-100 dark:bg-[#295482] text-black dark:text-slate-100 font-medium cursor-not-allowed mt-1 mb-1 max-w-[400px]"
-                disabled
-              />
+              <div className="flex flex-col gap-1 w-full">
+                <Input
+                  value={uniqueHeads.find((h: any) => h.id === parseInt(form.reportingManager))?.name || "Not assigned"}
+                  className="w-full h-8 border-blue-300 dark:border-[#3b6dae]/40 bg-gray-100 dark:bg-[#295482] text-black dark:text-slate-100 font-medium cursor-not-allowed mt-1 mb-1 max-w-[400px]"
+                  disabled
+                />
+                {isReadOnly && form.managerSignatureUrl && (
+                  <div className="mt-1">
+                    <p className="text-[10px] text-green-600 font-semibold mb-0.5">✓ Approved by HOD</p>
+                    <img src={form.managerSignatureUrl} alt="HOD Signature" className="h-10 object-contain" />
+                  </div>
+                )}
+              </div>
             </Row>
           </Section>
 
           {/* 7. EMPLOYEE SIGNATURE */}
           <Section title="7. EMPLOYEE SIGNATURE">
             <Row label="7.1 Your Signature">
-              <div className="space-y-3 py-1">
-                <div className="flex gap-4 mb-2">
-                  <label className="flex items-center gap-2 cursor-pointer group">
-                    <input
-                      type="radio"
-                      checked={form.signatureMethod === "draw"}
-                      onChange={() => {
-                        setForm({ ...form, signatureMethod: "draw", employeeSignature: null, employeeSignatureUrl: "" });
-                      }}
-                      className="w-4 h-4 accent-blue-600"
-                    />
-                    <span className="text-xs font-black uppercase tracking-widest text-[#3b6dae] group-hover:text-blue-800">Draw Signature</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer group">
-                    <input
-                      type="radio"
-                      checked={form.signatureMethod === "upload"}
-                      onChange={() => {
-                        setForm({ ...form, signatureMethod: "upload", employeeSignature: null, employeeSignatureUrl: "" });
-                      }}
-                      className="w-4 h-4 accent-blue-600"
-                    />
-                    <span className="text-xs font-black uppercase tracking-widest text-[#3b6dae] group-hover:text-blue-800">Upload Image</span>
-                  </label>
-                </div>
-
-                {form.signatureMethod === "upload" ? (
-                  <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        if (e.target.files?.[0]) {
-                          const file = e.target.files[0];
-                          setForm({ ...form, employeeSignature: file });
-                          const reader = new FileReader();
-                          reader.onload = (ev) => {
-                            setForm((prev) => ({
-                              ...prev,
-                              employeeSignatureUrl: ev.target?.result as string,
-                            }));
-                          };
-                          reader.readAsDataURL(file);
-                        }
-                      }}
-                      className="text-xs block w-full text-slate-500 file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                    />
+              <div className="space-y-3 py-1 w-full">
+                {isReadOnly ? (
+                  <div className="space-y-1">
+                    {form.employeeSignatureUrl ? (
+                      <img src={form.employeeSignatureUrl} alt="Employee Signature" className="h-14 object-contain" />
+                    ) : (
+                      <p className="text-xs italic text-gray-500">No signature provided</p>
+                    )}
                   </div>
                 ) : (
-                  <SignaturePad 
-                    onSave={(dataUrl) => {
-                      const file = base64ToFile(dataUrl, "signature.png");
-                      setForm({ ...form, employeeSignature: file, employeeSignatureUrl: dataUrl });
-                    }}
-                    onClear={() => {
-                      setForm({ ...form, employeeSignature: null, employeeSignatureUrl: "" });
-                    }}
-                  />
-                )}
-                
-                {form.employeeSignatureUrl && form.signatureMethod === "upload" && (
-                  <div className="p-2 border border-dashed border-blue-300 dark:border-[#3b6dae]/40 rounded bg-blue-50 inline-block animate-in zoom-in duration-300">
-                    <img src={form.employeeSignatureUrl} alt="signature" className="h-16 object-contain" />
-                  </div>
+                  <>
+                    <div className="flex gap-4 mb-2">
+                      <label className="flex items-center gap-2 cursor-pointer group">
+                        <input
+                          type="radio"
+                          checked={form.signatureMethod === "draw"}
+                          onChange={() => {
+                            setForm({ ...form, signatureMethod: "draw", employeeSignature: null, employeeSignatureUrl: "" });
+                          }}
+                          className="w-4 h-4 accent-blue-600"
+                        />
+                        <span className="text-xs font-black uppercase tracking-widest text-[#3b6dae] group-hover:text-blue-800">Draw Signature</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer group">
+                        <input
+                          type="radio"
+                          checked={form.signatureMethod === "upload"}
+                          onChange={() => {
+                            setForm({ ...form, signatureMethod: "upload", employeeSignature: null, employeeSignatureUrl: "" });
+                          }}
+                          className="w-4 h-4 accent-blue-600"
+                        />
+                        <span className="text-xs font-black uppercase tracking-widest text-[#3b6dae] group-hover:text-blue-800">Upload Image</span>
+                      </label>
+                    </div>
+
+                    {form.signatureMethod === "upload" ? (
+                      <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            if (e.target.files?.[0]) {
+                              const file = e.target.files[0];
+                              setForm({ ...form, employeeSignature: file });
+                              const reader = new FileReader();
+                              reader.onload = (ev) => {
+                                setForm((prev) => ({
+                                  ...prev,
+                                  employeeSignatureUrl: ev.target?.result as string,
+                                }));
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                          className="text-xs block w-full text-slate-500 file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                        />
+                      </div>
+                    ) : (
+                      <SignaturePad 
+                        onSave={(dataUrl) => {
+                          const file = base64ToFile(dataUrl, "signature.png");
+                          setForm({ ...form, employeeSignature: file, employeeSignatureUrl: dataUrl });
+                        }}
+                        onClear={() => {
+                          setForm({ ...form, employeeSignature: null, employeeSignatureUrl: "" });
+                        }}
+                      />
+                    )}
+                    
+                    {form.employeeSignatureUrl && (
+                      <div className="mt-2 animate-in zoom-in duration-300">
+                        <img src={form.employeeSignatureUrl} alt="signature" className="h-16 object-contain" />
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </Row>
@@ -669,30 +719,32 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
         </div>
 
         {/* ===== ACTIONS ===== */}
-        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center px-3 md:px-6 py-3 md:py-4 bg-gray-50 dark:bg-[#1a385c] gap-2 md:gap-4">
-          <div className="flex gap-2">
-            {/* Action buttons removed from unsent forms */}
+        {!isReadOnly && (
+          <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center px-3 lg:px-6 py-3 lg:py-4 bg-gray-50 dark:bg-[#1a385c] gap-2 lg:gap-4">
+            <div className="flex gap-2">
+              {/* Action buttons removed from unsent forms */}
+            </div>
+            <div className="flex flex-col lg:flex-row gap-2 w-full lg:justify-end">
+              <Button
+                variant="outline"
+                disabled={isSubmitting}
+                onClick={() => handleSubmit(false)}
+                className="border-blue-400 dark:border-[#3b6dae]/50"
+              >
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save Draft
+              </Button>
+              <Button
+                disabled={isSubmitting}
+                onClick={() => handleSubmit(true)}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Submit Request
+              </Button>
+            </div>
           </div>
-          <div className="flex flex-col gap-2">
-            <Button
-              variant="outline"
-              disabled={isSubmitting}
-              onClick={() => handleSubmit(false)}
-              className="border-blue-400 dark:border-[#3b6dae]/50"
-            >
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Draft
-            </Button>
-            <Button
-              disabled={isSubmitting}
-              onClick={() => handleSubmit(true)}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Submit Request
-            </Button>
-          </div>
-        </div>
+        )}
 
         {/* ===== FOOTER ===== */}
         <div className="text-center text-[10px] text-gray-500 py-3 border-t border-gray-100 space-y-1">
@@ -709,7 +761,7 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="md:bg-[#3b6dae] md:text-white font-bold px-4 py-2 text-sm">{title}</div>
+      <div className="lg:bg-[#3b6dae] lg:text-white font-bold px-4 py-2 text-sm">{title}</div>
       {children}
     </div>
   );
@@ -717,11 +769,11 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-0">
-      <div className="px-2 md:px-3 py-1.5 md:py-2 font-medium md:bg-blue-100 text-blue-700 text-[10px] md:text-xs md:whitespace-nowrap">
+    <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-0">
+      <div className="px-2 lg:px-3 py-1.5 lg:py-2 font-medium lg:bg-blue-100 text-blue-700 text-[10px] lg:text-xs lg:whitespace-nowrap">
         {label}
       </div>
-      <div className="px-2 md:px-3 py-1 text-xs md:text-sm">{children}</div>
+      <div className="px-2 lg:px-3 py-1 text-xs lg:text-sm">{children}</div>
     </div>
   );
 }

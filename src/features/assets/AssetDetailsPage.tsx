@@ -79,7 +79,7 @@ const AssetDetailsPage = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6 p-4 lg:p-8 animate-in fade-in duration-500 font-sans">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-4">
             <Link href="/assets">
               <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-800">
@@ -243,7 +243,7 @@ const AssetDetailsPage = () => {
             <Plus size={14} className="mr-2" /> Add Document
           </Button>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {asset.documents.length ? asset.documents.map((doc: any) => (
                     <Card key={doc.id} className="rounded-xl border-border/50 hover:border-blue-500/30 transition-colors cursor-pointer group shadow-none">
                       <CardContent className="p-4 flex items-center gap-4">

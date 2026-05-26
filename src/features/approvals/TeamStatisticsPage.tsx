@@ -28,7 +28,7 @@ export default function TeamStatistics() {
         </div>
 
         {/* Team Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <Card className="bg-card border-border">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -95,7 +95,7 @@ export default function TeamStatistics() {
               <div className="space-y-4">
                 {teamStats.teamMembers.map((member: any) => (
                   <div key={member.id} className="p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 gap-3">
+                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-3 gap-3">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
                           <AvatarImage src={member.profileImage} alt={member.name} />
@@ -106,10 +106,10 @@ export default function TeamStatistics() {
                           <p className="text-xs text-muted-foreground">{member.email}</p>
                         </div>
                       </div>
-                      <div className="text-left sm:text-right bg-muted/30 sm:bg-transparent p-2 sm:p-0 rounded flex justify-between sm:block items-center">
-                        <p className="text-xs text-muted-foreground sm:hidden">Total requests</p>
-                        <p className="text-xl sm:text-2xl font-bold text-foreground">{member.requestCount || 0}</p>
-                        <p className="text-xs text-muted-foreground hidden sm:block">Total requests</p>
+                      <div className="text-left lg:text-right bg-muted/30 lg:bg-transparent p-2 lg:p-0 rounded flex justify-between lg:block items-center">
+                        <p className="text-xs text-muted-foreground lg:hidden">Total requests</p>
+                        <p className="text-xl lg:text-2xl font-bold text-foreground">{member.requestCount || 0}</p>
+                        <p className="text-xs text-muted-foreground hidden lg:block">Total requests</p>
                       </div>
                     </div>
 
@@ -117,15 +117,15 @@ export default function TeamStatistics() {
                     <div className="grid grid-cols-3 gap-2 pt-3 border-t border-border">
                       <div className="text-center">
                         <p className="text-lg font-semibold text-green-500">{member.approvedCount || 0}</p>
-                        <p className="text-[10px] sm:text-xs text-muted-foreground">Approved</p>
+                        <p className="text-[10px] lg:text-xs text-muted-foreground">Approved</p>
                       </div>
                       <div className="text-center">
                         <p className="text-lg font-semibold text-red-500">{member.rejectedCount || 0}</p>
-                        <p className="text-[10px] sm:text-xs text-muted-foreground">Rejected</p>
+                        <p className="text-[10px] lg:text-xs text-muted-foreground">Rejected</p>
                       </div>
                       <div className="text-center">
                         <p className="text-lg font-semibold text-yellow-500">{member.pendingCount || 0}</p>
-                        <p className="text-[10px] sm:text-xs text-muted-foreground">Pending</p>
+                        <p className="text-[10px] lg:text-xs text-muted-foreground">Pending</p>
                       </div>
                     </div>
                   </div>

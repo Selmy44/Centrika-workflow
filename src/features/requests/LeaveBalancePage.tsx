@@ -26,7 +26,7 @@ export default function LeaveBalance() {
   if (!leaveBalance) {
     return (
       <DashboardLayout>
-        <div className="p-4 md:p-8">
+        <div className="p-4 lg:p-8">
           <div className="text-center space-y-4">
             <AlertCircle className="h-12 w-12 text-orange-500 mx-auto" />
             <h1 className="text-2xl font-semibold">No Leave Balance Found</h1>
@@ -57,7 +57,7 @@ export default function LeaveBalance() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 md:space-y-8 p-4 md:p-8">
+      <div className="space-y-6 lg:space-y-8 p-4 lg:p-8">
         {/* Header */}
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-[#3b6dae] dark:text-[#c79d2d]">
@@ -87,7 +87,7 @@ export default function LeaveBalance() {
         )}
 
         {/* Main Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
           <Card className="bg-white dark:bg-slate-800 hover:shadow-md transition-shadow">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
@@ -216,7 +216,7 @@ export default function LeaveBalance() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 text-sm">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
                 <h4 className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-600" />

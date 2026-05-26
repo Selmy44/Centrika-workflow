@@ -254,33 +254,33 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
 
             <div>
                 {/* ===== HEADER WITH LOGO AND CONTACT INFO ===== */}
-                <div className="flex flex-col md:flex-row md:justify-between md:items-start px-3 md:px-6 py-3 gap-4 md:gap-8">
+                <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start px-3 lg:px-6 py-3 gap-4 lg:gap-8">
                     <div className="shrink-0">
                         <img
                             src="/logo/centrikaLogo.png"
                             alt="Centrika Logo"
-                            className="h-14 md:h-20 w-auto"
+                            className="h-14 lg:h-20 w-auto"
                         />
                     </div>
-                    <div className="text-xs md:text-sm flex-1 flex justify-start md:justify-end">
-                        <div className="flex flex-col gap-2 md:gap-3 items-start">
+                    <div className="text-xs lg:text-sm flex-1 flex justify-start lg:justify-end">
+                        <div className="flex flex-col gap-2 lg:gap-3 items-start">
                             <div className="flex items-center gap-2 min-w-0">
-                                <Phone size={14} className="text-blue-600 shrink-0 md:w-[16px] md:h-[16px]" />
-                                <span className="text-blue-600 font-semibold truncate text-[11px] md:text-sm">+250 788 123 099</span>
+                                <Phone size={14} className="text-blue-600 shrink-0 lg:w-[16px] lg:h-[16px]" />
+                                <span className="text-blue-600 font-semibold truncate text-[11px] lg:text-sm">+250 788 123 099</span>
                             </div>
                             <div className="flex items-center gap-2 min-w-0">
-                                <Mail size={14} className="text-blue-600 shrink-0 md:w-[16px] md:h-[16px]" />
-                                <span className="text-blue-600 font-semibold truncate text-[11px] md:text-sm">info@centrika.rw</span>
+                                <Mail size={14} className="text-blue-600 shrink-0 lg:w-[16px] lg:h-[16px]" />
+                                <span className="text-blue-600 font-semibold truncate text-[11px] lg:text-sm">info@centrika.rw</span>
                             </div>
                             <div className="flex items-center gap-2 min-w-0">
-                                <Globe size={14} className="text-blue-600 shrink-0 md:w-[16px] md:h-[16px]" />
-                                <span className="text-blue-600 font-semibold truncate text-[11px] md:text-sm">www.centrika.rw</span>
+                                <Globe size={14} className="text-blue-600 shrink-0 lg:w-[16px] lg:h-[16px]" />
+                                <span className="text-blue-600 font-semibold truncate text-[11px] lg:text-sm">www.centrika.rw</span>
                             </div>
                             <div className="flex items-start gap-2">
-                                <MapPin size={14} className="text-blue-600 shrink-0 mt-0.5 md:w-[16px] md:h-[16px]" />
+                                <MapPin size={14} className="text-blue-600 shrink-0 mt-0.5 lg:w-[16px] lg:h-[16px]" />
                                 <div className="flex flex-col gap-0.5">
-                                    <span className="text-blue-600 font-semibold text-[10px] md:text-sm leading-tight">Room F002, 2nd Floor, CHIC Building,</span>
-                                    <span className="text-blue-600 font-semibold text-[10px] md:text-sm leading-tight">Plot 1007, KN2 Kigali-Rwanda</span>
+                                    <span className="text-blue-600 font-semibold text-[10px] lg:text-sm leading-tight">Room F002, 2nd Floor, CHIC Building,</span>
+                                    <span className="text-blue-600 font-semibold text-[10px] lg:text-sm leading-tight">Plot 1007, KN2 Kigali-Rwanda</span>
                                 </div>
                             </div>
                         </div>
@@ -293,31 +293,31 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                 </div>
 
                 {/* ===== REQUEST HEADER SECTION - Responsive Grid ===== */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-2.5 md:gap-3 px-3 md:px-6 py-2 md:py-3 text-xs md:text-sm items-end">
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-2 lg:gap-3 px-3 lg:px-6 py-2 lg:py-3 text-xs lg:text-sm items-end">
                     <div>
-                        <p className="font-semibold text-blue-600 mb-1 text-[10px] md:text-xs uppercase tracking-tighter">CTK</p>
+                        <p className="font-semibold text-blue-600 mb-1 text-[10px] lg:text-xs uppercase tracking-tighter">CTK</p>
                         <div className="flex gap-0 items-center">
                             <Input
                                 value="CTK"
-                                className="w-full h-6 md:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] md:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
+                                className="w-full h-6 lg:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] lg:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
                                 disabled
                             />
                         </div>
                     </div>
                     <div>
-                        <p className="font-semibold text-blue-600 mb-1 text-[10px] md:text-xs uppercase tracking-tighter">Date of Request</p>
+                        <p className="font-semibold text-blue-600 mb-1 text-[10px] lg:text-xs uppercase tracking-tighter">Date of Request</p>
                         <Input
                             type="text"
                             value={new Date().toISOString().split('T')[0]}
-                            className="h-6 md:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] md:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
+                            className="h-6 lg:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] lg:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
                             disabled
                         />
                     </div>
                     <div>
-                        <p className="font-semibold text-blue-600 text-[10px] md:text-xs mb-1 uppercase tracking-tighter">Request Number</p>
+                        <p className="font-semibold text-blue-600 text-[10px] lg:text-xs mb-1 uppercase tracking-tighter">Request Number</p>
                         <Input
                             value={form.requestNumber}
-                            className="h-6 md:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] md:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
+                            className="h-6 lg:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] lg:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
                             disabled
                         />
                     </div>
@@ -544,7 +544,7 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                                         
                                         {form.employeeSignatureUrl && (
                                            <div className="mt-2 animate-in zoom-in duration-300">
-                                              <img src={form.employeeSignatureUrl} alt="sig" className="h-16 object-contain border-2 border-blue-100 rounded-xl p-2 bg-white text-black" />
+                                              <img src={form.employeeSignatureUrl} alt="sig" className="h-16 object-contain" />
                                            </div>
                                         )}
                                     </>
@@ -556,23 +556,54 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                     {/* 4. APPROVAL WORKFLOW */}
                     <Section title="4. APPROVAL WORKFLOW">
                         <Row label="4.1 Line Manager / HOD">
-                            <Input
-                                value={uniqueHeads.find((h: any) => h.id === parseInt(form.reportingManager))?.name || "Not assigned"}
-                                className="w-full h-8 border-blue-300 dark:border-[#3b6dae]/40 bg-gray-100 dark:bg-[#295482] text-black dark:text-slate-100 font-medium cursor-not-allowed mt-1 mb-1 max-w-[400px]"
-                                disabled
-                            />
+                            <div className="flex flex-col gap-1 w-full">
+                                <Input
+                                    value={uniqueHeads.find((h: any) => h.id === parseInt(form.reportingManager))?.name || "Not assigned"}
+                                    className="w-full h-8 border-blue-300 dark:border-[#3b6dae]/40 bg-gray-100 dark:bg-[#295482] text-black dark:text-slate-100 font-medium cursor-not-allowed mt-1 mb-1 max-w-[400px]"
+                                    disabled
+                                />
+                                {isReadOnly && savedFormData.data?.managerSignatureUrl && (
+                                    <div className="mt-1">
+                                        <p className="text-[10px] text-green-600 font-semibold mb-0.5">✓ Approved by HOD</p>
+                                        <img src={savedFormData.data.managerSignatureUrl} alt="HOD Signature" className="h-10 object-contain" />
+                                    </div>
+                                )}
+                            </div>
                         </Row>
-
+                        {isReadOnly && savedFormData.data?.hrSignatureUrl && (
+                            <Row label="4.2 HR Review">
+                                <div className="mt-1">
+                                    <p className="text-[10px] text-green-600 font-semibold mb-0.5">✓ Approved by HR</p>
+                                    <img src={savedFormData.data.hrSignatureUrl} alt="HR Signature" className="h-10 object-contain" />
+                                </div>
+                            </Row>
+                        )}
+                        {isReadOnly && savedFormData.data?.financeSignatureUrl && (
+                            <Row label="4.3 Head of Finance">
+                                <div className="mt-1">
+                                    <p className="text-[10px] text-green-600 font-semibold mb-0.5">✓ Approved by Head of Finance</p>
+                                    <img src={savedFormData.data.financeSignatureUrl} alt="Finance Signature" className="h-10 object-contain" />
+                                </div>
+                            </Row>
+                        )}
+                        {isReadOnly && savedFormData.data?.ceoSignatureUrl && (
+                            <Row label="4.4 CEO / MD">
+                                <div className="mt-1">
+                                    <p className="text-[10px] text-green-600 font-semibold mb-0.5">✓ Final Approval by CEO/MD</p>
+                                    <img src={savedFormData.data.ceoSignatureUrl} alt="CEO Signature" className="h-10 object-contain" />
+                                </div>
+                            </Row>
+                        )}
                     </Section>
                 </div>
 
                 {/* ===== ACTIONS ===== */}
                 {!isReadOnly && (
-                    <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center px-3 md:px-6 py-3 md:py-4 bg-gray-50 dark:bg-[#1a385c] gap-2 md:gap-4 mt-6">
+                    <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center px-3 lg:px-6 py-3 lg:py-4 bg-gray-50 dark:bg-[#1a385c] gap-2 lg:gap-4 mt-6">
                         <div className="flex gap-2">
                             {/* Print/Download disabled until approved */}
                         </div>
-                        <div className="flex flex-col gap-2">
+                        <div className="flex flex-col lg:flex-row gap-2 w-full lg:justify-end">
                             <Button
                                 variant="outline"
                                 disabled={isSubmitting}
@@ -611,7 +642,7 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
 function Section({ title, children, className = "" }: { title: string, children: React.ReactNode, className?: string }) {
     return (
         <div className={className}>
-            <div className="md:bg-[#3b6dae] md:text-white font-bold px-4 py-2 text-sm">{title}</div>
+            <div className="lg:bg-[#3b6dae] lg:text-white font-bold px-4 py-2 text-sm">{title}</div>
             {children}
         </div>
     );
@@ -619,13 +650,13 @@ function Section({ title, children, className = "" }: { title: string, children:
 
 function Row({ label, children, colSpan = false }: { label: React.ReactNode, children: React.ReactNode, colSpan?: boolean }) {
     return (
-        <div className={`grid ${colSpan ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-[220px_1fr]'} gap-0`}>
+        <div className={`grid ${colSpan ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-[220px_1fr]'} gap-0`}>
             {!colSpan && (
-                <div className="px-2 md:px-3 py-1.5 md:py-2 font-medium md:bg-blue-100 text-[#3b6dae] text-[10px] md:text-xs flex items-center">
+                <div className="px-2 lg:px-3 py-1.5 lg:py-2 font-medium lg:bg-blue-100 text-[#3b6dae] text-[10px] lg:text-xs flex items-center">
                     {label}
                 </div>
             )}
-            <div className="px-2 md:px-3 py-1 flex items-center">{children}</div>
+            <div className="px-2 lg:px-3 py-1 flex items-center">{children}</div>
         </div>
     );
 }

@@ -47,20 +47,20 @@ const LeaveManagementPage = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6 p-4 lg:p-8 animate-in fade-in duration-500">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="text-2xl font-black tracking-tight text-[#3b6dae] dark:text-[#c79d2d]">Leave Management</h1>
             <p className="text-sm text-slate-500 dark:text-slate-400">Company-wide leave oversight, balance risk tracking, and operational coverage.</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="rounded-xl border-border/50">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto">
+            <Button variant="outline" size="sm" className="rounded-xl border-border/50 w-full sm:w-auto">
               <Download size={16} className="mr-2" /> Export Report
             </Button>
-            <Button size="sm" className="rounded-xl bg-blue-600 hover:bg-blue-700">Update Policies</Button>
+            <Button size="sm" className="rounded-xl bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">Update Policies</Button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-4">
           <Card className="rounded-2xl border-border/50 shadow-sm">
             <CardContent className="p-6">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Approved Today</p>

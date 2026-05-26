@@ -89,7 +89,7 @@ export default function ResetPasswordPage() {
       `}</style>
 
       {/* ====== LEFT: Branding Panel ====== */}
-      <div className="hidden md:flex relative w-[45%] flex-col justify-center overflow-hidden">
+      <div className="hidden xl:flex relative w-[45%] flex-col justify-center overflow-hidden">
         <img src="/logo/loginbackground2G.jpeg" alt="" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0" style={{ background: "linear-gradient(160deg, rgba(30, 64, 120, 0.92) 0%, rgba(59, 109, 174, 0.82) 50%, rgba(59, 109, 174, 0.65) 100%)" }} />
         

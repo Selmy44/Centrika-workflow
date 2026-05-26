@@ -45,7 +45,7 @@ interface Props {
  * Styled to match LeaveRequestForm design system.
  */
 export default function AssetRequestApprovalView({ requestData, onApprove, onReject, isLoading = false, onClose, onBack }: Props) {
-    const { user } = useAuth();
+    const { user, hasRole } = useAuth();
     const [approvalComments, setApprovalComments] = useState("");
     const [signatureFile, setSignatureFile] = useState<File | null>(null);
     const [signaturePreview, setSignaturePreview] = useState("");
@@ -58,6 +58,7 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
     const isRequestApproved = requestData?.status === "approved";
     const isRequestRejected = requestData?.status === "rejected";
     const approvalSectionIsReadOnly = isRequestApproved || isRequestRejected;
+    const isCurrentApprover = requestData?.currentApprovalLevel ? hasRole(requestData.currentApprovalLevel) : false;
 
     const { data, isLoading: detailsLoading } = trpc.requests.getAssetRequestDetails.useQuery(
         { requestId: requestData?.id || 0 },
@@ -159,33 +160,33 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
 
             <div>
                 {/* ===== HEADER WITH LOGO AND CONTACT INFO ===== */}
-                <div className="flex flex-col md:flex-row md:justify-between md:items-start px-3 md:px-8 py-4 md:py-6 gap-4 md:gap-12">
+                <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start px-3 lg:px-8 py-4 lg:py-6 gap-4 lg:gap-12">
                     <div className="shrink-0">
                         <img
                             src="/logo/centrikaLogo.png"
                             alt="Centrika Logo"
-                            className="h-14 md:h-32 w-auto"
+                            className="h-14 lg:h-32 w-auto"
                         />
                     </div>
-                    <div className="text-xs md:text-sm flex-1 flex justify-start md:justify-end">
-                        <div className="flex flex-col gap-2 md:gap-3 items-start text-blue-600">
+                    <div className="text-xs lg:text-sm flex-1 flex justify-start lg:justify-end">
+                        <div className="flex flex-col gap-2 lg:gap-3 items-start text-blue-600">
                             <div className="flex items-center gap-2 min-w-0">
-                                <Phone size={14} className="shrink-0 md:w-[16px] md:h-[16px]" />
-                                <span className="font-semibold truncate text-[11px] md:text-sm">+250 788 123 099</span>
+                                <Phone size={14} className="shrink-0 lg:w-[16px] lg:h-[16px]" />
+                                <span className="font-semibold truncate text-[11px] lg:text-sm">+250 788 123 099</span>
                             </div>
                             <div className="flex items-center gap-2 min-w-0">
-                                <Mail size={14} className="shrink-0 md:w-[16px] md:h-[16px]" />
-                                <span className="font-semibold truncate text-[11px] md:text-sm">info@centrika.rw</span>
+                                <Mail size={14} className="shrink-0 lg:w-[16px] lg:h-[16px]" />
+                                <span className="font-semibold truncate text-[11px] lg:text-sm">info@centrika.rw</span>
                             </div>
                             <div className="flex items-center gap-2 min-w-0">
-                                <Globe size={14} className="shrink-0 md:w-[16px] md:h-[16px]" />
-                                <span className="font-semibold truncate text-[11px] md:text-sm">www.centrika.rw</span>
+                                <Globe size={14} className="shrink-0 lg:w-[16px] lg:h-[16px]" />
+                                <span className="font-semibold truncate text-[11px] lg:text-sm">www.centrika.rw</span>
                             </div>
                             <div className="flex items-start gap-2">
-                                <MapPin size={14} className="shrink-0 mt-0.5 md:w-[16px] md:h-[16px]" />
+                                <MapPin size={14} className="shrink-0 mt-0.5 lg:w-[16px] lg:h-[16px]" />
                                 <div className="flex flex-col gap-0.5">
-                                    <span className="font-semibold text-[10px] md:text-sm leading-tight">Room F002, 2nd Floor, CHIC Building,</span>
-                                    <span className="font-semibold text-[10px] md:text-sm leading-tight">Plot 1007, KN2 Kigali-Rwanda</span>
+                                    <span className="font-semibold text-[10px] lg:text-sm leading-tight">Room F002, 2nd Floor, CHIC Building,</span>
+                                    <span className="font-semibold text-[10px] lg:text-sm leading-tight">Plot 1007, KN2 Kigali-Rwanda</span>
                                 </div>
                             </div>
                         </div>
@@ -215,7 +216,7 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
                 )}
 
                 {/* ===== REQUEST HEADER SECTION ===== */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-2.5 md:gap-3 px-3 md:px-6 py-2 md:py-3 text-xs md:text-sm items-end">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-2.5 lg:gap-3 px-3 lg:px-6 py-2 lg:py-3 text-xs lg:text-sm items-end">
                     <div>
                         <p className="font-semibold text-blue-600 mb-1 text-xs uppercase">Department</p>
                         <div className="flex gap-0 items-center">
@@ -317,7 +318,7 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
                         <Row label="4.1 Employee Signature">
                             <div className="mt-1 mb-2">
                                 {formDataDynamic?.employeeSignatureUrl ? (
-                                    <div className="p-2 border border-blue-200 dark:border-[#3b6dae]/30 rounded inline-block bg-white dark:bg-[#1f426b]">
+                                    <div className="p-2 rounded inline-block bg-white dark:bg-[#1f426b]">
                                         <img src={formDataDynamic.employeeSignatureUrl} alt="Employee Signature" className="h-12 object-contain" />
                                     </div>
                                 ) : (
@@ -334,7 +335,7 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
                             <Row label="5.1 Line Manager / HOD">
                                 <div className="mt-2">
                                     <p className="text-xs text-gray-500 mb-1">Approved by HOD:</p>
-                                    <img src={formDataDynamic.managerSignatureUrl} alt="HOD Signature" className="h-10 object-contain border border-blue-200 dark:border-[#3b6dae]/30 rounded p-1 bg-white dark:bg-[#1f426b]" />
+                                    <img src={formDataDynamic.managerSignatureUrl} alt="HOD Signature" className="h-10 object-contain" />
                                 </div>
                             </Row>
                         )}
@@ -342,7 +343,7 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
                             <Row label="5.2 HR Review">
                                 <div className="mt-2">
                                     <p className="text-xs text-gray-500 mb-1">Approved by HR:</p>
-                                    <img src={formDataDynamic.hrSignatureUrl} alt="HR Signature" className="h-10 object-contain border border-blue-200 dark:border-[#3b6dae]/30 rounded p-1 bg-white dark:bg-[#1f426b]" />
+                                    <img src={formDataDynamic.hrSignatureUrl} alt="HR Signature" className="h-10 object-contain" />
                                 </div>
                             </Row>
                         )}
@@ -350,7 +351,7 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
                             <Row label="5.3 Head of Finance">
                                 <div className="mt-2">
                                     <p className="text-xs text-gray-500 mb-1">Approved by Head of Finance:</p>
-                                    <img src={formDataDynamic.financeSignatureUrl} alt="Finance Signature" className="h-10 object-contain border border-blue-200 dark:border-[#3b6dae]/30 rounded p-1 bg-white dark:bg-[#1f426b]" />
+                                    <img src={formDataDynamic.financeSignatureUrl} alt="Finance Signature" className="h-10 object-contain" />
                                 </div>
                             </Row>
                         )}
@@ -358,12 +359,12 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
                             <Row label="5.4 CEO / MD">
                                 <div className="mt-2">
                                     <p className="text-xs text-gray-500 mb-1">Final Approval by CEO/MD:</p>
-                                    <img src={formDataDynamic.ceoSignatureUrl} alt="CEO Signature" className="h-10 object-contain border border-blue-200 dark:border-[#3b6dae]/30 rounded p-1 bg-white dark:bg-[#1f426b]" />
+                                    <img src={formDataDynamic.ceoSignatureUrl} alt="CEO Signature" className="h-10 object-contain" />
                                 </div>
                             </Row>
                         )}
 
-                        {!approvalSectionIsReadOnly ? (
+                        {!approvalSectionIsReadOnly && isCurrentApprover && (
                             <div className="p-4 bg-blue-50/50 mt-2">
                                 <h3 className="text-sm font-bold text-blue-700 mb-3 text-center border-b border-blue-200 dark:border-[#3b6dae]/30 pb-2">
                                     Wait for Your Approval: {getApprovalLevelLabel().toUpperCase()}
@@ -445,7 +446,7 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
 
                                         {signaturePreview && (
                                             <div className="space-y-2 animate-in zoom-in duration-300">
-                                                <div className="p-2 border-2 border-dashed border-green-300 rounded bg-green-50 flex items-center gap-4">
+                                                <div className="p-2 rounded bg-green-50 flex items-center gap-4">
                                                     <img src={signaturePreview} alt="approver-signature" className="h-12 object-contain" />
                                                     <p className="text-[10px] font-semibold text-green-700 uppercase">Signature Selected</p>
                                                 </div>
@@ -464,7 +465,8 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
                                     </div>
                                 </Row>
                             </div>
-                        ) : (
+                        )}
+                        {approvalSectionIsReadOnly && (
                             <Row label="Status">
                                 <div className={`px-4 py-2 rounded text-sm font-bold inline-block ${isRequestApproved ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200'}`}>
                                     {isRequestApproved ? "✓ FULLY APPROVED" : "✗ REJECTED"}
@@ -476,7 +478,7 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
 
                 {/* ===== ACTIONS ===== */}
                 {isRequestApproved && (
-                    <div className="no-print flex flex-col gap-2 px-3 md:px-6 py-4 md:py-5 bg-gray-50 dark:bg-[#1a385c] mb-4">
+                    <div className="no-print flex flex-col lg:flex-row gap-2 px-3 md:px-6 py-4 md:py-5 bg-gray-50 dark:bg-[#1a385c] mb-4 lg:justify-end">
                         <Button
                             variant="outline"
                             disabled={isLoading || isPrintingForm}
@@ -497,8 +499,8 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
                         </Button>
                     </div>
                 )}
-                {!approvalSectionIsReadOnly && (
-                    <div className="no-print flex flex-col gap-2 px-3 md:px-6 py-4 md:py-5 bg-gray-50 dark:bg-[#1a385c] mb-4">
+                {!approvalSectionIsReadOnly && isCurrentApprover && (
+                    <div className="no-print flex flex-col lg:flex-row gap-2 px-3 md:px-6 py-4 md:py-5 bg-gray-50 dark:bg-[#1a385c] mb-4 lg:justify-end">
                         <Button
                             variant="outline"
                             disabled={isLoading}
@@ -508,14 +510,35 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
                             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             REJECT REQUEST
                         </Button>
-                        <Button
-                            disabled={isLoading}
-                            onClick={() => onApprove({ comments: approvalComments, signatureFile: signatureFile || undefined })}
-                            className="bg-green-600 hover:bg-green-700 h-9 font-bold px-8 tracking-tight transition-all"
-                        >
-                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            APPROVE {signatureFile ? "& SIGN" : "REQUEST"}
-                        </Button>
+                        {requestData?.currentApprovalLevel === "head_of_finance" ? (
+                            <>
+                                <Button
+                                    disabled={isLoading}
+                                    onClick={() => onApprove({ comments: approvalComments, signatureFile: signatureFile || undefined, escalateToCeo: false })}
+                                    className="bg-green-600 hover:bg-green-700 h-9 font-bold px-8 tracking-tight transition-all"
+                                >
+                                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    APPROVE (FINAL)
+                                </Button>
+                                <Button
+                                    disabled={isLoading}
+                                    onClick={() => onApprove({ comments: approvalComments, signatureFile: signatureFile || undefined, escalateToCeo: true })}
+                                    className="bg-blue-600 hover:bg-blue-700 h-9 font-bold px-8 tracking-tight transition-all"
+                                >
+                                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    APPROVE & FORWARD TO CEO/MD
+                                </Button>
+                            </>
+                        ) : (
+                            <Button
+                                disabled={isLoading}
+                                onClick={() => onApprove({ comments: approvalComments, signatureFile: signatureFile || undefined })}
+                                className="bg-green-600 hover:bg-green-700 h-9 font-bold px-8 tracking-tight transition-all"
+                            >
+                                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                APPROVE {signatureFile ? "& SIGN" : "REQUEST"}
+                            </Button>
+                        )}
                     </div>
                 )}
 
@@ -586,7 +609,7 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
     return (
         <div>
-            <div className="md:bg-[#3b6dae] md:text-white font-bold px-4 py-1.5 text-xs uppercase tracking-wider">{title}</div>
+            <div className="lg:bg-[#3b6dae] lg:text-white font-bold px-4 py-1.5 text-xs uppercase tracking-wider">{title}</div>
             {children}
         </div>
     );
@@ -594,11 +617,11 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
     return (
-        <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] items-stretch gap-0">
-            <div className="px-2 md:px-3 py-1.5 md:py-2 font-semibold md:bg-blue-50/50 text-[#3b6dae] text-[10px] md:text-[11px] flex items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] items-stretch gap-0">
+            <div className="px-2 lg:px-3 py-1.5 lg:py-2 font-semibold lg:bg-blue-50/50 text-[#3b6dae] text-[10px] lg:text-[11px] flex items-center">
                 {label}
             </div>
-            <div className="px-2 md:px-3 py-1.5 flex items-center">{children}</div>
+            <div className="px-2 lg:px-3 py-1.5 flex items-center">{children}</div>
         </div>
     );
 }

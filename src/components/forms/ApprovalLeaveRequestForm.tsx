@@ -71,7 +71,8 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
   };
 
   const getApprovalLevelLabel = () => {
-    switch (user?.role) {
+    const level = request?.currentApprovalLevel;
+    switch (level) {
       case "head_of_department":
         return "Department Head Approval";
       case "hr":
@@ -85,7 +86,7 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
     }
   };
 
-  const shouldShowHRSelector = user?.role === "head_of_department";
+  const shouldShowHRSelector = request?.currentApprovalLevel === "head_of_department";
 
   // Show loading state while form data is being fetched
   if (formLoading) {
@@ -106,13 +107,13 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
   return (
     <div className="w-full bg-white dark:bg-[#1f426b] text-black dark:text-slate-100 px-3 md:px-8 py-4 md:py-6 space-y-4 md:space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start pb-4 md:pb-6 gap-2">
+      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start pb-4 lg:pb-6 gap-2">
         <div>
           <h1 className="text-lg md:text-2xl font-bold text-blue-600">Leave Request Approval Form</h1>
           <p className="text-xs md:text-sm text-gray-600 dark:text-slate-400 mt-1">{getApprovalLevelLabel()}</p>
           {submittedFormData && <p className="text-xs text-green-600 mt-1">✓ Form loaded from employee submission</p>}
         </div>
-        <div className="sm:text-right">
+        <div className="lg:text-right">
           <p className="text-xs text-gray-500">Request ID: #{request?.id}</p>
           <p className="text-xs text-gray-500">Submitted: {new Date(request?.createdAt).toLocaleDateString()}</p>
         </div>
@@ -122,7 +123,7 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
       <div className="bg-blue-50 border border-blue-200 dark:border-[#3b6dae]/30 rounded-lg p-4">
         <h2 className="font-bold text-blue-700 mb-3">EMPLOYEE INFORMATION</h2>
         <p className="text-xs text-blue-600 mb-3">From employee's submitted form</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 text-sm">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4 text-sm">
           <div>
             <label className="text-xs text-gray-600 dark:text-slate-400 font-semibold">Employee Name</label>
             <p className="text-foreground font-medium">{submittedFormData?.employeeName || request?.user?.name || "N/A"}</p>
@@ -154,7 +155,7 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
       <div className="border border-gray-300 rounded-lg p-4">
         <h2 className="font-bold text-blue-700 mb-3">LEAVE REQUEST DETAILS</h2>
         <p className="text-xs text-gray-600 dark:text-slate-400 mb-3">Exact data from employee's submission</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 text-sm">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4 text-sm">
           <div>
             <label className="text-xs text-gray-600 dark:text-slate-400 font-semibold">Leave Type</label>
             <p className="text-foreground font-medium capitalize">{submittedFormData?.leaveType || "N/A"}</p>
@@ -279,7 +280,7 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
               )}
 
               {signaturePreview && (
-                <div className="mt-3 p-2 bg-gray-50 dark:bg-[#1a385c] rounded border border-gray-200 animate-in zoom-in duration-300">
+                <div className="mt-3 p-2 bg-gray-50 dark:bg-[#1a385c] rounded animate-in zoom-in duration-300">
                   <img src={signaturePreview} alt="signature" className="h-24 object-contain mx-auto" />
                   <button
                     type="button"
@@ -316,7 +317,7 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
             )}
 
             {/* Action Buttons */}
-            <div className="flex flex-col gap-2 pt-4">
+            <div className="flex flex-col lg:flex-row gap-2 pt-4 lg:justify-end">
               <Button
                 variant="outline"
                 onClick={() => setShowRejectForm(true)}

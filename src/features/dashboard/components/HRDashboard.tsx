@@ -68,7 +68,7 @@ export const HRDashboard = () => {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 animate-pulse">
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="h-32 rounded-2xl bg-slate-200 dark:bg-slate-800" />
         ))}
@@ -87,7 +87,7 @@ export const HRDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Row 1: Full-Width Stats Grid */}
-        <div className="lg:col-span-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="lg:col-span-12 grid grid-cols-1 lg:grid-cols-4 gap-4">
            <StatsCard
             title="Active Workforce"
             value={stats?.totalEmployees || 0}

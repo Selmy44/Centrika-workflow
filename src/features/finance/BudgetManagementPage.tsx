@@ -56,15 +56,15 @@ const BudgetManagementPage = () => {
   return (
     <DashboardLayout>
       <div className="space-y-8 p-4 lg:p-8 animate-in fade-in duration-500">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="text-2xl font-black tracking-tight text-[#3b6dae] dark:text-[#c79d2d]">Budget Management</h1>
             <p className="text-sm text-slate-500 dark:text-slate-400">
               Allocate departmental budgets, monitor utilization, and surface overspend risk early.
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <select aria-label="Select fiscal year" className="rounded-xl border border-border/50 bg-white px-3 py-1.5 text-sm font-bold shadow-sm dark:bg-slate-900"
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
+            <select aria-label="Select fiscal year" className="rounded-xl border border-border/50 bg-white px-3 py-1.5 text-sm font-bold shadow-sm dark:bg-slate-900 w-full sm:w-auto"
               value={selectedYear}
               onChange={(e) => setSelectedYear(parseInt(e.target.value, 10))}
             >
@@ -74,7 +74,7 @@ const BudgetManagementPage = () => {
             </select>
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
               <DialogTrigger asChild>
-                <Button className="rounded-xl bg-blue-600 shadow-md hover:bg-blue-700">
+                <Button className="rounded-xl bg-blue-600 shadow-md hover:bg-blue-700 w-full sm:w-auto">
                   <Plus size={18} className="mr-2" /> New Allocation
                 </Button>
               </DialogTrigger>
@@ -108,7 +108,7 @@ const BudgetManagementPage = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-4">
           <Card className="overflow-hidden rounded-2xl border-border/50 bg-linear-to-br from-white to-blue-50/30 shadow-sm">
             <CardContent className="p-6">
               <div className="mb-4 flex items-center gap-4">

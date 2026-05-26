@@ -54,7 +54,7 @@ export default function ApprovalHistory() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
           <Card className="bg-card border-border">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">Total Reviewed</CardTitle>
@@ -143,8 +143,8 @@ export default function ApprovalHistory() {
               {filteredRequests.map((request: any) => (
                 <Card key={request.id} className="bg-card border-border hover:border-accent transition-colors">
                   <CardContent className="pt-4 pb-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div className="flex items-start sm:items-center gap-3 flex-1">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                      <div className="flex items-start lg:items-center gap-3 flex-1">
                         <div className="p-2 bg-muted rounded-lg shrink-0">{getRequestIcon(request.type)}</div>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-foreground truncate">{request.title}</p>
@@ -154,10 +154,10 @@ export default function ApprovalHistory() {
                         </div>
                       </div>
 
-                      <div className="flex flex-row sm:flex-row items-center justify-between sm:justify-end gap-3 w-full sm:w-auto mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-border">
-                        <div className="text-left sm:text-right">
+                      <div className="flex flex-row lg:flex-row items-center justify-between lg:justify-end gap-3 w-full lg:w-auto mt-2 lg:mt-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-border">
+                        <div className="text-left lg:text-right">
                           <p className="text-xs text-muted-foreground">Reviewed on</p>
-                          <p className="text-xs sm:text-sm font-medium text-foreground">
+                          <p className="text-xs lg:text-sm font-medium text-foreground">
                             {request.approvalDate ? formatDateTime(request.approvalDate) : "N/A"}
                           </p>
                         </div>

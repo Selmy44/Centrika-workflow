@@ -31,7 +31,7 @@ export default function OrganizationViewPage() {
   return (
     <DashboardLayout>
       <div className="space-y-8 p-4 md:p-8 max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-black tracking-tight text-[#3b6dae] dark:text-[#c79d2d] flex items-center gap-3">
               <Building2 className="h-8 w-8 text-blue-600" />
@@ -73,7 +73,7 @@ export default function OrganizationViewPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 xl:gap-6 pl-4 md:pl-8 border-l-2 border-slate-200 dark:border-slate-800 ml-6 pb-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 xl:gap-6 pl-4 md:pl-8 border-l-2 border-slate-200 dark:border-slate-800 ml-6 pb-4">
                   {dept.employees.length > 0 ? (
                     dept.employees.map((emp: any) => (
                       <Card 
@@ -133,7 +133,7 @@ export default function OrganizationViewPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 xl:gap-6 pl-4 md:pl-8 border-l-2 border-slate-200 dark:border-slate-800 ml-6 pb-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 xl:gap-6 pl-4 md:pl-8 border-l-2 border-slate-200 dark:border-slate-800 ml-6 pb-4">
                   {unassignedEmployees.map((emp: any) => (
                     <Card 
                       key={emp.id} 

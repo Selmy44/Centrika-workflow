@@ -27,7 +27,7 @@ export default function RequestAnalytics() {
         </div>
 
         {/* Analytics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
           <Card className="bg-card border-border">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -166,18 +166,18 @@ export default function RequestAnalytics() {
                 <Loader2 className="animate-spin text-accent" size={32} />
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <div className="text-center p-4 bg-green-500/10 rounded-lg border border-green-500/30">
-                  <p className="text-2xl sm:text-3xl font-bold text-green-500">{analyticsData?.approvedCount || 0}</p>
-                  <p className="text-xs sm:text-sm text-muted-foreground mt-1 sm:mt-2">Approved</p>
+                  <p className="text-2xl lg:text-3xl font-bold text-green-500">{analyticsData?.approvedCount || 0}</p>
+                  <p className="text-xs lg:text-sm text-muted-foreground mt-1 lg:mt-2">Approved</p>
                 </div>
                 <div className="text-center p-4 bg-red-500/10 rounded-lg border border-red-500/30">
-                  <p className="text-2xl sm:text-3xl font-bold text-red-500">{analyticsData?.rejectedCount || 0}</p>
-                  <p className="text-xs sm:text-sm text-muted-foreground mt-1 sm:mt-2">Rejected</p>
+                  <p className="text-2xl lg:text-3xl font-bold text-red-500">{analyticsData?.rejectedCount || 0}</p>
+                  <p className="text-xs lg:text-sm text-muted-foreground mt-1 lg:mt-2">Rejected</p>
                 </div>
                 <div className="text-center p-4 bg-yellow-500/10 rounded-lg border border-yellow-500/30">
-                  <p className="text-2xl sm:text-3xl font-bold text-yellow-500">{analyticsData?.pendingCount || 0}</p>
-                  <p className="text-xs sm:text-sm text-muted-foreground mt-1 sm:mt-2">Pending</p>
+                  <p className="text-2xl lg:text-3xl font-bold text-yellow-500">{analyticsData?.pendingCount || 0}</p>
+                  <p className="text-xs lg:text-sm text-muted-foreground mt-1 lg:mt-2">Pending</p>
                 </div>
               </div>
             )}

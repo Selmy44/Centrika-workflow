@@ -9,6 +9,7 @@ import ExpenditureRequestForm from "@/components/forms/ExpenditureRequestForm";
 import PersonalLeaveForm from "@/components/forms/PersonalLeaveForm";
 import UnpaidLeaveForm from "@/components/forms/UnpaidLeaveForm";
 import SickLeaveForm from "@/components/forms/SickLeaveForm";
+import AnnualLeaveForm from "@/components/forms/AnnualLeaveForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useEffect, useState } from "react";
 import { trpc } from "@/lib/trpc";
@@ -71,7 +72,7 @@ export default function RequestDetail() {
 
   return (
     <DashboardLayout hideConnectDock={true}>
-      <div className="p-4 md:p-6">
+      <div className="p-4 lg:p-6">
         {isLoading && (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="animate-spin text-accent" size={32} />
@@ -88,18 +89,53 @@ export default function RequestDetail() {
         {requestData && (
           <Dialog open={showModal} onOpenChange={handleCloseModal}>
             <DialogContent
-              className="w-full! h-dvh! md:h-auto! md:w-[70vw]! max-w-225! md:max-h-[90vh]! overflow-y-auto! p-0! flex! flex-col! gap-0! rounded-none! md:rounded-lg!"
+              className="w-full! h-dvh! lg:h-auto! lg:w-[70vw]! max-w-225! lg:max-h-[90vh]! overflow-y-auto! p-0! flex! flex-col! gap-0! rounded-none! lg:rounded-lg!"
             >
               <DialogHeader className="sr-only">
                 <DialogTitle>View Request</DialogTitle>
               </DialogHeader>
               <div className="flex-1 overflow-y-auto w-full">
                 {requestData.type === "leave" && (
-                  <LeaveRequestForm
-                    requestData={requestData}
-                    isReadOnly={requestData.status !== "draft"}
-                    onSuccess={handleFormSuccess}
-                  />
+                  <>
+                    {requestData.leaveRequest?.leaveType === "personal" && (
+                      <PersonalLeaveForm
+                        requestData={requestData}
+                        isReadOnly={requestData.status !== "draft"}
+                        onSuccess={handleFormSuccess}
+                      />
+                    )}
+                    {requestData.leaveRequest?.leaveType === "sick" && (
+                      <SickLeaveForm
+                        requestData={requestData}
+                        isReadOnly={requestData.status !== "draft"}
+                        onSuccess={handleFormSuccess}
+                      />
+                    )}
+                    {requestData.leaveRequest?.leaveType === "unpaid" && (
+                      <UnpaidLeaveForm
+                        requestData={requestData}
+                        isReadOnly={requestData.status !== "draft"}
+                        onSuccess={handleFormSuccess}
+                      />
+                    )}
+                    {requestData.leaveRequest?.leaveType === "annual" && (
+                      <AnnualLeaveForm
+                        requestData={requestData}
+                        isReadOnly={requestData.status !== "draft"}
+                        onSuccess={handleFormSuccess}
+                      />
+                    )}
+                    {requestData.leaveRequest?.leaveType !== "personal" &&
+                     requestData.leaveRequest?.leaveType !== "sick" &&
+                     requestData.leaveRequest?.leaveType !== "unpaid" &&
+                     requestData.leaveRequest?.leaveType !== "annual" && (
+                      <LeaveRequestForm
+                        requestData={requestData}
+                        isReadOnly={requestData.status !== "draft"}
+                        onSuccess={handleFormSuccess}
+                      />
+                    )}
+                  </>
                 )}
                 {requestData.type === "asset" && (
                   <AssetRequestForm
@@ -117,27 +153,6 @@ export default function RequestDetail() {
                 )}
                 {requestData.type === "expenditure" && (
                   <ExpenditureRequestForm
-                    requestData={requestData}
-                    isReadOnly={requestData.status !== "draft"}
-                    onSuccess={handleFormSuccess}
-                  />
-                )}
-                {requestData.type === "personal" && (
-                  <PersonalLeaveForm
-                    requestData={requestData}
-                    isReadOnly={requestData.status !== "draft"}
-                    onSuccess={handleFormSuccess}
-                  />
-                )}
-                {requestData.type === "unpaid" && (
-                  <UnpaidLeaveForm
-                    requestData={requestData}
-                    isReadOnly={requestData.status !== "draft"}
-                    onSuccess={handleFormSuccess}
-                  />
-                )}
-                {requestData.type === "sick" && (
-                  <SickLeaveForm
                     requestData={requestData}
                     isReadOnly={requestData.status !== "draft"}
                     onSuccess={handleFormSuccess}

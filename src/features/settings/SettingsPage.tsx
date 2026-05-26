@@ -152,40 +152,40 @@ export default function Settings() {
           </div>
 
           <Tabs defaultValue="profile" className="space-y-6">
-            <TabsList className="bg-white/40 border border-[#3b6dae]/5 p-1 rounded-xl h-auto backdrop-blur-md flex flex-wrap w-full md:w-auto md:inline-flex md:h-12">
-              <TabsTrigger value="profile" className="flex-1 md:flex-none px-4 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-[#3b6dae] data-[state=active]:text-white transition-all rounded-lg h-10 md:h-full">
+            <TabsList className="bg-white/40 border border-[#3b6dae]/5 p-1 rounded-xl h-auto backdrop-blur-md flex flex-wrap w-full lg:w-auto lg:inline-flex lg:h-12">
+              <TabsTrigger value="profile" className="flex-1 lg:flex-none px-4 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-[#3b6dae] data-[state=active]:text-white transition-all rounded-lg h-10 lg:h-full">
                 <User size={14} />
                 Profile
               </TabsTrigger>
 
-              <TabsTrigger value="security" className="flex-1 md:flex-none px-4 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-[#3b6dae] data-[state=active]:text-white transition-all rounded-lg h-10 md:h-full">
+              <TabsTrigger value="security" className="flex-1 lg:flex-none px-4 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-[#3b6dae] data-[state=active]:text-white transition-all rounded-lg h-10 lg:h-full">
                 <Lock size={14} />
                 Security
               </TabsTrigger>
-              <TabsTrigger value="documents" className="flex-1 md:flex-none px-4 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-[#3b6dae] data-[state=active]:text-white transition-all rounded-lg h-10 md:h-full">
+              <TabsTrigger value="documents" className="flex-1 lg:flex-none px-4 gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-[#3b6dae] data-[state=active]:text-white transition-all rounded-lg h-10 lg:h-full">
                 <FileText size={14} />
                 Documents
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="profile" className="space-y-4 focus-visible:outline-none">
-              <div className="flex flex-col md:flex-row  gap-4 items-center justify-between pb-2">
+              <div className="flex flex-col lg:flex-row gap-4 items-center justify-between pb-2">
                 <div>
                   <h2 className="text-xl font-bold tracking-tight text-[#3b6dae]">Personal Information</h2>
                   <p className="text-xs text-muted-foreground">Manage your personal details and contact information.</p>
                 </div>
                 {!isEditingProfile ? (
-                  <Button onClick={() => setIsEditingProfile(true)} className="bg-[#3b6dae] w-full md:w-auto hover:bg-[#2d5385] text-white">
+                  <Button onClick={() => setIsEditingProfile(true)} className="bg-[#3b6dae] w-full lg:w-auto hover:bg-[#2d5385] text-white">
                     <Pencil className="w-4 h-4 mr-2" />
                     Edit Profile
                   </Button>
                 ) : (
-                  <div className="flex justify-end flex-col w-full gap-2 md:flex-row items-center gap-2">
-                    <Button variant="outline" onClick={() => setIsEditingProfile(false)} className="border-red-200 text-red-600 hover:bg-red-50 w-full md:w-auto hover:text-red-700">
+                  <div className="flex justify-end flex-col w-full gap-2 lg:flex-row items-center gap-2">
+                    <Button variant="outline" onClick={() => setIsEditingProfile(false)} className="border-red-200 text-red-600 hover:bg-red-50 w-full lg:w-auto hover:text-red-700">
                       <X className="w-4 h-4 mr-2" />
                       Cancel
                     </Button>
-                    <Button onClick={handleUpdateProfile} disabled={updateProfileMutation.isPending} className="bg-green-600 hover:bg-green-700 w-full md:w-auto text-white">
+                    <Button onClick={handleUpdateProfile} disabled={updateProfileMutation.isPending} className="bg-green-600 hover:bg-green-700 w-full lg:w-auto text-white">
                       {updateProfileMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
                       Save Changes
                     </Button>
@@ -195,7 +195,7 @@ export default function Settings() {
 
               <Card className="bg-white border-[#3b6dae]/10 shadow-sm overflow-hidden">
                 <CardContent className="p-0">
-                  <div className="p-6 md:p-8 flex flex-col md:flex-row items-center md:items-start gap-8">
+                  <div className="p-6 lg:p-8 flex flex-col lg:flex-row items-center lg:items-start gap-8">
                     {/* AVATAR SECTION */}
                     <div className="flex flex-col items-center gap-4">
                       <div className="relative group">
@@ -215,16 +215,31 @@ export default function Settings() {
                       <div className="text-center">
                         <h3 className="font-bold text-lg text-slate-800 tracking-tight">{user.name}</h3>
                         <Badge variant="secondary" className="mt-1 bg-blue-50 text-blue-700 hover:bg-blue-100">
-                          {[user.role, ...(user.additionalRoles ? JSON.parse(user.additionalRoles) : [])].join(' & ').replace(/_/g, ' ').toUpperCase()}
+                          {[user.role, ...(() => {
+                            if (!user.additionalRoles) return [];
+                            if (typeof user.additionalRoles === 'string') {
+                              try {
+                                const trimmed = user.additionalRoles.trim();
+                                if (trimmed.startsWith('[')) {
+                                  const parsed = JSON.parse(trimmed);
+                                  return Array.isArray(parsed) ? parsed : [parsed];
+                                }
+                                return trimmed.split(',').map((r: string) => r.trim()).filter(Boolean);
+                              } catch (e) {
+                                return [user.additionalRoles];
+                              }
+                            }
+                            return Array.isArray(user.additionalRoles) ? user.additionalRoles : [];
+                          })()].join(' & ').replace(/_/g, ' ').toUpperCase()}
                         </Badge>
                       </div>
                     </div>
 
-                    <Separator orientation="vertical" className="hidden md:block h-auto min-h-[300px] bg-slate-100" />
-                    <Separator orientation="horizontal" className="block md:hidden bg-slate-100" />
+                    <Separator orientation="vertical" className="hidden lg:block h-auto min-h-[300px] bg-slate-100" />
+                    <Separator orientation="horizontal" className="block lg:hidden bg-slate-100" />
 
                     {/* FIELDS SECTION */}
-                    <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                    <div className="flex-1 w-full grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6">
                       <div className="space-y-1.5">
                         <Label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Full Name</Label>
                         {isEditingProfile ? (
@@ -369,7 +384,7 @@ export default function Settings() {
                       {passwordErrors.confirmPassword && <p className="text-xs text-red-500 mt-1 font-medium">{passwordErrors.confirmPassword}</p>}
                     </div>
                   </div>
-                  <Button onClick={handleChangePassword} disabled={changePasswordMutation.isPending} className="bg-[#3b6dae] hover:bg-[#2d5385] w-full md:w-auto  px-8 rounded-xl font-black uppercase text-[11px] tracking-widest shadow-lg shadow-[#3b6dae]/20 transition-all">
+                  <Button onClick={handleChangePassword} disabled={changePasswordMutation.isPending} className="bg-[#3b6dae] hover:bg-[#2d5385] w-full lg:w-auto  px-8 rounded-xl font-black uppercase text-[11px] tracking-widest shadow-lg shadow-[#3b6dae]/20 transition-all">
                     Update Password
                   </Button>
                 </CardContent>
@@ -509,7 +524,7 @@ function DocumentUploadForm() {
       </div>
       <div className="space-y-1.5">
         <Label className="text-[9px] font-black text-[#3b6dae]/40 uppercase tracking-widest">File selection</Label>
-        <div className="flex flex-col md:flex-row items-center gap-2">
+        <div className="flex flex-col lg:flex-row items-center gap-2">
           <Input 
             type="file" 
             onChange={(e) => setFile(e.target.files?.[0] || null)}
@@ -518,7 +533,7 @@ function DocumentUploadForm() {
           <Button 
             onClick={handleUpload} 
             disabled={uploadMutation.isPending}
-            className="bg-[#3b6dae] hover:bg-[#2d5385] h-9 px-4 w-full md:w-auto rounded-lg font-black uppercase text-[9px]"
+            className="bg-[#3b6dae] hover:bg-[#2d5385] h-9 px-4 w-full lg:w-auto rounded-lg font-black uppercase text-[9px]"
           >
             {uploadMutation.isPending ? <Loader2 className="animate-spin h-3 w-3" /> : "Upload"}
           </Button>
@@ -724,8 +739,8 @@ function UserDocumentsTable() {
     <>
       <div className="space-y-2">
         {documents.map((doc: any) => (
-          <div key={doc.id} className="flex flex-col md:flex-row items-center justify-between p-3 bg-white/40 rounded-xl border border-[#3b6dae]/5 hover:bg-white/60 transition-all">
-            <div className="flex flex-col md:flex-row items-center gap-3">
+          <div key={doc.id} className="flex flex-col lg:flex-row items-center justify-between p-3 bg-white/40 rounded-xl border border-[#3b6dae]/5 hover:bg-white/60 transition-all">
+            <div className="flex flex-col lg:flex-row items-center gap-3">
               <div className="h-8 w-8 bg-[#3b6dae]/10 rounded-lg flex items-center justify-center text-[#3b6dae]">
                 <FileText size={16} />
               </div>
@@ -864,8 +879,8 @@ function AllEmployeesDocumentsTable() {
             <p className="text-center text-[10px] font-bold text-[#3b6dae]/40 uppercase tracking-widest py-6">No results for "{searchUser}"</p>
           )}
           {filteredDocuments.map((doc: any) => (
-            <div key={doc.id} className="flex flex-col md:flex-row items-center justify-between p-3 bg-white/40 rounded-xl border border-[#3b6dae]/5 hover:bg-white/60 transition-all">
-              <div className="flex flex-col md:flex-row items-center gap-3 flex-1">
+            <div key={doc.id} className="flex flex-col lg:flex-row items-center justify-between p-3 bg-white/40 rounded-xl border border-[#3b6dae]/5 hover:bg-white/60 transition-all">
+              <div className="flex flex-col lg:flex-row items-center gap-3 flex-1">
                 <div className="h-8 w-8 bg-[#3b6dae]/10 rounded-lg flex items-center justify-center text-[#3b6dae] shrink-0"><FileText size={16} /></div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">

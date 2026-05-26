@@ -88,9 +88,9 @@ export default function EmployeeDirectory() {
           {(isLoadingEmployees || isLoadingDepts) && <Loader2 className="h-6 w-6 animate-spin text-blue-600" />}
         </div>
 
-        <div className="flex flex-col gap-4 md:flex-row">
+        <div className="flex flex-col gap-4 lg:flex-row">
           {/* Premium animated search bar */}
-          <div className="relative group transition-all duration-300 z-10 flex-1 max-w-md">
+          <div className="relative group transition-all duration-300 z-10 w-full lg:max-w-md">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-[#3b6dae] to-[#c79d2d] rounded-xl blur opacity-0 group-hover:opacity-20 group-focus-within:opacity-30 transition duration-500"></div>
             <div className="relative flex items-center">
               <Search className="absolute left-3.5 w-4 h-4 text-slate-400 group-focus-within:text-[#3b6dae] transition-colors z-10" />
@@ -114,7 +114,7 @@ export default function EmployeeDirectory() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <Card className="bg-white transition-shadow hover:shadow-md dark:bg-slate-800">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Employees</CardTitle>
@@ -146,7 +146,7 @@ export default function EmployeeDirectory() {
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {employees.map((employee: any) => (
             <Card key={employee.id} className="bg-white transition duration-200 hover:-translate-y-1 hover:shadow-lg dark:bg-slate-800">
               <CardContent className="p-6">

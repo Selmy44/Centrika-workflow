@@ -113,7 +113,7 @@ export function SignaturePad({ onSave, onClear, height = 150, className = "" }: 
 
   return (
     <div className={`space-y-3 w-full animate-in fade-in slide-in-from-top-2 duration-300 ${className}`}>
-      <div className="relative group bg-slate-50 dark:bg-slate-900/50 rounded-2xl border-2 border-dashed border-blue-200 dark:border-blue-900/50 overflow-hidden transition-all hover:border-blue-400 dark:hover:border-blue-700">
+      <div className="relative group bg-slate-50 dark:bg-slate-900/50 rounded-2xl overflow-hidden transition-all">
         <canvas
           ref={canvasRef}
           onMouseDown={startDrawing}
