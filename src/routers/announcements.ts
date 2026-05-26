@@ -2,6 +2,7 @@ import { z } from "zod";
 import { protectedProcedure, router } from "../core/trpc";
 import { prisma } from "../db";
 import { TRPCError } from "@trpc/server";
+import { parseAdditionalRoles } from "../shared/roles";
 import { sendEmail, emailTemplates } from "../core/email";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -64,9 +65,7 @@ export const announcementsRouter = router({
       const allowedRoles = ["admin", "hr", "head_of_department", "ceo_md"];
       
       // Check both primary role and additionalRoles
-      const additionalRoles = typeof ctx.user.additionalRoles === 'string'
-        ? JSON.parse(ctx.user.additionalRoles || "[]")
-        : (ctx.user.additionalRoles || []);
+      const additionalRoles = parseAdditionalRoles(ctx.user.additionalRoles);
       
       const hasAllowedRole = allowedRoles.includes(ctx.user.role) || 
         additionalRoles.some((r: string) => allowedRoles.includes(r));

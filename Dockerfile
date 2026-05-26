@@ -8,18 +8,20 @@ WORKDIR /app
 # Install dependencies needed for runtime
 RUN apk add --no-cache netcat-openbsd
 
-# Copy package files
-COPY package*.json ./
+# Install pnpm
+RUN npm install -g pnpm
 
-# Install dependencies using npm ci for reproducibility
-# (respects package-lock.json exactly)
-RUN npm ci
+# Copy package files and pnpm lockfile
+COPY package.json pnpm-lock.yaml ./
+
+# Install dependencies using pnpm
+RUN pnpm install --frozen-lockfile
 
 # Copy Prisma schema and migrations
 COPY prisma ./prisma
 
 # Generate Prisma client
-RUN npx prisma generate
+RUN pnpm prisma generate
 
 # Copy source code
 COPY src ./src
@@ -56,19 +58,14 @@ ENTRYPOINT ["/bin/sh", "-c", "\
   npx prisma migrate deploy && \
   echo '✅ Database migrations completed successfully' && \
   echo '🌱 Seeding database...' && \
-  echo '  → Seeding departments...' && \
-  npm run seed:departments || echo '⚠️  Departments seed completed' && \
-  echo '  → Seeding users...' && \
-  npm run seed:users || echo '⚠️  Users seed completed' && \
-  echo '  → Running generic seed script...' && \
-  npm run seed || echo '⚠️  Generic seed completed' && \
+  pnpm prisma db seed && \
   echo '✅ Database seeding completed' && \
   echo '🏁 Starting OnePortal Backend Application...' && \
   if [ \"${NODE_ENV}\" = \"production\" ]; then \
     echo '📦 Running in PRODUCTION mode...' && \
-    npm run build && \
-    exec npm run start; \
+    pnpm run build && \
+    exec pnpm run start; \
   else \
     echo '🛠️  Running in DEVELOPMENT mode...' && \
-    exec npm run dev; \
+    exec pnpm run dev; \
   fi"]

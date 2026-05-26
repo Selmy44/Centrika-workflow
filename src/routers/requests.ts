@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { protectedProcedure, router } from "../core/trpc";
 import { prisma } from "../db";
+import { parseAdditionalRoles } from "../shared/roles";
 import { TRPCError } from "@trpc/server";
 import { sendEmail, emailTemplates } from "../core/email";
 import {
@@ -48,11 +49,11 @@ async function generateRequestDetailsHtml(prisma: any, request: any): Promise<st
       detailsHtml += `<tr><td style="padding: 6px 0; font-weight: bold;">Est. Cost:</td><td>${data.estimatedCost} ${data.currency}</td></tr>`;
     }
   }
-  
+
   if (request.description) {
     detailsHtml += `<tr><td style="padding: 6px 0; font-weight: bold;">Description/Reason:</td><td>${request.description}</td></tr>`;
   }
-  
+
   detailsHtml += `</table>`;
   return detailsHtml;
 }
@@ -407,31 +408,31 @@ export const requestsRouter = router({
   listUserRequests: protectedProcedure
     .input(z.object({ includeNonSubmitted: z.boolean().optional() }).optional())
     .query(async ({ ctx, input }) => {
-    const userReqs = await prisma.request.findMany({
-      where: { 
-        userId: ctx.user.id,
-        // Only exclude draft/cancelled if not explicitly requested
-        ...(input?.includeNonSubmitted ? {} : { NOT: { status: { in: ["draft", "cancelled"] } } })
-      },
-      include: {
-        leaveRequest: true,
-        carRequest: true,
-        expenditureRequest: true,
-        assetRequest: true,
-        approvals: { include: { signature: true } },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+      const userReqs = await prisma.request.findMany({
+        where: {
+          userId: ctx.user.id,
+          // Only exclude draft/cancelled if not explicitly requested
+          ...(input?.includeNonSubmitted ? {} : { NOT: { status: { in: ["draft", "cancelled"] } } })
+        },
+        include: {
+          leaveRequest: true,
+          carRequest: true,
+          expenditureRequest: true,
+          assetRequest: true,
+          approvals: { include: { signature: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      });
 
-    return userReqs.map((req: any) => {
-      const hodApproval = req.approvals?.find((a: any) => a.approvalLevel === "head_of_department");
-      return {
-        ...req,
-        managerSignatureUrl: hodApproval?.signature?.fileUrl || null,
-        typeDetails: req.leaveRequest || req.carRequest || req.expenditureRequest || req.assetRequest
-      };
-    });
-  }),
+      return userReqs.map((req: any) => {
+        const hodApproval = req.approvals?.find((a: any) => a.approvalLevel === "head_of_department");
+        return {
+          ...req,
+          managerSignatureUrl: hodApproval?.signature?.fileUrl || null,
+          typeDetails: req.leaveRequest || req.carRequest || req.expenditureRequest || req.assetRequest
+        };
+      });
+    }),
 
   getRequest: protectedProcedure
     .input(z.object({ id: z.number() }))
@@ -449,7 +450,14 @@ export const requestsRouter = router({
       });
 
       if (!request) return null;
-      if (request.userId !== ctx.user.id && ctx.user.role !== "admin") {
+
+      const rolesToCheck: string[] = [ctx.user.role, ...parseAdditionalRoles(ctx.user.additionalRoles)];
+
+      const hasFullAccess = ["admin", "hr", "ceo_md"].some((role) => rolesToCheck.includes(role));
+      const isApprover = request.approvals.some((a) => a.approverId === ctx.user.id) || 
+                         (request.currentApprovalLevel && rolesToCheck.includes(request.currentApprovalLevel));
+
+      if (request.userId !== ctx.user.id && !hasFullAccess && !isApprover) {
         throw new TRPCError({ code: "FORBIDDEN" });
       }
 
@@ -512,7 +520,7 @@ export const requestsRouter = router({
         const defaultHod = await prisma.user.findFirst({ where: { role: "head_of_department" } });
         approverId = defaultHod?.id || 0;
       }
-      
+
       if (!approverId && !["hr", "head_of_finance", "ceo_md"].includes(initialLevel)) {
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "No approver found" });
       }
@@ -571,7 +579,6 @@ export const requestsRouter = router({
       } catch (error) {
         console.error("Failed to send submission email", error);
       }
-
       return { success: true };
     }),
 
@@ -585,20 +592,24 @@ export const requestsRouter = router({
       attachments: true,
     };
 
-    // Build OR conditions - only include role-based filter if role maps to ApprovalLevel
+    // Resolve all active roles for the user (primary + additional roles)
+    const rolesToCheck: string[] = [ctx.user.role, ...parseAdditionalRoles(ctx.user.additionalRoles)];
+
+    // Build OR conditions - include role-based filter if any role maps to a valid ApprovalLevel
     const validApprovalLevels = ["head_of_department", "hr", "head_of_finance", "ceo_md"];
     const orConditions: any[] = [
       { approverId: ctx.user.id, status: "pending" }
     ];
 
-    // Only add role-based filter if the user's role is a valid ApprovalLevel
-    if (validApprovalLevels.includes(ctx.user.role)) {
-      orConditions.push({
-        status: "pending",
-        approvalLevel: ctx.user.role,
-        request: { currentApprovalLevel: ctx.user.role }
-      });
-    }
+    rolesToCheck.forEach((role) => {
+      if (validApprovalLevels.includes(role)) {
+        orConditions.push({
+          status: "pending",
+          approvalLevel: role as any,
+          request: { currentApprovalLevel: role as any }
+        });
+      }
+    });
 
     const approvals = await prisma.requestApproval.findMany({
       where: { OR: orConditions },
@@ -607,7 +618,9 @@ export const requestsRouter = router({
 
     let results = approvals.map((a: any) => a.request);
 
-    if (ctx.user.role === "admin") {
+    // Allow HR, CEO/MD, and Admin to see ALL pending requests, not just their explicitly assigned ones
+    const hasFullAccess = ["admin", "hr", "ceo_md"].some((role) => rolesToCheck.includes(role));
+    if (hasFullAccess) {
       const allPending = await prisma.request.findMany({
         where: { status: "pending" },
         include: requestIncludes,
@@ -619,7 +632,9 @@ export const requestsRouter = router({
     }
 
     // Filter by role-specific needs if necessary
-    if (ctx.user.role === "head_of_finance") {
+    // Only filter out non-financial requests if they ONLY have the head_of_finance role
+    const onlyFinance = rolesToCheck.includes("head_of_finance") && !rolesToCheck.includes("head_of_department") && !rolesToCheck.includes("admin") && !rolesToCheck.includes("hr") && !rolesToCheck.includes("ceo_md");
+    if (onlyFinance) {
       results = (results as any[]).filter((r: any) => r.type === "expenditure" || r.type === "asset");
     }
 
@@ -638,8 +653,13 @@ export const requestsRouter = router({
       attachments: true,
     };
 
-    // Only admin sees ALL requests
-    if (ctx.user.role === "admin") {
+    // Resolve all active roles for the user (primary + additional roles)
+    const rolesToCheck: string[] = [ctx.user.role, ...parseAdditionalRoles(ctx.user.additionalRoles)];
+
+    const hasFullAccess = ["admin", "hr", "ceo_md"].some((role) => rolesToCheck.includes(role));
+
+    // Admin, HR, CEO/MD see ALL requests (approved, rejected, pending)
+    if (hasFullAccess) {
       const allRequests = await prisma.request.findMany({
         where: { status: { in: ["approved", "rejected", "pending"] } },
         include: requestIncludes,
@@ -648,7 +668,7 @@ export const requestsRouter = router({
       return allRequests;
     }
 
-    // Everyone else (HR, HOD, Finance, CEO/MD) only sees requests assigned to them
+    // HOD and Finance Head only see requests assigned to them
     const approvals = await prisma.requestApproval.findMany({
       where: { approverId: ctx.user.id },
       include: { request: { include: requestIncludes } },
@@ -815,11 +835,26 @@ export const requestsRouter = router({
         } catch (error) { console.error("Email error", error); }
       };
 
-      // Current approval
-      await prisma.requestApproval.updateMany({
+      // Resolve all active roles for the approver (primary + additionalRoles)
+      const approverRolesToCheck = [ctx.user.role as string, ...parseAdditionalRoles(ctx.user.additionalRoles)];
+
+      // Try to mark the approval by the exact approverId first
+      const byIdResult = await prisma.requestApproval.updateMany({
         where: { requestId: input.requestId, approverId: ctx.user.id, status: "pending" },
         data: { status: "approved", comments: input.comments, signatureFileId: input.signatureFileId, approvalDate: new Date() }
       });
+
+      // If no record matched by ID (e.g. the record was assigned to a different user of the same role pool),
+      // fall back to updating by approval level if the user holds that role
+      if (byIdResult.count === 0 && request.currentApprovalLevel) {
+        const currentLevel = request.currentApprovalLevel as string;
+        if (approverRolesToCheck.includes(currentLevel)) {
+          await prisma.requestApproval.updateMany({
+            where: { requestId: input.requestId, approvalLevel: currentLevel as any, status: "pending" },
+            data: { status: "approved", comments: input.comments, signatureFileId: input.signatureFileId, approvalDate: new Date(), approverId: ctx.user.id }
+          });
+        }
+      }
 
       const workflow = await prisma.workflowConfig.findFirst({
         where: { requestType: request.type, isActive: true },
@@ -901,10 +936,24 @@ export const requestsRouter = router({
       });
       if (!request) throw new TRPCError({ code: "NOT_FOUND" });
 
-      await prisma.requestApproval.updateMany({
+      // Resolve all active roles for the rejector (primary + additionalRoles)
+      const rejectorRolesToCheck = [ctx.user.role as string, ...parseAdditionalRoles(ctx.user.additionalRoles)];
+
+      const rejectByIdResult = await prisma.requestApproval.updateMany({
         where: { requestId: input.requestId, approverId: ctx.user.id, status: "pending" },
         data: { status: "rejected", comments: input.comments, approvalDate: new Date() }
       });
+
+      // Fallback: match by approvalLevel if this user holds that role
+      if (rejectByIdResult.count === 0 && request.currentApprovalLevel) {
+        const currentLevel = request.currentApprovalLevel as string;
+        if (rejectorRolesToCheck.includes(currentLevel)) {
+          await prisma.requestApproval.updateMany({
+            where: { requestId: input.requestId, approvalLevel: currentLevel as any, status: "pending" },
+            data: { status: "rejected", comments: input.comments, approvalDate: new Date(), approverId: ctx.user.id }
+          });
+        }
+      }
 
       await prisma.request.update({
         where: { id: input.requestId },
@@ -925,7 +974,7 @@ export const requestsRouter = router({
       try {
         const approver = await prisma.user.findUnique({ where: { id: ctx.user.id } });
         const docId = getDocId(request);
-        
+
         // Notify Requester
         if (request.user?.email && approver) {
           const emailContent = emailTemplates.requestRejectedEmail(
@@ -1044,9 +1093,9 @@ export const requestsRouter = router({
     }
 
     const approvedAnnualLeaves = await prisma.request.findMany({
-      where: { 
-        userId: ctx.user.id, 
-        type: "leave", 
+      where: {
+        userId: ctx.user.id,
+        type: "leave",
         status: "approved",
         leaveRequest: { leaveType: "annual" }
       },
@@ -1070,7 +1119,7 @@ export const requestsRouter = router({
         const start = new Date(request.leaveRequest.startDate);
         const end = new Date(request.leaveRequest.endDate);
         const current = new Date(start);
-        
+
         while (current <= end) {
           const dateStr = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}-${String(current.getDate()).padStart(2, '0')}`;
           takenLeaveDates.push(dateStr);
@@ -1107,7 +1156,11 @@ export const requestsRouter = router({
   }),
 
   getDashboardStats: protectedProcedure.query(async ({ ctx }) => {
-    if (ctx.user.role === "admin") {
+    // Resolve all active roles for the user (primary + additional roles)
+    const rolesToCheck: string[] = [ctx.user.role, ...parseAdditionalRoles(ctx.user.additionalRoles)];
+
+    const hasFullAccess = ["admin", "hr", "ceo_md"].some((role) => rolesToCheck.includes(role));
+    if (hasFullAccess) {
       const [totalRequests, totalUsers, pending, approved, rejected] = await Promise.all([
         prisma.request.count({ where: { NOT: { status: { in: ["draft", "cancelled"] } } } }),
         prisma.user.count(),
@@ -1118,14 +1171,14 @@ export const requestsRouter = router({
       return { totalRequests, totalUsers, pendingRequests: pending, approvedRequests: approved, rejectedRequests: rejected };
     }
 
-    const isApprover = ["head_of_department", "hr", "head_of_finance", "ceo_md"].includes(ctx.user.role) || !!ctx.user.additionalRoles;
+    const isApprover = ["head_of_department", "hr", "head_of_finance", "ceo_md"].some((role) => rolesToCheck.includes(role));
     if (isApprover) {
       const [pendCount, hdl] = await Promise.all([
         prisma.request.count({
           where: {
             status: "pending",
             OR: [
-              { currentApprovalLevel: ctx.user.role as any },
+              { currentApprovalLevel: { in: rolesToCheck as any[] } },
               { approvals: { some: { approverId: ctx.user.id, status: "pending" } } }
             ]
           }
@@ -1183,7 +1236,10 @@ export const requestsRouter = router({
   }),
 
   getExpenditureHistory: protectedProcedure.query(async ({ ctx }) => {
-    if (!["head_of_finance", "admin", "hr", "ceo_md"].includes(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN" });
+    const rolesToCheck: string[] = [ctx.user.role, ...parseAdditionalRoles(ctx.user.additionalRoles)];
+    const hasPriv = ["head_of_finance", "admin", "hr", "ceo_md"].some((role) => rolesToCheck.includes(role));
+    if (!hasPriv) throw new TRPCError({ code: "FORBIDDEN" });
+
     const expenditures = await prisma.request.findMany({
       where: { type: "expenditure", status: "approved" },
       include: { expenditureRequest: true, user: true },
@@ -1200,7 +1256,10 @@ export const requestsRouter = router({
   getEmployeeLeaveData: protectedProcedure
     .input(z.object({ employeeId: z.number().optional() }))
     .query(async ({ ctx, input }) => {
-      if (!["hr", "admin", "ceo_md"].includes(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN" });
+      const rolesToCheck: string[] = [ctx.user.role, ...parseAdditionalRoles(ctx.user.additionalRoles)];
+      const hasPriv = ["hr", "admin", "ceo_md"].some((role) => rolesToCheck.includes(role));
+      if (!hasPriv) throw new TRPCError({ code: "FORBIDDEN" });
+
       const targetId = input.employeeId || ctx.user.id;
       const [employee, balance, reqs] = await Promise.all([
         prisma.user.findUnique({ where: { id: targetId } }),
@@ -1211,7 +1270,8 @@ export const requestsRouter = router({
     }),
 
   getAllEmployees: protectedProcedure.query(async ({ ctx }) => {
-    const hasPriv = ["hr", "admin", "ceo_md"].includes(ctx.user.role) || (ctx.user.additionalRoles && (ctx.user.additionalRoles.includes("hr") || ctx.user.additionalRoles.includes("ceo_md")));
+    const rolesToCheck = [ctx.user.role, ...parseAdditionalRoles(ctx.user.additionalRoles)];
+    const hasPriv = ["hr", "admin", "ceo_md"].some((role) => rolesToCheck.includes(role));
     if (!hasPriv) throw new TRPCError({ code: "FORBIDDEN" });
     return prisma.user.findMany({ where: { role: "user" }, orderBy: { name: "asc" } });
   }),
@@ -1390,12 +1450,13 @@ export const requestsRouter = router({
   }),
 
   getDepartmentAnalytics: protectedProcedure.query(async ({ ctx }) => {
-    const isM = ["head_of_department", "hr", "head_of_finance", "ceo_md"].includes(ctx.user.role);
+    const rolesToCheck: string[] = [ctx.user.role, ...parseAdditionalRoles(ctx.user.additionalRoles)];
+    const isM = ["head_of_department", "hr", "head_of_finance", "ceo_md"].some((role) => rolesToCheck.includes(role));
     const reqs = await prisma.request.findMany({
       where: isM ? { user: { departmentId: ctx.user.departmentId } } : { userId: ctx.user.id },
     });
     const act = reqs.filter((r: any) => r.status !== "draft" && r.status !== "cancelled");
-    
+
     // Calculate average processing time (hrs) for completed requests
     const completed = act.filter((r: any) => r.status === "approved" || r.status === "rejected");
     const avgTime = completed.length > 0
@@ -1423,7 +1484,8 @@ export const requestsRouter = router({
   }),
 
   getTeamStatistics: protectedProcedure.query(async ({ ctx }) => {
-    if (!["head_of_department", "hr", "head_of_finance", "ceo_md"].includes(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN" });
+    const rolesToCheck: string[] = [ctx.user.role, ...parseAdditionalRoles(ctx.user.additionalRoles)];
+    if (!["head_of_department", "hr", "head_of_finance", "ceo_md"].some((role) => rolesToCheck.includes(role))) throw new TRPCError({ code: "FORBIDDEN" });
     const team = await prisma.user.findMany({
       where: { departmentId: ctx.user.departmentId, role: "user" },
       include: { requests: { where: { NOT: { status: { in: ["draft", "cancelled"] } } } } }
@@ -1460,7 +1522,8 @@ export const requestsRouter = router({
       leaveType: z.string().optional(),
     }))
     .query(async ({ ctx, input }) => {
-      if (ctx.user.role !== "hr" && ctx.user.role !== "admin" && ctx.user.role !== "ceo_md") {
+      const rolesToCheck: string[] = [ctx.user.role, ...parseAdditionalRoles(ctx.user.additionalRoles)];
+      if (!["hr", "admin", "ceo_md"].some((role) => rolesToCheck.includes(role))) {
         throw new TRPCError({ code: "FORBIDDEN" });
       }
 
@@ -1482,7 +1545,8 @@ export const requestsRouter = router({
     }),
 
   getAllLeaveBalances: protectedProcedure.query(async ({ ctx }) => {
-    if (ctx.user.role !== "hr" && ctx.user.role !== "admin" && ctx.user.role !== "ceo_md") {
+    const rolesToCheck: string[] = [ctx.user.role, ...parseAdditionalRoles(ctx.user.additionalRoles)];
+    if (!["hr", "admin", "ceo_md"].some((role) => rolesToCheck.includes(role))) {
       throw new TRPCError({ code: "FORBIDDEN" });
     }
 

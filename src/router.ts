@@ -1,5 +1,6 @@
 import { COOKIE_NAME } from "./shared/const";
 import { getSessionCookieOptions } from "./core/cookies";
+import { parseAdditionalRoles } from "./shared/roles";
 import { publicProcedure, router, protectedProcedure } from "./core/trpc";
 import { requestsRouter } from "./routers/requests";
 import { notificationsRouter } from "./routers/notifications";
@@ -682,9 +683,7 @@ export const appRouter = router({
     }),
 
     listAll: protectedProcedure.query(async ({ ctx }) => {
-      const additionalRoles = typeof ctx.user.additionalRoles === 'string'
-        ? JSON.parse(ctx.user.additionalRoles || "[]")
-        : (ctx.user.additionalRoles || []);
+      const additionalRoles = parseAdditionalRoles(ctx.user.additionalRoles);
       const hasAdminOrHr = ctx.user.role === "admin" || ctx.user.role === "hr" ||
         additionalRoles.includes("admin") || additionalRoles.includes("hr");
 
@@ -713,9 +712,7 @@ export const appRouter = router({
         gender: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        const additionalRoles = typeof ctx.user.additionalRoles === 'string'
-          ? JSON.parse(ctx.user.additionalRoles || "[]")
-          : (ctx.user.additionalRoles || []);
+        const additionalRoles = parseAdditionalRoles(ctx.user.additionalRoles);
         const hasAdminOrHr = ctx.user.role === "admin" || ctx.user.role === "hr" ||
           additionalRoles.includes("admin") || additionalRoles.includes("hr");
 
@@ -795,9 +792,7 @@ export const appRouter = router({
         profileImage: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        const additionalRoles = typeof ctx.user.additionalRoles === 'string'
-          ? JSON.parse(ctx.user.additionalRoles || "[]")
-          : (ctx.user.additionalRoles || []);
+        const additionalRoles = parseAdditionalRoles(ctx.user.additionalRoles);
         const hasAdminOrHr = ctx.user.role === "admin" || ctx.user.role === "hr" ||
           additionalRoles.includes("admin") || additionalRoles.includes("hr");
 
@@ -835,9 +830,7 @@ export const appRouter = router({
         role: z.enum(["user", "admin", "hr", "head_of_department", "head_of_finance", "ceo_md"]),
       }))
       .mutation(async ({ ctx, input }) => {
-        const additionalRoles = typeof ctx.user.additionalRoles === 'string'
-          ? JSON.parse(ctx.user.additionalRoles || "[]")
-          : (ctx.user.additionalRoles || []);
+        const additionalRoles = parseAdditionalRoles(ctx.user.additionalRoles);
         const hasAdminOrHr = ctx.user.role === "admin" || ctx.user.role === "hr" ||
           additionalRoles.includes("admin") || additionalRoles.includes("hr");
 
@@ -870,9 +863,7 @@ export const appRouter = router({
         newPassword: z.string().min(6, "Password must be at least 6 characters")
       }))
       .mutation(async ({ ctx, input }) => {
-        const additionalRoles = typeof ctx.user.additionalRoles === 'string'
-          ? JSON.parse(ctx.user.additionalRoles || "[]")
-          : (ctx.user.additionalRoles || []);
+        const additionalRoles = parseAdditionalRoles(ctx.user.additionalRoles);
         const hasAdminOrHr = ctx.user.role === "admin" || ctx.user.role === "hr" ||
           additionalRoles.includes("admin") || additionalRoles.includes("hr");
 
@@ -897,9 +888,7 @@ export const appRouter = router({
     deleteUser: protectedProcedure
       .input(z.object({ userId: z.number() }))
       .mutation(async ({ ctx, input }) => {
-        const additionalRoles = typeof ctx.user.additionalRoles === 'string'
-          ? JSON.parse(ctx.user.additionalRoles || "[]")
-          : (ctx.user.additionalRoles || []);
+        const additionalRoles = parseAdditionalRoles(ctx.user.additionalRoles);
         const hasAdminOrHr = ctx.user.role === "admin" || ctx.user.role === "hr" ||
           additionalRoles.includes("admin") || additionalRoles.includes("hr");
 

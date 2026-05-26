@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { parseAdditionalRoles } from "../shared/roles";
 
 const prisma = new PrismaClient();
 
@@ -12,7 +13,7 @@ async function main() {
       where: { id: hrUser.id },
       data: {
         role: "head_of_department",
-        additionalRoles: JSON.stringify(["hr"])
+        additionalRoles: "hr"
       }
     });
     console.log("Updated dmbabazi@centrika.rw to HOD + HR");
@@ -27,7 +28,7 @@ async function main() {
       where: { id: financeUser.id },
       data: {
         role: "head_of_department",
-        additionalRoles: JSON.stringify(["head_of_finance"])
+        additionalRoles: "head_of_finance"
       }
     });
     console.log("Updated pndabarasa@centrika.rw to HOD + Head of Finance");
@@ -38,16 +39,14 @@ async function main() {
   // 3. Assign Admin to snshuti@centrika.rw
   const snshutiUser = await prisma.user.findUnique({ where: { email: "snshuti@centrika.rw" } });
   if (snshutiUser) {
-    const additionalRoles = snshutiUser.additionalRoles 
-      ? JSON.parse(snshutiUser.additionalRoles as string) 
-      : [];
+    const additionalRoles = parseAdditionalRoles(snshutiUser.additionalRoles);
     if (!additionalRoles.includes("admin")) {
       additionalRoles.push("admin");
     }
     await prisma.user.update({
       where: { id: snshutiUser.id },
       data: {
-        additionalRoles: JSON.stringify(additionalRoles)
+        additionalRoles: additionalRoles.join(", ")
       }
     });
     console.log("Updated snshuti@centrika.rw with additional 'admin' role");
