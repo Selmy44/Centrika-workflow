@@ -58,6 +58,38 @@ async function generateRequestDetailsHtml(prisma: any, request: any): Promise<st
   return detailsHtml;
 }
 
+function populateRequestSignatures(req: any) {
+  if (!req) return req;
+  const hodApproval = req.approvals?.find((a: any) => a.approvalLevel === "head_of_department");
+  const hrApproval = req.approvals?.find((a: any) => a.approvalLevel === "hr");
+  const financeApproval = req.approvals?.find((a: any) => a.approvalLevel === "head_of_finance");
+  const ceoApproval = req.approvals?.find((a: any) => a.approvalLevel === "ceo_md" || a.approvalLevel === "md");
+
+  let managerSignatureUrl = hodApproval?.signature?.fileUrl || null;
+  let hrSignatureUrl = hrApproval?.signature?.fileUrl || null;
+  let financeSignatureUrl = financeApproval?.signature?.fileUrl || null;
+  let ceoSignatureUrl = ceoApproval?.signature?.fileUrl || null;
+
+  if (req.formSubmission?.formData) {
+    try {
+      const parsed = JSON.parse(req.formSubmission.formData);
+      if (!managerSignatureUrl) managerSignatureUrl = parsed.managerSignatureUrl || null;
+      if (!hrSignatureUrl) hrSignatureUrl = parsed.hrSignatureUrl || null;
+      if (!financeSignatureUrl) financeSignatureUrl = parsed.financeSignatureUrl || null;
+      if (!ceoSignatureUrl) ceoSignatureUrl = parsed.ceoSignatureUrl || null;
+    } catch {}
+  }
+
+  return {
+    ...req,
+    managerSignatureUrl,
+    hrSignatureUrl,
+    financeSignatureUrl,
+    ceoSignatureUrl,
+    typeDetails: req.leaveRequest || req.carRequest || req.expenditureRequest || req.assetRequest
+  };
+}
+
 export const requestsRouter = router({
   createLeaveRequest: protectedProcedure
     .input(
@@ -420,18 +452,12 @@ export const requestsRouter = router({
           expenditureRequest: true,
           assetRequest: true,
           approvals: { include: { signature: true } },
+          formSubmission: true,
         },
         orderBy: { createdAt: "desc" },
       });
 
-      return userReqs.map((req: any) => {
-        const hodApproval = req.approvals?.find((a: any) => a.approvalLevel === "head_of_department");
-        return {
-          ...req,
-          managerSignatureUrl: hodApproval?.signature?.fileUrl || null,
-          typeDetails: req.leaveRequest || req.carRequest || req.expenditureRequest || req.assetRequest
-        };
-      });
+      return userReqs.map(populateRequestSignatures);
     }),
 
   getRequest: protectedProcedure
@@ -446,6 +472,7 @@ export const requestsRouter = router({
           assetRequest: true,
           approvals: { include: { approver: true, signature: true } },
           attachments: true,
+          formSubmission: true,
         },
       });
 
@@ -461,12 +488,7 @@ export const requestsRouter = router({
         throw new TRPCError({ code: "FORBIDDEN" });
       }
 
-      const hodApproval = request.approvals?.find(a => a.approvalLevel === "head_of_department");
-      return {
-        ...request,
-        managerSignatureUrl: hodApproval?.signature?.fileUrl || null,
-        typeDetails: request.leaveRequest || request.carRequest || request.expenditureRequest || request.assetRequest
-      };
+      return populateRequestSignatures(request);
     }),
 
   submitRequest: protectedProcedure
@@ -590,6 +612,8 @@ export const requestsRouter = router({
       expenditureRequest: true,
       assetRequest: true,
       attachments: true,
+      approvals: { include: { signature: true } },
+      formSubmission: true,
     };
 
     // Resolve all active roles for the user (primary + additional roles)
@@ -640,7 +664,8 @@ export const requestsRouter = router({
 
     // Deduplicate in case a user is both assigned by ID and by role
     const uniqueMap = new Map(results.map((r: any) => [r.id, r]));
-    return Array.from(uniqueMap.values()).sort((a: any, b: any) => b.createdAt.getTime() - a.createdAt.getTime());
+    const deduplicated = Array.from(uniqueMap.values()).sort((a: any, b: any) => b.createdAt.getTime() - a.createdAt.getTime());
+    return deduplicated.map(populateRequestSignatures);
   }),
 
   listApprovalHistory: protectedProcedure.query(async ({ ctx }) => {
@@ -651,6 +676,8 @@ export const requestsRouter = router({
       expenditureRequest: true,
       assetRequest: true,
       attachments: true,
+      approvals: { include: { signature: true } },
+      formSubmission: true,
     };
 
     // Resolve all active roles for the user (primary + additional roles)
@@ -665,7 +692,7 @@ export const requestsRouter = router({
         include: requestIncludes,
         orderBy: { createdAt: "desc" },
       });
-      return allRequests;
+      return allRequests.map(populateRequestSignatures);
     }
 
     // HOD and Finance Head only see requests assigned to them
@@ -677,7 +704,8 @@ export const requestsRouter = router({
     const results = approvals.map((a: any) => a.request);
     // Deduplicate
     const map = new Map(results.map((r: any) => [r.id, r]));
-    return Array.from(map.values()).sort((a: any, b: any) => b.createdAt.getTime() - a.createdAt.getTime());
+    const deduplicated = Array.from(map.values()).sort((a: any, b: any) => b.createdAt.getTime() - a.createdAt.getTime());
+    return deduplicated.map(populateRequestSignatures);
   }),
 
   approveRequest: protectedProcedure
@@ -1393,7 +1421,7 @@ export const requestsRouter = router({
   getCarRequestDetails: protectedProcedure
     .input(z.object({ requestId: z.coerce.number() }))
     .query(async ({ input }) => {
-      const req = await prisma.request.findUnique({ where: { id: input.requestId }, include: { carRequest: true, user: true } });
+      const req = await prisma.request.findUnique({ where: { id: input.requestId }, include: { carRequest: true, user: { include: { department: true } } } });
       if (!req) throw new TRPCError({ code: "NOT_FOUND" });
       return { request: req, carDetails: req.carRequest, employee: req.user };
     }),
@@ -1401,7 +1429,7 @@ export const requestsRouter = router({
   getExpenditureRequestDetails: protectedProcedure
     .input(z.object({ requestId: z.coerce.number() }))
     .query(async ({ input }) => {
-      const req = await prisma.request.findUnique({ where: { id: input.requestId }, include: { expenditureRequest: true, user: true } });
+      const req = await prisma.request.findUnique({ where: { id: input.requestId }, include: { expenditureRequest: true, user: { include: { department: true } } } });
       if (!req) throw new TRPCError({ code: "NOT_FOUND" });
       return { request: req, expenditureDetails: req.expenditureRequest, employee: req.user };
     }),
@@ -1409,7 +1437,7 @@ export const requestsRouter = router({
   getAssetRequestDetails: protectedProcedure
     .input(z.object({ requestId: z.coerce.number() }))
     .query(async ({ input }) => {
-      const req = await prisma.request.findUnique({ where: { id: input.requestId }, include: { assetRequest: true, user: true } });
+      const req = await prisma.request.findUnique({ where: { id: input.requestId }, include: { assetRequest: true, user: { include: { department: true } } } });
       if (!req) throw new TRPCError({ code: "NOT_FOUND" });
       return { request: req, assetDetails: req.assetRequest, employee: req.user };
     }),

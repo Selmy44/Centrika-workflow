@@ -50,13 +50,14 @@ async function main() {
       staffId: "", // Auto-generate
     },
     {
-      email: "dmbabazi@centrika.rw",
-      name: "Doreen Mbabazi",
+      email: "hntaganzwa@centrika.rw",
+      name: "Henry Ntaganzwa",
       password: hashedPassword,
       role: "head_of_department",
       additionalRoles: "hr",
       status: "Active",
       departmentName: "Administration",
+      position: "HR Manager",
       staffId: "", // Auto-generate
     },
     {
