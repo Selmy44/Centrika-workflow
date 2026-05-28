@@ -302,7 +302,7 @@ export default function Approvals() {
   const getApprovalLevelLabel = (level: string) => {
     const labels: Record<string, string> = {
       "head_of_department": "Department Head",
-      "hr": "HR (Doreen MBABAZI)",
+      "hr": "HR (Henry Ntaganzwa)",
       "head_of_finance": "Head of Finance (Patrick NDABARASA)",
       "ceo_md": "CEO/MD",
       "final": "Final Approval",

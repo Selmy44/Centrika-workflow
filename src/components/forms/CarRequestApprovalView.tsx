@@ -191,7 +191,7 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-2.5 lg:gap-3 px-3 lg:px-6 py-2 lg:py-3 text-xs lg:text-sm items-end border-b border-gray-200">
                     <div>
                         <p className="font-semibold text-blue-600 mb-1 text-xs">Department</p>
-                        <Input value={employee?.department || "N/A"} disabled className="h-7 text-xs bg-gray-50" />
+                        <Input value={employee?.department?.name || formDataDynamic?.department || "N/A"} disabled className="h-7 text-xs bg-gray-50" />
                     </div>
                     <div>
                         <p className="font-semibold text-blue-600 mb-1 text-xs">Date Submitted</p>
@@ -199,11 +199,11 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                     </div>
                     <div>
                         <p className="font-semibold text-blue-600 text-xs mb-1">Staff ID</p>
-                        <Input value={employee?.staffId || "N/A"} disabled className="h-7 text-xs bg-gray-50" />
+                        <Input value={employee?.staffId || formDataDynamic?.staffId || "N/A"} disabled className="h-7 text-xs bg-gray-50" />
                     </div>
                     <div>
                         <p className="font-semibold text-blue-600 text-xs mb-1">Employee Name</p>
-                        <Input value={employee?.name || "N/A"} disabled className="h-7 text-xs bg-gray-50" />
+                        <Input value={employee?.name || formDataDynamic?.employeeName || "N/A"} disabled className="h-7 text-xs bg-gray-50" />
                     </div>
                 </div>
 
@@ -211,35 +211,47 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                 <div className="divide-y divide-[#3b6dae]/30">
                     <Section title="1. EMPLOYEE INFORMATION">
                         <Row label="1.1 Employee Full Name">
-                            <Input value={employee?.name || "N/A"} disabled className="h-7 text-xs bg-gray-50" />
+                            <Input value={employee?.name || formDataDynamic?.employeeName || "N/A"} disabled className="h-7 text-xs bg-gray-50 font-medium" />
                         </Row>
-                        <Row label="1.2 Staff ID">
-                            <Input value={employee?.staffId || "N/A"} disabled className="h-7 text-xs bg-gray-50" />
+                        <Row label="1.2 Date of Employment">
+                            <Input value={employee?.dateOfEmployment || formDataDynamic?.dateOfEmployment || "N/A"} disabled className="h-7 text-xs bg-gray-50 font-medium" />
                         </Row>
-                        <Row label="1.3 Department">
-                            <Input value={employee?.department || "N/A"} disabled className="h-7 text-xs bg-gray-50" />
+                        <Row label="1.3 Staff ID">
+                            <Input value={employee?.staffId || formDataDynamic?.staffId || "N/A"} disabled className="h-7 text-xs bg-gray-50 font-medium" />
+                        </Row>
+                        <Row label="1.4 Department">
+                            <Input value={employee?.department?.name || formDataDynamic?.department || "N/A"} disabled className="h-7 text-xs bg-gray-50 font-medium" />
+                        </Row>
+                        <Row label="1.5 Position / Title">
+                            <Input value={employee?.position || formDataDynamic?.position || "N/A"} disabled className="h-7 text-xs bg-gray-50 font-medium" />
                         </Row>
                     </Section>
 
                     <Section title="2. CAR REQUEST DETAILS">
                         <Row label="2.1 Request ID">
-                            <Input value={`#${requestData?.id}`} disabled className="h-7 text-xs bg-gray-50" />
+                            <Input value={`#${requestData?.id}`} disabled className="h-7 text-xs bg-gray-50 font-medium" />
                         </Row>
                         <Row label="2.2 Destination">
-                            <Input value={car?.destination || "N/A"} disabled className="h-7 text-xs bg-gray-50" />
+                            <Input value={car?.destination || formDataDynamic?.destination || "N/A"} disabled className="h-7 text-xs bg-gray-50 font-medium" />
                         </Row>
-                        <Row label="2.3 Departure">
-                            <Input value={`${car?.departureDate || ""} ${car?.departureTime || ""}`} disabled className="h-7 text-xs bg-gray-50" />
+                        <Row label="2.3 Request Title">
+                            <Input value={requestData?.title || formDataDynamic?.title || "N/A"} disabled className="h-7 text-xs bg-gray-50 font-medium" />
                         </Row>
-                        <Row label="2.4 Passengers">
-                            <Input value={car?.passengers?.toString() || "0"} disabled className="h-7 text-xs bg-gray-50" />
+                        <Row label="2.4 Purpose">
+                            <Textarea value={car?.purpose || formDataDynamic?.purpose || "N/A"} disabled className="min-h-16 text-xs bg-gray-50 resize-none font-medium" />
                         </Row>
-                        <Row label="2.5 Vehicle & Driver">
-                            <div className="space-y-1">
+                        <Row label="2.5 Departure">
+                            <Input value={`${car?.departureDate || formDataDynamic?.departureDate || ""} ${car?.departureTime || formDataDynamic?.departureTime || ""}`} disabled className="h-7 text-xs bg-gray-50 font-medium" />
+                        </Row>
+                        <Row label="2.6 Passengers">
+                            <Input value={car?.passengers?.toString() || formDataDynamic?.passengers?.toString() || "0"} disabled className="h-7 text-xs bg-gray-50 font-medium" />
+                        </Row>
+                        <Row label="2.7 Vehicle & Driver">
+                            <div className="space-y-1 w-full font-medium">
                                 <p className="text-[10px] text-gray-500 uppercase font-bold">Driver:</p>
-                                <Input value={car?.driverName || "N/A"} disabled className="h-7 text-xs bg-gray-50" />
+                                <Input value={car?.driverName || formDataDynamic?.driverName || "N/A"} disabled className="h-7 text-xs bg-gray-50 font-medium" />
                                 <p className="text-[10px] text-gray-500 uppercase font-bold mt-1">Vehicle:</p>
-                                <Input value={car?.carInfo || "N/A"} disabled className="h-7 text-xs bg-gray-50" />
+                                <Input value={car?.carInfo || formDataDynamic?.carInfo || "N/A"} disabled className="h-7 text-xs bg-gray-50 font-medium" />
                             </div>
                         </Row>
                     </Section>
@@ -247,7 +259,9 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                     <Section title="3. EMPLOYEE SIGNATURE">
                         <Row label="3.1 Signature">
                             {formDataDynamic?.employeeSignatureUrl ? (
-                                <img src={formDataDynamic.employeeSignatureUrl} alt="Employee" className="h-10 object-contain" />
+                                <div className="p-2 border border-blue-200 dark:border-[#3b6dae]/30 rounded inline-block bg-white dark:bg-[#1f426b]">
+                                    <img src={formDataDynamic.employeeSignatureUrl} alt="Employee Signature" className="h-14 object-contain" />
+                                </div>
                             ) : (
                                 <p className="text-xs italic text-gray-500">No signature</p>
                             )}
@@ -255,22 +269,14 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                     </Section>
 
                     <Section title="4. APPROVAL WORKFLOW">
-                        {/* HOD / Manager */}
-                        {formDataDynamic?.managerSignatureUrl && (
-                            <Row label="4.1 Line Manager / HOD">
-                                <div className="py-1">
-                                    <p className="text-[10px] font-bold text-gray-400 mb-1">APPROVED BY HOD:</p>
-                                    <img src={formDataDynamic.managerSignatureUrl} alt="HOD" className="h-10 object-contain" />
-                                </div>
-                            </Row>
-                        )}
-
                         {/* HR */}
-                        <Row label="4.2 HR Approval">
-                            {formDataDynamic?.hrSignatureUrl ? (
+                        <Row label="4.1 HR Approval">
+                            {(formDataDynamic?.hrSignatureUrl || requestData?.hrSignatureUrl) ? (
                                 <div className="py-1">
                                     <p className="text-[10px] font-bold text-gray-400 mb-1">APPROVED BY HR:</p>
-                                    <img src={formDataDynamic.hrSignatureUrl} alt="HR" className="h-10 object-contain" />
+                                    <div className="p-2 border border-blue-200 dark:border-[#3b6dae]/30 rounded inline-block bg-white dark:bg-[#1f426b]">
+                                        <img src={formDataDynamic?.hrSignatureUrl || requestData?.hrSignatureUrl} alt="HR Signature" className="h-14 object-contain" />
+                                    </div>
                                 </div>
                             ) : (
                                 <p className="text-xs italic text-gray-500 py-2">Awaiting HR Review</p>

@@ -106,9 +106,11 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
         signatureFile: null, // Don't restore file objects
         signaturePreview: d.signaturePreview || prev.signaturePreview,
         supportingDocumentUrl: d.supportingDocumentUrl || prev.supportingDocumentUrl,
+        hrSignatureUrl: d.hrSignatureUrl || requestData?.hrSignatureUrl || prev.hrSignatureUrl || "",
+        managerSignatureUrl: d.managerSignatureUrl || requestData?.managerSignatureUrl || prev.managerSignatureUrl || "",
       }));
     }
-  }, [savedFormData.data]);
+  }, [savedFormData.data, requestData]);
 
   // Merge requestData fields directly to handle cases where form submission is missing or for additional robustness
   useEffect(() => {
@@ -425,6 +427,9 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
                 label=""
                 className={`border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs font-medium text-black dark:text-slate-100 ${isReadOnly ? 'bg-gray-100 dark:bg-[#295482] cursor-not-allowed' : 'bg-white dark:bg-[#1f426b]'}`}
                 disabled={isReadOnly}
+                disablePastDates={true}
+                highlightWeekends={true}
+                highlightToday={true}
               />
             </Row>
             <Row label="3.2 Departure Time">
@@ -571,29 +576,19 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
 
           {/* 6. APPROVAL WORKFLOW */}
           <Section title="6. APPROVAL WORKFLOW">
-            <Row label="6.1 Line Manager / HOD">
+            <Row label="6.1 HR Approver">
               <div className="flex flex-col gap-1 w-full">
-                <Input
-                  value={uniqueHeads.find((h: any) => h.id === parseInt(form.reportingManager))?.name || "Not assigned"}
-                  className="w-full h-8 border-blue-300 dark:border-[#3b6dae]/40 bg-gray-100 dark:bg-[#295482] text-black dark:text-slate-100 font-medium cursor-not-allowed max-w-[400px] mt-1 mb-1"
-                  disabled
-                />
-                {isReadOnly && form.managerSignatureUrl && (
+                <p className="text-xs text-gray-500 italic mt-1 mb-1">
+                  This request is routed directly to <span className="font-semibold text-blue-600">HR</span> for approval.
+                </p>
+                {isReadOnly && form.hrSignatureUrl && (
                   <div className="mt-1">
-                    <p className="text-[10px] text-green-600 font-semibold mb-0.5">✓ Approved by HOD</p>
-                    <img src={form.managerSignatureUrl} alt="HOD Signature" className="h-10 object-contain" />
+                    <p className="text-[10px] text-green-600 font-semibold mb-0.5">✓ Approved by HR</p>
+                    <img src={form.hrSignatureUrl} alt="HR Signature" className="h-10 object-contain" />
                   </div>
                 )}
               </div>
             </Row>
-            {isReadOnly && form.hrSignatureUrl && (
-              <Row label="6.2 HR Approver">
-                <div className="mt-1">
-                  <p className="text-[10px] text-green-600 font-semibold mb-0.5">✓ Approved by HR</p>
-                  <img src={form.hrSignatureUrl} alt="HR Signature" className="h-10 object-contain" />
-                </div>
-              </Row>
-            )}
           </Section>
         </div>
 

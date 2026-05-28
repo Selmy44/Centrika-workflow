@@ -39,6 +39,7 @@ export default function AnnualLeaveForm({ requestData, isReadOnly = false, onSuc
   const [, navigate] = useLocation();
   const autoFillData = useFormAutoFill();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [takenLeaveDates, setTakenLeaveDates] = useState<string[]>([]);
 
   const [form, setForm] = useState({
     documentId: "",
@@ -262,30 +263,20 @@ export default function AnnualLeaveForm({ requestData, isReadOnly = false, onSuc
           Annual Leave Request Form
         </div>
 
-        {/* ===== READ-ONLY BADGE ===== */}
-        {isReadOnly && (
-          <div className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 dark:bg-[#1a385c] border-b border-blue-100 dark:border-[#2b6cb0]/30">
-            <span className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wider">
-              📄 View Only — This form has been submitted
-            </span>
-          </div>
-        )}
-
         {/* ===== REQUEST HEADER SECTION ===== */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-2 lg:gap-3 px-3 lg:px-6 py-2 lg:py-3 text-xs lg:text-sm items-end">
           <div>
-            <p className="font-semibold text-blue-600 mb-1 text-xs">Name of Department</p>
+            <p className="font-semibold text-blue-600 mb-1 text-xs uppercase tracking-tighter">CTK</p>
             <div className="flex gap-0 items-center">
-              <span className="text-blue-600 font-bold text-xs whitespace-nowrap">CTK - </span>
               <Input
                 value={form.department}
-                className="w-full h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed border-l-0"
+                className="w-full h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
                 disabled
               />
             </div>
           </div>
           <div>
-            <p className="font-semibold text-blue-600 mb-1 text-xs">Nature of the Annual Leave</p>
+            <p className="font-semibold text-blue-600 mb-1 text-xs">Nature of Leave</p>
             <Input
               value="Annual Leave"
               className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
@@ -372,76 +363,45 @@ export default function AnnualLeaveForm({ requestData, isReadOnly = false, onSuc
           {/* 2. LEAVE DETAILS */}
           <Section title="2. LEAVE DETAILS">
             <Row label="2.1 Leave Duration (Start – End)">
-              {isReadOnly ? (
-                <div className="flex gap-3 text-xs font-medium text-black dark:text-slate-100 py-1">
-                  <span>{form.startDate || "—"}</span>
-                  <span>→</span>
-                  <span>{form.endDate || "—"}</span>
-                </div>
-              ) : (
-                <DateRangePicker
-                  startDate={form.startDate}
-                  endDate={form.endDate}
-                  onStartDateChange={(date) => setForm({ ...form, startDate: date })}
-                  onEndDateChange={(date) => setForm({ ...form, endDate: date })}
-                  maxDays={18}
-                />
-              )}
+              <DateRangePicker
+                startDate={form.startDate}
+                endDate={form.endDate}
+                onStartDateChange={(date) => setForm({ ...form, startDate: date })}
+                onEndDateChange={(date) => setForm({ ...form, endDate: date })}
+                maxDays={18}
+                disabled={isReadOnly}
+                takenLeaveDates={takenLeaveDates}
+              />
             </Row>
 
-            {!isReadOnly && (
-              <div className="px-4 pb-4">
-                <LeaveBalanceCalculator
-                  leaveType="annual"
-                  startDate={form.startDate}
-                  endDate={form.endDate}
-                  alreadyTaken={parseInt(form.leaveDaysTaken) || 0}
-                  onTakenChange={(val) => setForm(prev => ({ ...prev, leaveDaysTaken: val.toString() }))}
-                  onCalculated={(data: any) => {
-                    if (
-                      form.leaveDaysRequested !== data.requested.toString() ||
-                      form.leaveDaysRemaining !== data.remaining.toString() ||
-                      form.leaveDaysEntitled !== data.entitled.toString() ||
-                      form.leaveDaysTaken !== data.taken.toString()
-                    ) {
-                      setForm(prev => ({
-                        ...prev,
-                        leaveDaysRequested: data.requested.toString(),
-                        leaveDaysRemaining: data.remaining.toString(),
-                        leaveDaysEntitled: data.entitled.toString(),
-                        leaveDaysTaken: data.taken.toString()
-                      }));
-                    }
-                  }}
-                />
-              </div>
-            )}
-
-            {isReadOnly && (
-              <>
-                <Row label="2.1a Leave Days Entitled">
-                  <Input
-                    value={form.leaveDaysEntitled}
-                    className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium w-24"
-                    disabled
-                  />
-                </Row>
-                <Row label="2.1b Leave Days Taken">
-                  <Input
-                    value={form.leaveDaysTaken}
-                    className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium w-24"
-                    disabled
-                  />
-                </Row>
-                <Row label="2.1c Leave Days Remaining">
-                  <Input
-                    value={form.leaveDaysRemaining}
-                    className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium w-24"
-                    disabled
-                  />
-                </Row>
-              </>
-            )}
+            <div className="px-4 pb-4">
+              <LeaveBalanceCalculator
+                leaveType="annual"
+                startDate={form.startDate}
+                endDate={form.endDate}
+                alreadyTaken={parseInt(form.leaveDaysTaken) || 0}
+                onTakenChange={(val) => setForm(prev => ({ ...prev, leaveDaysTaken: val.toString() }))}
+                onCalculated={(data: any) => {
+                  if (
+                    form.leaveDaysRequested !== data.requested.toString() ||
+                    form.leaveDaysRemaining !== data.remaining.toString() ||
+                    form.leaveDaysEntitled !== data.entitled.toString() ||
+                    form.leaveDaysTaken !== data.taken.toString()
+                  ) {
+                    setForm(prev => ({
+                      ...prev,
+                      leaveDaysRequested: data.requested.toString(),
+                      leaveDaysRemaining: data.remaining.toString(),
+                      leaveDaysEntitled: data.entitled.toString(),
+                      leaveDaysTaken: data.taken.toString()
+                    }));
+                  }
+                  if (data.takenLeaveDates) {
+                    setTakenLeaveDates(data.takenLeaveDates);
+                  }
+                }}
+              />
+            </div>
 
             <Row label="2.2 Number of Leave Days Requested">
               <Input
@@ -487,27 +447,8 @@ export default function AnnualLeaveForm({ requestData, isReadOnly = false, onSuc
             </Row>
           </Section>
 
-          {/* 3. INITIAL APPROVAL */}
-          <Section title="3. INITIAL APPROVAL">
-            <Row label="3.1 Reporting Manager / HOD">
-              <div className="flex flex-col gap-1 w-full">
-                <Input
-                  value={uniqueHeads.find((h: any) => h.id === parseInt(form.reportingManager))?.name || "Not assigned"}
-                  className="w-full h-8 border-blue-300 dark:border-[#3b6dae]/40 bg-gray-100 dark:bg-[#295482] text-black dark:text-slate-100 font-medium cursor-not-allowed mt-1 mb-1 max-w-[400px]"
-                  disabled
-                />
-                {isReadOnly && form.managerSignatureUrl && (
-                  <div className="mt-1">
-                    <p className="text-[10px] text-green-600 font-semibold mb-0.5">✓ Approved by HOD</p>
-                    <img src={form.managerSignatureUrl} alt="HOD Signature" className="h-10 object-contain" />
-                  </div>
-                )}
-              </div>
-            </Row>
-          </Section>
-
-          {/* 4. EMPLOYEE SIGNATURE */}
-          <Section title="4. EMPLOYEE SIGNATURE">
+          {/* 3. EMPLOYEE SIGNATURE */}
+          <Section title="3. EMPLOYEE SIGNATURE">
             <Row label="4.1 Your Signature">
               <div className="space-y-3 py-1 w-full">
                 {isReadOnly ? (
@@ -588,12 +529,31 @@ export default function AnnualLeaveForm({ requestData, isReadOnly = false, onSuc
                 )}
               </div>
             </Row>
-            <Row label="4.2 Signature Date">
+            <Row label="3.2 Signature Date">
               <Input
                 value={form.signatureDate || new Date().toISOString().split("T")[0]}
                 readOnly
                 className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium w-40"
               />
+            </Row>
+          </Section>
+
+          {/* 4. INITIAL APPROVAL */}
+          <Section title="4. INITIAL APPROVAL">
+            <Row label="4.1 Reporting Manager / HOD">
+              <div className="flex flex-col gap-1 w-full">
+                <Input
+                  value={uniqueHeads.find((h: any) => h.id === parseInt(form.reportingManager))?.name || "Not assigned"}
+                  className="w-full h-8 border-blue-300 dark:border-[#3b6dae]/40 bg-gray-100 dark:bg-[#295482] text-black dark:text-slate-100 font-medium cursor-not-allowed mt-1 mb-1 max-w-[400px]"
+                  disabled
+                />
+                {isReadOnly && form.managerSignatureUrl && (
+                  <div className="mt-1">
+                    <p className="text-[10px] text-green-600 font-semibold mb-0.5">✓ Approved by HOD</p>
+                    <img src={form.managerSignatureUrl} alt="HOD Signature" className="h-10 object-contain" />
+                  </div>
+                )}
+              </div>
             </Row>
           </Section>
         </div>

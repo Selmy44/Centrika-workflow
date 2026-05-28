@@ -38,6 +38,7 @@ export default function PersonalLeaveForm({ requestData, isReadOnly = false, onS
   const [, navigate] = useLocation();
   const autoFillData = useFormAutoFill();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [takenLeaveDates, setTakenLeaveDates] = useState<string[]>([]);
 
   const [form, setForm] = useState({
     documentId: "",
@@ -298,12 +299,11 @@ export default function PersonalLeaveForm({ requestData, isReadOnly = false, onS
         {/* ===== REQUEST HEADER SECTION - Responsive Grid ===== */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-2 lg:gap-3 px-3 lg:px-6 py-2 lg:py-3 text-xs lg:text-sm items-end">
           <div>
-            <p className="font-semibold text-blue-600 mb-1 text-[10px] lg:text-xs">Name of Department</p>
+            <p className="font-semibold text-blue-600 mb-1 text-[10px] lg:text-xs uppercase tracking-tighter">CTK</p>
             <div className="flex gap-0 items-center">
-              <span className="text-blue-600 font-bold text-[10px] lg:text-xs whitespace-nowrap">CTK - </span>
               <Input
                 value={form.department}
-                className="w-full h-6 lg:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] lg:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed border-l-0"
+                className="w-full h-6 lg:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] lg:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
                 disabled
               />
             </div>
@@ -403,6 +403,7 @@ export default function PersonalLeaveForm({ requestData, isReadOnly = false, onS
                 onEndDateChange={(date) => setForm({ ...form, endDate: date })}
                 maxDays={30}
                 disabled={isReadOnly}
+                takenLeaveDates={takenLeaveDates}
               />
             </Row>
 
@@ -427,6 +428,9 @@ export default function PersonalLeaveForm({ requestData, isReadOnly = false, onS
                       leaveDaysEntitled: data.entitled.toString(),
                       leaveDaysTaken: data.taken.toString()
                     }));
+                  }
+                  if (data.takenLeaveDates) {
+                    setTakenLeaveDates(data.takenLeaveDates);
                   }
                 }}
               />
@@ -559,27 +563,11 @@ export default function PersonalLeaveForm({ requestData, isReadOnly = false, onS
                   leaveDaysTaken: data.taken.toString()
                 }));
               }
+              if (data.takenLeaveDates) {
+                setTakenLeaveDates(data.takenLeaveDates);
+              }
             }}
           />
-
-          {/* 6. INITIAL APPROVAL */}
-          <Section title="6. INITIAL APPROVAL">
-            <Row label="6.1 Reporting Manager / HOD">
-              <div className="flex flex-col gap-1 w-full">
-                <Input
-                  value={uniqueHeads.find((h: any) => h.id === parseInt(form.reportingManager))?.name || "Not assigned"}
-                  className="w-full h-8 border-blue-300 dark:border-[#3b6dae]/40 bg-gray-100 dark:bg-[#295482] text-black dark:text-slate-100 font-medium cursor-not-allowed mt-1 mb-1 max-w-[400px]"
-                  disabled
-                />
-                {isReadOnly && form.managerSignatureUrl && (
-                  <div className="mt-1">
-                    <p className="text-[10px] text-green-600 font-semibold mb-0.5">✓ Approved by HOD</p>
-                    <img src={form.managerSignatureUrl} alt="HOD Signature" className="h-10 object-contain" />
-                  </div>
-                )}
-              </div>
-            </Row>
-          </Section>
 
           {/* 7. EMPLOYEE SIGNATURE */}
           <Section title="7. EMPLOYEE SIGNATURE">
@@ -669,6 +657,25 @@ export default function PersonalLeaveForm({ requestData, isReadOnly = false, onS
                 readOnly
                 className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium w-40"
               />
+            </Row>
+          </Section>
+
+          {/* 6. INITIAL APPROVAL */}
+          <Section title="6. INITIAL APPROVAL">
+            <Row label="6.1 Reporting Manager / HOD">
+              <div className="flex flex-col gap-1 w-full">
+                <Input
+                  value={uniqueHeads.find((h: any) => h.id === parseInt(form.reportingManager))?.name || "Not assigned"}
+                  className="w-full h-8 border-blue-300 dark:border-[#3b6dae]/40 bg-gray-100 dark:bg-[#295482] text-black dark:text-slate-100 font-medium cursor-not-allowed mt-1 mb-1 max-w-[400px]"
+                  disabled
+                />
+                {isReadOnly && form.managerSignatureUrl && (
+                  <div className="mt-1">
+                    <p className="text-[10px] text-green-600 font-semibold mb-0.5">✓ Approved by HOD</p>
+                    <img src={form.managerSignatureUrl} alt="HOD Signature" className="h-10 object-contain" />
+                  </div>
+                )}
+              </div>
             </Row>
           </Section>
         </div>

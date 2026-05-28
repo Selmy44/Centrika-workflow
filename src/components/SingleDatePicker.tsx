@@ -13,6 +13,9 @@ interface SingleDatePickerProps {
   label?: string;
   autoClose?: boolean;
   className?: string;
+  disablePastDates?: boolean;
+  highlightWeekends?: boolean;
+  highlightToday?: boolean;
 }
 
 export default function SingleDatePicker({
@@ -23,6 +26,9 @@ export default function SingleDatePicker({
   label = "Select Date",
   autoClose = true,
   className,
+  disablePastDates = false,
+  highlightWeekends = false,
+  highlightToday = false,
 }: SingleDatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   
@@ -81,6 +87,9 @@ export default function SingleDatePicker({
     const firstDay = getFirstDayOfMonth(displayMonth);
     const days = [];
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     // Empty cells for days before month starts
     for (let i = 0; i < firstDay; i++) {
       days.push(
@@ -91,19 +100,51 @@ export default function SingleDatePicker({
     // Days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const selected = isSelected(day);
+      
+      const checkDate = new Date(displayMonth.getFullYear(), displayMonth.getMonth(), day);
+      checkDate.setHours(0, 0, 0, 0);
+      const isPast = checkDate.getTime() < today.getTime();
+      const isDayToday = 
+        displayMonth.getFullYear() === today.getFullYear() &&
+        displayMonth.getMonth() === today.getMonth() &&
+        day === today.getDate();
+      
+      const dayOfWeek = checkDate.getDay();
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+      const isButtonDisabled = disabled || (disablePastDates && isPast);
+
+      // Determine class names for styling
+      let buttonStyle = "text-foreground hover:bg-accent hover:text-accent-foreground";
+      
+      if (selected) {
+        buttonStyle = "bg-primary text-primary-foreground font-medium shadow-sm hover:bg-primary hover:text-primary-foreground";
+      } else if (isButtonDisabled) {
+        buttonStyle = isPast && disablePastDates
+          ? "text-black dark:text-white line-through decoration-rose-500 dark:decoration-rose-400 decoration-[1.5px] cursor-not-allowed hover:bg-transparent pointer-events-none"
+          : "opacity-50 cursor-not-allowed";
+      } else {
+        // Not selected and not disabled
+        if (isWeekend && highlightWeekends) {
+          buttonStyle = "text-rose-500 hover:bg-rose-50 hover:text-rose-600 dark:text-rose-400 dark:hover:bg-rose-950/20 font-medium";
+        }
+        if (isDayToday && highlightToday) {
+          buttonStyle = cn(
+            buttonStyle,
+            "ring-2 ring-yellow-500 dark:ring-yellow-400 ring-offset-2 dark:ring-offset-[#1f426b] font-bold text-yellow-600 dark:text-yellow-400"
+          );
+        }
+      }
 
       days.push(
         <button
           key={day}
-          onClick={() => handleDateClick(day)}
+          onClick={() => !isButtonDisabled && handleDateClick(day)}
           className={cn(
             "h-8 w-8 mx-auto rounded-md font-normal text-sm transition-all flex items-center justify-center",
-            selected
-              ? "bg-primary text-primary-foreground font-medium shadow-sm hover:bg-primary hover:text-primary-foreground"
-              : "text-foreground hover:bg-accent hover:text-accent-foreground",
-            disabled && "opacity-50 cursor-not-allowed"
+            buttonStyle
           )}
-          disabled={disabled}
+          disabled={isButtonDisabled}
         >
           {day}
         </button>

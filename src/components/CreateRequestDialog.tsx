@@ -2,6 +2,10 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { LeaveTypeSelector } from "@/components/LeaveTypeSelector";
 import LeaveRequestForm from "@/components/forms/LeaveRequestForm";
+import PersonalLeaveForm from "@/components/forms/PersonalLeaveForm";
+import UnpaidLeaveForm from "@/components/forms/UnpaidLeaveForm";
+import SickLeaveForm from "@/components/forms/SickLeaveForm";
+import AnnualLeaveForm from "@/components/forms/AnnualLeaveForm";
 import CarRequestForm from "@/components/forms/CarRequestForm";
 import ExpenditureRequestForm from "@/components/forms/ExpenditureRequestForm";
 import AssetRequestForm from "@/components/forms/AssetRequestForm";
@@ -80,10 +84,35 @@ export function CreateRequestDialog({
               <DialogTitle>Create Leave Request</DialogTitle>
             </DialogHeader>
             <div className="flex-1 overflow-y-auto w-full">
-              <LeaveRequestForm
-                onSuccess={handleSuccess}
-                leaveType={selectedLeaveType}
-              />
+              {selectedLeaveType === "personal" && (
+                <PersonalLeaveForm
+                  onSuccess={handleSuccess}
+                />
+              )}
+              {selectedLeaveType === "sick" && (
+                <SickLeaveForm
+                  onSuccess={handleSuccess}
+                />
+              )}
+              {selectedLeaveType === "unpaid" && (
+                <UnpaidLeaveForm
+                  onSuccess={handleSuccess}
+                />
+              )}
+              {selectedLeaveType === "annual" && (
+                <AnnualLeaveForm
+                  onSuccess={handleSuccess}
+                />
+              )}
+              {selectedLeaveType !== "personal" &&
+               selectedLeaveType !== "sick" &&
+               selectedLeaveType !== "unpaid" &&
+               selectedLeaveType !== "annual" && (
+                <LeaveRequestForm
+                  onSuccess={handleSuccess}
+                  leaveType={selectedLeaveType}
+                />
+              )}
             </div>
           </DialogContent>
         </Dialog>

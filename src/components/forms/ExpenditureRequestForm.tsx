@@ -527,35 +527,35 @@ export default function ExpenditureRequestForm({ requestData, isReadOnly = false
                   className="w-full h-8 border-blue-300 dark:border-[#3b6dae]/40 bg-gray-100 dark:bg-[#295482] text-black dark:text-slate-100 font-medium cursor-not-allowed mt-1 mb-1 max-w-[400px]"
                   disabled
                 />
-                {isReadOnly && savedFormData.data?.managerSignatureUrl && (
+                {isReadOnly && (savedFormData.data?.managerSignatureUrl || requestData?.managerSignatureUrl) && (
                   <div className="mt-1">
                     <p className="text-[10px] text-green-600 font-semibold mb-0.5">✓ Approved by HOD</p>
-                    <img src={savedFormData.data.managerSignatureUrl} alt="HOD Signature" className="h-10 object-contain" />
+                    <img src={savedFormData.data?.managerSignatureUrl || requestData?.managerSignatureUrl} alt="HOD Signature" className="h-10 object-contain" />
                   </div>
                 )}
               </div>
             </Row>
-            {isReadOnly && savedFormData.data?.hrSignatureUrl && (
+            {isReadOnly && (savedFormData.data?.hrSignatureUrl || requestData?.hrSignatureUrl) && (
               <Row label="4.2 HR Review">
                 <div className="mt-1">
                   <p className="text-[10px] text-green-600 font-semibold mb-0.5">✓ Approved by HR</p>
-                  <img src={savedFormData.data.hrSignatureUrl} alt="HR Signature" className="h-10 object-contain" />
+                  <img src={savedFormData.data?.hrSignatureUrl || requestData?.hrSignatureUrl} alt="HR Signature" className="h-10 object-contain" />
                 </div>
               </Row>
             )}
-            {isReadOnly && savedFormData.data?.financeSignatureUrl && (
+            {isReadOnly && (savedFormData.data?.financeSignatureUrl || requestData?.financeSignatureUrl) && (
               <Row label="4.3 Head of Finance">
                 <div className="mt-1">
                   <p className="text-[10px] text-green-600 font-semibold mb-0.5">✓ Approved by Head of Finance</p>
-                  <img src={savedFormData.data.financeSignatureUrl} alt="Finance Signature" className="h-10 object-contain" />
+                  <img src={savedFormData.data?.financeSignatureUrl || requestData?.financeSignatureUrl} alt="Finance Signature" className="h-10 object-contain" />
                 </div>
               </Row>
             )}
-            {isReadOnly && savedFormData.data?.ceoSignatureUrl && (
+            {isReadOnly && (savedFormData.data?.ceoSignatureUrl || requestData?.ceoSignatureUrl) && (
               <Row label="4.4 CEO / MD">
                 <div className="mt-1">
                   <p className="text-[10px] text-green-600 font-semibold mb-0.5">✓ Final Approval by CEO/MD</p>
-                  <img src={savedFormData.data.ceoSignatureUrl} alt="CEO Signature" className="h-10 object-contain" />
+                  <img src={savedFormData.data?.ceoSignatureUrl || requestData?.ceoSignatureUrl} alt="CEO Signature" className="h-10 object-contain" />
                 </div>
               </Row>
             )}

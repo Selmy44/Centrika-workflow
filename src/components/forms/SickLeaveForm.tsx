@@ -38,6 +38,7 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
   const [, navigate] = useLocation();
   const autoFillData = useFormAutoFill();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [takenLeaveDates, setTakenLeaveDates] = useState<string[]>([]);
 
   const [form, setForm] = useState({
     documentId: "",
@@ -180,7 +181,7 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
       toast.error("Please provide hospital name");
       return false;
     }
-    if (form.medicalDocuments.length === 0) {
+    if (form.medicalDocuments.length === 0 && (!form.medicalDocumentUrls || form.medicalDocumentUrls.length === 0)) {
       toast.error("Medical documentation is required for sick leave");
       return false;
     }
@@ -191,6 +192,8 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
     return true;
   };
 
+  const updateLeave = trpc.requests.updateLeaveRequest.useMutation();
+
   const handleSubmit = async (submit: boolean) => {
     if (submit && !validate()) return;
 
@@ -198,18 +201,34 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
     try {
       const reason = `Illness: ${form.illnessDescription}${form.visitedHospital === "yes" ? ` | Hospital: ${form.hospitalName}` : ""}`;
 
-      const created = await createLeave.mutateAsync({
-        title: `Sick Leave Request - ${form.documentId}`,
-        leaveType: "sick" as any,
-        startDate: form.startDate,
-        endDate: form.endDate,
-        reason: reason,
-        leaveDaysEntitled: parseInt(form.leaveDaysEntitled) || 0,
-        leaveDaysTaken: parseInt(form.leaveDaysTaken) || 0,
-        leaveDaysRequested: parseInt(form.leaveDaysRequested) || 0,
-      });
-
-      const requestId = (created as any)?.id as number;
+      // If editing an existing draft, reuse its ID — don't create a duplicate request
+      let requestId: number;
+      if (requestData?.id) {
+        await updateLeave.mutateAsync({
+          requestId: requestData.id,
+          title: `Sick Leave Request - ${form.documentId}`,
+          leaveType: "sick" as any,
+          startDate: form.startDate,
+          endDate: form.endDate,
+          reason: reason,
+          leaveDaysEntitled: parseInt(form.leaveDaysEntitled) || 0,
+          leaveDaysTaken: parseInt(form.leaveDaysTaken) || 0,
+          leaveDaysRequested: parseInt(form.leaveDaysRequested) || 0,
+        });
+        requestId = requestData.id;
+      } else {
+        const created = await createLeave.mutateAsync({
+          title: `Sick Leave Request - ${form.documentId}`,
+          leaveType: "sick" as any,
+          startDate: form.startDate,
+          endDate: form.endDate,
+          reason: reason,
+          leaveDaysEntitled: parseInt(form.leaveDaysEntitled) || 0,
+          leaveDaysTaken: parseInt(form.leaveDaysTaken) || 0,
+          leaveDaysRequested: parseInt(form.leaveDaysRequested) || 0,
+        });
+        requestId = (created as any)?.id as number;
+      }
 
       if (requestId) {
         let finalUrls = [...(form.medicalDocumentUrls || [])];
@@ -308,12 +327,11 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
         {/* ===== REQUEST HEADER SECTION - Responsive Grid ===== */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-2 lg:gap-3 px-3 lg:px-6 py-2 lg:py-3 text-xs lg:text-sm items-end">
           <div>
-            <p className="font-semibold text-blue-600 mb-1 text-[10px] lg:text-xs">Name of Department</p>
+            <p className="font-semibold text-blue-600 mb-1 text-[10px] lg:text-xs uppercase tracking-tighter">CTK</p>
             <div className="flex gap-0 items-center">
-              <span className="text-blue-600 font-bold text-[10px] lg:text-xs whitespace-nowrap">CTK - </span>
               <Input
                 value={form.department}
-                className="w-full h-6 lg:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] lg:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed border-l-0"
+                className="w-full h-6 lg:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] lg:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
                 disabled
               />
             </div>
@@ -413,6 +431,7 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
                 onEndDateChange={(date) => setForm({ ...form, endDate: date })}
                 maxDays={365}
                 disabled={isReadOnly}
+                takenLeaveDates={takenLeaveDates}
               />
             </Row>
 
@@ -437,6 +456,9 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
                       leaveDaysEntitled: data.entitled.toString(),
                       leaveDaysTaken: data.taken.toString()
                     }));
+                  }
+                  if (data.takenLeaveDates) {
+                    setTakenLeaveDates(data.takenLeaveDates);
                   }
                 }}
               />
@@ -607,25 +629,6 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
             </Row>
           </Section>
 
-          {/* 5. INITIAL APPROVAL */}
-          <Section title="5. INITIAL APPROVAL">
-            <Row label="5.1 Reporting Manager / HOD">
-              <div className="flex flex-col gap-1 w-full">
-                <Input
-                  value={uniqueHeads.find((h: any) => h.id === parseInt(form.reportingManager))?.name || "Not assigned"}
-                  className="w-full h-8 border-blue-300 dark:border-[#3b6dae]/40 bg-gray-100 dark:bg-[#295482] text-black dark:text-slate-100 font-medium cursor-not-allowed mt-1 mb-1 max-w-[400px]"
-                  disabled
-                />
-                {isReadOnly && form.managerSignatureUrl && (
-                  <div className="mt-1">
-                    <p className="text-[10px] text-green-600 font-semibold mb-0.5">✓ Approved by HOD</p>
-                    <img src={form.managerSignatureUrl} alt="HOD Signature" className="h-10 object-contain" />
-                  </div>
-                )}
-              </div>
-            </Row>
-          </Section>
-
           {/* 7. EMPLOYEE SIGNATURE */}
           <Section title="7. EMPLOYEE SIGNATURE">
             <Row label="7.1 Your Signature">
@@ -714,6 +717,25 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
                 readOnly
                 className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium w-40"
               />
+            </Row>
+          </Section>
+
+          {/* 5. INITIAL APPROVAL */}
+          <Section title="5. INITIAL APPROVAL">
+            <Row label="5.1 Reporting Manager / HOD">
+              <div className="flex flex-col gap-1 w-full">
+                <Input
+                  value={uniqueHeads.find((h: any) => h.id === parseInt(form.reportingManager))?.name || "Not assigned"}
+                  className="w-full h-8 border-blue-300 dark:border-[#3b6dae]/40 bg-gray-100 dark:bg-[#295482] text-black dark:text-slate-100 font-medium cursor-not-allowed mt-1 mb-1 max-w-[400px]"
+                  disabled
+                />
+                {isReadOnly && form.managerSignatureUrl && (
+                  <div className="mt-1">
+                    <p className="text-[10px] text-green-600 font-semibold mb-0.5">✓ Approved by HOD</p>
+                    <img src={form.managerSignatureUrl} alt="HOD Signature" className="h-10 object-contain" />
+                  </div>
+                )}
+              </div>
             </Row>
           </Section>
         </div>
