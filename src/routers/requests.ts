@@ -577,7 +577,8 @@ export const requestsRouter = router({
         })
       ]);
 
-      try {
+      // Run email notifications in the background so it doesn't block the request creation response
+      (async () => {
         const approver = await prisma.user.findUnique({ where: { id: approverId } });
         if (approver?.email) {
           const docId = getDocId(request);
@@ -598,9 +599,9 @@ export const requestsRouter = router({
           );
           await sendEmail(approver.email, emailContent.subject, emailContent.html);
         }
-      } catch (error) {
-        console.error("Failed to send submission email", error);
-      }
+      })().catch((error) => {
+        console.error("Failed to send submission email in background:", error);
+      });
       return { success: true };
     }),
 
@@ -739,6 +740,8 @@ export const requestsRouter = router({
           }
         });
 
+      // Run finalApprove notification block in the background
+      (async () => {
         try {
           const approver = await prisma.user.findUnique({ where: { id: ctx.user.id } });
           const docId = getDocId(request);
@@ -760,7 +763,7 @@ export const requestsRouter = router({
                 level: "NORMAL"
               }
             );
-            await sendEmail(request.user.email, emailContent.subject, emailContent.html);
+            sendEmail(request.user.email, emailContent.subject, emailContent.html).catch(e => console.error("Requester email error:", e));
           }
 
           // Email Observers (HR, CEO/MD, and Finance if expenditure/asset)
@@ -779,7 +782,7 @@ export const requestsRouter = router({
             }
           });
 
-          for (const recipient of observers) {
+          await Promise.all(observers.map(async (recipient) => {
             // In-app notification for observers
             await prisma.notification.create({
               data: {
@@ -812,34 +815,39 @@ export const requestsRouter = router({
               );
               await sendEmail(recipient.email, notifEmail.subject, notifEmail.html);
             }
-          }
-        } catch (error) { console.error("Email/Observer notification error", error); }
-      };
+          }));
+        } catch (error) {
+          console.error("Background finalApprove notifications failed:", error);
+        }
+      })();
+    };
 
-      const routeToNext = async (nextLevel: string, nextRole: string) => {
-        const nextUser = await prisma.user.findFirst({
-          where: { OR: [{ role: nextRole as any }, { additionalRoles: { contains: nextRole } }] }
-        });
-        if (!nextUser) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `No ${nextRole} found` });
+    const routeToNext = async (nextLevel: string, nextRole: string) => {
+      const nextUser = await prisma.user.findFirst({
+        where: { OR: [{ role: nextRole as any }, { additionalRoles: { contains: nextRole } }] }
+      });
+      if (!nextUser) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `No ${nextRole} found` });
 
-        await prisma.requestApproval.create({
-          data: { requestId: input.requestId, approverId: nextUser.id, approvalLevel: nextLevel as any, status: "pending" }
-        });
-        await prisma.request.update({
-          where: { id: input.requestId },
-          data: { status: "pending", currentApprovalLevel: nextLevel as any, updatedAt: new Date() }
-        });
-        await prisma.notification.create({
-          data: {
-            userId: nextUser.id,
-            requestId: input.requestId,
-            triggeredByUserId: ctx.user.id,
-            type: "approval_needed",
-            title: `Approval needed: ${request.type} request`,
-            message: `A request is waiting for your approval.`,
-          }
-        });
+      await prisma.requestApproval.create({
+        data: { requestId: input.requestId, approverId: nextUser.id, approvalLevel: nextLevel as any, status: "pending" }
+      });
+      await prisma.request.update({
+        where: { id: input.requestId },
+        data: { status: "pending", currentApprovalLevel: nextLevel as any, updatedAt: new Date() }
+      });
+      await prisma.notification.create({
+        data: {
+          userId: nextUser.id,
+          requestId: input.requestId,
+          triggeredByUserId: ctx.user.id,
+          type: "approval_needed",
+          title: `Approval needed: ${request.type} request`,
+          message: `A request is waiting for your approval.`,
+        }
+      });
 
+      // Run escalation email notification in the background
+      (async () => {
         try {
           if (nextUser.email) {
             const docId = getDocId(request);
@@ -860,8 +868,11 @@ export const requestsRouter = router({
             );
             await sendEmail(nextUser.email, emailContent.subject, emailContent.html);
           }
-        } catch (error) { console.error("Email error", error); }
-      };
+        } catch (error) {
+          console.error("Background routeToNext email failed:", error);
+        }
+      })();
+    };
 
       // Resolve all active roles for the approver (primary + additionalRoles)
       const approverRolesToCheck = [ctx.user.role as string, ...parseAdditionalRoles(ctx.user.additionalRoles)];
@@ -999,63 +1010,68 @@ export const requestsRouter = router({
         }
       });
 
-      try {
-        const approver = await prisma.user.findUnique({ where: { id: ctx.user.id } });
-        const docId = getDocId(request);
+      // Run email notifications in the background so it doesn't block the HTTP response of the reject request
+      (async () => {
+        try {
+          const approver = await prisma.user.findUnique({ where: { id: ctx.user.id } });
+          const docId = getDocId(request);
 
-        // Notify Requester
-        if (request.user?.email && approver) {
-          const emailContent = emailTemplates.requestRejectedEmail(
-            request.user.name || "Employee",
-            approver.name || "Manager",
-            request.type,
-            docId,
-            input.comments,
-            {
-              dept: request.user.department?.name || "N/A",
-              pos: request.user.position || "Staff",
-              topic: `${request.type.toUpperCase()} REQUEST`,
-              action: "REJECTED",
-              level: "MODERATE"
-            }
-          );
-          await sendEmail(request.user.email, emailContent.subject, emailContent.html);
-        }
-
-        // Notify Observers (HR/CEO)
-        const observers = await prisma.user.findMany({
-          where: {
-            OR: [
-              { role: "hr" }, { role: "ceo_md" },
-              { additionalRoles: { contains: "hr" } }, { additionalRoles: { contains: "ceo_md" } }
-            ],
-            id: { not: ctx.user.id }
-          }
-        });
-
-        for (const recipient of observers) {
-          if (recipient.email && approver) {
-            const detailsHtml = await generateRequestDetailsHtml(prisma, request);
-            const notifEmail = emailTemplates.observerNotificationEmail(
-              recipient.name || "Team",
+          // Notify Requester
+          if (request.user?.email && approver) {
+            const emailContent = emailTemplates.requestRejectedEmail(
               request.user.name || "Employee",
               approver.name || "Manager",
-              "REJECTED",
               request.type,
               docId,
-              detailsHtml + `<br/><p style="color:#d32f2f"><strong>Rejection Reason:</strong> ${input.comments}</p>`,
+              input.comments,
               {
                 dept: request.user.department?.name || "N/A",
                 pos: request.user.position || "Staff",
-                topic: `${request.type.toUpperCase()} NOTIFICATION`,
-                action: "OBSERVED-REJECTED",
+                topic: `${request.type.toUpperCase()} REQUEST`,
+                action: "REJECTED",
                 level: "MODERATE"
               }
             );
-            await sendEmail(recipient.email, notifEmail.subject, notifEmail.html);
+            sendEmail(request.user.email, emailContent.subject, emailContent.html).catch(e => console.error("Requester email error:", e));
           }
+
+          // Notify Observers (HR/CEO)
+          const observers = await prisma.user.findMany({
+            where: {
+              OR: [
+                { role: "hr" }, { role: "ceo_md" },
+                { additionalRoles: { contains: "hr" } }, { additionalRoles: { contains: "ceo_md" } }
+              ],
+              id: { not: ctx.user.id }
+            }
+          });
+
+          await Promise.all(observers.map(async (recipient) => {
+            if (recipient.email && approver) {
+              const detailsHtml = await generateRequestDetailsHtml(prisma, request);
+              const notifEmail = emailTemplates.observerNotificationEmail(
+                recipient.name || "Team",
+                request.user.name || "Employee",
+                approver.name || "Manager",
+                "REJECTED",
+                request.type,
+                docId,
+                detailsHtml + `<br/><p style="color:#d32f2f"><strong>Rejection Reason:</strong> ${input.comments}</p>`,
+                {
+                  dept: request.user.department?.name || "N/A",
+                  pos: request.user.position || "Staff",
+                  topic: `${request.type.toUpperCase()} NOTIFICATION`,
+                  action: "OBSERVED-REJECTED",
+                  level: "MODERATE"
+                }
+              );
+              await sendEmail(recipient.email, notifEmail.subject, notifEmail.html);
+            }
+          }));
+        } catch (error) {
+          console.error("Background reject notifications failed:", error);
         }
-      } catch (error) { console.error("Email error", error); }
+      })();
 
       return { success: true };
     }),
