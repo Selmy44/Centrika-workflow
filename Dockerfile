@@ -8,20 +8,17 @@ WORKDIR /app
 # Install dependencies needed for runtime
 RUN apk add --no-cache netcat-openbsd
 
-# Install pnpm
-RUN npm install -g pnpm
+# Copy package files and lockfile
+COPY package.json package-lock.json ./
 
-# Copy package files and pnpm lockfile
-COPY package.json pnpm-lock.yaml ./
-
-# Install dependencies using pnpm
-RUN pnpm install --frozen-lockfile
+# Install dependencies using npm
+RUN npm ci
 
 # Copy Prisma schema and migrations
 COPY prisma ./prisma
 
 # Generate Prisma client
-RUN pnpm prisma generate
+RUN npx prisma generate
 
 # Copy source code
 COPY src ./src
@@ -58,14 +55,14 @@ ENTRYPOINT ["/bin/sh", "-c", "\
   npx prisma migrate deploy && \
   echo '✅ Database migrations completed successfully' && \
   echo '🌱 Seeding database...' && \
-  pnpm prisma db seed && \
+  npx prisma db seed && \
   echo '✅ Database seeding completed' && \
   echo '🏁 Starting OnePortal Backend Application...' && \
   if [ \"${NODE_ENV}\" = \"production\" ]; then \
     echo '📦 Running in PRODUCTION mode...' && \
-    pnpm run build && \
-    exec pnpm run start; \
+    npm run build && \
+    exec npm run start; \
   else \
     echo '🛠️  Running in DEVELOPMENT mode...' && \
-    exec pnpm run dev; \
+    exec npm run dev; \
   fi"]
