@@ -8,14 +8,11 @@ FROM dhi.io/node:24-alpine3.22-dev AS builder
 # Set the working directory inside the container
 WORKDIR /app
 
-# Install pnpm globally
-RUN npm install -g pnpm
-
 # Copy package-related files first to leverage Docker's caching mechanism
-COPY package.json pnpm-lock.yaml ./
+COPY package.json package-lock.json ./
 
-# Install project dependencies using pnpm
-RUN pnpm install --frozen-lockfile
+# Install project dependencies using npm
+RUN npm ci
 
 # Copy the rest of the application source code into the container
 COPY . .
@@ -29,7 +26,7 @@ ARG VITE_APP_TITLE
 ARG VITE_APP_LOGO
 
 # Build the React.js application (outputs to /app/dist)
-RUN pnpm run build
+RUN npm run build
 
 # =========================================
 # Stage 2: Prepare Nginx to Serve Static Files
