@@ -9,7 +9,7 @@
 ## What You Need
 
 - **Node.js** 18 or higher  
-- **pnpm** 8 or higher  
+- **npm** 10 or higher  
 - **PostgreSQL** 14 or higher  
 - **Redis** 6+ *(optional — the app works fine without it)*
 
@@ -41,7 +41,7 @@ git clone <frontend-repo-url> frontend
 
 ```bash
 cd backend
-pnpm install
+npm install
 ```
 
 Create a file called `.env` in the backend root:
@@ -73,7 +73,7 @@ npx prisma db push
 Start the server:
 
 ```bash
-pnpm run dev
+npm run dev
 ```
 
 Backend runs on **port 3001**.
@@ -84,7 +84,7 @@ Backend runs on **port 3001**.
 
 ```bash
 cd frontend
-pnpm install
+npm install
 ```
 
 Create a file called `.env.local` in the frontend root:
@@ -100,7 +100,7 @@ VITE_OAUTH_PORTAL_URL=
 Start the app:
 
 ```bash
-pnpm run dev
+npm run dev
 ```
 
 Frontend runs on **port 5173**. Open `http://localhost:5173` in the browser and you should see the login screen.
@@ -164,12 +164,12 @@ Frontend runs on **port 5173**. Open `http://localhost:5173` in the browser and 
 ```bash
 # Backend
 cd backend
-pnpm run build
-pnpm run start          # runs dist/index.js
+npm run build
+npm run start          # runs dist/index.js
 
 # Frontend
 cd frontend
-pnpm run build          # outputs to dist/
+npm run build          # outputs to dist/
 ```
 
 Serve the frontend `dist/` folder with any web server (Nginx, Caddy, etc.).
@@ -212,10 +212,10 @@ No code changes needed. When served over HTTPS, cookies automatically switch to 
 
 ## Quick Checklist for New Environments
 
-- [ ] Node.js and pnpm installed
+- [ ] Node.js and npm installed
 - [ ] PostgreSQL running and accessible
 - [ ] Both repos cloned side by side
-- [ ] `pnpm install` run in both folders
+- [ ] `npm install` run in both folders
 - [ ] `.env` created in backend with correct `DATABASE_URL`, `JWT_SECRET`, `FRONTEND_URL`
 - [ ] `.env.local` created in frontend with correct `VITE_API_URL`
 - [ ] `npx prisma generate && npx prisma db push` completed

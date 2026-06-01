@@ -18,9 +18,9 @@ if ! command -v node &> /dev/null; then
     exit 1
 fi
 
-# Check if pnpm is available
-if ! command -v pnpm &> /dev/null; then
-    echo "❌ pnpm is not installed. Please install it: npm install -g pnpm"
+# Check if npm is available
+if ! command -v npm &> /dev/null; then
+    echo "❌ npm is not installed. Please install Node.js."
     exit 1
 fi
 
@@ -33,14 +33,14 @@ echo ""
 # Install backend dependencies if needed
 if [ ! -d "$SCRIPT_DIR/backend/node_modules" ]; then
     echo -e "${YELLOW}Installing backend dependencies...${NC}"
-    (cd "$SCRIPT_DIR/backend" && pnpm install)
+    (cd "$SCRIPT_DIR/backend" && npm install)
     echo ""
 fi
 
 # Install frontend dependencies if needed
 if [ ! -d "$SCRIPT_DIR/frontend/node_modules" ]; then
     echo -e "${YELLOW}Installing frontend dependencies...${NC}"
-    (cd "$SCRIPT_DIR/frontend" && pnpm install)
+    (cd "$SCRIPT_DIR/frontend" && npm install)
     echo ""
 fi
 
@@ -52,7 +52,7 @@ echo ""
 
 # Start backend in the background
 echo -e "${YELLOW}Starting Backend (port 3001)...${NC}"
-(cd "$SCRIPT_DIR/backend" && pnpm run dev) &
+(cd "$SCRIPT_DIR/backend" && npm run dev) &
 BACKEND_PID=$!
 
 # Wait a moment for backend to start
@@ -60,7 +60,7 @@ sleep 3
 
 # Start frontend in the background
 echo -e "${YELLOW}Starting Frontend (port 5173)...${NC}"
-(cd "$SCRIPT_DIR/frontend" && pnpm run dev) &
+(cd "$SCRIPT_DIR/frontend" && npm run dev) &
 FRONTEND_PID=$!
 
 # Wait a moment for frontend to start
@@ -80,8 +80,8 @@ echo "🔙 Backend API:"
 echo -e "   ${GREEN}http://localhost:3001/api/trpc${NC}"
 echo ""
 echo "💡 Each app can also be started independently:"
-echo "   cd backend  && pnpm run dev"
-echo "   cd frontend && pnpm run dev"
+echo "   cd backend  && npm run dev"
+echo "   cd frontend && npm run dev"
 echo ""
 echo -e "${BLUE}Press Ctrl+C to stop all servers${NC}"
 echo ""
