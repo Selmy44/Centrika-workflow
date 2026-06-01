@@ -122,23 +122,14 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
     };
 
     return (
-        <div className="w-full bg-white dark:bg-[#1f426b] text-black dark:text-slate-100 px-3 md:px-10 leave-form-container relative dark:border-[#2b6cb0]/30">
-            {/* CLOSE/BACK BUTTON */}
-            <button
-                onClick={() => onBack ? onBack() : (onClose ? onClose() : window.history.back())}
-                className="no-print absolute top-4 right-4 p-2 hover:bg-gray-100 dark:bg-[#295482] rounded-lg transition"
-                title="Close form"
-            >
-                <svg className="w-6 h-6 text-gray-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
+        <div className="w-full bg-white dark:bg-[#1f426b] text-black dark:text-slate-100 px-4 leave-form-container relative dark:border-[#2b6cb0]/30">
+
 
             <div>
                 {/* HEADER SECTION */}
-                <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start px-3 lg:px-8 py-4 lg:py-6 gap-4 lg:gap-12">
+                <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start px-3 lg:px-6 py-3 gap-4 lg:gap-8">
                     <div className="shrink-0">
-                        <img src="/logo/centrikaLogo.png" alt="Centrika Logo" className="h-14 lg:h-32 w-auto" />
+                        <img src="/logo/centrikaLogo.png" alt="Centrika Logo" className="h-14 lg:h-20 w-auto" />
                     </div>
                     <div className="text-xs lg:text-sm flex-1 flex justify-start lg:justify-end">
                         <div className="flex flex-col gap-2 lg:gap-3 items-start">
@@ -188,22 +179,22 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                 )}
 
                 {/* HEADER INFO */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-2.5 lg:gap-3 px-3 lg:px-6 py-2 lg:py-3 text-xs lg:text-sm items-end border-b border-gray-200">
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-2 lg:gap-3 px-3 lg:px-6 py-2 lg:py-3 text-xs lg:text-sm items-end">
                     <div>
                         <p className="font-semibold text-blue-600 mb-1 text-xs">Department</p>
-                        <Input value={employee?.department?.name || formDataDynamic?.department || "N/A"} disabled className="h-7 text-xs bg-gray-50" />
+                        <Input value={employee?.department?.name || formDataDynamic?.department || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
                     </div>
                     <div>
                         <p className="font-semibold text-blue-600 mb-1 text-xs">Date Submitted</p>
-                        <Input value={requestData?.createdAt ? new Date(requestData.createdAt).toLocaleDateString() : "N/A"} disabled className="h-7 text-xs bg-gray-50" />
+                        <Input value={requestData?.createdAt ? new Date(requestData.createdAt).toLocaleDateString() : "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
                     </div>
                     <div>
                         <p className="font-semibold text-blue-600 text-xs mb-1">Staff ID</p>
-                        <Input value={employee?.staffId || formDataDynamic?.staffId || "N/A"} disabled className="h-7 text-xs bg-gray-50" />
+                        <Input value={employee?.staffId || formDataDynamic?.staffId || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
                     </div>
                     <div>
                         <p className="font-semibold text-blue-600 text-xs mb-1">Employee Name</p>
-                        <Input value={employee?.name || formDataDynamic?.employeeName || "N/A"} disabled className="h-7 text-xs bg-gray-50" />
+                        <Input value={employee?.name || formDataDynamic?.employeeName || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
                     </div>
                 </div>
 
@@ -211,47 +202,47 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                 <div className="divide-y divide-[#3b6dae]/30">
                     <Section title="1. EMPLOYEE INFORMATION">
                         <Row label="1.1 Employee Full Name">
-                            <Input value={employee?.name || formDataDynamic?.employeeName || "N/A"} disabled className="h-7 text-xs bg-gray-50 font-medium" />
+                            <Input value={employee?.name || formDataDynamic?.employeeName || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
                         </Row>
                         <Row label="1.2 Date of Employment">
-                            <Input value={employee?.dateOfEmployment || formDataDynamic?.dateOfEmployment || "N/A"} disabled className="h-7 text-xs bg-gray-50 font-medium" />
+                            <Input value={employee?.dateOfEmployment || formDataDynamic?.dateOfEmployment || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
                         </Row>
                         <Row label="1.3 Staff ID">
-                            <Input value={employee?.staffId || formDataDynamic?.staffId || "N/A"} disabled className="h-7 text-xs bg-gray-50 font-medium" />
+                            <Input value={employee?.staffId || formDataDynamic?.staffId || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
                         </Row>
                         <Row label="1.4 Department">
-                            <Input value={employee?.department?.name || formDataDynamic?.department || "N/A"} disabled className="h-7 text-xs bg-gray-50 font-medium" />
+                            <Input value={employee?.department?.name || formDataDynamic?.department || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
                         </Row>
                         <Row label="1.5 Position / Title">
-                            <Input value={employee?.position || formDataDynamic?.position || "N/A"} disabled className="h-7 text-xs bg-gray-50 font-medium" />
+                            <Input value={employee?.position || formDataDynamic?.position || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
                         </Row>
                     </Section>
 
                     <Section title="2. CAR REQUEST DETAILS">
                         <Row label="2.1 Request ID">
-                            <Input value={`#${requestData?.id}`} disabled className="h-7 text-xs bg-gray-50 font-medium" />
+                            <Input value={`#${requestData?.id}`} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
                         </Row>
                         <Row label="2.2 Destination">
-                            <Input value={car?.destination || formDataDynamic?.destination || "N/A"} disabled className="h-7 text-xs bg-gray-50 font-medium" />
+                            <Input value={car?.destination || formDataDynamic?.destination || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
                         </Row>
                         <Row label="2.3 Request Title">
-                            <Input value={requestData?.title || formDataDynamic?.title || "N/A"} disabled className="h-7 text-xs bg-gray-50 font-medium" />
+                            <Input value={requestData?.title || formDataDynamic?.title || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
                         </Row>
                         <Row label="2.4 Purpose">
-                            <Textarea value={car?.purpose || formDataDynamic?.purpose || "N/A"} disabled className="min-h-16 text-xs bg-gray-50 resize-none font-medium" />
+                            <Textarea value={car?.purpose || formDataDynamic?.purpose || "N/A"} disabled className="min-h-16 border-blue-300 dark:border-[#3b6dae]/40 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium resize-none" />
                         </Row>
                         <Row label="2.5 Departure">
-                            <Input value={`${car?.departureDate || formDataDynamic?.departureDate || ""} ${car?.departureTime || formDataDynamic?.departureTime || ""}`} disabled className="h-7 text-xs bg-gray-50 font-medium" />
+                            <Input value={`${car?.departureDate || formDataDynamic?.departureDate || ""} ${car?.departureTime || formDataDynamic?.departureTime || ""}`} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
                         </Row>
                         <Row label="2.6 Passengers">
-                            <Input value={car?.passengers?.toString() || formDataDynamic?.passengers?.toString() || "0"} disabled className="h-7 text-xs bg-gray-50 font-medium" />
+                            <Input value={car?.passengers?.toString() || formDataDynamic?.passengers?.toString() || "0"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
                         </Row>
                         <Row label="2.7 Vehicle & Driver">
                             <div className="space-y-1 w-full font-medium">
                                 <p className="text-[10px] text-gray-500 uppercase font-bold">Driver:</p>
-                                <Input value={car?.driverName || formDataDynamic?.driverName || "N/A"} disabled className="h-7 text-xs bg-gray-50 font-medium" />
+                                <Input value={car?.driverName || formDataDynamic?.driverName || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
                                 <p className="text-[10px] text-gray-500 uppercase font-bold mt-1">Vehicle:</p>
-                                <Input value={car?.carInfo || formDataDynamic?.carInfo || "N/A"} disabled className="h-7 text-xs bg-gray-50 font-medium" />
+                                <Input value={car?.carInfo || formDataDynamic?.carInfo || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
                             </div>
                         </Row>
                     </Section>
@@ -300,32 +291,52 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
 
                                     <div>
                                         <label className="text-[10px] font-bold text-gray-500 uppercase block mb-2">Signature</label>
-                                        <div className="flex gap-4 mb-3">
-                                            <label className="flex items-center gap-2 cursor-pointer">
-                                                <input type="radio" checked={signatureMethod === "draw"} onChange={() => setSignatureMethod("draw")} />
-                                                <span className="text-xs">Draw</span>
+                                        <div className="flex gap-4 mb-4">
+                                            <label className="flex items-center gap-2 cursor-pointer group">
+                                                <input
+                                                    type="radio"
+                                                    checked={signatureMethod === "draw"}
+                                                    onChange={() => {
+                                                        setSignatureMethod("draw");
+                                                        setSignatureFile(null);
+                                                        setSignaturePreview("");
+                                                    }}
+                                                    className="w-4 h-4 accent-blue-600"
+                                                />
+                                                <span className="text-xs font-black uppercase tracking-widest text-[#3b6dae] group-hover:text-blue-600">DRAW SIGNATURE</span>
                                             </label>
-                                            <label className="flex items-center gap-2 cursor-pointer">
-                                                <input type="radio" checked={signatureMethod === "upload"} onChange={() => setSignatureMethod("upload")} />
-                                                <span className="text-xs">Upload</span>
+                                            <label className="flex items-center gap-2 cursor-pointer group">
+                                                <input
+                                                    type="radio"
+                                                    checked={signatureMethod === "upload"}
+                                                    onChange={() => {
+                                                        setSignatureMethod("upload");
+                                                        setSignatureFile(null);
+                                                        setSignaturePreview("");
+                                                    }}
+                                                    className="w-4 h-4 accent-blue-600"
+                                                />
+                                                <span className="text-xs font-black uppercase tracking-widest text-[#3b6dae] group-hover:text-blue-600">UPLOAD IMAGE</span>
                                             </label>
                                         </div>
 
                                         {signatureMethod === "upload" ? (
-                                            <Input
-                                                type="file"
-                                                accept="image/*"
-                                                onChange={(e) => {
-                                                    const file = e.target.files?.[0];
-                                                    if (file) {
-                                                        setSignatureFile(file);
-                                                        const reader = new FileReader();
-                                                        reader.onload = (ev) => setSignaturePreview(ev.target?.result as string);
-                                                        reader.readAsDataURL(file);
-                                                    }
-                                                }}
-                                                className="text-xs"
-                                            />
+                                            <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={(e) => {
+                                                        const file = e.target.files?.[0];
+                                                        if (file) {
+                                                            setSignatureFile(file);
+                                                            const reader = new FileReader();
+                                                            reader.onload = (ev) => setSignaturePreview(ev.target?.result as string);
+                                                            reader.readAsDataURL(file);
+                                                        }
+                                                    }}
+                                                    className="text-xs block w-full text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all border border-blue-200 dark:border-[#3b6dae]/30 p-1.5 rounded-lg"
+                                                />
+                                            </div>
                                         ) : (
                                             <SignaturePad
                                                 onSave={(dataUrl) => {
@@ -341,12 +352,15 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                                         )}
 
                                         {signaturePreview && (
-                                            <div className="mt-2 p-2 rounded bg-white inline-block relative">
+                                            <div className="space-y-2 animate-in zoom-in duration-300">
                                                 <img src={signaturePreview} alt="Preview" className="h-12 object-contain" />
                                                 <button
+                                                    type="button"
                                                     onClick={() => { setSignatureFile(null); setSignaturePreview(""); }}
-                                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px]"
-                                                >✕</button>
+                                                    className="text-[10px] text-red-600 hover:text-red-800 font-bold uppercase underline underline-offset-2"
+                                                >
+                                                    Clear Signature
+                                                </button>
                                             </div>
                                         )}
                                     </div>
@@ -443,20 +457,24 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
     );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children, className = "" }: { title: string; children: React.ReactNode; className?: string }) {
     return (
-        <div>
-            <div className="lg:bg-[#3b6dae] lg:text-white font-bold px-4 py-2 text-xs uppercase tracking-wider">{title}</div>
-            <div className="bg-white">{children}</div>
+        <div className={className}>
+            <div className="lg:bg-[#3b6dae] lg:text-white font-bold px-4 py-2 text-sm">{title}</div>
+            {children}
         </div>
     );
 }
 
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
+function Row({ label, children, colSpan = false }: { label: React.ReactNode; children: React.ReactNode; colSpan?: boolean }) {
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr] gap-0">
-            <div className="px-2 lg:px-4 py-2 lg:py-3 lg:bg-blue-50/30 text-[10px] lg:text-[11px] font-bold text-gray-500 uppercase flex items-center">{label}</div>
-            <div className="px-2 lg:px-4 py-1.5 lg:py-2">{children}</div>
+        <div className={`grid ${colSpan ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-[220px_1fr]'} gap-0`}>
+            {!colSpan && (
+                <div className="px-2 lg:px-3 py-1.5 lg:py-2 font-medium lg:bg-blue-100 text-[#3b6dae] text-[10px] lg:text-xs flex items-center">
+                    {label}
+                </div>
+            )}
+            <div className="px-2 lg:px-3 py-1 flex items-center">{children}</div>
         </div>
     );
 }

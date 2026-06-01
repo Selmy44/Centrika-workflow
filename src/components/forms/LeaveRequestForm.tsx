@@ -846,7 +846,7 @@ export default function LeaveRequestForm({
                               }}
                               className="w-4 h-4 accent-blue-600"
                             />
-                            <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600">Draw</span>
+                            <span className="text-xs font-black uppercase tracking-widest text-[#3b6dae] group-hover:text-blue-600">DRAW SIGNATURE</span>
                           </label>
                           <label className="flex items-center gap-2 cursor-pointer group">
                             <input
@@ -859,7 +859,7 @@ export default function LeaveRequestForm({
                               }}
                               className="w-4 h-4 accent-blue-600"
                             />
-                            <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600">Upload</span>
+                            <span className="text-xs font-black uppercase tracking-widest text-[#3b6dae] group-hover:text-blue-600">UPLOAD IMAGE</span>
                           </label>
                         </div>
 
@@ -877,7 +877,7 @@ export default function LeaveRequestForm({
                                   reader.readAsDataURL(file);
                                 }
                               }}
-                              className="block w-full text-xs text-slate-500 file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:font-semibold file:bg-[#3b6dae]/10 file:text-[#3b6dae] hover:file:bg-[#3b6dae]/20 border border-[#3b6dae]/30 rounded-lg p-1 transition-colors hover:border-[#3b6dae]/60 cursor-pointer"
+                              className="text-xs block w-full text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all border border-blue-200 dark:border-[#3b6dae]/30 p-1.5 rounded-lg"
                             />
                           </div>
                         ) : (

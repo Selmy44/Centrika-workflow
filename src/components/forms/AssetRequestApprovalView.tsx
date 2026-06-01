@@ -145,27 +145,18 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
     };
 
     return (
-        <div className="w-full bg-white dark:bg-[#1f426b] text-black dark:text-slate-100 px-3 md:px-10 leave-form-container relative dark:border-[#2b6cb0]/30">
+        <div className="w-full bg-white dark:bg-[#1f426b] text-black dark:text-slate-100 px-4 leave-form-container relative dark:border-[#2b6cb0]/30">
 
-            {/* CLOSE/BACK BUTTON */}
-            <button
-                onClick={() => onBack ? onBack() : (onClose ? onClose() : window.history.back())}
-                className="no-print absolute top-4 right-4 p-2 hover:bg-gray-100 dark:bg-[#295482] rounded-lg transition"
-                title="Close form"
-            >
-                <svg className="w-6 h-6 text-gray-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
+
 
             <div>
                 {/* ===== HEADER WITH LOGO AND CONTACT INFO ===== */}
-                <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start px-3 lg:px-8 py-4 lg:py-6 gap-4 lg:gap-12">
+                <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start px-3 lg:px-6 py-3 gap-4 lg:gap-8">
                     <div className="shrink-0">
                         <img
                             src="/logo/centrikaLogo.png"
                             alt="Centrika Logo"
-                            className="h-14 lg:h-32 w-auto"
+                            className="h-14 lg:h-20 w-auto"
                         />
                     </div>
                     <div className="text-xs lg:text-sm flex-1 flex justify-start lg:justify-end">
@@ -394,7 +385,7 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
                                                         }}
                                                         className="w-4 h-4 accent-blue-600"
                                                     />
-                                                    <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600">Draw Signature</span>
+                                                    <span className="text-xs font-black uppercase tracking-widest text-[#3b6dae] group-hover:text-blue-600">DRAW SIGNATURE</span>
                                                 </label>
                                                 <label className="flex items-center gap-2 cursor-pointer group">
                                                     <input
@@ -407,7 +398,7 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
                                                         }}
                                                         className="w-4 h-4 accent-blue-600"
                                                     />
-                                                    <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600">Upload Image</span>
+                                                    <span className="text-xs font-black uppercase tracking-widest text-[#3b6dae] group-hover:text-blue-600">UPLOAD IMAGE</span>
                                                 </label>
                                             </div>
                                         )}
@@ -427,7 +418,7 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
                                                         }
                                                     }}
                                                     disabled={isLoading}
-                                                    className="block w-full text-xs text-gray-600 dark:text-slate-400 border border-dashed border-blue-300 dark:border-[#3b6dae]/40 rounded p-2 cursor-pointer bg-blue-50/30"
+                                                    className="text-xs block w-full text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all border border-blue-200 dark:border-[#3b6dae]/30 p-1.5 rounded-lg"
                                                 />
                                             </div>
                                         ) : (
@@ -446,10 +437,7 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
 
                                         {signaturePreview && (
                                             <div className="space-y-2 animate-in zoom-in duration-300">
-                                                <div className="p-2 rounded bg-green-50 flex items-center gap-4">
-                                                    <img src={signaturePreview} alt="approver-signature" className="h-12 object-contain" />
-                                                    <p className="text-[10px] font-semibold text-green-700 uppercase">Signature Selected</p>
-                                                </div>
+                                                <img src={signaturePreview} alt="approver-signature" className="h-12 object-contain" />
                                                 <button
                                                     type="button"
                                                     onClick={() => {
@@ -458,7 +446,7 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
                                                     }}
                                                     className="text-[10px] text-red-600 hover:text-red-800 font-bold uppercase underline underline-offset-2"
                                                 >
-                                                    Clear and Change
+                                                    Clear Signature
                                                 </button>
                                             </div>
                                         )}
@@ -606,22 +594,24 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
 
 /* ========= Helper Components ========= */
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children, className = "" }: { title: string; children: React.ReactNode; className?: string }) {
     return (
-        <div>
-            <div className="lg:bg-[#3b6dae] lg:text-white font-bold px-4 py-1.5 text-xs uppercase tracking-wider">{title}</div>
+        <div className={className}>
+            <div className="lg:bg-[#3b6dae] lg:text-white font-bold px-4 py-2 text-sm">{title}</div>
             {children}
         </div>
     );
 }
 
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
+function Row({ label, children, colSpan = false }: { label: React.ReactNode; children: React.ReactNode; colSpan?: boolean }) {
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] items-stretch gap-0">
-            <div className="px-2 lg:px-3 py-1.5 lg:py-2 font-semibold lg:bg-blue-50/50 text-[#3b6dae] text-[10px] lg:text-[11px] flex items-center">
-                {label}
-            </div>
-            <div className="px-2 lg:px-3 py-1.5 flex items-center">{children}</div>
+        <div className={`grid ${colSpan ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-[220px_1fr]'} gap-0`}>
+            {!colSpan && (
+                <div className="px-2 lg:px-3 py-1.5 lg:py-2 font-medium lg:bg-blue-100 text-[#3b6dae] text-[10px] lg:text-xs flex items-center">
+                    {label}
+                </div>
+            )}
+            <div className="px-2 lg:px-3 py-1 flex items-center">{children}</div>
         </div>
     );
 }

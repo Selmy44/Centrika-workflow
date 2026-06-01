@@ -119,16 +119,20 @@ export default function Approvals() {
     onSuccess: () => {
       toast.success("Request approved successfully");
       setShowApproveDialog(false);
-      setShowFullFormDialog(false);
-      setComments("");
-      setSelectedRequest(null);
-      setIsProcessingApproval(false);
-      // Refresh the list to remove the approved request
-      refetch();
-      refetchHistory();
-      // Invalidate dashboard stats so counts update in real-time
-      queryClient.invalidateQueries({ queryKey: ["requests", "getDashboardStats"] });
-      queryClient.invalidateQueries({ queryKey: ["requests", "getRecentRequests"] });
+      
+      // Delay closing for 800ms so the user sees the spinner loading state and experiences a smooth, satisfying transition
+      setTimeout(() => {
+        setShowFullFormDialog(false);
+        setComments("");
+        setSelectedRequest(null);
+        setIsProcessingApproval(false);
+        // Refresh the list to remove the approved request
+        refetch();
+        refetchHistory();
+        // Invalidate dashboard stats so counts update in real-time
+        queryClient.invalidateQueries({ queryKey: ["requests", "getDashboardStats"] });
+        queryClient.invalidateQueries({ queryKey: ["requests", "getRecentRequests"] });
+      }, 800);
     },
     onError: (error: any) => {
       setIsProcessingApproval(false);
@@ -140,15 +144,22 @@ export default function Approvals() {
     onSuccess: () => {
       toast.success("Request rejected");
       setShowRejectDialog(false);
-      setComments("");
-      setSelectedRequest(null);
-      refetch();
-      refetchHistory();
-      // Invalidate dashboard stats so counts update in real-time
-      queryClient.invalidateQueries({ queryKey: ["requests", "getDashboardStats"] });
-      queryClient.invalidateQueries({ queryKey: ["requests", "getRecentRequests"] });
+      
+      // Delay closing for 800ms so the user sees the spinner loading state and experiences a smooth, satisfying transition
+      setTimeout(() => {
+        setShowFullFormDialog(false);
+        setComments("");
+        setSelectedRequest(null);
+        setIsProcessingApproval(false);
+        refetch();
+        refetchHistory();
+        // Invalidate dashboard stats so counts update in real-time
+        queryClient.invalidateQueries({ queryKey: ["requests", "getDashboardStats"] });
+        queryClient.invalidateQueries({ queryKey: ["requests", "getRecentRequests"] });
+      }, 800);
     },
     onError: (error: any) => {
+      setIsProcessingApproval(false);
       toast.error(error.message || "Failed to reject request");
     },
   });
@@ -679,101 +690,90 @@ export default function Approvals() {
           </DialogContent>
         </Dialog>
 
-        {/* Full Form - Display as proper modal with navbar header */}
-        {showFullFormDialog && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-0 sm:p-4">
-            <div className="bg-white rounded-none sm:rounded-lg shadow-2xl w-full max-w-7xl h-dvh sm:h-[95vh] flex flex-col relative">
-              {/* Navbar Header - Fixed at top */}
-              <div className="flex items-center justify-between gap-3 px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-200 bg-gray-50 sticky top-0 z-20">
-                <h2 className="text-sm sm:text-lg font-semibold text-foreground truncate">
-                  {selectedRequest?.title}
-                </h2>
-                <button
-                  onClick={() => setShowFullFormDialog(false)}
-                  className="p-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-bold text-xl sm:text-2xl w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center shrink-0"
-                >
-                  ✕
-                </button>
-              </div>
+        {/* Full Form - Display as proper modal matching Request Form size and styling */}
+        <Dialog open={showFullFormDialog} onOpenChange={setShowFullFormDialog}>
+          <DialogContent
+            className="w-full! h-dvh! md:h-auto! md:w-[70vw]! max-w-225! md:max-h-[90vh]! overflow-y-auto! p-0! flex! flex-col! gap-0! rounded-none! md:rounded-lg!"
+          >
+            <DialogHeader className="sr-only">
+              <DialogTitle>View Approval Request</DialogTitle>
+            </DialogHeader>
+            <div className="flex-1 overflow-y-auto w-full">
+              {selectedRequest ? (
+                <>
+                  {/* ===== LEAVE REQUEST ===== */}
+                  {selectedRequest.type === "leave" && (
+                    <LeaveRequestForm
+                      isApprover={true}
+                      requestData={selectedRequest}
+                      onApprove={(data) => handleGenericApprove(data, "leave", getFormDataDynamic, storeFormData)}
+                      onReject={(reason) => {
+                        setIsProcessingApproval(true);
+                        rejectMutation.mutate({
+                          requestId: selectedRequest.id,
+                          comments: reason,
+                        });
+                      }}
+                      isLoading={approveMutation.isPending || rejectMutation.isPending || isProcessingApproval}
+                    />
+                  )}
 
-              {/* Scrollable Form Content */}
-              <div className="overflow-y-auto flex-1">
-                {selectedRequest ? (
-                  <>
-                    {/* ===== LEAVE REQUEST ===== */}
-                    {selectedRequest.type === "leave" && (
-                      <LeaveRequestForm
-                        isApprover={true}
-                        requestData={selectedRequest}
-                        onApprove={(data) => handleGenericApprove(data, "leave", getFormDataDynamic, storeFormData)}
-                        onReject={(reason) => {
-                          rejectMutation.mutate({
-                            requestId: selectedRequest.id,
-                            comments: reason,
-                          });
-                          setShowFullFormDialog(false);
-                        }}
-                        isLoading={approveMutation.isPending || rejectMutation.isPending || isProcessingApproval}
-                      />
-                    )}
+                  {/* ===== CAR REQUEST ===== */}
+                  {selectedRequest.type === "car" && (
+                    <CarRequestApprovalView
+                      requestData={selectedRequest}
+                      onApprove={(data) => handleGenericApprove(data, "car", getCarFormDataDynamic, storeCarFormData)}
+                      onReject={(reason) => {
+                        setIsProcessingApproval(true);
+                        rejectMutation.mutate({
+                          requestId: selectedRequest.id,
+                          comments: reason,
+                        });
+                      }}
+                      isLoading={approveMutation.isPending || rejectMutation.isPending || isProcessingApproval}
+                    />
+                  )}
 
-                    {/* ===== CAR REQUEST ===== */}
-                    {selectedRequest.type === "car" && (
-                      <CarRequestApprovalView
-                        requestData={selectedRequest}
-                        onApprove={(data) => handleGenericApprove(data, "car", getCarFormDataDynamic, storeCarFormData)}
-                        onReject={(reason) => {
-                          rejectMutation.mutate({
-                            requestId: selectedRequest.id,
-                            comments: reason,
-                          });
-                          setShowFullFormDialog(false);
-                        }}
-                        isLoading={approveMutation.isPending || rejectMutation.isPending || isProcessingApproval}
-                      />
-                    )}
+                  {/* ===== EXPENDITURE REQUEST ===== */}
+                  {selectedRequest.type === "expenditure" && (
+                    <ExpenditureRequestApprovalView
+                      requestData={selectedRequest}
+                      onApprove={(data) => handleGenericApprove(data, "expenditure", getExpenditureFormDataDynamic, storeExpenditureFormData)}
+                      onReject={(reason) => {
+                        setIsProcessingApproval(true);
+                        rejectMutation.mutate({
+                          requestId: selectedRequest.id,
+                          comments: reason,
+                        });
+                      }}
+                      isLoading={approveMutation.isPending || rejectMutation.isPending || isProcessingApproval}
+                    />
+                  )}
 
-                    {/* ===== EXPENDITURE REQUEST ===== */}
-                    {selectedRequest.type === "expenditure" && (
-                      <ExpenditureRequestApprovalView
-                        requestData={selectedRequest}
-                        onApprove={(data) => handleGenericApprove(data, "expenditure", getExpenditureFormDataDynamic, storeExpenditureFormData)}
-                        onReject={(reason) => {
-                          rejectMutation.mutate({
-                            requestId: selectedRequest.id,
-                            comments: reason,
-                          });
-                          setShowFullFormDialog(false);
-                        }}
-                        isLoading={approveMutation.isPending || rejectMutation.isPending || isProcessingApproval}
-                      />
-                    )}
-
-                    {/* ===== ASSET REQUEST ===== */}
-                    {selectedRequest.type === "asset" && (
-                      <AssetRequestApprovalView
-                        requestData={selectedRequest}
-                        onApprove={(data) => handleGenericApprove(data, "asset", getAssetFormDataDynamic, storeAssetFormData)}
-                        onReject={(reason) => {
-                          rejectMutation.mutate({
-                            requestId: selectedRequest.id,
-                            comments: reason,
-                          });
-                          setShowFullFormDialog(false);
-                        }}
-                        isLoading={approveMutation.isPending || rejectMutation.isPending || isProcessingApproval}
-                      />
-                    )}
-                  </>
-                ) : (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="animate-spin text-blue-400 mr-2" />
-                  </div>
-                )}
-              </div>
+                  {/* ===== ASSET REQUEST ===== */}
+                  {selectedRequest.type === "asset" && (
+                    <AssetRequestApprovalView
+                      requestData={selectedRequest}
+                      onApprove={(data) => handleGenericApprove(data, "asset", getAssetFormDataDynamic, storeAssetFormData)}
+                      onReject={(reason) => {
+                        setIsProcessingApproval(true);
+                        rejectMutation.mutate({
+                          requestId: selectedRequest.id,
+                          comments: reason,
+                        });
+                      }}
+                      isLoading={approveMutation.isPending || rejectMutation.isPending || isProcessingApproval}
+                    />
+                  )}
+                </>
+              ) : (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="animate-spin text-blue-400 mr-2" />
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );

@@ -29,6 +29,16 @@ const EmployeeProfilePage = () => {
     { enabled: !!employeeId }
   );
 
+  const allRequests = useMemo(() => (employee as any)?.allRequests ?? [], [employee]);
+
+  const requestsByType = useMemo(() => {
+    const map: Record<string, number> = {};
+    allRequests.forEach((r: any) => {
+      map[r.type] = (map[r.type] || 0) + 1;
+    });
+    return map;
+  }, [allRequests]);
+
   if (userLoading) return <ProfileSkeleton />;
 
   if (!employee) {
@@ -46,19 +56,10 @@ const EmployeeProfilePage = () => {
   const pendingDocs = documents.filter((doc: any) => doc.status === "pending").length;
   const leaveRequests = leaveData?.leaveRequests ?? [];
   const leaveBalance = leaveData?.leaveBalance;
-  const allRequests = (employee as any).allRequests ?? [];
   const approvedCount = (employee as any).approvedCount ?? 0;
   const rejectedCount = (employee as any).rejectedCount ?? 0;
   const pendingCount = (employee as any).pendingCount ?? 0;
   const approvalRate = employee.requestsCount > 0 ? Math.round((approvedCount / employee.requestsCount) * 100) : 0;
-
-  const requestsByType = useMemo(() => {
-    const map: Record<string, number> = {};
-    allRequests.forEach((r: any) => {
-      map[r.type] = (map[r.type] || 0) + 1;
-    });
-    return map;
-  }, [allRequests]);
 
   const getStatusColor = (status?: string | null) => {
     switch ((status || "active").toLowerCase()) {
