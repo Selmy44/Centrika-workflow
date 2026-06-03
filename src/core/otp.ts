@@ -7,6 +7,7 @@ import { sendEmail, emailTemplates } from "./email";
  * Generate a random 6-digit OTP code
  */
 export function generateOtpCode(): string {
+  // return crypto.randomInt(100000, 999999).toString(); // Use this for production random OTP
   return "123456";
 }
 
