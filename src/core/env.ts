@@ -35,3 +35,38 @@ if (!ENV.databaseUrl) {
 if (!process.env.FRONTEND_URL) {
   console.warn("⚠️  WARNING: FRONTEND_URL is not set! CORS defaults to http://localhost:5173. Set FRONTEND_URL in .env");
 }
+
+/**
+ * Helper to dynamically determine the frontend URL based on the incoming request.
+ * Prioritizes the Request's Origin or Referer header, falling back to the configured APP_URL or FRONTEND_URL.
+ */
+export function getFrontendUrl(req?: any): string {
+  if (req && req.headers) {
+    // 1. Try Origin header
+    const origin = req.headers.origin;
+    if (origin && typeof origin === "string") {
+      return origin.replace(/\/$/, "");
+    }
+    
+    // 2. Try Referer header (parse base origin)
+    const referer = req.headers.referer;
+    if (referer && typeof referer === "string") {
+      try {
+        const url = new URL(referer);
+        return url.origin;
+      } catch (e) {
+        // Ignore parsing error
+      }
+    }
+  }
+
+  // 3. Fallback to env configured APP_URL or FRONTEND_URL
+  const configuredUrl = process.env.APP_URL || process.env.FRONTEND_URL || process.env.VITE_OAUTH_PORTAL_URL;
+  if (configuredUrl) {
+    // Take the first origin in case of comma-separated values (like FRONTEND_URL)
+    return configuredUrl.split(",")[0].trim().replace(/\/$/, "");
+  }
+
+  // 4. Default fallback
+  return "http://localhost:5173";
+}

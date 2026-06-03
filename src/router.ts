@@ -18,7 +18,7 @@ import { financeRouter } from "./routers/finance";
 import { assetsRouter } from "./routers/assets";
 import { upsertUser, prisma } from "./db";
 import { SignJWT } from "jose";
-import { ENV } from "./core/env";
+import { ENV, getFrontendUrl } from "./core/env";
 import { TRPCError } from "@trpc/server";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
@@ -487,7 +487,7 @@ export const appRouter = router({
       .input(z.object({
         email: z.string().email("Invalid email"),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
         const normalizedEmail = input.email.trim().toLowerCase();
         const user = await prisma.user.findFirst({
           where: {
@@ -523,7 +523,8 @@ export const appRouter = router({
           }
         });
 
-        const resetLink = `${ENV.appUrl}/reset-password?token=${resetToken}`;
+        const frontendUrl = getFrontendUrl(ctx.req);
+        const resetLink = `${frontendUrl}/reset-password?token=${resetToken}`;
         const userWithDeptForReset = await prisma.user.findUnique({
           where: { id: user.id },
           include: { department: true }
