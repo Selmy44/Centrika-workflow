@@ -147,10 +147,10 @@ async function main() {
   for (const user of users) {
     const dept = createdDepartments.find(d => d.name === user.departmentName);
     const openId = `email-${crypto.createHash('md5').update(user.email).digest('hex')}`;
-    
+
     // Generate staff ID with format: CTK-YYYY-MM-DD NNN
     const staffId = `CTK-${todayDate} ${String(userCounter).padStart(3, '0')}`;
-    
+
     // @ts-ignore - Ignore potential stale types for email unique if prisma hasn't regenerated yet
     await prisma.user.upsert({
       where: { email: user.email } as any,
@@ -213,16 +213,16 @@ async function main() {
     data: { requestType: "expenditure", name: "Expenditure Approval", isActive: true }
   });
   // HOD first
-  await prisma.workflowStep.create({ 
-    data: { workflowConfigId: expWf.id, stepOrder: 1, stepName: "HOD Approval", statusLabel: "Pending HOD", roleResponsible: "head_of_department", isFinal: false } 
+  await prisma.workflowStep.create({
+    data: { workflowConfigId: expWf.id, stepOrder: 1, stepName: "HOD Approval", statusLabel: "Pending HOD", roleResponsible: "head_of_department", isFinal: false }
   });
   // Head of Finance (manual escalate or final approve)
-  await prisma.workflowStep.create({ 
-    data: { workflowConfigId: expWf.id, stepOrder: 2, stepName: "Finance Approval", statusLabel: "Pending Finance", roleResponsible: "head_of_finance", isFinal: false } 
+  await prisma.workflowStep.create({
+    data: { workflowConfigId: expWf.id, stepOrder: 2, stepName: "Finance Approval", statusLabel: "Pending Finance", roleResponsible: "head_of_finance", isFinal: false }
   });
   // CEO (final option)
-  await prisma.workflowStep.create({ 
-    data: { workflowConfigId: expWf.id, stepOrder: 3, stepName: "CEO Approval", statusLabel: "Pending CEO", roleResponsible: "ceo_md", isFinal: true } 
+  await prisma.workflowStep.create({
+    data: { workflowConfigId: expWf.id, stepOrder: 3, stepName: "CEO Approval", statusLabel: "Pending CEO", roleResponsible: "ceo_md", isFinal: true }
   });
   console.log("Configured Expenditure workflow.");
 
@@ -230,14 +230,14 @@ async function main() {
   const assetWf = await prisma.workflowConfig.create({
     data: { requestType: "asset", name: "Asset Approval", isActive: true }
   });
-  await prisma.workflowStep.create({ 
-    data: { workflowConfigId: assetWf.id, stepOrder: 1, stepName: "HOD Approval", statusLabel: "Pending HOD", roleResponsible: "head_of_department", isFinal: false } 
+  await prisma.workflowStep.create({
+    data: { workflowConfigId: assetWf.id, stepOrder: 1, stepName: "HOD Approval", statusLabel: "Pending HOD", roleResponsible: "head_of_department", isFinal: false }
   });
-  await prisma.workflowStep.create({ 
-    data: { workflowConfigId: assetWf.id, stepOrder: 2, stepName: "Finance Approval", statusLabel: "Pending Finance", roleResponsible: "head_of_finance", isFinal: false } 
+  await prisma.workflowStep.create({
+    data: { workflowConfigId: assetWf.id, stepOrder: 2, stepName: "Finance Approval", statusLabel: "Pending Finance", roleResponsible: "head_of_finance", isFinal: false }
   });
-  await prisma.workflowStep.create({ 
-    data: { workflowConfigId: assetWf.id, stepOrder: 3, stepName: "CEO Approval", statusLabel: "Pending CEO", roleResponsible: "ceo_md", isFinal: true } 
+  await prisma.workflowStep.create({
+    data: { workflowConfigId: assetWf.id, stepOrder: 3, stepName: "CEO Approval", statusLabel: "Pending CEO", roleResponsible: "ceo_md", isFinal: true }
   });
   console.log("Configured Asset workflow.");
 
