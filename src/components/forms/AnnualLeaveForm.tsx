@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Loader2, Phone, Mail, Globe, MapPin } from "lucide-react";
+import { Loader2, Phone, Mail, Globe, MapPin, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -21,6 +21,14 @@ import {
 import { LeaveBalanceCalculator } from "./shared/LeaveBalanceCalculator";
 import { SignaturePad } from "@/components/SignaturePad";
 import { base64ToFile } from "@/lib/fileUtils";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Props {
   requestData?: any;
@@ -28,18 +36,44 @@ interface Props {
   onSuccess?: () => void;
   onClose?: () => void;
   onBack?: () => void;
+  isApprover?: boolean;
+  onApprove?: (data: any) => void;
+  onReject?: (reason: string) => void;
+  isLoading?: boolean;
 }
 
 /**
  * Annual Leave Form - Professional document-style design
  * Matches CarRequestForm / ExpenditureRequestForm / AssetRequestForm layout
  */
-export default function AnnualLeaveForm({ requestData, isReadOnly = false, onSuccess, onClose, onBack }: Props) {
+export default function AnnualLeaveForm({
+  requestData,
+  isReadOnly = false,
+  onSuccess,
+  onClose,
+  onBack,
+  isApprover: propsIsApprover,
+  onApprove,
+  onReject,
+  isLoading = false,
+}: Props) {
   const { user, isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
   const autoFillData = useFormAutoFill();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [takenLeaveDates, setTakenLeaveDates] = useState<string[]>([]);
+  const [isEligible, setIsEligible] = useState(true);
+
+  const [approvalComments, setApprovalComments] = useState("");
+  const [approverSignature, setApproverSignature] = useState<File | null>(null);
+  const [approverSignatureUrl, setApproverSignatureUrl] = useState("");
+  const [approverSignatureMethod, setApproverSignatureMethod] = useState<"upload" | "draw">("draw");
+  const [selectedHR, setSelectedHR] = useState("");
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+
+  const isApprover = propsIsApprover !== undefined ? propsIsApprover : (!!onApprove || !!onReject);
+  const effectiveIsReadOnly = isReadOnly || isApprover;
 
   const [form, setForm] = useState({
     documentId: "",
@@ -89,7 +123,7 @@ export default function AnnualLeaveForm({ requestData, isReadOnly = false, onSuc
   // Fetch saved form data for draft/read-only views
   const savedFormData = (trpc as any).requests.getLeaveFormData.useQuery(
     { requestId: requestData?.id || 0 },
-    { enabled: !!requestData?.id && (isReadOnly || requestData?.status === "draft") }
+    { enabled: !!requestData?.id && (isReadOnly || isApprover || requestData?.status === "draft") }
   );
 
   // Merge saved form data when available
@@ -123,7 +157,7 @@ export default function AnnualLeaveForm({ requestData, isReadOnly = false, onSuc
   }, [requestData]);
 
   useEffect(() => {
-    if (user && autoFillData && !isReadOnly) {
+    if (user && autoFillData && !effectiveIsReadOnly) {
       const sequence = String(Math.floor(Math.random() * 10000)).padStart(5, "0");
       const currentMonth = String(new Date().getMonth() + 1).padStart(2, "0");
       const docId = `AL-${new Date().getFullYear()}-${currentMonth}-${sequence}`;
@@ -139,7 +173,7 @@ export default function AnnualLeaveForm({ requestData, isReadOnly = false, onSuc
         reportingManager: autoFillData.managerId ? String(autoFillData.managerId) : "",
       }));
     }
-  }, [user, autoFillData, isReadOnly]);
+  }, [user, autoFillData, effectiveIsReadOnly]);
 
   const validate = () => {
     if (!form.startDate || !form.endDate) {
@@ -171,6 +205,10 @@ export default function AnnualLeaveForm({ requestData, isReadOnly = false, onSuc
   };
 
   const handleSubmit = async (submit: boolean) => {
+    if (!isEligible) {
+      toast.error("You must be employed for at least one year to apply for Annual Leave.");
+      return;
+    }
     if (submit && !validate()) return;
 
     setIsSubmitting(true);
@@ -262,6 +300,22 @@ export default function AnnualLeaveForm({ requestData, isReadOnly = false, onSuc
         <div className="bg-yellow-500 text-white text-center font-bold py-2 text-lg tracking-wide uppercase">
           Annual Leave Request Form
         </div>
+
+        {/* ELIGIBILITY WARNING BANNER */}
+        {!isEligible && (
+          <div className="mx-3 lg:mx-6 mt-4 mb-2 bg-amber-50 dark:bg-amber-950/20 border-l-4 border-amber-500 p-4 rounded-lg flex items-start gap-3 shadow-xs">
+            <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+            <div>
+              <h4 className="font-semibold text-amber-900 dark:text-amber-200 text-sm">
+                Annual Leave Not Available
+              </h4>
+              <p className="text-xs text-amber-800 dark:text-amber-300 mt-1">
+                You must have at least 1 year of service to apply for Annual Leave.
+                Your Date of Employment is <span className="font-bold">{form.dateOfEmployment || "not set"}</span>.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* ===== REQUEST HEADER SECTION ===== */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-2 lg:gap-3 px-3 lg:px-6 py-2 lg:py-3 text-xs lg:text-sm items-end">
@@ -369,7 +423,7 @@ export default function AnnualLeaveForm({ requestData, isReadOnly = false, onSuc
                 onStartDateChange={(date) => setForm({ ...form, startDate: date })}
                 onEndDateChange={(date) => setForm({ ...form, endDate: date })}
                 maxDays={18}
-                disabled={isReadOnly}
+                disabled={effectiveIsReadOnly}
                 takenLeaveDates={takenLeaveDates}
               />
             </Row>
@@ -399,6 +453,9 @@ export default function AnnualLeaveForm({ requestData, isReadOnly = false, onSuc
                   if (data.takenLeaveDates) {
                     setTakenLeaveDates(data.takenLeaveDates);
                   }
+                  if (data.isEligible !== undefined && data.isEligible !== isEligible) {
+                    setIsEligible(data.isEligible);
+                  }
                 }}
               />
             </div>
@@ -417,8 +474,8 @@ export default function AnnualLeaveForm({ requestData, isReadOnly = false, onSuc
                     type="radio"
                     value="yes"
                     checked={form.outsideCountry === "yes"}
-                    onChange={(e) => !isReadOnly && setForm({ ...form, outsideCountry: e.target.value })}
-                    disabled={isReadOnly}
+                    onChange={(e) => !effectiveIsReadOnly && setForm({ ...form, outsideCountry: e.target.value })}
+                    disabled={effectiveIsReadOnly}
                     className="w-4 h-4"
                   />
                   Yes
@@ -428,8 +485,8 @@ export default function AnnualLeaveForm({ requestData, isReadOnly = false, onSuc
                     type="radio"
                     value="no"
                     checked={form.outsideCountry === "no"}
-                    onChange={(e) => !isReadOnly && setForm({ ...form, outsideCountry: e.target.value })}
-                    disabled={isReadOnly}
+                    onChange={(e) => !effectiveIsReadOnly && setForm({ ...form, outsideCountry: e.target.value })}
+                    disabled={effectiveIsReadOnly}
                     className="w-4 h-4"
                   />
                   No
@@ -441,8 +498,8 @@ export default function AnnualLeaveForm({ requestData, isReadOnly = false, onSuc
                 value={form.contactDuringLeave}
                 onChange={(e) => setForm({ ...form, contactDuringLeave: e.target.value })}
                 placeholder="Provide contact details or person covering for you..."
-                className={`min-h-20 border-blue-300 dark:border-[#3b6dae]/40 text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100' : ''}`}
-                disabled={isReadOnly}
+                className={`min-h-20 border-blue-300 dark:border-[#3b6dae]/40 text-xs ${effectiveIsReadOnly ? 'bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100' : ''}`}
+                disabled={effectiveIsReadOnly}
               />
             </Row>
           </Section>
@@ -451,7 +508,7 @@ export default function AnnualLeaveForm({ requestData, isReadOnly = false, onSuc
           <Section title="3. EMPLOYEE SIGNATURE">
             <Row label="4.1 Your Signature">
               <div className="space-y-3 py-1 w-full">
-                {isReadOnly ? (
+                {effectiveIsReadOnly ? (
                   <div className="space-y-1">
                     {form.employeeSignatureUrl ? (
                       <img src={form.employeeSignatureUrl} alt="Employee Signature" className="h-14 object-contain" />
@@ -547,7 +604,7 @@ export default function AnnualLeaveForm({ requestData, isReadOnly = false, onSuc
                   className="w-full h-8 border-blue-300 dark:border-[#3b6dae]/40 bg-gray-100 dark:bg-[#295482] text-black dark:text-slate-100 font-medium cursor-not-allowed mt-1 mb-1 max-w-[400px]"
                   disabled
                 />
-                {isReadOnly && form.managerSignatureUrl && (
+                {(isReadOnly || isApprover || requestData?.status === "approved" || requestData?.status === "rejected") && form.managerSignatureUrl && (
                   <div className="mt-1">
                     <p className="text-[10px] text-green-600 font-semibold mb-0.5">✓ Approved by HOD</p>
                     <img src={form.managerSignatureUrl} alt="HOD Signature" className="h-10 object-contain" />
@@ -555,35 +612,206 @@ export default function AnnualLeaveForm({ requestData, isReadOnly = false, onSuc
                 )}
               </div>
             </Row>
+
+            {requestData?.status === "rejected" && (
+              <div className="p-4 border border-red-300 dark:border-red-900/50 rounded-lg bg-red-50 dark:bg-red-950/30 my-4 mx-4">
+                <div className="flex items-start gap-3">
+                  <div className="text-red-600 dark:text-red-400 font-bold text-lg">✕</div>
+                  <div className="flex-1">
+                    <h3 className="text-sm font-bold text-red-700 dark:text-red-400 mb-2">Request Rejected</h3>
+                    <p className="text-xs text-red-600 dark:text-red-300">
+                      {requestData?.rejectionReason || "This leave request has been rejected. Please contact your manager or HR for more information."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {isApprover && requestData?.status !== "approved" && requestData?.status !== "rejected" && (
+              <div className="p-4 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-blue-50/30">
+                <h3 className="text-sm font-bold text-blue-700 mb-3">Your Approval ({(requestData?.currentApprovalLevel || user?.role || "Approver").replace(/_/g, " ")})</h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-semibold block mb-1">Comments</label>
+                    <Textarea value={approvalComments} onChange={(e) => setApprovalComments(e.target.value)} placeholder="Add comments..." className="text-xs border-blue-300 dark:border-[#3b6dae]/40 bg-white dark:bg-[#1a385c]" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold block mb-1">Signature</label>
+                    <div className="space-y-3">
+                      <div className="flex gap-4 mb-4">
+                        <label className="flex items-center gap-2 cursor-pointer group">
+                          <input
+                            type="radio"
+                            checked={approverSignatureMethod === "draw"}
+                            onChange={() => {
+                              setApproverSignatureMethod("draw");
+                              setApproverSignature(null);
+                              setApproverSignatureUrl("");
+                            }}
+                            className="w-4 h-4 accent-blue-600"
+                          />
+                          <span className="text-xs font-black uppercase tracking-widest text-[#3b6dae] group-hover:text-blue-600">DRAW SIGNATURE</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer group">
+                          <input
+                            type="radio"
+                            checked={approverSignatureMethod === "upload"}
+                            onChange={() => {
+                              setApproverSignatureMethod("upload");
+                              setApproverSignature(null);
+                              setApproverSignatureUrl("");
+                            }}
+                            className="w-4 h-4 accent-blue-600"
+                          />
+                          <span className="text-xs font-black uppercase tracking-widest text-[#3b6dae] group-hover:text-blue-600">UPLOAD IMAGE</span>
+                        </label>
+                      </div>
+
+                      {approverSignatureMethod === "upload" ? (
+                        <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0] || null;
+                              setApproverSignature(file);
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onload = (ev) => setApproverSignatureUrl(ev.target?.result as string);
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                            className="text-xs block w-full text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all border border-blue-200 dark:border-[#3b6dae]/30 p-1.5 rounded-lg"
+                          />
+                        </div>
+                      ) : (
+                        <SignaturePad 
+                          onSave={(dataUrl) => {
+                            const file = base64ToFile(dataUrl, "approver_signature.png");
+                            setApproverSignature(file);
+                            setApproverSignatureUrl(dataUrl);
+                          }}
+                          onClear={() => {
+                            setApproverSignature(null);
+                            setApproverSignatureUrl("");
+                          }}
+                        />
+                      )}
+
+                      {approverSignatureUrl && (
+                        <div className="mt-2 animate-in zoom-in duration-300">
+                          <img
+                            src={approverSignatureUrl}
+                            alt="Signature Preview"
+                            className="h-10 object-contain"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </Section>
         </div>
 
         {/* ===== ACTIONS ===== */}
-        {!isReadOnly && (
+        {( !effectiveIsReadOnly || (isApprover && requestData?.status !== "approved" && requestData?.status !== "rejected") ) && (
           <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center px-3 lg:px-6 py-3 lg:py-4 bg-gray-50 dark:bg-[#1a385c] gap-2 lg:gap-4">
             <div className="flex gap-2">
               {/* Print/Download options are only available for approved requests */}
             </div>
             <div className="flex flex-col lg:flex-row gap-2 w-full lg:justify-end">
-              <Button
-                variant="outline"
-                disabled={isSubmitting}
-                onClick={() => handleSubmit(false)}
-                className="border-blue-400 dark:border-[#3b6dae]/50"
-              >
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save Draft
-              </Button>
-              <Button
-                disabled={isSubmitting}
-                onClick={() => handleSubmit(true)}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Submit Request
-              </Button>
+              {isApprover ? (
+                <>
+                  <Button 
+                    variant="destructive" 
+                    onClick={() => setShowRejectDialog(true)}
+                    className="bg-red-600 hover:bg-red-700 text-white font-semibold"
+                  >
+                    Reject Request
+                  </Button>
+                  <Button disabled={isLoading} onClick={() => onApprove?.({ comments: approvalComments, signatureFile: approverSignature, selectedHR })} className="bg-green-600 hover:bg-green-700">
+                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Approve
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant="outline"
+                    disabled={isSubmitting || !isEligible}
+                    onClick={() => handleSubmit(false)}
+                    className={`border-blue-400 dark:border-[#3b6dae]/50 ${!isEligible ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Save Draft
+                  </Button>
+                  <Button
+                    disabled={isSubmitting || !isEligible}
+                    onClick={() => handleSubmit(true)}
+                    className={`bg-blue-600 hover:bg-blue-700 ${!isEligible ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Submit Request
+                  </Button>
+                </>
+              )}
             </div>
           </div>
+        )}
+
+        {isApprover && (
+          <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+            <DialogContent className="sm:max-w-md bg-white dark:bg-[#1f426b]">
+              <DialogHeader>
+                <DialogTitle className="text-lg font-bold text-red-600">Reject Request</DialogTitle>
+                <DialogDescription className="text-sm text-gray-600 dark:text-slate-300 mt-2">
+                  Please provide a detailed reason for rejecting this request. This feedback will be shared with the requester.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div>
+                  <label className="text-sm font-semibold text-gray-700 dark:text-slate-200 mb-2 block">Rejection Reason *</label>
+                  <Textarea 
+                    placeholder="Provide a reason for rejection..." 
+                    value={rejectReason} 
+                    onChange={(e) => setRejectReason(e.target.value)}
+                    className="min-h-24 text-sm border-red-300 focus:border-red-500 focus:ring-red-500 bg-white dark:bg-[#1a385c]"
+                    maxLength={500}
+                  />
+                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">{rejectReason.length}/500 characters</p>
+                </div>
+              </div>
+              <DialogFooter className="flex gap-2 justify-end">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowRejectDialog(false);
+                    setRejectReason("");
+                  }}
+                  className="border-gray-300 dark:border-slate-600 text-foreground"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  disabled={rejectReason.trim().length < 1 || isLoading}
+                  onClick={() => {
+                    if (rejectReason.trim().length >= 1) {
+                      onReject?.(rejectReason);
+                      setRejectReason("");
+                      setShowRejectDialog(false);
+                    }
+                  }}
+                  className="bg-red-600 hover:bg-red-700 text-white font-semibold"
+                >
+                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Reject Request
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         )}
 
         {/* ===== FOOTER ===== */}

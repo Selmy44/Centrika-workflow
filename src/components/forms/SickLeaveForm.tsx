@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer, AlertCircle, Eye } from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
+import { Loader2, Phone, Mail, Globe, MapPin, AlertCircle, Eye, CalendarCheck, Sparkles, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -10,7 +10,6 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import DateRangePicker from "@/components/DateRangePicker";
 import SingleDatePicker from "@/components/SingleDatePicker";
 import {
   Select,
@@ -22,23 +21,74 @@ import {
 import { LeaveBalanceCalculator } from "./shared/LeaveBalanceCalculator";
 import { SignaturePad } from "@/components/SignaturePad";
 import { base64ToFile, fileToBase64 } from "@/lib/fileUtils";
+import { isNonWorkingDay } from "@/utils/leaveCalculator";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+/** Add N business days (skipping weekends + Rwandan holidays) to a date string */
+function addBusinessDays(startDateStr: string, days: number): string {
+  if (!startDateStr) return "";
+  const date = new Date(startDateStr + "T00:00:00Z");
+  let added = 0;
+  // The start date itself counts as day 1 if it's a working day
+  while (added < days - 1) {
+    date.setUTCDate(date.getUTCDate() + 1);
+    if (!isNonWorkingDay(date)) added++;
+  }
+  return date.toISOString().split("T")[0];
+}
+
+function formatDateDisplay(dateStr: string): string {
+  if (!dateStr) return "—";
+  const d = new Date(dateStr + "T00:00:00");
+  return d.toLocaleDateString("en-US", { weekday: "short", year: "numeric", month: "short", day: "numeric" });
+}
 
 interface Props {
   requestData?: any;
   isReadOnly?: boolean;
   onSuccess?: () => void;
+  isApprover?: boolean;
+  onApprove?: (data: any) => void;
+  onReject?: (reason: string) => void;
+  isLoading?: boolean;
 }
 
 /**
  * Sick Leave Form - Professional document-style design
  * Matches CarRequestForm / ExpenditureRequestForm / AssetRequestForm layout
  */
-export default function SickLeaveForm({ requestData, isReadOnly = false, onSuccess }: Props) {
+export default function SickLeaveForm({
+  requestData,
+  isReadOnly = false,
+  onSuccess,
+  isApprover: propsIsApprover,
+  onApprove,
+  onReject,
+  isLoading = false,
+}: Props) {
   const { user, isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
   const autoFillData = useFormAutoFill();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [takenLeaveDates, setTakenLeaveDates] = useState<string[]>([]);
+
+  const [approvalComments, setApprovalComments] = useState("");
+  const [approverSignature, setApproverSignature] = useState<File | null>(null);
+  const [approverSignatureUrl, setApproverSignatureUrl] = useState("");
+  const [approverSignatureMethod, setApproverSignatureMethod] = useState<"upload" | "draw">("draw");
+  const [selectedHR, setSelectedHR] = useState("");
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+
+  const isApprover = propsIsApprover !== undefined ? propsIsApprover : (!!onApprove || !!onReject);
+  const effectiveIsReadOnly = isReadOnly || isApprover;
 
   const [form, setForm] = useState({
     documentId: "",
@@ -96,7 +146,7 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
   // Fetch saved form data for draft/read-only views
   const savedFormData = (trpc as any).requests.getLeaveFormData.useQuery(
     { requestId: requestData?.id || 0 },
-    { enabled: !!requestData?.id && (isReadOnly || requestData?.status === "draft") }
+    { enabled: !!requestData?.id && (isReadOnly || isApprover || requestData?.status === "draft") }
   );
 
   // Merge saved form data when available
@@ -131,7 +181,7 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
   }, [requestData]);
 
   useEffect(() => {
-    if (user && autoFillData) {
+    if (user && autoFillData && !effectiveIsReadOnly) {
       const sequence = String(Math.floor(Math.random() * 10000)).padStart(5, "0");
       const currentMonth = String(new Date().getMonth() + 1).padStart(2, "0");
       const docId = `SL-${new Date().getFullYear()}-${currentMonth}-${sequence}`;
@@ -147,30 +197,34 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
         reportingManager: autoFillData.managerId ? String(autoFillData.managerId) : "",
       }));
     }
-  }, [user, autoFillData]);
+  }, [user, autoFillData, effectiveIsReadOnly]);
 
   // Leave balance calculated by LeaveBalanceCalculator component
+
+  // Auto-calculate end date whenever start date changes (5 business days)
+  useEffect(() => {
+    if (form.startDate) {
+      const autoEnd = addBusinessDays(form.startDate, 5);
+      if (autoEnd !== form.endDate) {
+        setForm(prev => ({ ...prev, endDate: autoEnd }));
+      }
+    } else {
+      setForm(prev => ({ ...prev, endDate: "" }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.startDate]);
 
   const validate = () => {
     if (!form.reportingManager) {
       toast.error("Please select a reporting manager");
       return false;
     }
-    if (!form.startDate || !form.endDate) {
-      toast.error("Start and end dates are required");
-      return false;
-    }
-    if (form.endDate < form.startDate) {
-      toast.error("End date must be after start date");
+    if (!form.startDate) {
+      toast.error("Please select your sick leave start date");
       return false;
     }
     if (!form.leaveDaysRequested || parseInt(form.leaveDaysRequested) <= 0) {
-      toast.error("Requested days must be greater than 0. Please check your dates.");
-      return false;
-    }
-    const remaining = parseInt(form.leaveDaysRemaining);
-    if (!isNaN(remaining) && remaining < 0) {
-      toast.error("You do not have enough leave balance for this request");
+      toast.error("Leave days could not be calculated. Please re-select the start date.");
       return false;
     }
     if (!form.illnessDescription.trim()) {
@@ -423,16 +477,68 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
 
           {/* 2. LEAVE DETAILS */}
           <Section title="2. LEAVE DETAILS">
-            <Row label="2.1 Leave Duration (Start – End)">
-              <DateRangePicker
-                startDate={form.startDate}
-                endDate={form.endDate}
-                onStartDateChange={(date) => setForm({ ...form, startDate: date })}
-                onEndDateChange={(date) => setForm({ ...form, endDate: date })}
-                maxDays={365}
-                disabled={isReadOnly}
-                takenLeaveDates={takenLeaveDates}
-              />
+            {/* Smart single-date picker with auto end date */}
+            <Row label="2.1 Sick Leave Start Date">
+              <div className="flex flex-col gap-3">
+                {effectiveIsReadOnly ? (
+                  <Input
+                    type="date"
+                    value={form.startDate}
+                    className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium"
+                    disabled
+                  />
+                ) : (
+                  <SingleDatePicker
+                    value={form.startDate}
+                    onChange={(date) => setForm(prev => ({ ...prev, startDate: date }))}
+                    label="Select your start date"
+                    disablePastDates={false}
+                    highlightToday
+                    highlightWeekends
+                  />
+                )}
+
+                {/* Auto-calculated end date pill */}
+                {form.startDate && form.endDate && (
+                  <div className="relative flex items-stretch gap-0 rounded-xl overflow-hidden shadow-md border border-blue-200 dark:border-blue-700/60">
+                    {/* Start */}
+                    <div className="flex-1 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-[#1e3a5f] dark:to-[#243f65] px-4 py-3">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-blue-500 dark:text-blue-300 mb-0.5">Start Date</p>
+                      <p className="text-sm font-bold text-blue-800 dark:text-blue-100 leading-tight">{formatDateDisplay(form.startDate)}</p>
+                    </div>
+                    {/* Arrow */}
+                    <div className="flex items-center justify-center bg-blue-600 dark:bg-blue-700 px-3">
+                      <ArrowRight size={14} className="text-white" />
+                    </div>
+                    {/* End (auto) */}
+                    <div className="flex-1 bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-[#1a3a2a] dark:to-[#1e4030] px-4 py-3">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-300">End Date</p>
+                        <span className="inline-flex items-center gap-0.5 bg-emerald-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full">
+                          <Sparkles size={7} /> Auto
+                        </span>
+                      </div>
+                      <p className="text-sm font-bold text-emerald-800 dark:text-emerald-100 leading-tight">{formatDateDisplay(form.endDate)}</p>
+                    </div>
+                    {/* Duration badge */}
+                    <div className="flex items-center justify-center bg-yellow-400 dark:bg-yellow-500 px-3">
+                      <div className="text-center">
+                        <p className="text-[9px] font-black text-yellow-900">DAYS</p>
+                        <p className="text-lg font-black text-yellow-900 leading-tight">5</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {!form.startDate && !effectiveIsReadOnly && (
+                  <div className="flex items-center gap-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/40 px-3 py-2">
+                    <CalendarCheck size={14} className="text-amber-600 shrink-0" />
+                    <p className="text-[11px] text-amber-700 dark:text-amber-300 font-medium">
+                      Select your start date — the end date will be automatically set to <strong>5 business days</strong> later.
+                    </p>
+                  </div>
+                )}
+              </div>
             </Row>
 
             <div className="px-4 pb-4">
@@ -480,7 +586,7 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
                     checked={form.outsideCountry === "yes"}
                     onChange={(e) => setForm({ ...form, outsideCountry: e.target.value })}
                     className="w-4 h-4"
-                    disabled={isReadOnly}
+                    disabled={effectiveIsReadOnly}
                   />
                   Yes
                 </label>
@@ -491,7 +597,7 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
                     checked={form.outsideCountry === "no"}
                     onChange={(e) => setForm({ ...form, outsideCountry: e.target.value })}
                     className="w-4 h-4"
-                    disabled={isReadOnly}
+                    disabled={effectiveIsReadOnly}
                   />
                   No
                 </label>
@@ -511,8 +617,8 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
                 value={form.illnessDescription}
                 onChange={(e) => setForm({ ...form, illnessDescription: e.target.value })}
                 placeholder="Describe your illness or medical condition..."
-                className={`min-h-20 border-blue-300 dark:border-[#3b6dae]/40 text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100' : ''}`}
-                disabled={isReadOnly}
+                className={`min-h-20 border-blue-300 dark:border-[#3b6dae]/40 text-xs ${effectiveIsReadOnly ? 'bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100' : ''}`}
+                disabled={effectiveIsReadOnly}
                 required
               />
             </Row>
@@ -525,7 +631,7 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
                     checked={form.visitedHospital === "yes"}
                     onChange={(e) => setForm({ ...form, visitedHospital: e.target.value })}
                     className="w-4 h-4"
-                    disabled={isReadOnly}
+                    disabled={effectiveIsReadOnly}
                   />
                   Yes
                 </label>
@@ -536,7 +642,7 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
                     checked={form.visitedHospital === "no"}
                     onChange={(e) => setForm({ ...form, visitedHospital: e.target.value })}
                     className="w-4 h-4"
-                    disabled={isReadOnly}
+                    disabled={effectiveIsReadOnly}
                   />
                   No
                 </label>
@@ -549,8 +655,8 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
                     value={form.hospitalName}
                     onChange={(e) => setForm({ ...form, hospitalName: e.target.value })}
                     placeholder="Name of hospital or healthcare facility"
-                    className={`border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium' : ''}`}
-                    disabled={isReadOnly}
+                    className={`border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs ${effectiveIsReadOnly ? 'bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium' : ''}`}
+                    disabled={effectiveIsReadOnly}
                     required
                   />
                 </Row>
@@ -559,37 +665,50 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
                     value={form.doctorName}
                     onChange={(e) => setForm({ ...form, doctorName: e.target.value })}
                     placeholder="Name of attending doctor"
-                    className={`border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium' : ''}`}
-                    disabled={isReadOnly}
+                    className={`border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs ${effectiveIsReadOnly ? 'bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium' : ''}`}
+                    disabled={effectiveIsReadOnly}
                   />
                 </Row>
               </>
             )}
             <Row label={`3.${form.visitedHospital === "yes" ? "5" : "3"} Medical Documents *`}>
               <div className="space-y-2 py-1">
-                {!isReadOnly && (
+                {!effectiveIsReadOnly && (
                   <input
                     type="file"
                     multiple
                     accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       if (e.target.files) {
-                        setForm({ ...form, medicalDocuments: Array.from(e.target.files) });
+                        const files = Array.from(e.target.files);
+                        setIsSubmitting(true);
+                        try {
+                          const uploadedUrls: string[] = [];
+                          for (const file of files) {
+                            const base64 = await fileToBase64(file);
+                            const uploadResult = await uploadAttachment.mutateAsync({
+                              requestId: (requestData as any)?.id || 0,
+                              fileName: file.name,
+                              fileData: base64,
+                              mimeType: file.type,
+                              attachmentType: "supporting_document",
+                            });
+                            uploadedUrls.push(uploadResult.fileUrl);
+                          }
+                          setForm(prev => ({
+                            ...prev,
+                            medicalDocumentUrls: [...(prev.medicalDocumentUrls || []), ...uploadedUrls]
+                          }));
+                          toast.success("Documents uploaded successfully");
+                        } catch (err) {
+                          toast.error("Failed to upload documents");
+                        } finally {
+                          setIsSubmitting(false);
+                        }
                       }
                     }}
-                    className="text-xs"
-                    required={!form.medicalDocumentUrls || form.medicalDocumentUrls.length === 0}
+                    className="text-xs text-slate-500 file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                   />
-                )}
-                {form.medicalDocuments && form.medicalDocuments.length > 0 && (
-                  <div className="space-y-1">
-                    <p className="text-xs text-green-600 font-semibold">✓ {form.medicalDocuments.length} file(s) uploaded:</p>
-                    <ul className="text-xs text-gray-600 dark:text-slate-400 space-y-0.5">
-                      {form.medicalDocuments.map((doc, idx) => (
-                        <li key={idx} className="ml-3">• {doc.name}</li>
-                      ))}
-                    </ul>
-                  </div>
                 )}
                 {form.medicalDocumentUrls && form.medicalDocumentUrls.length > 0 && (
                   <div className="space-y-1 mt-2">
@@ -623,8 +742,8 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
                 value={form.contactDuringLeave}
                 onChange={(e) => setForm({ ...form, contactDuringLeave: e.target.value })}
                 placeholder="How can you be contacted during your absence?"
-                className={`min-h-20 border-blue-300 dark:border-[#3b6dae]/40 text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100' : ''}`}
-                disabled={isReadOnly}
+                className={`min-h-20 border-blue-300 dark:border-[#3b6dae]/40 text-xs ${effectiveIsReadOnly ? 'bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100' : ''}`}
+                disabled={effectiveIsReadOnly}
               />
             </Row>
           </Section>
@@ -633,7 +752,7 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
           <Section title="7. EMPLOYEE SIGNATURE">
             <Row label="7.1 Your Signature">
               <div className="space-y-3 py-1 w-full">
-                {isReadOnly ? (
+                {effectiveIsReadOnly ? (
                   <div className="space-y-1">
                     {form.employeeSignatureUrl ? (
                       <img src={form.employeeSignatureUrl} alt="Employee Signature" className="h-14 object-contain" />
@@ -729,7 +848,7 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
                   className="w-full h-8 border-blue-300 dark:border-[#3b6dae]/40 bg-gray-100 dark:bg-[#295482] text-black dark:text-slate-100 font-medium cursor-not-allowed mt-1 mb-1 max-w-[400px]"
                   disabled
                 />
-                {isReadOnly && form.managerSignatureUrl && (
+                {(isReadOnly || isApprover || requestData?.status === "approved" || requestData?.status === "rejected") && form.managerSignatureUrl && (
                   <div className="mt-1">
                     <p className="text-[10px] text-green-600 font-semibold mb-0.5">✓ Approved by HOD</p>
                     <img src={form.managerSignatureUrl} alt="HOD Signature" className="h-10 object-contain" />
@@ -737,35 +856,206 @@ export default function SickLeaveForm({ requestData, isReadOnly = false, onSucce
                 )}
               </div>
             </Row>
+
+            {requestData?.status === "rejected" && (
+              <div className="p-4 border border-red-300 dark:border-red-900/50 rounded-lg bg-red-50 dark:bg-red-950/30 my-4 mx-4">
+                <div className="flex items-start gap-3">
+                  <div className="text-red-600 dark:text-red-400 font-bold text-lg">✕</div>
+                  <div className="flex-1">
+                    <h3 className="text-sm font-bold text-red-700 dark:text-red-400 mb-2">Request Rejected</h3>
+                    <p className="text-xs text-red-600 dark:text-red-300">
+                      {requestData?.rejectionReason || "This leave request has been rejected. Please contact your manager or HR for more information."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {isApprover && requestData?.status !== "approved" && requestData?.status !== "rejected" && (
+              <div className="p-4 border-t border-blue-400 dark:border-[#3b6dae]/50 bg-blue-50/30">
+                <h3 className="text-sm font-bold text-blue-700 mb-3">Your Approval ({(requestData?.currentApprovalLevel || user?.role || "Approver").replace(/_/g, " ")})</h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-semibold block mb-1">Comments</label>
+                    <Textarea value={approvalComments} onChange={(e) => setApprovalComments(e.target.value)} placeholder="Add comments..." className="text-xs border-blue-300 dark:border-[#3b6dae]/40 bg-white dark:bg-[#1a385c]" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold block mb-1">Signature</label>
+                    <div className="space-y-3">
+                      <div className="flex gap-4 mb-4">
+                        <label className="flex items-center gap-2 cursor-pointer group">
+                          <input
+                            type="radio"
+                            checked={approverSignatureMethod === "draw"}
+                            onChange={() => {
+                              setApproverSignatureMethod("draw");
+                              setApproverSignature(null);
+                              setApproverSignatureUrl("");
+                            }}
+                            className="w-4 h-4 accent-blue-600"
+                          />
+                          <span className="text-xs font-black uppercase tracking-widest text-[#3b6dae] group-hover:text-blue-600">DRAW SIGNATURE</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer group">
+                          <input
+                            type="radio"
+                            checked={approverSignatureMethod === "upload"}
+                            onChange={() => {
+                              setApproverSignatureMethod("upload");
+                              setApproverSignature(null);
+                              setApproverSignatureUrl("");
+                            }}
+                            className="w-4 h-4 accent-blue-600"
+                          />
+                          <span className="text-xs font-black uppercase tracking-widest text-[#3b6dae] group-hover:text-blue-600">UPLOAD IMAGE</span>
+                        </label>
+                      </div>
+
+                      {approverSignatureMethod === "upload" ? (
+                        <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0] || null;
+                              setApproverSignature(file);
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onload = (ev) => setApproverSignatureUrl(ev.target?.result as string);
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                            className="text-xs block w-full text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all border border-blue-200 dark:border-[#3b6dae]/30 p-1.5 rounded-lg"
+                          />
+                        </div>
+                      ) : (
+                        <SignaturePad 
+                          onSave={(dataUrl) => {
+                            const file = base64ToFile(dataUrl, "approver_signature.png");
+                            setApproverSignature(file);
+                            setApproverSignatureUrl(dataUrl);
+                          }}
+                          onClear={() => {
+                            setApproverSignature(null);
+                            setApproverSignatureUrl("");
+                          }}
+                        />
+                      )}
+
+                      {approverSignatureUrl && (
+                        <div className="mt-2 animate-in zoom-in duration-300">
+                          <img
+                            src={approverSignatureUrl}
+                            alt="Signature Preview"
+                            className="h-10 object-contain"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </Section>
         </div>
 
         {/* ===== ACTIONS ===== */}
-        {!isReadOnly && (
+        {( !effectiveIsReadOnly || (isApprover && requestData?.status !== "approved" && requestData?.status !== "rejected") ) && (
           <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center px-3 lg:px-6 py-3 lg:py-4 bg-gray-50 dark:bg-[#1a385c] gap-2 lg:gap-4">
             <div className="flex gap-2">
-              {/* Action buttons removed from unsent forms */}
+              {/* Actions for forms */}
             </div>
             <div className="flex flex-col lg:flex-row gap-2 w-full lg:justify-end">
-              <Button
-                variant="outline"
-                disabled={isSubmitting}
-                onClick={() => handleSubmit(false)}
-                className="border-blue-400 dark:border-[#3b6dae]/50"
-              >
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save Draft
-              </Button>
-              <Button
-                disabled={isSubmitting}
-                onClick={() => handleSubmit(true)}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Submit Request
-              </Button>
+              {isApprover ? (
+                <>
+                  <Button 
+                    variant="destructive" 
+                    onClick={() => setShowRejectDialog(true)}
+                    className="bg-red-600 hover:bg-red-700 text-white font-semibold"
+                  >
+                    Reject Request
+                  </Button>
+                  <Button disabled={isLoading} onClick={() => onApprove?.({ comments: approvalComments, signatureFile: approverSignature, selectedHR })} className="bg-green-600 hover:bg-green-700">
+                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Approve
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant="outline"
+                    disabled={isSubmitting}
+                    onClick={() => handleSubmit(false)}
+                    className="border-blue-400 dark:border-[#3b6dae]/50"
+                  >
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Save Draft
+                  </Button>
+                  <Button
+                    disabled={isSubmitting}
+                    onClick={() => handleSubmit(true)}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Submit Request
+                  </Button>
+                </>
+              )}
             </div>
           </div>
+        )}
+
+        {isApprover && (
+          <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+            <DialogContent className="sm:max-w-md bg-white dark:bg-[#1f426b]">
+              <DialogHeader>
+                <DialogTitle className="text-lg font-bold text-red-600">Reject Request</DialogTitle>
+                <DialogDescription className="text-sm text-gray-600 dark:text-slate-300 mt-2">
+                  Please provide a detailed reason for rejecting this request. This feedback will be shared with the requester.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div>
+                  <label className="text-sm font-semibold text-gray-700 dark:text-slate-200 mb-2 block">Rejection Reason *</label>
+                  <Textarea 
+                    placeholder="Provide a reason for rejection..." 
+                    value={rejectReason} 
+                    onChange={(e) => setRejectReason(e.target.value)}
+                    className="min-h-24 text-sm border-red-300 focus:border-red-500 focus:ring-red-500 bg-white dark:bg-[#1a385c]"
+                    maxLength={500}
+                  />
+                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">{rejectReason.length}/500 characters</p>
+                </div>
+              </div>
+              <DialogFooter className="flex gap-2 justify-end">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowRejectDialog(false);
+                    setRejectReason("");
+                  }}
+                  className="border-gray-300 dark:border-slate-600 text-foreground"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  disabled={rejectReason.trim().length < 1 || isLoading}
+                  onClick={() => {
+                    if (rejectReason.trim().length >= 1) {
+                      onReject?.(rejectReason);
+                      setRejectReason("");
+                      setShowRejectDialog(false);
+                    }
+                  }}
+                  className="bg-red-600 hover:bg-red-700 text-white font-semibold"
+                >
+                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Reject Request
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         )}
 
         {/* ===== FOOTER ===== */}

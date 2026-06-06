@@ -79,6 +79,9 @@ function Router() {
     <Switch>
       <Route path="/login"><Redirect to="/" /></Route>
       <Route path="/otp-login"><Redirect to="/" /></Route>
+      <Route path="/forgot-password"><Redirect to="/" /></Route>
+      <Route path="/reset-password" component={ResetPasswordPage} />
+      <Route path="/accept-invite/:token" component={AcceptInvitePage} />
       <Route path="/" component={DashboardPage} />
       <Route path="/requests" component={RequestsPage} />
       <Route path="/requests/:id" component={RequestDetailPage} />

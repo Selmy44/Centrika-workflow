@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Calendar, X } from "lucide-react";
-import { getHolidayType } from "@/utils/leaveCalculator";
+import { getHolidayType, calculateWorkingDays } from "@/utils/leaveCalculator";
 
 interface DateRangePickerProps {
   startDate: string;
@@ -12,6 +12,7 @@ interface DateRangePickerProps {
   disabled?: boolean;
   maxDays: number;
   takenLeaveDates?: string[];
+  isFixedDuration?: boolean;
 }
 
 export default function DateRangePicker({
@@ -22,6 +23,7 @@ export default function DateRangePicker({
   disabled = false,
   maxDays,
   takenLeaveDates = [],
+  isFixedDuration = false,
 }: DateRangePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectingEnd, setSelectingEnd] = useState(false);
@@ -51,11 +53,13 @@ export default function DateRangePicker({
         setDisplayMonth(new Date(today.getFullYear(), today.getMonth()));
       }
       // Only reset selectingEnd when calendar first opens
-      if (!startDate && !endDate) {
+      if (isFixedDuration) {
+        setSelectingEnd(false);
+      } else if (!startDate && !endDate) {
         setSelectingEnd(false);
       }
     }
-  }, [isOpen]);
+  }, [isOpen, isFixedDuration]);
 
   // Lock body scroll when calendar is open on mobile
   useEffect(() => {
@@ -111,6 +115,11 @@ export default function DateRangePicker({
     const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
     if (isTakenLeave(dateString)) return;
+
+    if (isFixedDuration) {
+      onStartDateChange(dateString);
+      return;
+    }
 
     if (!selectingEnd) {
       onStartDateChange(dateString);
@@ -282,7 +291,10 @@ export default function DateRangePicker({
           <div className="px-3 md:px-4 py-2 md:py-3 rounded-lg border-2 border-blue-300 dark:border-blue-500/50 bg-blue-50 dark:bg-blue-900/30 text-center shrink-0">
             <div className="text-[10px] md:text-xs text-blue-600 dark:text-blue-300">Duration</div>
             <div className="font-bold text-base md:text-lg text-blue-900 dark:text-blue-100 leading-tight">
-              {Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1} days
+              {isFixedDuration
+                ? calculateWorkingDays(startDate, endDate)
+                : Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1}{" "}
+              days
             </div>
           </div>
         )}
@@ -308,7 +320,11 @@ export default function DateRangePicker({
               <div>
                 <h3 className="font-bold text-sm md:text-lg">Select Your Leave Dates</h3>
                 <p className="text-blue-100 text-xs md:text-sm">
-                  {selectingEnd ? "Select your end date" : "Select your start date"}
+                  {isFixedDuration
+                    ? "Select your start date"
+                    : selectingEnd
+                    ? "Select your end date"
+                    : "Select your start date"}
                 </p>
               </div>
               {/* Close button — always visible, especially helpful on mobile */}
@@ -420,7 +436,10 @@ export default function DateRangePicker({
                       <span className="font-semibold">{formatDate(endDate)}</span>
                     </p>
                     <p className="text-xs md:text-sm text-blue-600 dark:text-blue-300 mt-1 font-bold">
-                      {Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1} days
+                      {isFixedDuration
+                        ? calculateWorkingDays(startDate, endDate)
+                        : Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1}{" "}
+                      days
                     </p>
                   </div>
                   <button

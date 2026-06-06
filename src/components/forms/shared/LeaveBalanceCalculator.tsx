@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { differenceInBusinessDays, parseISO, isValid } from "date-fns";
+import { calculateWorkingDays } from "@/utils/leaveCalculator";
 import { Calculator, Calendar, Clock, AlertCircle, CheckCircle2, History } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
@@ -10,7 +10,7 @@ interface LeaveBalanceCalculatorProps {
   endDate: string;
   alreadyTaken?: number; // Optional now, since we auto-calculate by default
   onTakenChange?: (val: number) => void;
-  onCalculated: (data: { requested: number; remaining: number | "Unlimited"; entitled: number | "Unlimited"; taken: number; takenLeaveDates?: string[] }) => void;
+  onCalculated: (data: { requested: number; remaining: number | "Unlimited"; entitled: number | "Unlimited"; taken: number; takenLeaveDates?: string[]; isEligible?: boolean }) => void;
 }
 
 export function LeaveBalanceCalculator({
@@ -66,24 +66,14 @@ export function LeaveBalanceCalculator({
     setEntitledDays(entitled);
   }, [leaveType, (user as any)?.gender, leaveBalanceQuery.data]);
 
-  // 3. Calculate Requested Days (Business Days Only)
+  // 3. Calculate Requested Days (Business Days — excludes weekends & holidays for ALL types)
   useEffect(() => {
     if (!startDate || !endDate) {
       setRequestedDays(0);
       return;
     }
-    const start = parseISO(startDate);
-    const end = parseISO(endDate);
-    if (isValid(start) && isValid(end)) {
-      if (end < start) {
-        setRequestedDays(0);
-        return;
-      }
-      const days = differenceInBusinessDays(end, start) + 1;
-      setRequestedDays(days > 0 ? days : 0);
-    } else {
-      setRequestedDays(0);
-    }
+    const days = calculateWorkingDays(startDate, endDate);
+    setRequestedDays(days);
   }, [startDate, endDate]);
 
   // 4. Fire to Parent
@@ -99,9 +89,10 @@ export function LeaveBalanceCalculator({
       entitled: entitledDays,
       taken: historyTaken,
       takenLeaveDates: leaveBalanceQuery.data?.takenLeaveDates || [],
+      isEligible: leaveBalanceQuery.data?.isEligibleForAnnualLeave ?? true,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [requestedDays, entitledDays, historyTaken, leaveBalanceQuery.data?.takenLeaveDates]);
+  }, [requestedDays, entitledDays, historyTaken, leaveBalanceQuery.data?.takenLeaveDates, leaveBalanceQuery.data?.isEligibleForAnnualLeave]);
 
   const currentBalance = entitledDays === "Unlimited" ? "Unlimited" : (Number(entitledDays) - historyTaken);
   const newBalance = entitledDays === "Unlimited" ? "Unlimited" : (Number(currentBalance) - requestedDays);

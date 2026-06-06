@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer, Eye } from "lucide-react";
+import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer, Eye, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
@@ -13,12 +13,31 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useFormAutoFill } from "@/_core/hooks/useFormAutoFill";
 import DateRangePicker from "@/components/DateRangePicker";
-import SingleDatePicker from "@/components/SingleDatePicker";
 import { getLeaveTypeConfig } from "@/lib/leaveTypeConfig";
 import { LeaveBalanceCalculator } from "./shared/LeaveBalanceCalculator";
 import { SignaturePad } from "@/components/SignaturePad";
 import { base64ToFile, fileToBase64 } from "@/lib/fileUtils";
 import { exportFormToPdf, getActiveFormElement, printFormElement } from "@/lib/formExport";
+import { isNonWorkingDay, calculateWorkingDays } from "@/utils/leaveCalculator";
+
+/** Add N business days (skipping weekends + Rwandan holidays) to a date string */
+function addBusinessDays(startDateStr: string, days: number): string {
+  if (!startDateStr) return "";
+  const date = new Date(startDateStr + "T00:00:00Z");
+  let added = 0;
+  // The start date itself counts as day 1 if it's a working day
+  while (added < days - 1) {
+    date.setUTCDate(date.getUTCDate() + 1);
+    if (!isNonWorkingDay(date)) added++;
+  }
+  return date.toISOString().split("T")[0];
+}
+
+function formatDateDisplay(dateStr: string): string {
+  if (!dateStr) return "—";
+  const d = new Date(dateStr + "T00:00:00");
+  return d.toLocaleDateString("en-US", { weekday: "short", year: "numeric", month: "short", day: "numeric" });
+}
 
 interface LeaveRequestFormProps {
   requestId?: number;
@@ -49,6 +68,7 @@ export default function LeaveRequestForm({
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [takenLeaveDates, setTakenLeaveDates] = useState<string[]>([]);
+  const [isEligible, setIsEligible] = useState(true);
 
   const autoFillData = useFormAutoFill();
 
@@ -161,14 +181,59 @@ export default function LeaveRequestForm({
     }
   }, [savedFormData.data]);
 
+  // Auto-calculate end date whenever start date or leave type changes for sick / parental leaves
+  useEffect(() => {
+    const isSick = form.leaveType === "sick";
+    const isParental = form.leaveType === "parental";
+    
+    if ((isSick || isParental) && form.startDate) {
+      let autoEnd = "";
+      if (isSick) {
+        autoEnd = addBusinessDays(form.startDate, 5);
+      } else if (isParental) {
+        if (resolvedLeaveType === "maternity") {
+          autoEnd = addBusinessDays(form.startDate, 84);
+        } else if (resolvedLeaveType === "paternity") {
+          autoEnd = addBusinessDays(form.startDate, 7);
+        }
+      }
+      
+      if (autoEnd && autoEnd !== form.endDate) {
+        setForm(prev => ({ ...prev, endDate: autoEnd }));
+      }
+    } else if ((isSick || isParental) && !form.startDate) {
+      if (form.endDate !== "") {
+        setForm(prev => ({ ...prev, endDate: "" }));
+      }
+    }
+  }, [form.startDate, form.leaveType, resolvedLeaveType]);
+
   const validate = () => {
-    if (!form.startDate || !form.endDate) {
-      toast.error("Start and end dates are required");
+    if (form.leaveType === "annual" && !isEligible) {
+      toast.error("You must be employed for at least one year to apply for Annual Leave.");
       return false;
     }
-    if (form.endDate < form.startDate) {
-      toast.error("End date must be after start date");
-      return false;
+    const isSick = form.leaveType === "sick";
+    const isParental = form.leaveType === "parental";
+
+    if (isSick || isParental) {
+      if (!form.startDate) {
+        toast.error("Start date is required");
+        return false;
+      }
+      if (!form.endDate) {
+        toast.error("End date could not be calculated. Please re-select the start date.");
+        return false;
+      }
+    } else {
+      if (!form.startDate || !form.endDate) {
+        toast.error("Start and end dates are required");
+        return false;
+      }
+      if (form.endDate < form.startDate) {
+        toast.error("End date must be after start date");
+        return false;
+      }
     }
     if (!form.leaveDaysRequested || form.leaveDaysRequested <= 0) {
       toast.error("Requested days must be greater than 0. Please check dates.");
@@ -204,6 +269,15 @@ export default function LeaveRequestForm({
     return form.leaveType;
   })();
 
+  const isParental = form.leaveType === "parental" || resolvedLeaveType === "maternity" || resolvedLeaveType === "paternity";
+  const isSick = form.leaveType === "sick";
+  const isSingleDateSelection = isSick || isParental;
+
+  const calculatedDays = calculateWorkingDays(form.startDate, form.endDate);
+
+  const gender = requestData?.user?.gender?.toLowerCase() || (user as any)?.gender?.toLowerCase();
+  const parentalDays = (resolvedLeaveType === "maternity" || (form.leaveType === "parental" && gender === "female")) ? 84 : 7;
+
   const config = getLeaveTypeConfig(resolvedLeaveType);
   const colorMap: Record<string, string> = {
     yellow: "bg-yellow-500",
@@ -215,21 +289,7 @@ export default function LeaveRequestForm({
   };
   const titleBarColor = colorMap[config.color] || "bg-yellow-500";
 
-  const calculateBusinessDays = (start?: string, end?: string) => {
-    if (!start || !end) return 0;
-    const startDate = new Date(start);
-    const endDate = new Date(end);
-    let count = 0;
-    const curDate = new Date(startDate.getTime());
-    while (curDate <= endDate) {
-      const dayOfWeek = curDate.getDay();
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) count++;
-      curDate.setDate(curDate.getDate() + 1);
-    }
-    return count;
-  };
 
-  const calculatedBusinessDays = calculateBusinessDays(form.startDate, form.endDate);
 
   const createLeave = trpc.requests.createLeaveRequest.useMutation();
   const updateLeave = (trpc as any).requests.updateLeaveRequest.useMutation();
@@ -277,6 +337,10 @@ export default function LeaveRequestForm({
   };
 
   const handleSaveAsDraft = async () => {
+    if (form.leaveType === "annual" && !isEligible) {
+      toast.error("You must be employed for at least one year to apply for Annual Leave.");
+      return;
+    }
     setIsSubmitting(true);
     try {
       // Check if we're updating an existing draft request
@@ -358,6 +422,10 @@ export default function LeaveRequestForm({
   };
 
   const handleSubmit = async () => {
+    if (form.leaveType === "annual" && !isEligible) {
+      toast.error("You must be employed for at least one year to apply for Annual Leave.");
+      return;
+    }
     if (!validate()) return;
     if (!form.reportingManager) {
       toast.error("Please select a Line Manager / HOD");
@@ -485,6 +553,22 @@ export default function LeaveRequestForm({
           {config.title || "LEAVE REQUEST FORM"}
         </div>
 
+        {/* ELIGIBILITY WARNING BANNER */}
+        {form.leaveType === "annual" && !isEligible && (
+          <div className="mx-3 lg:mx-6 mt-4 mb-2 bg-amber-50 dark:bg-amber-950/20 border-l-4 border-amber-500 p-4 rounded-lg flex items-start gap-3 shadow-xs">
+            <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+            <div>
+              <h4 className="font-semibold text-amber-900 dark:text-amber-200 text-sm">
+                Annual Leave Not Available
+              </h4>
+              <p className="text-xs text-amber-800 dark:text-amber-300 mt-1">
+                You must have at least 1 year of service to apply for Annual Leave.
+                Your Date of Employment is <span className="font-bold">{form.dateOfEmployment || "not set"}</span>.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* REQUEST HEADER SECTION - Responsive Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-2 lg:gap-3 px-3 lg:px-6 py-2 lg:py-3 text-xs lg:text-sm items-end">
           <div>
@@ -548,6 +632,7 @@ export default function LeaveRequestForm({
                 disabled={effectiveIsReadOnly}
                 maxDays={200}
                 takenLeaveDates={takenLeaveDates}
+                isFixedDuration={isSingleDateSelection}
               />
             </Row>
 
@@ -577,13 +662,16 @@ export default function LeaveRequestForm({
                   if (data.takenLeaveDates) {
                     setTakenLeaveDates(data.takenLeaveDates);
                   }
+                  if (data.isEligible !== undefined && data.isEligible !== isEligible) {
+                    setIsEligible(data.isEligible);
+                  }
                 }}
               />
             </div>
 
             <Row label="2.3 Business Days Requested">
               <div className="flex items-center gap-2">
-                <Input value={calculatedBusinessDays} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs w-24 bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 w-full  font-medium text-center" />
+                <Input value={calculatedDays} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs w-24 bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 w-full  font-medium text-center" />
                 <span className="text-xs font-medium text-gray-600 dark:text-slate-400">Day(s)</span>
               </div>
             </Row>
@@ -953,8 +1041,19 @@ export default function LeaveRequestForm({
 
               {!isApprover && !isReadOnly && requestData?.status !== "rejected" && (
                 <>
-                  <Button variant="outline" disabled={isSubmitting} onClick={handleSaveAsDraft} className="border-blue-400 dark:border-[#3b6dae]/50">Save Draft</Button>
-                  <Button disabled={isSubmitting} onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700">
+                  <Button
+                    variant="outline"
+                    disabled={isSubmitting || (form.leaveType === "annual" && !isEligible)}
+                    onClick={handleSaveAsDraft}
+                    className={`border-blue-400 dark:border-[#3b6dae]/50 ${(form.leaveType === "annual" && !isEligible) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    Save Draft
+                  </Button>
+                  <Button
+                    disabled={isSubmitting || (form.leaveType === "annual" && !isEligible)}
+                    onClick={handleSubmit}
+                    className={`bg-blue-600 hover:bg-blue-700 ${(form.leaveType === "annual" && !isEligible) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Submit Request
                   </Button>
