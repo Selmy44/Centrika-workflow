@@ -114,6 +114,12 @@ export const requestsRouter = router({
       let entitled = input.leaveDaysEntitled;
       if (input.leaveType === "annual") {
         const leaveBalance = calculateAnnualLeaveBalance(user.dateOfEmployment);
+        if (!leaveBalance.completedFullYear) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "You must be employed for at least one year to apply for Annual Leave."
+          });
+        }
         entitled = leaveBalance.totalAnnualLeave;
       } else {
         entitled = entitled || 0;
@@ -179,6 +185,12 @@ export const requestsRouter = router({
       let entitled = input.leaveDaysEntitled;
       if (input.leaveType === "annual") {
         const leaveBalance = calculateAnnualLeaveBalance(user.dateOfEmployment);
+        if (!leaveBalance.completedFullYear) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "You must be employed for at least one year to apply for Annual Leave."
+          });
+        }
         entitled = leaveBalance.totalAnnualLeave;
       } else {
         entitled = entitled || 0;

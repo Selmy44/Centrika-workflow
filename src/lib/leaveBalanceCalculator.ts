@@ -75,11 +75,16 @@ export function calculateAnnualLeaveBalance(
     }
 
     // Calculate months and years employed
-    const monthsDiff = (today.getFullYear() - empDate.getFullYear()) * 12 + 
-                      (today.getMonth() - empDate.getMonth());
+    let months = (today.getFullYear() - empDate.getFullYear()) * 12 + 
+                 (today.getMonth() - empDate.getMonth());
+    
+    // Adjust if today's day of the month is less than employment start day of the month
+    if (today.getDate() < empDate.getDate()) {
+      months--;
+    }
     
     // Only count complete months (not including partial months)
-    const completeMonths = Math.floor(monthsDiff);
+    const completeMonths = Math.max(0, months);
     
     // Check if employee has completed 1 full year (12 months)
     const completedFullYear = completeMonths >= 12;
