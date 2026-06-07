@@ -312,7 +312,7 @@ export default function Login() {
             <p className="text-center text-xs pt-2" style={{ color: "#8ca0b8" }}>
               Don't have an account?{" "}
               <a
-                href="mailto:dmbabazi@centrika.rw?subject=Centrika%20OnePortal%20Access%20Request"
+                href="mailto:hntaganzwa@centrika.rw?subject=Centrika%20OnePortal%20-%20Account%20Access%20Request&body=Dear%20HR%20Team%2C%0D%0A%0D%0AI%20hope%20this%20email%20finds%20you%20well.%0D%0A%0D%0AI%20would%20like%20to%20request%20an%20account%20creation%20for%20Centrika%20OnePortal%20to%20access%20the%20workspace.%0D%0A%0D%0APlease%20find%20my%20details%20below%3A%0D%0A-%20Full%20Name%3A%20%5BYour%20Name%5D%0D%0A-%20Staff%20ID%3A%20%5BYour%20Staff%20ID%5D%0D%0A-%20Department%3A%20%5BYour%20Department%5D%0D%0A-%20Position%3A%20%5BYour%20Position%5D%0D%0A-%20Line%20Manager%3A%20%5BYour%20Manager%27s%20Name%5D%0D%0A%0D%0AThank%20you%2C%0D%0A%5BYour%20Name%5D"
                 className="font-medium cursor-pointer hover:underline"
                 style={{ color: "#3b6dae" }}
               >
