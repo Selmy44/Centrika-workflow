@@ -123,6 +123,21 @@ export default function LeaveRequestForm({
     { enabled: !!(requestData?.id || requestId) && (isReadOnly || !!onApprove || !!onReject || requestData?.status === "draft") }
   );
 
+  // Resolve parental leave to maternity/paternity based on the employee's gender
+  // For approver views, use the employee's gender from requestData, not the approver's
+  const resolvedLeaveType = (() => {
+    if (form.leaveType === "parental") {
+      // 1. If the saved form data already has a resolved type, use it
+      if (savedFormData?.data?.resolvedLeaveType) return savedFormData.data.resolvedLeaveType;
+      if (form.parentalLeaveType) return form.parentalLeaveType;
+      // 2. Use the employee's gender from requestData (for approver views)
+      const employeeGender = requestData?.user?.gender?.toLowerCase() || (user as any)?.gender?.toLowerCase();
+      if (employeeGender === "female") return "maternity";
+      if (employeeGender === "male") return "paternity";
+    }
+    return form.leaveType;
+  })();
+
   const isApprover = propsIsApprover !== undefined ? propsIsApprover : (!!onApprove || !!onReject);
   const effectiveIsReadOnly = isReadOnly || isApprover;
 
@@ -253,21 +268,6 @@ export default function LeaveRequestForm({
 
   const uniqueHeads = headsOfDept.data || [];
   const uniqueHR = hrUsers.data || [];
-
-  // Resolve parental leave to maternity/paternity based on the employee's gender
-  // For approver views, use the employee's gender from requestData, not the approver's
-  const resolvedLeaveType = (() => {
-    if (form.leaveType === "parental") {
-      // 1. If the saved form data already has a resolved type, use it
-      if (savedFormData?.data?.resolvedLeaveType) return savedFormData.data.resolvedLeaveType;
-      if (form.parentalLeaveType) return form.parentalLeaveType;
-      // 2. Use the employee's gender from requestData (for approver views)
-      const employeeGender = requestData?.user?.gender?.toLowerCase() || (user as any)?.gender?.toLowerCase();
-      if (employeeGender === "female") return "maternity";
-      if (employeeGender === "male") return "paternity";
-    }
-    return form.leaveType;
-  })();
 
   const isParental = form.leaveType === "parental" || resolvedLeaveType === "maternity" || resolvedLeaveType === "paternity";
   const isSick = form.leaveType === "sick";
