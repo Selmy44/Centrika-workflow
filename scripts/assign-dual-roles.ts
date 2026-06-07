@@ -5,23 +5,23 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Assigning dual roles to specific staff...');
 
-  // 1. Doreen MBABAZI (HOD + HR)
-  console.log('\nProcessing Doreen MBABAZI (dmbabazi@centrika.rw)...');
-  const doreen = await prisma.user.findFirst({
-    where: { email: 'dmbabazi@centrika.rw' }
+  // 1. Henry NTAGANZWA (HOD + HR)
+  console.log('\nProcessing Henry NTAGANZWA (hntaganzwa@centrika.rw)...');
+  const henry = await prisma.user.findFirst({
+    where: { email: 'hntaganzwa@centrika.rw' }
   });
 
-  if (doreen) {
-    const updatedDoreen = await prisma.user.update({
-      where: { id: doreen.id },
+  if (henry) {
+    const updatedHenry = await prisma.user.update({
+      where: { id: henry.id },
       data: {
         role: 'head_of_department',
         additionalRoles: 'hr'
       }
     });
-    console.log(`✅ Successfully updated Doreen. Base Role: ${updatedDoreen.role}, Additional Roles: ${updatedDoreen.additionalRoles}`);
+    console.log(`✅ Successfully updated Henry. Base Role: ${updatedHenry.role}, Additional Roles: ${updatedHenry.additionalRoles}`);
   } else {
-    console.log('❌ User dmbabazi@centrika.rw not found in database.');
+    console.log('❌ User hntaganzwa@centrika.rw not found in database.');
   }
 
   // 2. Patrick NDABARASA (HOD + Head of Finance)

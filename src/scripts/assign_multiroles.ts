@@ -6,8 +6,8 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("Assigning multiple roles to specific users...");
 
-  // 1. Assign HOD + HR to dmbabazi@centrika.rw
-  const hrUser = await prisma.user.findUnique({ where: { email: "dmbabazi@centrika.rw" } });
+  // 1. Assign HOD + HR to hntaganzwa@centrika.rw
+  const hrUser = await prisma.user.findUnique({ where: { email: "hntaganzwa@centrika.rw" } });
   if (hrUser) {
     await prisma.user.update({
       where: { id: hrUser.id },
@@ -16,9 +16,9 @@ async function main() {
         additionalRoles: "hr"
       }
     });
-    console.log("Updated dmbabazi@centrika.rw to HOD + HR");
+    console.log("Updated hntaganzwa@centrika.rw to HOD + HR");
   } else {
-    console.warn("User dmbabazi@centrika.rw not found");
+    console.warn("User hntaganzwa@centrika.rw not found");
   }
 
   // 2. Assign HOD + Finance to pndabarasa@centrika.rw

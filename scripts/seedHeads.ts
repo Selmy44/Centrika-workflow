@@ -7,15 +7,15 @@ async function seed() {
 
   const heads = [
     {
-      openId: "seed:doreen",
-      name: "Doreen MBABAZI",
+      openId: "seed:henry",
+      name: "Henry NTAGANZWA",
       password: "Rwanda@123",
-      email: "dmbabazi@centrika.rw",
+      email: "hntaganzwa@centrika.rw",
       loginMethod: "dev",
       role: "head_of_department" as const,
       additionalRoles: "hr",
       department: "Administration",
-      position: "Head of Administration",
+      position: "HR Manager",
     },
     {
       openId: "seed:patrick",
