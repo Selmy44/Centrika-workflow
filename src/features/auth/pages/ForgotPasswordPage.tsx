@@ -164,18 +164,17 @@ export default function ForgotPasswordPage() {
                   <CheckCircle className="h-12 w-12" style={{ color: "#22c55e" }} />
                 </div>
               </div>
-              <h2 className="text-2xl font-semibold mb-2" style={{ color: "#1e3a5f" }}>Check your email!</h2>
-              <p className="mb-1" style={{ color: "#5a7a99", fontSize: "14px" }}>
-                We've sent password reset instructions to
+              <h2 className="text-2xl font-semibold mb-2" style={{ color: "#1e3a5f" }}>Reset Request Received</h2>
+              <p className="mb-6" style={{ color: "#5a7a99", fontSize: "14px" }}>
+                If an account exists for <span className="font-semibold" style={{ color: "#3b6dae" }}>{email}</span>, you will receive an email with instructions to reset your password shortly.
               </p>
-              <p className="font-semibold mb-6" style={{ color: "#3b6dae", fontSize: "14px" }}>{email}</p>
               
-              <div className="mb-8 p-4 rounded-xl border border-blue-100 bg-blue-50/30">
+              <div className="mb-8 p-4 rounded-xl border border-blue-100 bg-blue-50/30 text-left">
                 <p style={{ color: "#3b6dae", fontSize: "13px", fontWeight: 500 }} className="mb-1">
-                  Expires in 7 minutes
+                  Important Info
                 </p>
                 <p style={{ color: "#8ca0b8", fontSize: "12px" }}>
-                  We'll send you an email with a link to reset your password. The link will expire in 7 minutes.
+                  The reset link is only valid for 15 minutes. If you do not receive the email, please check your spam folder or contact support.
                 </p>
               </div>
 
