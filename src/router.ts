@@ -498,18 +498,14 @@ export const appRouter = router({
           }
         });
 
-        if (!user) {
-          throw new TRPCError({ 
-            code: "NOT_FOUND", 
-            message: "This email address is not registered in our system. Please contact HR to create an account." 
-          });
-        }
+        const successResponse = {
+          success: true,
+          message: "If an account exists for this email, a reset link has been sent."
+        };
 
-        if (!user.password) {
-          throw new TRPCError({ 
-            code: "BAD_REQUEST", 
-            message: "This account does not have a password set. Please contact support." 
-          });
+        // If user doesn't exist or has no password, return success immediately to prevent enumeration
+        if (!user || !user.password) {
+          return successResponse;
         }
 
         const resetToken = crypto.randomBytes(32).toString("hex");
@@ -539,7 +535,7 @@ export const appRouter = router({
         });
         await sendEmail(input.email, resetEmail.subject, resetEmail.html);
 
-        return { success: true, message: "Password reset instructions have been sent to your email" };
+        return successResponse;
       }),
 
     resetPassword: publicProcedure
