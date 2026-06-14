@@ -40,7 +40,9 @@ export const appRouter = router({
 
     registerUser: protectedProcedure
       .input(z.object({
-        email: z.string().email("Invalid email"),
+        email: z.string().email("Invalid email").refine(val => val.trim().toLowerCase().endsWith("@centrika.rw"), {
+          message: "Email must be a company email address (username@centrika.rw)"
+        }),
         name: z.string().min(2, "Name must be at least 2 characters"),
         password: z.string().min(6, "Password must be at least 6 characters"),
         departmentId: z.number().min(1, "Department is required"),
@@ -48,12 +50,28 @@ export const appRouter = router({
         staffId: z.string().optional(),
         dateOfEmployment: z.string().min(1, "Date of employment is required"),
         managerId: z.number().optional(),
-        role: z.enum(["user", "admin", "hr", "head_of_department", "head_of_finance", "ceo_md"]).default("user"),
+        role: z.enum(["user", "admin", "hr", "head_of_department", "head_of_finance", "ceo_md"] as const).default("user"),
         dateOfBirth: z.string().optional(),
         jobDescription: z.string().optional(),
         contractType: z.string().optional(),
         contractStart: z.string().optional(),
         contractEnd: z.string().optional(),
+      }).refine((data) => {
+        if (data.contractType && (data.contractType === "Full-time" || data.contractType === "Contract")) {
+          return !!data.contractEnd && data.contractEnd.length >= 10;
+        }
+        return true;
+      }, {
+        message: "Contract End Date is required for Full-time or Contract employee types",
+        path: ["contractEnd"]
+      }).refine((data) => {
+        if (data.contractType) {
+          return !!data.contractStart && data.contractStart.length >= 10;
+        }
+        return true;
+      }, {
+        message: "Contract Start Date is required when Contract Type is selected",
+        path: ["contractStart"]
       }))
       .mutation(async ({ ctx, input }) => {
         // Only HR and Admin can register users
@@ -695,11 +713,13 @@ export const appRouter = router({
 
     createUser: protectedProcedure
       .input(z.object({
-        email: z.string().email("Invalid email"),
+        email: z.string().email("Invalid email").refine(val => val.trim().toLowerCase().endsWith("@centrika.rw"), {
+          message: "Email must be a company email address (username@centrika.rw)"
+        }),
         name: z.string().min(2, "Name must be at least 2 characters"),
-        departmentId: z.number().optional(),
+        departmentId: z.number({ error: "Department is required" }),
         position: z.string().optional(),
-        role: z.enum(["user", "admin", "hr", "head_of_department", "head_of_finance", "ceo_md"]).default("user"),
+        role: z.enum(["user", "admin", "hr", "head_of_department", "head_of_finance", "ceo_md"] as const).default("user"),
         dateOfEmployment: z.string().optional(),
         dateOfBirth: z.string().optional(),
         jobDescription: z.string().optional(),
@@ -707,7 +727,23 @@ export const appRouter = router({
         contractStart: z.string().optional(),
         contractEnd: z.string().optional(),
         phoneNumber: z.string().optional(),
-        gender: z.string().optional(),
+        gender: z.enum(["male", "female"] as const, { error: "Gender must be selected" }),
+      }).refine((data) => {
+        if (data.contractType && (data.contractType === "Full-time" || data.contractType === "Contract")) {
+          return !!data.contractEnd && data.contractEnd.length >= 10;
+        }
+        return true;
+      }, {
+        message: "Contract End Date is required for Full-time or Contract employee types",
+        path: ["contractEnd"]
+      }).refine((data) => {
+        if (data.contractType) {
+          return !!data.contractStart && data.contractStart.length >= 10;
+        }
+        return true;
+      }, {
+        message: "Contract Start Date is required when Contract Type is selected",
+        path: ["contractStart"]
       }))
       .mutation(async ({ ctx, input }) => {
         const additionalRoles = parseAdditionalRoles(ctx.user.additionalRoles);
@@ -775,7 +811,7 @@ export const appRouter = router({
     updateUser: protectedProcedure
       .input(z.object({
         userId: z.number(),
-        role: z.enum(["user", "admin", "hr", "head_of_department", "head_of_finance", "ceo_md"]),
+        role: z.enum(["user", "admin", "hr", "head_of_department", "head_of_finance", "ceo_md"] as const),
         departmentId: z.number().optional().nullable(),
         managerId: z.number().optional().nullable(),
         staffId: z.string().optional(),
@@ -786,8 +822,24 @@ export const appRouter = router({
         contractStart: z.string().optional(),
         contractEnd: z.string().optional(),
         phoneNumber: z.string().optional(),
-        gender: z.string().optional(),
+        gender: z.enum(["male", "female"] as const, { error: "Gender must be selected" }).optional(),
         profileImage: z.string().optional(),
+      }).refine((data) => {
+        if (data.contractType && (data.contractType === "Full-time" || data.contractType === "Contract")) {
+          return !!data.contractEnd && data.contractEnd.length >= 10;
+        }
+        return true;
+      }, {
+        message: "Contract End Date is required for Full-time or Contract employee types",
+        path: ["contractEnd"]
+      }).refine((data) => {
+        if (data.contractType) {
+          return !!data.contractStart && data.contractStart.length >= 10;
+        }
+        return true;
+      }, {
+        message: "Contract Start Date is required when Contract Type is selected",
+        path: ["contractStart"]
       }))
       .mutation(async ({ ctx, input }) => {
         const additionalRoles = parseAdditionalRoles(ctx.user.additionalRoles);

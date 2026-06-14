@@ -16,9 +16,11 @@ export const invitationsRouter = router({
   // Send invitation to new user
   sendInvitation: protectedProcedure
     .input(z.object({
-      email: z.string().email(),
+      email: z.string().email("Invalid email").refine(val => val.trim().toLowerCase().endsWith("@centrika.rw"), {
+        message: "Email must be a company email address (username@centrika.rw)"
+      }),
       name: z.string().min(1),
-      role: z.enum(["user", "admin", "hr", "head_of_department", "head_of_finance", "ceo_md"]),
+      role: z.enum(["user", "admin", "hr", "head_of_department", "head_of_finance", "ceo_md"] as const),
     }))
     .mutation(async ({ ctx, input }) => {
       try {
