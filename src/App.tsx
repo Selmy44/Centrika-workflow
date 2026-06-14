@@ -82,49 +82,49 @@ function Router() {
     <>
       <Switch>
         <Route path="/login"><Redirect to="/" /></Route>
-      <Route path="/otp-login"><Redirect to="/" /></Route>
-      <Route path="/forgot-password"><Redirect to="/" /></Route>
-      <Route path="/reset-password" component={ResetPasswordPage} />
-      <Route path="/accept-invite/:token" component={AcceptInvitePage} />
-      <Route path="/" component={DashboardPage} />
-      <Route path="/requests" component={RequestsPage} />
-      <Route path="/requests/:id" component={RequestDetailPage} />
-      <Route path="/approvals" component={ApprovalsPage} />
-      <Route path="/approval-history" component={ApprovalHistoryPage} />
-      <Route path="/request-analytics" component={RequestAnalyticsPage} />
-      <Route path="/team-statistics" component={TeamStatisticsPage} />
-      <Route path="/team-status" component={TeamStatusPage} />
-      <Route path="/employee-directory" component={EmployeeDirectoryPage} />
-      <Route path="/employees" component={EmployeeDirectoryPage} />
-      <Route path="/organization-view" component={OrganizationViewPage} />
-      <Route path="/admin/employees/:id" component={EmployeeProfilePage} />
-      <Route path="/finance" component={FinancePage} />
-      <Route path="/finance/history" component={ExpenditureHistoryPage} />
-      <Route path="/finance/budgets" component={BudgetManagementPage} />
-      <Route path="/finance/reports">{() => <ReportsPage type="finance" />}</Route>
-      <Route path="/expenditure-history" component={ExpenditureHistoryPage} />
-      <Route path="/hr/leave" component={LeaveManagementPage} />
-      <Route path="/hr/documents" component={DocumentCenterPage} />
-      <Route path="/hr/reports">{() => <ReportsPage type="hr" />}</Route>
-      <Route path="/departments" component={DepartmentManagementPage} />
-      <Route path="/leave-balance" component={LeaveBalancePage} />
-      <Route path="/admin/users" component={AdminUsersPage} />
-      <Route path="/admin/departments" component={DepartmentManagementPage} />
-      <Route path="/settings" component={SettingsPage} />
-      <Route path="/insights" component={PersonalInsightsPage} />
-      <Route path="/connect" component={CentrikaConnectPage} />
-      <Route path="/assets" component={AssetsPage} />
-      <Route path="/assets/:id" component={AssetDetailsPage} />
-      <Route path="/hr/assets" component={AssetsPage} />
-      <Route path="/404" component={NotFoundPage} />
-      {/* Final fallback route */}
-      <Route component={NotFoundPage} />
-    </Switch>
-    <IdleTimeoutDialog 
-      open={showWarning} 
-      secondsLeft={secondsLeft} 
-      onKeepWorking={keepWorking} 
-    />
+        <Route path="/otp-login"><Redirect to="/" /></Route>
+        <Route path="/forgot-password"><Redirect to="/" /></Route>
+        <Route path="/reset-password" component={ResetPasswordPage} />
+        <Route path="/accept-invite/:token" component={AcceptInvitePage} />
+        <Route path="/" component={DashboardPage} />
+        <Route path="/requests" component={RequestsPage} />
+        <Route path="/requests/:id" component={RequestDetailPage} />
+        <Route path="/approvals" component={ApprovalsPage} />
+        <Route path="/approval-history" component={ApprovalHistoryPage} />
+        <Route path="/request-analytics" component={RequestAnalyticsPage} />
+        <Route path="/team-statistics" component={TeamStatisticsPage} />
+        <Route path="/team-status" component={TeamStatusPage} />
+        <Route path="/employee-directory" component={EmployeeDirectoryPage} />
+        <Route path="/employees" component={EmployeeDirectoryPage} />
+        <Route path="/organization-view" component={OrganizationViewPage} />
+        <Route path="/admin/employees/:id" component={EmployeeProfilePage} />
+        <Route path="/finance" component={FinancePage} />
+        <Route path="/finance/history" component={ExpenditureHistoryPage} />
+        <Route path="/finance/budgets" component={BudgetManagementPage} />
+        <Route path="/finance/reports">{() => <ReportsPage type="finance" />}</Route>
+        <Route path="/expenditure-history" component={ExpenditureHistoryPage} />
+        <Route path="/hr/leave" component={LeaveManagementPage} />
+        <Route path="/hr/documents" component={DocumentCenterPage} />
+        <Route path="/hr/reports">{() => <ReportsPage type="hr" />}</Route>
+        <Route path="/departments" component={DepartmentManagementPage} />
+        <Route path="/leave-balance" component={LeaveBalancePage} />
+        <Route path="/admin/users" component={AdminUsersPage} />
+        <Route path="/admin/departments" component={DepartmentManagementPage} />
+        <Route path="/settings" component={SettingsPage} />
+        <Route path="/insights" component={PersonalInsightsPage} />
+        <Route path="/connect" component={CentrikaConnectPage} />
+        <Route path="/assets" component={AssetsPage} />
+        <Route path="/assets/:id" component={AssetDetailsPage} />
+        <Route path="/hr/assets" component={AssetsPage} />
+        <Route path="/404" component={NotFoundPage} />
+        {/* Final fallback route */}
+        <Route component={NotFoundPage} />
+      </Switch>
+      <IdleTimeoutDialog
+        open={showWarning}
+        secondsLeft={secondsLeft}
+        onKeepWorking={keepWorking}
+      />
     </>
   );
 }
