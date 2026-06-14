@@ -66,6 +66,8 @@ export interface EmailMetadata {
   topic: string;
   action: string;
   level?: string;
+  /** The frontend base URL used to build links in email CTAs (e.g. https://oneportal.centrika.rw) */
+  appUrl?: string;
 }
 
 export function formatEmailSubject(meta: EmailMetadata) {
@@ -75,9 +77,11 @@ export function formatEmailSubject(meta: EmailMetadata) {
 
 // Email templates
 export const emailTemplates = {
-  welcomeEmail: (name: string, email: string, meta: EmailMetadata, password?: string) => ({
-    subject: formatEmailSubject(meta),
-    html: `
+  welcomeEmail: (name: string, email: string, meta: EmailMetadata, password?: string) => {
+    const appUrl = (meta.appUrl ?? ENV.appUrl).replace(/\/$/, "");
+    return ({
+      subject: formatEmailSubject(meta),
+      html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; color: white; text-align: center;">
           <h1>Welcome to Centrika OnePortal</h1>
@@ -99,8 +103,8 @@ export const emailTemplates = {
 
           <p style="font-size: 14px; color: #666; line-height: 1.6;">
             <strong>Quick Links:</strong><br>
-            • <a href="https://centrika.rw/login" style="color: #667eea; text-decoration: none;">Login to Portal</a><br>
-            • <a href="https://centrika.rw/help" style="color: #667eea; text-decoration: none;">Help & Support</a>
+            • <a href="${appUrl}/login" style="color: #667eea; text-decoration: none;">Login to Portal</a><br>
+            • <a href="${appUrl}/help" style="color: #667eea; text-decoration: none;">Help &amp; Support</a>
           </p>
 
           <p style="font-size: 12px; color: #999; margin-top: 30px;">
@@ -112,7 +116,8 @@ export const emailTemplates = {
         </div>
       </div>
     `,
-  }),
+    });
+  },
 
   passwordResetEmail: (name: string, resetLink: string, meta: EmailMetadata) => ({
     subject: formatEmailSubject(meta),
@@ -297,9 +302,11 @@ export const emailTemplates = {
     `,
   }),
 
-  leaveRequestSubmittedEmail: (employeeName: string, hodName: string, requestNumber: string, startDate: string, endDate: string, meta: EmailMetadata) => ({
-    subject: formatEmailSubject(meta),
-    html: `
+  leaveRequestSubmittedEmail: (employeeName: string, hodName: string, requestNumber: string, startDate: string, endDate: string, meta: EmailMetadata) => {
+    const appUrl = (meta.appUrl ?? ENV.appUrl).replace(/\/$/, "");
+    return ({
+      subject: formatEmailSubject(meta),
+      html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; color: white; text-align: center;">
           <h1>New Leave Request</h1>
@@ -320,7 +327,7 @@ export const emailTemplates = {
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://centrika.rw/approvals" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+            <a href="${appUrl}/approvals" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
               Review Request
             </a>
           </div>
@@ -338,11 +345,14 @@ export const emailTemplates = {
         </div>
       </div>
     `,
-  }),
+    });
+  },
 
-  leaveRequestApprovedEmail: (employeeName: string, approverName: string, requestNumber: string, startDate: string, endDate: string, meta: EmailMetadata) => ({
-    subject: formatEmailSubject(meta),
-    html: `
+  leaveRequestApprovedEmail: (employeeName: string, approverName: string, requestNumber: string, startDate: string, endDate: string, meta: EmailMetadata) => {
+    const appUrl = (meta.appUrl ?? ENV.appUrl).replace(/\/$/, "");
+    return ({
+      subject: formatEmailSubject(meta),
+      html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); padding: 40px; color: white; text-align: center;">
           <h1>✓ Leave Request Approved</h1>
@@ -367,7 +377,7 @@ export const emailTemplates = {
           </p>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://centrika.rw/requests" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+            <a href="${appUrl}/requests" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
               View Request
             </a>
           </div>
@@ -381,11 +391,14 @@ export const emailTemplates = {
         </div>
       </div>
     `,
-  }),
+    });
+  },
 
-  leaveRequestRejectedEmail: (employeeName: string, approverName: string, requestNumber: string, reason: string, meta: EmailMetadata) => ({
-    subject: formatEmailSubject(meta),
-    html: `
+  leaveRequestRejectedEmail: (employeeName: string, approverName: string, requestNumber: string, reason: string, meta: EmailMetadata) => {
+    const appUrl = (meta.appUrl ?? ENV.appUrl).replace(/\/$/, "");
+    return ({
+      subject: formatEmailSubject(meta),
+      html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); padding: 40px; color: white; text-align: center;">
           <h1>Leave Request Rejected</h1>
@@ -409,7 +422,7 @@ export const emailTemplates = {
           </p>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://centrika.rw/requests" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+            <a href="${appUrl}/requests" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
               View Requests
             </a>
           </div>
@@ -423,7 +436,8 @@ export const emailTemplates = {
         </div>
       </div>
     `,
-  }),
+    });
+  },
 
   userInvitationEmail: (name: string, email: string, inviteLink: string, invitedBy: string, meta: EmailMetadata) => ({
     subject: formatEmailSubject(meta),
@@ -472,7 +486,7 @@ export const emailTemplates = {
           </p>
 
           <p style="font-size: 12px; color: #999; margin-top: 20px; line-height: 1.6;">
-            <strong>Need help?</strong> Contact your HR department or visit our <a href="https://centrika.rw/help" style="color: #667eea; text-decoration: none;">Help Center</a>
+            <strong>Need help?</strong> Contact your HR department or visit our <a href="${(meta.appUrl ?? ENV.appUrl).replace(/\/$/, "")}/help" style="color: #667eea; text-decoration: none;">Help Center</a>
           </p>
 
           <p style="font-size: 12px; color: #999; margin-top: 30px;">
@@ -498,7 +512,9 @@ export const emailTemplates = {
     requestNumber: string,
     approvalDate: string,
     meta: EmailMetadata
-  ) => ({
+  ) => {
+    const appUrl = (meta.appUrl ?? ENV.appUrl).replace(/\/$/, "");
+    return ({
     subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -533,7 +549,7 @@ export const emailTemplates = {
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://centrika.rw/approval-history" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+            <a href="${appUrl}/approvals" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
               View Approved Request
             </a>
           </div>
@@ -547,11 +563,14 @@ export const emailTemplates = {
         </div>
       </div>
     `,
-  }),
+    });
+  },
 
-  requestSubmittedEmail: (approverName: string, employeeName: string, requestType: string, requestNumber: string, detailsHtml: string, meta: EmailMetadata) => ({
-    subject: formatEmailSubject(meta),
-    html: `
+  requestSubmittedEmail: (approverName: string, employeeName: string, requestType: string, requestNumber: string, detailsHtml: string, meta: EmailMetadata) => {
+    const appUrl = (meta.appUrl ?? ENV.appUrl).replace(/\/$/, "");
+    return ({
+      subject: formatEmailSubject(meta),
+      html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; color: white; text-align: center;">
           <h1>New Request Awaiting Approval</h1>
@@ -573,7 +592,7 @@ export const emailTemplates = {
           </p>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://centrika.rw/approvals" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+            <a href="${appUrl}/approvals" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
               Review Request
             </a>
           </div>
@@ -582,11 +601,14 @@ export const emailTemplates = {
         </div>
       </div>
     `,
-  }),
+    });
+  },
 
-  requestApprovedEmail: (employeeName: string, approverName: string, requestType: string, requestNumber: string, detailsHtml: string, meta: EmailMetadata) => ({
-    subject: formatEmailSubject(meta),
-    html: `
+  requestApprovedEmail: (employeeName: string, approverName: string, requestType: string, requestNumber: string, detailsHtml: string, meta: EmailMetadata) => {
+    const appUrl = (meta.appUrl ?? ENV.appUrl).replace(/\/$/, "");
+    return ({
+      subject: formatEmailSubject(meta),
+      html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); padding: 40px; color: white; text-align: center;">
           <h1>✓ Request Approved</h1>
@@ -601,7 +623,7 @@ export const emailTemplates = {
             ${detailsHtml}
           </div>
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://centrika.rw/requests" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+            <a href="${appUrl}/requests" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
               View Request
             </a>
           </div>
@@ -609,11 +631,14 @@ export const emailTemplates = {
         </div>
       </div>
     `,
-  }),
+    });
+  },
 
-  requestRejectedEmail: (employeeName: string, approverName: string, requestType: string, requestNumber: string, reason: string, meta: EmailMetadata) => ({
-    subject: formatEmailSubject(meta),
-    html: `
+  requestRejectedEmail: (employeeName: string, approverName: string, requestType: string, requestNumber: string, reason: string, meta: EmailMetadata) => {
+    const appUrl = (meta.appUrl ?? ENV.appUrl).replace(/\/$/, "");
+    return ({
+      subject: formatEmailSubject(meta),
+      html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); padding: 40px; color: white; text-align: center;">
           <h1>Request Rejected</h1>
@@ -628,7 +653,7 @@ export const emailTemplates = {
             <p style="margin: 8px 0;"><strong>Reason provided:</strong> ${reason || "No specific reason provided."}</p>
           </div>
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://centrika.rw/requests" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+            <a href="${appUrl}/requests" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
               View Request
             </a>
           </div>
@@ -636,9 +661,12 @@ export const emailTemplates = {
         </div>
       </div>
     `,
-  }),
+    });
+  },
 
-  observerNotificationEmail: (recipientName: string, employeeName: string, approverName: string, actionType: "APPROVED" | "REJECTED", requestType: string, requestNumber: string, detailsHtml: string, meta: EmailMetadata) => ({
+  observerNotificationEmail: (recipientName: string, employeeName: string, approverName: string, actionType: "APPROVED" | "REJECTED", requestType: string, requestNumber: string, detailsHtml: string, meta: EmailMetadata) => {
+    const appUrl = (meta.appUrl ?? ENV.appUrl).replace(/\/$/, "");
+    return ({
     subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -659,7 +687,7 @@ export const emailTemplates = {
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://centrika.rw/approval-history" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+            <a href="${appUrl}/approvals" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
               View Request Details
             </a>
           </div>
@@ -667,7 +695,8 @@ export const emailTemplates = {
         </div>
       </div>
     `,
-  }),
+    });
+  },
 
   announcementPostedEmail: (recipientName: string, authorName: string, authorRole: string, announcementTitle: string, announcementContent: string, viewLink: string, meta: EmailMetadata) => ({
     subject: formatEmailSubject(meta),

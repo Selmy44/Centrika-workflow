@@ -135,7 +135,8 @@ export const appRouter = router({
           pos: "USER",
           topic: "WELCOME",
           action: "ACCOUNT-CREATED",
-          level: "NORMAL"
+          level: "NORMAL",
+          appUrl: getFrontendUrl(ctx.req),
         });
         await sendEmail(input.email, welcomeEmail.subject, welcomeEmail.html);
 

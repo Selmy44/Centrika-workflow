@@ -4,6 +4,7 @@ import { prisma } from "../db";
 import { parseAdditionalRoles } from "../shared/roles";
 import { TRPCError } from "@trpc/server";
 import { sendEmail, emailTemplates } from "../core/email";
+import { getFrontendUrl } from "../core/env";
 import {
   uploadFileToSpaces,
   generateFileKey,
@@ -606,7 +607,8 @@ export const requestsRouter = router({
               pos: request.user.position || "Staff",
               topic: `${request.type.toUpperCase()} REQUEST`,
               action: "SUBMITTED",
-              level: "MODERATE"
+              level: "MODERATE",
+              appUrl: getFrontendUrl(ctx.req),
             }
           );
           await sendEmail(approver.email, emailContent.subject, emailContent.html);
@@ -772,7 +774,8 @@ export const requestsRouter = router({
                 pos: request.user.position || "Staff",
                 topic: `${request.type.toUpperCase()} REQUEST`,
                 action: "APPROVED",
-                level: "NORMAL"
+                level: "NORMAL",
+                appUrl: getFrontendUrl(ctx.req),
               }
             );
             sendEmail(request.user.email, emailContent.subject, emailContent.html).catch(e => console.error("Requester email error:", e));
@@ -822,7 +825,8 @@ export const requestsRouter = router({
                   pos: request.user.position || "Staff",
                   topic: `${request.type.toUpperCase()} NOTIFICATION`,
                   action: "OBSERVED-APPROVED",
-                  level: "NORMAL"
+                  level: "NORMAL",
+                  appUrl: getFrontendUrl(ctx.req),
                 }
               );
               await sendEmail(recipient.email, notifEmail.subject, notifEmail.html);
@@ -875,7 +879,8 @@ export const requestsRouter = router({
                 pos: request.user.position || "Staff",
                 topic: `${request.type.toUpperCase()} ESCALATION`,
                 action: "PENDING-APPROVAL",
-                level: "URGENT"
+                level: "URGENT",
+                appUrl: getFrontendUrl(ctx.req),
               }
             );
             await sendEmail(nextUser.email, emailContent.subject, emailContent.html);
@@ -1041,7 +1046,8 @@ export const requestsRouter = router({
                 pos: request.user.position || "Staff",
                 topic: `${request.type.toUpperCase()} REQUEST`,
                 action: "REJECTED",
-                level: "MODERATE"
+                level: "MODERATE",
+                appUrl: getFrontendUrl(ctx.req),
               }
             );
             sendEmail(request.user.email, emailContent.subject, emailContent.html).catch(e => console.error("Requester email error:", e));
@@ -1074,7 +1080,8 @@ export const requestsRouter = router({
                   pos: request.user.position || "Staff",
                   topic: `${request.type.toUpperCase()} NOTIFICATION`,
                   action: "OBSERVED-REJECTED",
-                  level: "MODERATE"
+                  level: "MODERATE",
+                  appUrl: getFrontendUrl(ctx.req),
                 }
               );
               await sendEmail(recipient.email, notifEmail.subject, notifEmail.html);

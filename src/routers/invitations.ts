@@ -102,7 +102,8 @@ export const invitationsRouter = router({
             pos: "ADMIN",
             topic: "ACCOUNT INVITATION",
             action: "JOIN-ONEPORTAL",
-            level: "MODERATE"
+            level: "MODERATE",
+            appUrl: frontendUrl,
           }
         );
 
@@ -213,7 +214,8 @@ export const invitationsRouter = router({
             pos: "ADMIN",
             topic: "ACCOUNT INVITATION",
             action: "RESEND-INVITE",
-            level: "MODERATE"
+            level: "MODERATE",
+            appUrl: frontendUrl,
           }
         );
 
@@ -362,7 +364,8 @@ export const invitationsRouter = router({
             pos: "USER",
             topic: "WELCOME",
             action: "ACCOUNT-ACTIVATED",
-            level: "NORMAL"
+            level: "NORMAL",
+            appUrl: getFrontendUrl(),
           }
         );
 
