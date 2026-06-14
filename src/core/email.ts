@@ -68,6 +68,8 @@ export interface EmailMetadata {
   level?: string;
   /** The frontend base URL used to build links in email CTAs (e.g. https://oneportal.centrika.rw) */
   appUrl?: string;
+  /** The recipient's email address — appended to email CTA links so the frontend can validate session ownership */
+  recipientEmail?: string;
 }
 
 export function formatEmailSubject(meta: EmailMetadata) {
@@ -75,10 +77,23 @@ export function formatEmailSubject(meta: EmailMetadata) {
   return `CTK-${dept.toUpperCase()}-${pos.toUpperCase()}-${topic}-${action}-${level.toUpperCase()}`;
 }
 
+/**
+ * Builds a URL with the recipient's email appended as a query parameter.
+ * This allows the frontend to verify that the logged-in user matches the
+ * intended recipient of the email, preventing session hijacking via shared links.
+ */
+export function buildLink(url: string, recipientEmail?: string): string {
+  if (!recipientEmail) return url;
+  const encoded = encodeURIComponent(recipientEmail);
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}email=${encoded}`;
+}
+
 // Email templates
 export const emailTemplates = {
   welcomeEmail: (name: string, email: string, meta: EmailMetadata, password?: string) => {
     const appUrl = (meta.appUrl ?? ENV.appUrl).replace(/\/$/, "");
+    const loginLink = buildLink(`${appUrl}/login`, meta.recipientEmail);
     return ({
       subject: formatEmailSubject(meta),
       html: `
@@ -103,7 +118,7 @@ export const emailTemplates = {
 
           <p style="font-size: 14px; color: #666; line-height: 1.6;">
             <strong>Quick Links:</strong><br>
-            • <a href="${appUrl}/login" style="color: #667eea; text-decoration: none;">Login to Portal</a><br>
+            • <a href="${loginLink}" style="color: #667eea; text-decoration: none;">Login to Portal</a><br>
             • <a href="${appUrl}/help" style="color: #667eea; text-decoration: none;">Help &amp; Support</a>
           </p>
 
@@ -304,6 +319,7 @@ export const emailTemplates = {
 
   leaveRequestSubmittedEmail: (employeeName: string, hodName: string, requestNumber: string, startDate: string, endDate: string, meta: EmailMetadata) => {
     const appUrl = (meta.appUrl ?? ENV.appUrl).replace(/\/$/, "");
+    const reviewLink = buildLink(`${appUrl}/approvals`, meta.recipientEmail);
     return ({
       subject: formatEmailSubject(meta),
       html: `
@@ -327,7 +343,7 @@ export const emailTemplates = {
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${appUrl}/approvals" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+            <a href="${reviewLink}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
               Review Request
             </a>
           </div>
@@ -350,6 +366,7 @@ export const emailTemplates = {
 
   leaveRequestApprovedEmail: (employeeName: string, approverName: string, requestNumber: string, startDate: string, endDate: string, meta: EmailMetadata) => {
     const appUrl = (meta.appUrl ?? ENV.appUrl).replace(/\/$/, "");
+    const viewLink = buildLink(`${appUrl}/requests`, meta.recipientEmail);
     return ({
       subject: formatEmailSubject(meta),
       html: `
@@ -377,7 +394,7 @@ export const emailTemplates = {
           </p>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${appUrl}/requests" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+            <a href="${viewLink}" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
               View Request
             </a>
           </div>
@@ -396,6 +413,7 @@ export const emailTemplates = {
 
   leaveRequestRejectedEmail: (employeeName: string, approverName: string, requestNumber: string, reason: string, meta: EmailMetadata) => {
     const appUrl = (meta.appUrl ?? ENV.appUrl).replace(/\/$/, "");
+    const viewLink = buildLink(`${appUrl}/requests`, meta.recipientEmail);
     return ({
       subject: formatEmailSubject(meta),
       html: `
@@ -422,7 +440,7 @@ export const emailTemplates = {
           </p>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${appUrl}/requests" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+            <a href="${viewLink}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
               View Requests
             </a>
           </div>
@@ -514,6 +532,7 @@ export const emailTemplates = {
     meta: EmailMetadata
   ) => {
     const appUrl = (meta.appUrl ?? ENV.appUrl).replace(/\/$/, "");
+    const viewLink = buildLink(`${appUrl}/approvals`, meta.recipientEmail);
     return ({
     subject: formatEmailSubject(meta),
     html: `
@@ -549,7 +568,7 @@ export const emailTemplates = {
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${appUrl}/approvals" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+            <a href="${viewLink}" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
               View Approved Request
             </a>
           </div>
@@ -568,6 +587,7 @@ export const emailTemplates = {
 
   requestSubmittedEmail: (approverName: string, employeeName: string, requestType: string, requestNumber: string, detailsHtml: string, meta: EmailMetadata) => {
     const appUrl = (meta.appUrl ?? ENV.appUrl).replace(/\/$/, "");
+    const reviewLink = buildLink(`${appUrl}/approvals`, meta.recipientEmail);
     return ({
       subject: formatEmailSubject(meta),
       html: `
@@ -592,7 +612,7 @@ export const emailTemplates = {
           </p>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${appUrl}/approvals" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+            <a href="${reviewLink}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
               Review Request
             </a>
           </div>
@@ -606,6 +626,7 @@ export const emailTemplates = {
 
   requestApprovedEmail: (employeeName: string, approverName: string, requestType: string, requestNumber: string, detailsHtml: string, meta: EmailMetadata) => {
     const appUrl = (meta.appUrl ?? ENV.appUrl).replace(/\/$/, "");
+    const viewLink = buildLink(`${appUrl}/requests`, meta.recipientEmail);
     return ({
       subject: formatEmailSubject(meta),
       html: `
@@ -623,7 +644,7 @@ export const emailTemplates = {
             ${detailsHtml}
           </div>
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${appUrl}/requests" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+            <a href="${viewLink}" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
               View Request
             </a>
           </div>
@@ -636,6 +657,7 @@ export const emailTemplates = {
 
   requestRejectedEmail: (employeeName: string, approverName: string, requestType: string, requestNumber: string, reason: string, meta: EmailMetadata) => {
     const appUrl = (meta.appUrl ?? ENV.appUrl).replace(/\/$/, "");
+    const viewLink = buildLink(`${appUrl}/requests`, meta.recipientEmail);
     return ({
       subject: formatEmailSubject(meta),
       html: `
@@ -653,7 +675,7 @@ export const emailTemplates = {
             <p style="margin: 8px 0;"><strong>Reason provided:</strong> ${reason || "No specific reason provided."}</p>
           </div>
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${appUrl}/requests" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+            <a href="${viewLink}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
               View Request
             </a>
           </div>
@@ -666,6 +688,7 @@ export const emailTemplates = {
 
   observerNotificationEmail: (recipientName: string, employeeName: string, approverName: string, actionType: "APPROVED" | "REJECTED", requestType: string, requestNumber: string, detailsHtml: string, meta: EmailMetadata) => {
     const appUrl = (meta.appUrl ?? ENV.appUrl).replace(/\/$/, "");
+    const obsViewLink = buildLink(`${appUrl}/approvals`, meta.recipientEmail);
     return ({
     subject: formatEmailSubject(meta),
     html: `
@@ -687,7 +710,7 @@ export const emailTemplates = {
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${appUrl}/approvals" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+            <a href="${obsViewLink}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
               View Request Details
             </a>
           </div>
@@ -698,7 +721,9 @@ export const emailTemplates = {
     });
   },
 
-  announcementPostedEmail: (recipientName: string, authorName: string, authorRole: string, announcementTitle: string, announcementContent: string, viewLink: string, meta: EmailMetadata) => ({
+  announcementPostedEmail: (recipientName: string, authorName: string, authorRole: string, announcementTitle: string, announcementContent: string, rawViewLink: string, meta: EmailMetadata) => {
+    const viewLink = buildLink(rawViewLink, meta.recipientEmail);
+    return ({
     subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -735,9 +760,12 @@ export const emailTemplates = {
         </div>
       </div>
     `,
-  }),
+  });
+  },
 
-  newCommentEmail: (recipientName: string, commenterName: string, commenterPosition: string, announcementTitle: string, commentContent: string, viewLink: string, meta: EmailMetadata) => ({
+  newCommentEmail: (recipientName: string, commenterName: string, commenterPosition: string, announcementTitle: string, commentContent: string, viewLink: string, meta: EmailMetadata) => {
+    const link = buildLink(viewLink, meta.recipientEmail);
+    return ({
     subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -759,7 +787,7 @@ export const emailTemplates = {
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${viewLink}" style="background: linear-gradient(135deg, #3b6dae 0%, #2d5385 100%); color: white; padding: 14px 35px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 14px;">
+            <a href="${link}" style="background: linear-gradient(135deg, #3b6dae 0%, #2d5385 100%); color: white; padding: 14px 35px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 14px;">
               View on OnePortal
             </a>
           </div>
@@ -773,9 +801,12 @@ export const emailTemplates = {
         </div>
       </div>
     `,
-  }),
+  });
+  },
 
-  newSuggestionEmail: (recipientName: string, roleName: string, suggestionContent: string, viewLink: string, meta: EmailMetadata) => ({
+  newSuggestionEmail: (recipientName: string, roleName: string, suggestionContent: string, viewLink: string, meta: EmailMetadata) => {
+    const link = buildLink(viewLink, meta.recipientEmail);
+    return ({
     subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -797,7 +828,7 @@ export const emailTemplates = {
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${viewLink}" style="background: linear-gradient(135deg, #3b6dae 0%, #2d5385 100%); color: white; padding: 14px 35px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 14px;">
+            <a href="${link}" style="background: linear-gradient(135deg, #3b6dae 0%, #2d5385 100%); color: white; padding: 14px 35px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 14px;">
               Review in Inbox
             </a>
           </div>
@@ -807,9 +838,12 @@ export const emailTemplates = {
         </div>
       </div>
     `,
-  }),
+  });
+  },
 
-  feedbackReplyEmail: (recipientName: string, replierPosition: string, replyContent: string, viewLink: string, meta: EmailMetadata) => ({
+  feedbackReplyEmail: (recipientName: string, replierPosition: string, replyContent: string, viewLink: string, meta: EmailMetadata) => {
+    const link = buildLink(viewLink, meta.recipientEmail);
+    return ({
     subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -830,7 +864,7 @@ export const emailTemplates = {
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${viewLink}" style="background: linear-gradient(135deg, #3b6dae 0%, #2d5385 100%); color: white; padding: 14px 35px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 14px;">
+            <a href="${link}" style="background: linear-gradient(135deg, #3b6dae 0%, #2d5385 100%); color: white; padding: 14px 35px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 14px;">
               View Full Conversation
             </a>
           </div>
@@ -840,5 +874,6 @@ export const emailTemplates = {
         </div>
       </div>
     `,
-  }),
+  });
+  },
 };

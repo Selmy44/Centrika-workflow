@@ -368,6 +368,7 @@ export const invitationsRouter = router({
             action: "ACCOUNT-ACTIVATED",
             level: "NORMAL",
             appUrl: getFrontendUrl(),
+            recipientEmail: newUser.email || "",
           }
         );
 

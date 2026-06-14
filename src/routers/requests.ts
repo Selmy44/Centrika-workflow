@@ -609,6 +609,7 @@ export const requestsRouter = router({
               action: "SUBMITTED",
               level: "MODERATE",
               appUrl: getFrontendUrl(ctx.req),
+              recipientEmail: approver.email
             }
           );
           await sendEmail(approver.email, emailContent.subject, emailContent.html);
@@ -776,6 +777,7 @@ export const requestsRouter = router({
                 action: "APPROVED",
                 level: "NORMAL",
                 appUrl: getFrontendUrl(ctx.req),
+                recipientEmail: request.user.email
               }
             );
             sendEmail(request.user.email, emailContent.subject, emailContent.html).catch(e => console.error("Requester email error:", e));
@@ -827,6 +829,7 @@ export const requestsRouter = router({
                   action: "OBSERVED-APPROVED",
                   level: "NORMAL",
                   appUrl: getFrontendUrl(ctx.req),
+                  recipientEmail: recipient.email
                 }
               );
               await sendEmail(recipient.email, notifEmail.subject, notifEmail.html);
@@ -881,6 +884,7 @@ export const requestsRouter = router({
                 action: "PENDING-APPROVAL",
                 level: "URGENT",
                 appUrl: getFrontendUrl(ctx.req),
+                recipientEmail: nextUser.email
               }
             );
             await sendEmail(nextUser.email, emailContent.subject, emailContent.html);
@@ -1048,6 +1052,7 @@ export const requestsRouter = router({
                 action: "REJECTED",
                 level: "MODERATE",
                 appUrl: getFrontendUrl(ctx.req),
+                recipientEmail: request.user.email
               }
             );
             sendEmail(request.user.email, emailContent.subject, emailContent.html).catch(e => console.error("Requester email error:", e));
@@ -1082,6 +1087,7 @@ export const requestsRouter = router({
                   action: "OBSERVED-REJECTED",
                   level: "MODERATE",
                   appUrl: getFrontendUrl(ctx.req),
+                  recipientEmail: recipient.email
                 }
               );
               await sendEmail(recipient.email, notifEmail.subject, notifEmail.html);

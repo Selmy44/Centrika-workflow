@@ -175,7 +175,8 @@ export const announcementsRouter = router({
                 pos: authorWithDept?.position || "Staff",
                 topic: "INTERNAL COMMUNICATION",
                 action: "NEW-POST",
-                level: "NORMAL"
+                level: "NORMAL",
+                recipientEmail: u.email || undefined
               }
             );
             return sendEmail(u.email!, emailData.subject, emailData.html);
@@ -388,7 +389,8 @@ export const announcementsRouter = router({
                 pos: comment.user.position || "Staff",
                 topic: "COMMUNICATION COMMENT",
                 action: "NEW-REPLY",
-                level: "NORMAL"
+                level: "NORMAL",
+                recipientEmail: u.email || undefined
               }
             );
             return sendEmail(

@@ -113,7 +113,8 @@ export const suggestionsRouter = router({
                 pos: user?.position || "Staff",
                 topic: "CENTRIKA CONNECT",
                 action: "NEW-MESSAGE",
-                level: "NORMAL"
+                level: "NORMAL",
+                recipientEmail: u.email || undefined
               }
             );
             return sendEmail(u.email!, template.subject, template.html);
@@ -297,7 +298,8 @@ export const suggestionsRouter = router({
               pos: replier?.position || "Staff",
               topic: "PULSE REPLY",
               action: "RESPONSE-RECEIVED",
-              level: "MODERATE"
+              level: "MODERATE",
+              recipientEmail: suggestion.user.email || undefined
             }
           );
           sendEmail(suggestion.user.email, template.subject, template.html).catch(console.error);
