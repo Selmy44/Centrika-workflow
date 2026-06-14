@@ -29,6 +29,14 @@ export default function OtpLoginPage() {
     return () => clearTimeout(timer);
   }, [timeLeft]);
 
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const emailParam = searchParams.get("email");
+    if (emailParam) {
+      setEmail(emailParam);
+    }
+  }, []);
+
   const sendOtpMutation = trpc.mfa.sendEmailOtp.useMutation({
     onSuccess: () => {
       setStep("otp");
@@ -56,7 +64,13 @@ export default function OtpLoginPage() {
         console.warn("Auth refetch failed, proceeding anyway");
       }
       setTimeout(() => {
-        window.location.href = "/";
+        const searchParams = new URLSearchParams(window.location.search);
+        const redirectUrl = searchParams.get("redirect");
+        if (redirectUrl) {
+          window.location.href = decodeURIComponent(redirectUrl);
+        } else {
+          window.location.href = "/";
+        }
       }, 500);
     },
     onError: (err: any) => {

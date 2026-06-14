@@ -7,7 +7,13 @@ import { useEffect } from "react";
 function Redirect({ to }: { to: string }) {
   const [, navigate] = useLocation();
   useEffect(() => {
-    navigate(to, { replace: true });
+    const searchParams = new URLSearchParams(window.location.search);
+    const redirectUrl = searchParams.get("redirect");
+    if (redirectUrl) {
+      navigate(decodeURIComponent(redirectUrl), { replace: true });
+    } else {
+      navigate(to, { replace: true });
+    }
   }, [navigate, to]);
   return null;
 }
@@ -50,8 +56,54 @@ import { IdleTimeoutDialog } from "./components/IdleTimeoutDialog";
 // Re-index trigger
 
 function Router() {
-  const { isAuthenticated, loading, logout } = useAuth();
+  const [location, navigate] = useLocation();
+  const { isAuthenticated, loading, logout, user } = useAuth();
   const { showWarning, secondsLeft, keepWorking } = useIdleTimeout(isAuthenticated, logout);
+
+  useEffect(() => {
+    if (loading) return;
+
+    const isUnauthenticatedRoute = 
+      location === "/login" || 
+      location === "/otp-login" || 
+      location === "/forgot-password" || 
+      location === "/reset-password" || 
+      location.startsWith("/accept-invite");
+
+    if (isUnauthenticatedRoute) return;
+
+    const searchParams = new URLSearchParams(window.location.search);
+    const emailParam = searchParams.get("email");
+
+    if (emailParam) {
+      if (isAuthenticated) {
+        if (user && user.email && user.email.toLowerCase() === emailParam.toLowerCase()) {
+          // Email matches the logged-in user. Clean up the email query param from URL.
+          searchParams.delete("email");
+          const newSearch = searchParams.toString();
+          const cleanPath = `${window.location.pathname}${newSearch ? `?${newSearch}` : ""}`;
+          window.history.replaceState(null, "", cleanPath);
+        } else if (user) {
+          // Email mismatch! Log out first, then navigate to login with email & redirect.
+          console.warn(`User mismatch! Logged in as ${user.email}, but link is for ${emailParam}. Logging out.`);
+          
+          // Build redirect URL representing the current target destination (pathname + search params without email)
+          const redirectParams = new URLSearchParams(window.location.search);
+          redirectParams.delete("email");
+          const redirectSearch = redirectParams.toString();
+          const redirectDest = `${window.location.pathname}${redirectSearch ? `?${redirectSearch}` : ""}`;
+          
+          logout().then(() => {
+            navigate(`/login?email=${encodeURIComponent(emailParam)}&redirect=${encodeURIComponent(redirectDest)}`);
+          });
+        }
+      } else {
+        // Not authenticated, redirect to login
+        const redirectDest = `${window.location.pathname}${window.location.search}`;
+        navigate(`/login?email=${encodeURIComponent(emailParam)}&redirect=${encodeURIComponent(redirectDest)}`);
+      }
+    }
+  }, [isAuthenticated, loading, user, navigate, location]);
 
   // Show loading state while checking authentication
   if (loading) {
