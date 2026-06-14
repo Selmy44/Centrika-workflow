@@ -6,7 +6,7 @@ import { generateToken, sendOtp, verifyOtp, getUserByEmail } from "../core/otp";
 import { sendEmail, emailTemplates } from "../core/email";
 import { getSessionCookieOptions } from "../core/cookies";
 import { SignJWT } from "jose";
-import { ENV } from "../core/env";
+import { ENV, getFrontendUrl } from "../core/env";
 import { COOKIE_NAME } from "../shared/const";
 import crypto from "crypto";
 
@@ -135,7 +135,7 @@ export const mfaRouter = router({
    */
   sendMagicLink: publicProcedure
     .input(z.object({ email: z.string().email() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       try {
         const user = await getUserByEmail(input.email);
         if (!user) {
@@ -157,7 +157,8 @@ export const mfaRouter = router({
           }
         });
 
-        const magicLink = `${ENV.appUrl}/auth/magic-link?token=${token}`;
+        const frontendUrl = getFrontendUrl(ctx.req);
+        const magicLink = `${frontendUrl}/auth/magic-link?token=${token}`;
         const userWithDept = await prisma.user.findUnique({
           where: { id: user.id },
           include: { department: true }
@@ -168,7 +169,8 @@ export const mfaRouter = router({
           pos: userWithDept?.position || "USER",
           topic: "SECURITY",
           action: "MAGIC-LINK-LOGIN",
-          level: "URGENT"
+          level: "URGENT",
+          appUrl: frontendUrl,
         });
         await sendEmail(user.email!, template.subject, template.html);
 
