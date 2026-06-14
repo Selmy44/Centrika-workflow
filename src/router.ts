@@ -245,7 +245,7 @@ export const appRouter = router({
         })
           .setProtectedHeader({ alg: "HS256" })
           .setIssuedAt()
-          .setExpirationTime("7d")
+          .setExpirationTime("15m")
           .sign(secret);
 
         const cookieOptions = getSessionCookieOptions(ctx.req);
@@ -301,7 +301,7 @@ export const appRouter = router({
         })
           .setProtectedHeader({ alg: "HS256" })
           .setIssuedAt()
-          .setExpirationTime("7d")
+          .setExpirationTime("15m")
           .sign(secret);
 
         const cookieOptions = getSessionCookieOptions(ctx.req);

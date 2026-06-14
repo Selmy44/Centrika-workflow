@@ -1,4 +1,5 @@
 import type { CookieOptions, Request } from "express";
+import { SESSION_COOKIE_MAX_AGE_MS } from "../shared/const";
 
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
 
@@ -23,7 +24,7 @@ function isSecureRequest(req: Request) {
 
 export function getSessionCookieOptions(
   req: Request
-): Pick<CookieOptions, "domain" | "httpOnly" | "path" | "sameSite" | "secure"> {
+): Pick<CookieOptions, "domain" | "httpOnly" | "path" | "sameSite" | "secure" | "maxAge"> {
   // const hostname = req.hostname;
   // const shouldSetDomain =
   //   hostname &&
@@ -47,5 +48,6 @@ export function getSessionCookieOptions(
     // Use 'lax' for development (HTTP), 'none' for production (HTTPS)
     sameSite: isSecure ? "none" : "lax",
     secure: isSecure,
+    maxAge: SESSION_COOKIE_MAX_AGE_MS,
   };
 }

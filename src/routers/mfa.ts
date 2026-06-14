@@ -102,7 +102,7 @@ export const mfaRouter = router({
           name: user.name,
         })
           .setProtectedHeader({ alg: "HS256" })
-          .setExpirationTime("7d")
+          .setExpirationTime("15m")
           .sign(new TextEncoder().encode(ENV.cookieSecret));
 
         const cookieOptions = getSessionCookieOptions(ctx.req);
@@ -221,7 +221,7 @@ export const mfaRouter = router({
           name: user.name,
         })
           .setProtectedHeader({ alg: "HS256" })
-          .setExpirationTime("7d")
+          .setExpirationTime("15m")
           .sign(new TextEncoder().encode(ENV.cookieSecret));
 
         const cookieOptions = getSessionCookieOptions(ctx.req);
