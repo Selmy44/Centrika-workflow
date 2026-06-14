@@ -59,6 +59,11 @@ export function InviteUserModal({ open, onOpenChange, onSuccess }: InviteUserMod
       return;
     }
 
+    if (!email.trim().toLowerCase().endsWith("@centrika.rw")) {
+      toast.error("Email must be a company email address (username@centrika.rw)");
+      return;
+    }
+
     sendInvitationMutation.mutate({
       email,
       name,

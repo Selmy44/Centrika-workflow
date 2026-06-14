@@ -79,7 +79,7 @@ export default function AdminUsers() {
   const [createPhoneNumber, setCreatePhoneNumber] = useState("");
   const [editPhoneNumber, setEditPhoneNumber] = useState("");
 
-  const [validationErrors, setValidationErrors] = useState<{name?: string, email?: string, department?: string, gender?: string}>({});
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   const { data: users, isLoading, refetch } = (trpc as any).users.listAll.useQuery(undefined, {
     enabled: isAuthenticated && canManageUsers,
@@ -221,6 +221,24 @@ export default function AdminUsers() {
 
   const handleSave = async () => {
     if (!editingUser) return;
+
+    const errors: Record<string, string> = {};
+    if (!editGender) {
+      errors.gender = "Gender must be selected";
+    }
+    if (editContractType) {
+      if (!editContractStart) {
+        errors.contractStart = "Contract Start Date is required when Contract Type is selected";
+      }
+      if ((editContractType === "Full-time" || editContractType === "Contract") && !editContractEnd) {
+        errors.contractEnd = "Contract End Date is required for Full-time or Contract employee types";
+      }
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
 
     try {
       await updateUserMutation.mutateAsync({
@@ -417,7 +435,13 @@ export default function AdminUsers() {
       </div>
 
       {/* Edit Dialog */}
-      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+      <Dialog open={showDialog} onOpenChange={(open) => {
+        setShowDialog(open);
+        if (!open) {
+          setValidationErrors({});
+          setEditingUser(null);
+        }
+      }}>
         <DialogContent className="max-w-112">
           <DialogHeader>
             <DialogTitle>Edit User: {editingUser?.name}</DialogTitle>
@@ -469,9 +493,18 @@ export default function AdminUsers() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="editGender">Gender</Label>
-                <Select value={editGender} onValueChange={setEditGender}>
-                  <SelectTrigger>
+                <Label htmlFor="editGender" className={validationErrors.gender ? "text-red-500" : ""}>Gender <span className="text-red-500">*</span></Label>
+                <Select value={editGender} onValueChange={(val) => {
+                  setEditGender(val);
+                  if (validationErrors.gender) {
+                    setValidationErrors((prev) => {
+                      const copy = { ...prev };
+                      delete copy.gender;
+                      return copy;
+                    });
+                  }
+                }}>
+                  <SelectTrigger className={validationErrors.gender ? "border-red-500 focus:ring-red-500" : ""}>
                     <SelectValue placeholder="Select gender" />
                   </SelectTrigger>
                   <SelectContent>
@@ -479,6 +512,7 @@ export default function AdminUsers() {
                     <SelectItem value="female">Female</SelectItem>
                   </SelectContent>
                 </Select>
+                {validationErrors.gender && <p className="text-xs text-red-500">{validationErrors.gender}</p>}
               </div>
 
               <div className="space-y-2">
@@ -551,9 +585,18 @@ export default function AdminUsers() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Contract Type</Label>
-                  <Select value={editContractType} onValueChange={setEditContractType}>
-                    <SelectTrigger aria-label="Select contract type">
+                  <Label className={validationErrors.contractType ? "text-red-500" : ""}>Contract Type</Label>
+                  <Select value={editContractType} onValueChange={(val) => {
+                    setEditContractType(val);
+                    if (validationErrors.contractType) {
+                      setValidationErrors((prev) => {
+                        const copy = { ...prev };
+                        delete copy.contractType;
+                        return copy;
+                      });
+                    }
+                  }}>
+                    <SelectTrigger className={validationErrors.contractType ? "border-red-500 focus:ring-red-500" : ""} aria-label="Select contract type">
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -563,23 +606,50 @@ export default function AdminUsers() {
                       <SelectItem value="Internship">Internship</SelectItem>
                     </SelectContent>
                   </Select>
+                  {validationErrors.contractType && <p className="text-xs text-red-500">{validationErrors.contractType}</p>}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Contract Start</Label>
+                  <Label className={validationErrors.contractStart ? "text-red-500" : ""}>
+                    Contract Start {editContractType && <span className="text-red-500">*</span>}
+                  </Label>
                   <SingleDatePicker
                     value={editContractStart}
-                    onChange={setEditContractStart}
+                    onChange={(val) => {
+                      setEditContractStart(val);
+                      if (validationErrors.contractStart) {
+                        setValidationErrors((prev) => {
+                          const copy = { ...prev };
+                          delete copy.contractStart;
+                          return copy;
+                        });
+                      }
+                    }}
+                    className={validationErrors.contractStart ? "border-red-500 focus-visible:ring-red-500" : ""}
                   />
+                  {validationErrors.contractStart && <p className="text-xs text-red-500">{validationErrors.contractStart}</p>}
                 </div>
                 <div className="space-y-2">
-                  <Label>Contract End</Label>
+                  <Label className={validationErrors.contractEnd ? "text-red-500" : ""}>
+                    Contract End {(editContractType === "Full-time" || editContractType === "Contract") && <span className="text-red-500">*</span>}
+                  </Label>
                   <SingleDatePicker
                     value={editContractEnd}
-                    onChange={setEditContractEnd}
+                    onChange={(val) => {
+                      setEditContractEnd(val);
+                      if (validationErrors.contractEnd) {
+                        setValidationErrors((prev) => {
+                          const copy = { ...prev };
+                          delete copy.contractEnd;
+                          return copy;
+                        });
+                      }
+                    }}
+                    className={validationErrors.contractEnd ? "border-red-500 focus-visible:ring-red-500" : ""}
                   />
+                  {validationErrors.contractEnd && <p className="text-xs text-red-500">{validationErrors.contractEnd}</p>}
                 </div>
               </div>
 
@@ -715,7 +785,7 @@ export default function AdminUsers() {
       {/* Create User Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={(open) => {
         setShowCreateDialog(open);
-        if (!open) { setValidationErrors({}); }
+        setValidationErrors({});
       }}>
         <DialogContent className="max-w-112 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -736,7 +806,13 @@ export default function AdminUsers() {
                   value={createName}
                   onChange={(e) => {
                     setCreateName(e.target.value);
-                    if (validationErrors.name) setValidationErrors({...validationErrors, name: undefined});
+                    if (validationErrors.name) {
+                      setValidationErrors((prev) => {
+                        const copy = { ...prev };
+                        delete copy.name;
+                        return copy;
+                      });
+                    }
                   }}
                   className={`pl-9 ${validationErrors.name ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                 />
@@ -755,7 +831,13 @@ export default function AdminUsers() {
                   value={createEmail}
                   onChange={(e) => {
                     setCreateEmail(e.target.value);
-                    if (validationErrors.email) setValidationErrors({...validationErrors, email: undefined});
+                    if (validationErrors.email) {
+                      setValidationErrors((prev) => {
+                        const copy = { ...prev };
+                        delete copy.email;
+                        return copy;
+                      });
+                    }
                   }}
                   className={`pl-9 ${validationErrors.email ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                 />
@@ -769,7 +851,13 @@ export default function AdminUsers() {
                 value={createDepartmentId} 
                 onValueChange={(val) => {
                   setCreateDepartmentId(val);
-                  if (validationErrors.department) setValidationErrors({...validationErrors, department: undefined});
+                  if (validationErrors.department) {
+                    setValidationErrors((prev) => {
+                      const copy = { ...prev };
+                      delete copy.department;
+                      return copy;
+                    });
+                  }
                 }}
               >
                 <SelectTrigger className={validationErrors.department ? "border-red-500 focus:ring-red-500" : ""} aria-label="Select department">
@@ -852,7 +940,13 @@ export default function AdminUsers() {
               <Label htmlFor="createGender" className={validationErrors.gender ? "text-red-500" : ""}>Gender <span className="text-red-500">*</span></Label>
               <Select value={createGender} onValueChange={(val) => {
                 setCreateGender(val);
-                if (validationErrors.gender) setValidationErrors({...validationErrors, gender: undefined});
+                if (validationErrors.gender) {
+                  setValidationErrors((prev) => {
+                    const copy = { ...prev };
+                    delete copy.gender;
+                    return copy;
+                  });
+                }
               }}>
                 <SelectTrigger className={validationErrors.gender ? "border-red-500 focus:ring-red-500" : ""}>
                   <SelectValue placeholder="Select gender" />
@@ -874,9 +968,18 @@ export default function AdminUsers() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Contract Type</Label>
-                <Select value={createContractType} onValueChange={setCreateContractType}>
-                  <SelectTrigger aria-label="Select contract type">
+                <Label className={validationErrors.contractType ? "text-red-500" : ""}>Contract Type</Label>
+                <Select value={createContractType} onValueChange={(val) => {
+                  setCreateContractType(val);
+                  if (validationErrors.contractType) {
+                    setValidationErrors((prev) => {
+                      const copy = { ...prev };
+                      delete copy.contractType;
+                      return copy;
+                    });
+                  }
+                }}>
+                  <SelectTrigger className={validationErrors.contractType ? "border-red-500 focus:ring-red-500" : ""} aria-label="Select contract type">
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -886,23 +989,50 @@ export default function AdminUsers() {
                     <SelectItem value="Internship">Internship</SelectItem>
                   </SelectContent>
                 </Select>
+                {validationErrors.contractType && <p className="text-xs text-red-500">{validationErrors.contractType}</p>}
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Contract Start</Label>
+                <Label className={validationErrors.contractStart ? "text-red-500" : ""}>
+                  Contract Start {createContractType && <span className="text-red-500">*</span>}
+                </Label>
                 <SingleDatePicker
                   value={createContractStart}
-                  onChange={setCreateContractStart}
+                  onChange={(val) => {
+                    setCreateContractStart(val);
+                    if (validationErrors.contractStart) {
+                      setValidationErrors((prev) => {
+                        const copy = { ...prev };
+                        delete copy.contractStart;
+                        return copy;
+                      });
+                    }
+                  }}
+                  className={validationErrors.contractStart ? "border-red-500 focus-visible:ring-red-500" : ""}
                 />
+                {validationErrors.contractStart && <p className="text-xs text-red-500">{validationErrors.contractStart}</p>}
               </div>
               <div className="space-y-2">
-                <Label>Contract End</Label>
+                <Label className={validationErrors.contractEnd ? "text-red-500" : ""}>
+                  Contract End {(createContractType === "Full-time" || createContractType === "Contract") && <span className="text-red-500">*</span>}
+                </Label>
                 <SingleDatePicker
                   value={createContractEnd}
-                  onChange={setCreateContractEnd}
+                  onChange={(val) => {
+                    setCreateContractEnd(val);
+                    if (validationErrors.contractEnd) {
+                      setValidationErrors((prev) => {
+                        const copy = { ...prev };
+                        delete copy.contractEnd;
+                        return copy;
+                      });
+                    }
+                  }}
+                  className={validationErrors.contractEnd ? "border-red-500 focus-visible:ring-red-500" : ""}
                 />
+                {validationErrors.contractEnd && <p className="text-xs text-red-500">{validationErrors.contractEnd}</p>}
               </div>
             </div>
 
@@ -930,19 +1060,31 @@ export default function AdminUsers() {
             </Button>
             <Button
               onClick={async () => {
-                const errors: {name?: string, email?: string, department?: string, gender?: string} = {};
+                const errors: Record<string, string> = {};
                 if (!createName.trim()) errors.name = "Full name is required";
                 if (!createEmail.trim()) errors.email = "Email address is required";
                 else if (!/\S+@\S+\.\S+/.test(createEmail)) errors.email = "Invalid email format";
+                else if (!createEmail.trim().toLowerCase().endsWith("@centrika.rw")) {
+                  errors.email = "Email must be a company email address (username@centrika.rw)";
+                }
                 if (!createDepartmentId) errors.department = "Department must be selected";
                 if (!createGender) errors.gender = "Gender must be selected";
+
+                if (createContractType) {
+                  if (!createContractStart) {
+                    errors.contractStart = "Contract Start Date is required when Contract Type is selected";
+                  }
+                  if ((createContractType === "Full-time" || createContractType === "Contract") && !createContractEnd) {
+                    errors.contractEnd = "Contract End Date is required for Full-time or Contract employee types";
+                  }
+                }
 
                 if (Object.keys(errors).length > 0) {
                   setValidationErrors(errors);
                   return;
                 }
 
-               try {
+                try {
                   await createUserMutation.mutateAsync({
                     name: createName,
                     email: createEmail,
