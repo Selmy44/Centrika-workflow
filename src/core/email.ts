@@ -669,7 +669,7 @@ export const emailTemplates = {
     `,
   }),
 
-  announcementPostedEmail: (recipientName: string, authorName: string, authorRole: string, announcementTitle: string, announcementContent: string, meta: EmailMetadata) => ({
+  announcementPostedEmail: (recipientName: string, authorName: string, authorRole: string, announcementTitle: string, announcementContent: string, viewLink: string, meta: EmailMetadata) => ({
     subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -692,7 +692,7 @@ export const emailTemplates = {
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://centrika.rw/dashboard" style="background: linear-gradient(135deg, #3b6dae 0%, #2d5385 100%); color: white; padding: 14px 35px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 14px;">
+            <a href="${viewLink}" style="background: linear-gradient(135deg, #3b6dae 0%, #2d5385 100%); color: white; padding: 14px 35px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 14px;">
               View on OnePortal
             </a>
           </div>
@@ -708,7 +708,7 @@ export const emailTemplates = {
     `,
   }),
 
-  newCommentEmail: (recipientName: string, commenterName: string, commenterPosition: string, announcementTitle: string, commentContent: string, meta: EmailMetadata) => ({
+  newCommentEmail: (recipientName: string, commenterName: string, commenterPosition: string, announcementTitle: string, commentContent: string, viewLink: string, meta: EmailMetadata) => ({
     subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -730,7 +730,7 @@ export const emailTemplates = {
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://centrika.rw/dashboard" style="background: linear-gradient(135deg, #3b6dae 0%, #2d5385 100%); color: white; padding: 14px 35px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 14px;">
+            <a href="${viewLink}" style="background: linear-gradient(135deg, #3b6dae 0%, #2d5385 100%); color: white; padding: 14px 35px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 14px;">
               View on OnePortal
             </a>
           </div>
@@ -746,7 +746,7 @@ export const emailTemplates = {
     `,
   }),
 
-  newSuggestionEmail: (recipientName: string, roleName: string, suggestionContent: string, meta: EmailMetadata) => ({
+  newSuggestionEmail: (recipientName: string, roleName: string, suggestionContent: string, viewLink: string, meta: EmailMetadata) => ({
     subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -768,7 +768,7 @@ export const emailTemplates = {
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://centrika.rw/dashboard" style="background: linear-gradient(135deg, #3b6dae 0%, #2d5385 100%); color: white; padding: 14px 35px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 14px;">
+            <a href="${viewLink}" style="background: linear-gradient(135deg, #3b6dae 0%, #2d5385 100%); color: white; padding: 14px 35px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 14px;">
               Review in Inbox
             </a>
           </div>
@@ -780,7 +780,7 @@ export const emailTemplates = {
     `,
   }),
 
-  feedbackReplyEmail: (recipientName: string, replierPosition: string, replyContent: string, meta: EmailMetadata) => ({
+  feedbackReplyEmail: (recipientName: string, replierPosition: string, replyContent: string, viewLink: string, meta: EmailMetadata) => ({
     subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -801,7 +801,7 @@ export const emailTemplates = {
           </div>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://centrika.rw/dashboard" style="background: linear-gradient(135deg, #3b6dae 0%, #2d5385 100%); color: white; padding: 14px 35px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 14px;">
+            <a href="${viewLink}" style="background: linear-gradient(135deg, #3b6dae 0%, #2d5385 100%); color: white; padding: 14px 35px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 14px;">
               View Full Conversation
             </a>
           </div>

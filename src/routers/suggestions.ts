@@ -4,6 +4,7 @@ import { protectedProcedure, router } from "../core/trpc";
 import { prisma } from "../db";
 import { TRPCError } from "@trpc/server";
 import { sendEmail, emailTemplates } from "../core/email";
+import { getFrontendUrl } from "../core/env";
 import { Role } from "@prisma/client";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -96,6 +97,9 @@ export const suggestionsRouter = router({
           })),
         });
 
+        const frontendUrl = getFrontendUrl(ctx.req);
+        const viewLink = `${frontendUrl}/connect?messageId=${suggestion.id}`;
+
         const emailPromises = allTargets
           .filter((u) => u.email)
           .map((u) => {
@@ -103,6 +107,7 @@ export const suggestionsRouter = router({
               u.name || "Colleague",
               "Direct Message",
               input.content,
+              viewLink,
               {
                 dept: user?.department?.name || "N/A",
                 pos: user?.position || "Staff",
@@ -279,10 +284,14 @@ export const suggestionsRouter = router({
         });
 
         if (suggestion.user?.email) {
+          const frontendUrl = getFrontendUrl(ctx.req);
+          const viewLink = `${frontendUrl}/connect?messageId=${suggestion.id}`;
+
           const template = emailTemplates.feedbackReplyEmail(
             suggestion.user.name || "Staff",
             replier?.position || "Staff",
             input.content,
+            viewLink,
             {
               dept: replier?.department?.name || "N/A",
               pos: replier?.position || "Staff",

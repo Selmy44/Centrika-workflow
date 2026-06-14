@@ -4,6 +4,7 @@ import { prisma } from "../db";
 import { TRPCError } from "@trpc/server";
 import { parseAdditionalRoles } from "../shared/roles";
 import { sendEmail, emailTemplates } from "../core/email";
+import { getFrontendUrl } from "../core/env";
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "Admin",
@@ -156,6 +157,9 @@ export const announcementsRouter = router({
           include: { department: true }
         });
 
+        const frontendUrl = getFrontendUrl(ctx.req);
+        const viewLink = `${frontendUrl}/?announcementId=${announcement.id}`;
+
         const emailPromises = targetUsers
           .filter((u) => u.email) // Only users with emails
           .map((u) => {
@@ -165,6 +169,7 @@ export const announcementsRouter = router({
               authorRole,
               input.title,
               input.content,
+              viewLink,
               {
                 dept: authorWithDept?.department?.name || "SYSTEM",
                 pos: authorWithDept?.position || "Staff",
@@ -365,6 +370,9 @@ export const announcementsRouter = router({
           })),
         });
 
+        const frontendUrl = getFrontendUrl(ctx.req);
+        const viewLink = `${frontendUrl}/?announcementId=${announcement.id}`;
+
         const emailPromises = targetUsers
           .filter((u) => u.email)
           .map((u) => {
@@ -374,6 +382,7 @@ export const announcementsRouter = router({
               comment.user.position || "Staff",
               announcement.title,
               input.content,
+              viewLink,
               {
                 dept: (comment.user as any).department?.name || "N/A",
                 pos: comment.user.position || "Staff",
