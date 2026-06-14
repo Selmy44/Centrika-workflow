@@ -30,12 +30,16 @@ export function useIdleTimeout(isAuthenticated: boolean, logout: () => void) {
   useEffect(() => {
     if (!isAuthenticated) {
       setShowWarning(false);
+      localStorage.removeItem(STORAGE_KEY);
       return;
     }
 
-    // Set initial activity time on mount if not present
-    if (!localStorage.getItem(STORAGE_KEY)) {
-      localStorage.setItem(STORAGE_KEY, Date.now().toString());
+    // Set initial activity time on mount if not present or stale
+    const lastActivityStr = localStorage.getItem(STORAGE_KEY);
+    const lastActivity = lastActivityStr ? parseInt(lastActivityStr, 10) : 0;
+    const now = Date.now();
+    if (!lastActivityStr || now - lastActivity >= IDLE_LIMIT_MS) {
+      localStorage.setItem(STORAGE_KEY, now.toString());
     }
 
     // Add activity listeners
