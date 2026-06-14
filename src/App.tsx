@@ -44,11 +44,14 @@ import AssetDetailsPage from "./features/assets/AssetDetailsPage";
 import { PersonalInsightsPage } from "@/features/resources/pages/PersonalInsightsPage";
 import OrganizationViewPage from "./features/users/OrganizationViewPage";
 import CentrikaConnectPage from "./features/connect/CentrikaConnectPage";
+import { useIdleTimeout } from "./_core/hooks/useIdleTimeout";
+import { IdleTimeoutDialog } from "./components/IdleTimeoutDialog";
 
 // Re-index trigger
 
 function Router() {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, logout } = useAuth();
+  const { showWarning, secondsLeft, keepWorking } = useIdleTimeout(isAuthenticated, logout);
 
   // Show loading state while checking authentication
   if (loading) {
@@ -76,8 +79,9 @@ function Router() {
 
   // If authenticated, show protected routes
   return (
-    <Switch>
-      <Route path="/login"><Redirect to="/" /></Route>
+    <>
+      <Switch>
+        <Route path="/login"><Redirect to="/" /></Route>
       <Route path="/otp-login"><Redirect to="/" /></Route>
       <Route path="/forgot-password"><Redirect to="/" /></Route>
       <Route path="/reset-password" component={ResetPasswordPage} />
@@ -116,6 +120,12 @@ function Router() {
       {/* Final fallback route */}
       <Route component={NotFoundPage} />
     </Switch>
+    <IdleTimeoutDialog 
+      open={showWarning} 
+      secondsLeft={secondsLeft} 
+      onKeepWorking={keepWorking} 
+    />
+    </>
   );
 }
 
