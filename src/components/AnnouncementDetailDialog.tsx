@@ -32,9 +32,10 @@ const ROLE_COLORS: Record<string, string> = {
 const ROLE_LABELS: Record<string, string> = {
   admin: "Admin",
   hr: "HR",
-  head_of_department: "HOD",
-  ceo_md: "CEO / MD",
-  user: "Staff",
+  head_of_department: "Head of Department",
+  head_of_finance: "Head of Finance",
+  ceo_md: "CEO/MD",
+  user: "Employee",
 };
 
 function timeAgo(date: string | Date) {

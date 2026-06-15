@@ -25,6 +25,7 @@ import {
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { useIsMobile, useIsTablet } from "@/hooks/useMobile";
+import { formatRole } from "@/utils/roleUtils";
 import { LayoutDashboard, LogOut, PanelLeft, FileText, CheckCircle, Settings, Users, Bell, TrendingUp, DollarSign, Search, ChevronDown, Car, Calendar, BarChart3, User, Lock, AlertCircle, Building2, Wallet, Receipt, UserPlus, Package, MessageSquare } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import ThemeToggleIcon from "@/components/ui/ThemeToggleIcon";
@@ -564,7 +565,7 @@ function DashboardLayoutContent({
                   </p>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <p className="text-[10px] font-bold text-[#3b6dae] truncate uppercase tracking-widest leading-none">
-                      {user?.position || "Member"}
+                      {user?.position || formatRole(user?.role)}
                     </p>
                     <span className="text-[10px] text-[#3b6dae]/30">•</span>
                     <p className="text-[10px] font-bold text-[#3b6dae]/60 truncate uppercase tracking-widest leading-none">

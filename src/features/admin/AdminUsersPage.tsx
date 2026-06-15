@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import { formatRole } from "@/utils/roleUtils";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -268,11 +269,12 @@ export default function AdminUsers() {
       admin: { bg: "bg-red-500/20", text: "text-red-400" },
       hr: { bg: "bg-blue-500/20", text: "text-blue-400" },
       head_of_department: { bg: "bg-purple-500/20", text: "text-purple-400" },
+      head_of_finance: { bg: "bg-purple-500/20", text: "text-purple-400" },
       ceo_md: { bg: "bg-amber-500/20", text: "text-amber-400" },
     };
 
     const config = roleConfig[role] || roleConfig.user;
-    const label = role.replace(/_/g, " ").toUpperCase();
+    const label = formatRole(role);
 
     return (
       <Badge className={`${config.bg} ${config.text}`}>
@@ -483,7 +485,7 @@ export default function AdminUsers() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="user">Employee</SelectItem>
-                    <SelectItem value="head_of_department">Department Head</SelectItem>
+                    <SelectItem value="head_of_department">Head of Department</SelectItem>
                     <SelectItem value="hr">HR</SelectItem>
                     <SelectItem value="head_of_finance">Head of Finance</SelectItem>
                     <SelectItem value="ceo_md">CEO/MD</SelectItem>
@@ -927,7 +929,7 @@ export default function AdminUsers() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="user">Employee</SelectItem>
-                  <SelectItem value="head_of_department">Department Head</SelectItem>
+                  <SelectItem value="head_of_department">Head of Department</SelectItem>
                   <SelectItem value="hr">HR</SelectItem>
                   <SelectItem value="head_of_finance">Head of Finance</SelectItem>
                   <SelectItem value="ceo_md">CEO/MD</SelectItem>

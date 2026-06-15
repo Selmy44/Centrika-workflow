@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatRole } from "@/utils/roleUtils";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -65,9 +66,9 @@ export function RequestMessaging({ requestId }: RequestMessagingProps) {
                     <span className="text-[10px] text-slate-400">
                       {formatDateTime(comment.createdAt)}
                     </span>
-                    {comment.user.role !== "user" && (
+                     {comment.user.role !== "user" && (
                       <span className="bg-slate-100 text-slate-500 text-[9px] px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">
-                        {comment.user.role.replace(/_/g, " ")}
+                        {formatRole(comment.user.role)}
                       </span>
                     )}
                   </div>
