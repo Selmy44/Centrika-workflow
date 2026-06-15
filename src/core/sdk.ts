@@ -269,6 +269,10 @@ class SDKServer {
       throw ForbiddenError("User not found");
     }
 
+    if (user.status === "Inactive") {
+      throw ForbiddenError("Account deactivated");
+    }
+
     // Update last signed in using Prisma
     await db.prisma.user.update({
       where: { openId: user.openId },

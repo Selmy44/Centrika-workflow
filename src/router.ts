@@ -1,6 +1,6 @@
 import { COOKIE_NAME } from "./shared/const";
 import { getSessionCookieOptions } from "./core/cookies";
-import { parseAdditionalRoles } from "./shared/roles";
+import { parseAdditionalRoles, formatRole } from "./shared/roles";
 import { publicProcedure, router, protectedProcedure } from "./core/trpc";
 import { requestsRouter } from "./routers/requests";
 import { notificationsRouter } from "./routers/notifications";
@@ -189,6 +189,11 @@ export const appRouter = router({
           throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid email or password" });
         }
 
+        if (user.status === "Inactive") {
+          console.warn(`[Auth] Login blocked: deactivated account for ${normalizedEmail}`);
+          throw new TRPCError({ code: "FORBIDDEN", message: "Your account has been deactivated. Please contact your administrator." });
+        }
+
         if (!user.password) {
           console.warn(`[Auth] Login failed: no password set for user ${user.id} (${normalizedEmail})`);
           throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid email or password" });
@@ -238,6 +243,10 @@ export const appRouter = router({
 
         if (!user) {
           throw new TRPCError({ code: "UNAUTHORIZED", message: "This email address is not registered in our system. Please contact HR to create an account." });
+        }
+
+        if (user.status === "Inactive") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Your account has been deactivated. Please contact your administrator." });
         }
 
         // Ensure user has an openId
@@ -624,6 +633,7 @@ export const appRouter = router({
       try {
         const heads = await prisma.user.findMany({
           where: {
+            status: "Active", // Exclude deactivated users from all pickers
             OR: [
               { role: "head_of_department" },
               { additionalRoles: { contains: "head_of_department" } }
@@ -649,6 +659,7 @@ export const appRouter = router({
     getHRUsers: protectedProcedure.query(async () => {
       return prisma.user.findMany({
         where: {
+          status: "Active", // Exclude deactivated HR users
           OR: [
             { role: "hr" },
             { additionalRoles: { contains: "hr" } }
@@ -707,8 +718,26 @@ export const appRouter = router({
       if (!hasAdminOrHr) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Only admins and HR can view all users" });
       }
+      // Returns ALL users (including Inactive) — used by admin directory page.
+      // For assignment pickers use listAllActive instead.
       return prisma.user.findMany({
         include: { department: true, manager: true } as any
+      });
+    }),
+
+    // Active-only list for pickers (asset assignment, etc.) — excludes Inactive users
+    listAllActive: protectedProcedure.query(async ({ ctx }) => {
+      const additionalRoles = parseAdditionalRoles(ctx.user.additionalRoles);
+      const hasAdminOrHr = ctx.user.role === "admin" || ctx.user.role === "hr" ||
+        additionalRoles.includes("admin") || additionalRoles.includes("hr");
+
+      if (!hasAdminOrHr) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Only admins and HR can view all users" });
+      }
+      return prisma.user.findMany({
+        where: { status: "Active" },
+        include: { department: true } as any,
+        orderBy: { name: "asc" }
       });
     }),
 
@@ -851,7 +880,11 @@ export const appRouter = router({
           throw new TRPCError({ code: "FORBIDDEN", message: "Only admins and HR can update users" });
         }
 
-        await prisma.user.update({
+        const beforeUser = await prisma.user.findUnique({
+          where: { id: input.userId }
+        });
+
+        const updatedUser = await prisma.user.update({
           where: { id: input.userId },
           data: {
             role: input.role,
@@ -869,6 +902,17 @@ export const appRouter = router({
             gender: input.gender,
             profileImage: input.profileImage,
             updatedAt: new Date(),
+          }
+        });
+
+        await prisma.userAuditLog.create({
+          data: {
+            actorId: ctx.user.id,
+            targetUserId: input.userId,
+            action: "edit",
+            reason: "User details updated by Admin/HR",
+            beforeState: JSON.stringify(beforeUser),
+            afterState: JSON.stringify(updatedUser)
           }
         });
 
@@ -926,6 +970,10 @@ export const appRouter = router({
           throw new TRPCError({ code: "BAD_REQUEST", message: "Use the regular password change endpoint" });
         }
 
+        const beforeUser = await prisma.user.findUnique({
+          where: { id: input.userId }
+        });
+
         const hashedPassword = await bcrypt.hash(input.newPassword, 10);
 
         const updatedUser = await prisma.user.update({
@@ -933,42 +981,340 @@ export const appRouter = router({
           data: { password: hashedPassword }
         });
 
+        await prisma.userAuditLog.create({
+          data: {
+            actorId: ctx.user.id,
+            targetUserId: input.userId,
+            action: "reset_password",
+            reason: "Admin/HR reset user password",
+            beforeState: JSON.stringify({ ...beforeUser, password: "[REDACTED]" }),
+            afterState: JSON.stringify({ ...updatedUser, password: "[REDACTED]" })
+          }
+        });
+
         return { success: true, message: `Password reset for ${updatedUser.name}` };
       }),
 
-    deleteUser: protectedProcedure
+    deactivateUser: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        reason: z.string().min(10, "Reason must be at least 10 characters")
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const additionalRoles = parseAdditionalRoles(ctx.user.additionalRoles);
+        const hasAdminOrHr = ctx.user.role === "admin" || ctx.user.role === "hr" ||
+          additionalRoles.includes("admin") || additionalRoles.includes("hr");
+        if (!hasAdminOrHr) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Only administrators and HR can deactivate accounts" });
+        }
+
+        if (ctx.user.id === input.userId) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot deactivate your own account" });
+        }
+
+        const targetUser = await prisma.user.findUnique({ where: { id: input.userId } });
+        if (!targetUser) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+        }
+
+        // 1. Last admin check
+        const targetIsAdmin = targetUser.role === "admin" || parseAdditionalRoles(targetUser.additionalRoles).includes("admin");
+        if (targetIsAdmin) {
+          const activeAdmins = await prisma.user.findMany({
+            where: {
+              status: "Active",
+              OR: [
+                { role: "admin" },
+                { additionalRoles: { contains: "admin" } }
+              ]
+            }
+          });
+          if (activeAdmins.length <= 1) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot deactivate the last remaining administrator" });
+          }
+        }
+
+        // 2. Department HOD check
+        const hodDepartment = await prisma.department.findFirst({
+          where: { hodId: input.userId }
+        });
+        if (hodDepartment) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `Cannot deactivate user. They are the Head of Department for "${hodDepartment.name}". Please assign a new HOD first.`
+          });
+        }
+
+        // 3. Pending approvals check
+        const pendingApprovalsCount = await prisma.requestApproval.count({
+          where: {
+            approverId: input.userId,
+            status: "pending"
+          }
+        });
+        if (pendingApprovalsCount > 0) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `Cannot deactivate user. They have ${pendingApprovalsCount} pending approvals. Please reassign their pending approvals first.`
+          });
+        }
+
+        // 4. Sole role-based approver check (head_of_finance, ceo_md)
+        const targetRoles = [targetUser.role, ...parseAdditionalRoles(targetUser.additionalRoles)];
+        for (const role of targetRoles) {
+          if (["head_of_finance", "ceo_md"].includes(role)) {
+            const activeUsersWithRole = await prisma.user.count({
+              where: {
+                status: "Active",
+                OR: [
+                  { role: role as any },
+                  { additionalRoles: { contains: role } }
+                ]
+              }
+            });
+            if (activeUsersWithRole <= 1) {
+              throw new TRPCError({
+                code: "BAD_REQUEST",
+                message: `Cannot deactivate user. They are the sole active user with the role ${formatRole(role)}. Please assign another user to this role first.`
+              });
+            }
+          }
+        }
+
+        // Update managerId to null for subordinates
+        await prisma.user.updateMany({
+          where: { managerId: input.userId },
+          data: { managerId: null }
+        });
+
+        const updatedUser = await prisma.user.update({
+          where: { id: input.userId },
+          data: {
+            status: "Inactive",
+            deactivatedAt: new Date(),
+            deactivationReason: input.reason,
+            updatedAt: new Date()
+          }
+        });
+
+        await prisma.userAuditLog.create({
+          data: {
+            actorId: ctx.user.id,
+            targetUserId: input.userId,
+            action: "deactivate",
+            reason: input.reason,
+            beforeState: JSON.stringify(targetUser),
+            afterState: JSON.stringify(updatedUser)
+          }
+        });
+
+        return { success: true, message: `User ${targetUser.name} has been deactivated.` };
+      }),
+
+    reactivateUser: protectedProcedure
       .input(z.object({ userId: z.number() }))
       .mutation(async ({ ctx, input }) => {
         const additionalRoles = parseAdditionalRoles(ctx.user.additionalRoles);
         const hasAdminOrHr = ctx.user.role === "admin" || ctx.user.role === "hr" ||
           additionalRoles.includes("admin") || additionalRoles.includes("hr");
-
         if (!hasAdminOrHr) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Only admins and HR can delete users" });
+          throw new TRPCError({ code: "FORBIDDEN", message: "Only administrators and HR can reactivate accounts" });
+        }
+
+        const targetUser = await prisma.user.findUnique({ where: { id: input.userId } });
+        if (!targetUser) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+        }
+
+        const updatedUser = await prisma.user.update({
+          where: { id: input.userId },
+          data: {
+            status: "Active",
+            deactivatedAt: null,
+            deactivationReason: null,
+            updatedAt: new Date()
+          }
+        });
+
+        await prisma.userAuditLog.create({
+          data: {
+            actorId: ctx.user.id,
+            targetUserId: input.userId,
+            action: "reactivate",
+            reason: "User reactivated by administrator",
+            beforeState: JSON.stringify(targetUser),
+            afterState: JSON.stringify(updatedUser)
+          }
+        });
+
+        return { success: true, message: `User ${targetUser.name} has been reactivated.` };
+      }),
+
+    permanentDeleteUser: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        reason: z.string().min(10, "Reason must be at least 10 characters")
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const additionalRoles = parseAdditionalRoles(ctx.user.additionalRoles);
+        const hasAdminOrHr = ctx.user.role === "admin" || ctx.user.role === "hr" ||
+          additionalRoles.includes("admin") || additionalRoles.includes("hr");
+        if (!hasAdminOrHr) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Only administrators and HR can delete users" });
         }
 
         if (ctx.user.id === input.userId) {
           throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot delete your own account" });
         }
 
-        try {
-          await prisma.user.updateMany({
-            where: { managerId: input.userId },
-            data: { managerId: null }
-          });
+        const targetUser = await prisma.user.findUnique({ where: { id: input.userId } });
+        if (!targetUser) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+        }
 
-          const deleted = await prisma.user.delete({
-            where: { id: input.userId }
+        // 1. Last admin check
+        const targetIsAdmin = targetUser.role === "admin" || parseAdditionalRoles(targetUser.additionalRoles).includes("admin");
+        if (targetIsAdmin) {
+          const activeAdmins = await prisma.user.findMany({
+            where: {
+              status: "Active",
+              OR: [
+                { role: "admin" },
+                { additionalRoles: { contains: "admin" } }
+              ]
+            }
           });
+          if (activeAdmins.length <= 1) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot delete the last remaining administrator" });
+          }
+        }
 
-          return { success: true, message: `User ${deleted.name} has been deleted` };
-        } catch (error) {
-          console.error("[deleteUser] Error deleting user:", error);
+        // 2. Strict referential activity check
+        const requestsCount = await prisma.request.count({ where: { userId: input.userId } });
+        const approvalsCount = await prisma.requestApproval.count({ where: { approverId: input.userId } });
+        const announcementsCount = await prisma.announcement.count({ where: { authorId: input.userId } });
+        const commentsCount = await prisma.requestComment.count({ where: { userId: input.userId } });
+        const announcementCommentsCount = await prisma.announcementComment.count({ where: { userId: input.userId } });
+        const suggestionRepliesCount = await prisma.suggestionReply.count({ where: { userId: input.userId } });
+        const suggestionsCount = await prisma.suggestion.count({ where: { userId: input.userId } });
+        const assignedAssetsCount = await prisma.assetAssignment.count({ where: { userId: input.userId } });
+        const assetsAssignedByCount = await prisma.assetAssignment.count({ where: { assignedBy: input.userId } });
+        const employeeDocumentsCount = await prisma.employeeDocument.count({ where: { userId: input.userId } });
+        const verifiedDocumentsCount = await prisma.employeeDocument.count({ where: { verifiedBy: input.userId } });
+        const uploadedAssetDocsCount = await prisma.assetDocument.count({ where: { uploadedBy: input.userId } });
+        const loggedAssetMaintenanceCount = await prisma.assetMaintenance.count({ where: { loggedBy: input.userId } });
+
+        const totalLinked = requestsCount + approvalsCount + announcementsCount + commentsCount +
+          announcementCommentsCount + suggestionRepliesCount + suggestionsCount + assignedAssetsCount +
+          assetsAssignedByCount + employeeDocumentsCount + verifiedDocumentsCount + uploadedAssetDocsCount +
+          loggedAssetMaintenanceCount;
+
+        if (totalLinked > 0) {
           throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Failed to delete user"
+            code: "BAD_REQUEST",
+            message: `User has linked activity (${totalLinked} records found). Hard deletion is blocked to preserve referential and audit integrity. Please use 'Deactivate' or 'Anonymize' instead.`
           });
         }
+
+        // Clear managerId from subordinates before deletion
+        await prisma.user.updateMany({
+          where: { managerId: input.userId },
+          data: { managerId: null }
+        });
+
+        // Write deletion audit log first
+        await prisma.userAuditLog.create({
+          data: {
+            actorId: ctx.user.id,
+            targetUserId: input.userId,
+            action: "delete",
+            reason: input.reason,
+            beforeState: JSON.stringify(targetUser),
+            afterState: null
+          }
+        });
+
+        const deleted = await prisma.user.delete({
+          where: { id: input.userId }
+        });
+
+        return { success: true, message: `User ${deleted.name} has been permanently deleted.` };
+      }),
+
+    anonymizeUser: protectedProcedure
+      .input(z.object({
+        userId: z.number(),
+        reason: z.string().min(10, "Reason must be at least 10 characters")
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const additionalRoles = parseAdditionalRoles(ctx.user.additionalRoles);
+        const hasAdminOrHr = ctx.user.role === "admin" || ctx.user.role === "hr" ||
+          additionalRoles.includes("admin") || additionalRoles.includes("hr");
+        if (!hasAdminOrHr) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Only administrators and HR can anonymize users" });
+        }
+
+        if (ctx.user.id === input.userId) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot anonymize your own account" });
+        }
+
+        const targetUser = await prisma.user.findUnique({ where: { id: input.userId } });
+        if (!targetUser) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+        }
+
+        // Last admin check
+        const targetIsAdmin = targetUser.role === "admin" || parseAdditionalRoles(targetUser.additionalRoles).includes("admin");
+        if (targetIsAdmin) {
+          const activeAdmins = await prisma.user.findMany({
+            where: {
+              status: "Active",
+              OR: [
+                { role: "admin" },
+                { additionalRoles: { contains: "admin" } }
+              ]
+            }
+          });
+          if (activeAdmins.length <= 1) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot anonymize the last remaining administrator" });
+          }
+        }
+
+        // Clear managerId from subordinates
+        await prisma.user.updateMany({
+          where: { managerId: input.userId },
+          data: { managerId: null }
+        });
+
+        const anonymizedName = `Deleted User #${targetUser.id}`;
+        const anonymizedEmail = `deleted-${targetUser.id}@removed.invalid`;
+
+        const updatedUser = await prisma.user.update({
+          where: { id: input.userId },
+          data: {
+            name: anonymizedName,
+            email: anonymizedEmail,
+            phoneNumber: null,
+            profileImage: null,
+            status: "Inactive",
+            deactivatedAt: new Date(),
+            deactivationReason: `Anonymized: ${input.reason}`,
+            updatedAt: new Date()
+          }
+        });
+
+        await prisma.userAuditLog.create({
+          data: {
+            actorId: ctx.user.id,
+            targetUserId: input.userId,
+            action: "anonymize",
+            reason: input.reason,
+            beforeState: JSON.stringify(targetUser),
+            afterState: JSON.stringify(updatedUser)
+          }
+        });
+
+        return { success: true, message: "User PII has been successfully anonymized." };
       }),
   }),
 

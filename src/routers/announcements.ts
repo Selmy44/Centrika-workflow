@@ -123,6 +123,7 @@ export const announcementsRouter = router({
         // Determine which users should receive the notification
         const targetUsers = await prisma.user.findMany({
           where: {
+            status: "Active", // Exclude deactivated users from notifications
             id: { not: ctx.user.id }, // Don't notify the author
             ...(targetDepartmentId
               ? { departmentId: targetDepartmentId } // Department-specific

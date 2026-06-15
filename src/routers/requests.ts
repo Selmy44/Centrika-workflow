@@ -791,6 +791,7 @@ export const requestsRouter = router({
 
           const observers = await prisma.user.findMany({
             where: {
+              status: "Active", // Only notify active users
               OR: rolesToNotify.flatMap(role => [
                 { role: role as any },
                 { additionalRoles: { contains: role } }
@@ -843,9 +844,12 @@ export const requestsRouter = router({
 
     const routeToNext = async (nextLevel: string, nextRole: string) => {
       const nextUser = await prisma.user.findFirst({
-        where: { OR: [{ role: nextRole as any }, { additionalRoles: { contains: nextRole } }] }
+        where: {
+          status: "Active", // Only route to active (non-deactivated) users
+          OR: [{ role: nextRole as any }, { additionalRoles: { contains: nextRole } }]
+        }
       });
-      if (!nextUser) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `No ${nextRole} found` });
+      if (!nextUser) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `No active ${nextRole} found` });
 
       await prisma.requestApproval.create({
         data: { requestId: input.requestId, approverId: nextUser.id, approvalLevel: nextLevel as any, status: "pending" }
@@ -1061,6 +1065,7 @@ export const requestsRouter = router({
           // Notify Observers (HR/CEO)
           const observers = await prisma.user.findMany({
             where: {
+              status: "Active", // Only notify active users
               OR: [
                 { role: "hr" }, { role: "ceo_md" },
                 { additionalRoles: { contains: "hr" } }, { additionalRoles: { contains: "ceo_md" } }

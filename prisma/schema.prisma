@@ -146,6 +146,11 @@ model User {
   contractType      String?  @map("contract_type") @db.VarChar(50)
   contractStart     String?  @map("contract_start") @db.VarChar(10)
   contractEnd       String?  @map("contract_end") @db.VarChar(10)
+  deactivatedAt      DateTime? @map("deactivated_at")
+  deactivationReason String?   @map("deactivation_reason") @db.Text
+
+  auditLogsAsActor  UserAuditLog[] @relation("AuditActor")
+  auditLogsAsTarget UserAuditLog[] @relation("AuditTarget")
 
   department        Department? @relation("DepartmentUsers", fields: [departmentId], references: [id])
   hodOfDepartment   Department? @relation("DepartmentHOD")
@@ -880,3 +885,20 @@ model SuggestionReplyLike {
   @@unique([replyId, userId])
   @@map("suggestion_reply_likes")
 }
+
+model UserAuditLog {
+  id           Int      @id @default(autoincrement())
+  actorId      Int      @map("actor_id")
+  targetUserId Int?     @map("target_user_id")
+  action       String   @db.VarChar(50) // edit, reset_password, deactivate, reactivate, delete, anonymize
+  reason       String?  @db.Text
+  beforeState  String?  @map("before_state") @db.Text // JSON snapshot
+  afterState   String?  @map("after_state") @db.Text  // JSON snapshot
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  actor        User     @relation("AuditActor", fields: [actorId], references: [id], onDelete: Cascade)
+  target       User?    @relation("AuditTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+
+  @@map("user_audit_logs")
+}
+
