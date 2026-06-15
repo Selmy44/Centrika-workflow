@@ -31,7 +31,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Loader2, Edit2, Trash2, Plus, Mail, User, RotateCw, X, MoreHorizontal, Key, Phone } from "lucide-react";
+import { Loader2, Edit2, Trash2, Plus, Mail, User, RotateCw, X, MoreHorizontal, Key, Phone, ShieldOff, UserCheck, UserX } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { InviteUserModal } from "@/components/InviteUserModal";
@@ -43,10 +43,28 @@ import { FileText, CheckCircle2, XCircle, Clock, ExternalLink } from "lucide-rea
 export default function AdminUsers() {
   const { isAuthenticated, user, hasRole } = useAuth();
   const canManageUsers = hasRole?.("admin") || hasRole?.("hr") || user?.role === "admin" || user?.role === "hr";
+
+  const checkIsAdmin = (u: any) => {
+    if (!u) return false;
+    if (u.role === "admin") return true;
+    if (u.additionalRoles) {
+      try {
+        const parsed = typeof u.additionalRoles === 'string' && u.additionalRoles.trim().startsWith('[') 
+          ? JSON.parse(u.additionalRoles) 
+          : String(u.additionalRoles).split(',').map((r: string) => r.trim());
+        if (Array.isArray(parsed) && parsed.includes("admin")) return true;
+      } catch (e) {}
+    }
+    return false;
+  };
   const [editingUser, setEditingUser] = useState<any>(null);
   const [showDialog, setShowDialog] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showDeactivateDialog, setShowDeactivateDialog] = useState(false);
+  const [showReactivateDialog, setShowReactivateDialog] = useState(false);
+  const [showPermanentDeleteDialog, setShowPermanentDeleteDialog] = useState(false);
+  const [showAnonymizeDialog, setShowAnonymizeDialog] = useState(false);
+  const [lifecycleReason, setLifecycleReason] = useState("");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [role, setRole] = useState("");
@@ -116,15 +134,54 @@ export default function AdminUsers() {
     },
   });
 
-  const deleteUserMutation = (trpc as any).users.deleteUser.useMutation({
-    onSuccess: () => {
-      toast.success("User deleted successfully!");
-      setShowDeleteDialog(false);
+  const deactivateUserMutation = (trpc as any).users.deactivateUser.useMutation({
+    onSuccess: (data: any) => {
+      toast.success(data.message || "User deactivated successfully!");
+      setShowDeactivateDialog(false);
+      setLifecycleReason("");
+      setEditingUser(null);
+      refetch();
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to deactivate user");
+    },
+  });
+
+  const reactivateUserMutation = (trpc as any).users.reactivateUser.useMutation({
+    onSuccess: (data: any) => {
+      toast.success(data.message || "User reactivated successfully!");
+      setShowReactivateDialog(false);
+      setEditingUser(null);
+      refetch();
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to reactivate user");
+    },
+  });
+
+  const permanentDeleteUserMutation = (trpc as any).users.permanentDeleteUser.useMutation({
+    onSuccess: (data: any) => {
+      toast.success(data.message || "User permanently deleted!");
+      setShowPermanentDeleteDialog(false);
+      setLifecycleReason("");
       setEditingUser(null);
       refetch();
     },
     onError: (error: any) => {
       toast.error(error.message || "Failed to delete user");
+    },
+  });
+
+  const anonymizeUserMutation = (trpc as any).users.anonymizeUser.useMutation({
+    onSuccess: (data: any) => {
+      toast.success(data.message || "User PII has been anonymized.");
+      setShowAnonymizeDialog(false);
+      setLifecycleReason("");
+      setEditingUser(null);
+      refetch();
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to anonymize user");
     },
   });
 
@@ -376,6 +433,11 @@ export default function AdminUsers() {
                               </AvatarFallback>
                             </Avatar>
                             <span className="truncate max-w-[150px]" title={userData.name}>{userData.name}</span>
+                            {userData.status === "Inactive" && (
+                              <Badge className="bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 text-[10px] py-0 px-2 rounded-full font-medium shrink-0 shadow-sm ml-2">
+                                Inactive
+                              </Badge>
+                            )}
                           </div>
                         </td>
                         <td className="py-3 px-4 text-muted-foreground">{userData.email}</td>
@@ -390,7 +452,7 @@ export default function AdminUsers() {
                                 <span className="sr-only">Open menu</span>
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48 rounded-xl p-2 shadow-xl border-border/50 backdrop-blur-sm">
+                            <DropdownMenuContent align="end" className="w-52 rounded-xl p-2 shadow-xl border-border/50 backdrop-blur-sm">
                               <DropdownMenuLabel className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-2 py-1.5">
                                 User Actions
                               </DropdownMenuLabel>
@@ -412,17 +474,60 @@ export default function AdminUsers() {
                                 <Key className="h-4 w-4" />
                                 <span className="font-medium text-xs">Reset Password</span>
                               </DropdownMenuItem>
-                              <DropdownMenuSeparator className="bg-border/50" />
-                              <DropdownMenuItem 
-                                onClick={() => {
-                                  setEditingUser(userData);
-                                  setShowDeleteDialog(true);
-                                }}
-                                className="flex items-center gap-2 py-2.5 px-2 rounded-lg cursor-pointer text-red-500 hover:bg-red-500/10 transition-colors"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                <span className="font-medium text-xs">Delete User</span>
-                              </DropdownMenuItem>
+                              {canManageUsers && userData.id !== user?.id && (
+                                <>
+                                  <DropdownMenuSeparator className="bg-border/50" />
+                                  {userData.status !== "Inactive" ? (
+                                    <DropdownMenuItem 
+                                      onClick={() => {
+                                        setEditingUser(userData);
+                                        setLifecycleReason("");
+                                        setShowDeactivateDialog(true);
+                                      }}
+                                      className="flex items-center gap-2 py-2.5 px-2 rounded-lg cursor-pointer text-orange-500 hover:bg-orange-500/10 transition-colors"
+                                    >
+                                      <ShieldOff className="h-4 w-4" />
+                                      <span className="font-medium text-xs">Deactivate User</span>
+                                    </DropdownMenuItem>
+                                  ) : (
+                                    <>
+                                      <DropdownMenuItem 
+                                        onClick={() => {
+                                          setEditingUser(userData);
+                                          setShowReactivateDialog(true);
+                                        }}
+                                        className="flex items-center gap-2 py-2.5 px-2 rounded-lg cursor-pointer text-emerald-500 hover:bg-emerald-500/10 transition-colors"
+                                      >
+                                        <UserCheck className="h-4 w-4" />
+                                        <span className="font-medium text-xs">Reactivate User</span>
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem 
+                                        onClick={() => {
+                                          setEditingUser(userData);
+                                          setLifecycleReason("");
+                                          setShowAnonymizeDialog(true);
+                                        }}
+                                        className="flex items-center gap-2 py-2.5 px-2 rounded-lg cursor-pointer text-gray-500 hover:bg-gray-500/10 transition-colors"
+                                      >
+                                        <UserX className="h-4 w-4" />
+                                        <span className="font-medium text-xs">Anonymize (Privacy)</span>
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator className="bg-border/50" />
+                                      <DropdownMenuItem 
+                                        onClick={() => {
+                                          setEditingUser(userData);
+                                          setLifecycleReason("");
+                                          setShowPermanentDeleteDialog(true);
+                                        }}
+                                        className="flex items-center gap-2 py-2.5 px-2 rounded-lg cursor-pointer text-red-500 hover:bg-red-500/10 transition-colors font-semibold"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                        <span className="text-xs">Delete Permanently</span>
+                                      </DropdownMenuItem>
+                                    </>
+                                  )}
+                                </>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </td>
@@ -749,36 +854,222 @@ export default function AdminUsers() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete User Dialog */}
-      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent className="max-w-112">
+      {/* Deactivate User Dialog */}
+      <Dialog open={showDeactivateDialog} onOpenChange={setShowDeactivateDialog}>
+        <DialogContent className="max-w-112 border-border/80 bg-card/95 backdrop-blur-md">
           <DialogHeader>
-            <DialogTitle>Delete User</DialogTitle>
+            <DialogTitle className="text-orange-500 flex items-center gap-2">
+              <ShieldOff className="h-5 w-5" />
+              Deactivate User
+            </DialogTitle>
             <DialogDescription>
-              This action cannot be undone. Are you sure you want to delete {editingUser?.name}?
+              Disable system access for {editingUser?.name}.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-4">
-            <p className="text-sm text-red-700 dark:text-red-300">
-              <strong>Warning:</strong> Deleting this user will remove their account from the system permanently.
-            </p>
+          <div className="space-y-4 my-2">
+            <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-4 text-xs text-orange-400 space-y-2">
+              <p className="font-semibold">Consequences of Deactivation:</p>
+              <ul className="list-disc list-inside space-y-1">
+                <li>Immediate revocation of active sessions and tokens</li>
+                <li>Excluded from future task assignments and backup pickers</li>
+                <li>Subordinate manager assignments will be unlinked</li>
+                <li>All historical records and approvals remain intact</li>
+              </ul>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="deactivateReason" className="text-xs font-semibold text-muted-foreground">
+                Reason for Deactivation <span className="text-red-500">*</span>
+              </Label>
+              <Textarea
+                id="deactivateReason"
+                placeholder="Enter reason (min 10 characters)..."
+                value={lifecycleReason}
+                onChange={(e) => setLifecycleReason(e.target.value)}
+                className="h-20 resize-none bg-muted/50 border-border"
+              />
+              <p className="text-[10px] text-muted-foreground text-right">
+                {lifecycleReason.trim().length}/10 characters minimum
+              </p>
+            </div>
           </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setShowDeleteDialog(false)}>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button type="button" variant="outline" onClick={() => setShowDeactivateDialog(false)}>
               Cancel
             </Button>
             <Button
               onClick={async () => {
-                await deleteUserMutation.mutateAsync({
+                if (lifecycleReason.trim().length < 10) {
+                  toast.error("Reason must be at least 10 characters");
+                  return;
+                }
+                await deactivateUserMutation.mutateAsync({
+                  userId: editingUser.id,
+                  reason: lifecycleReason,
+                });
+              }}
+              disabled={deactivateUserMutation.isPending || lifecycleReason.trim().length < 10}
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              {deactivateUserMutation.isPending ? "Deactivating..." : "Deactivate"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reactivate User Dialog */}
+      <Dialog open={showReactivateDialog} onOpenChange={setShowReactivateDialog}>
+        <DialogContent className="max-w-112 border-border/80 bg-card/95 backdrop-blur-md">
+          <DialogHeader>
+            <DialogTitle className="text-emerald-500 flex items-center gap-2">
+              <UserCheck className="h-5 w-5" />
+              Reactivate User
+            </DialogTitle>
+            <DialogDescription>
+              Restore system access for {editingUser?.name}.
+            </DialogDescription>
+          </DialogHeader>
+
+          <p className="text-sm text-muted-foreground my-2">
+            Are you sure you want to reactivate <strong>{editingUser?.name}</strong>? They will be restored as an active Employee, allowing them to log back in and participate in workflows.
+          </p>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setShowReactivateDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={async () => {
+                await reactivateUserMutation.mutateAsync({
                   userId: editingUser.id,
                 });
               }}
-              disabled={deleteUserMutation.isPending}
-              className="bg-red-600 hover:bg-red-700"
+              disabled={reactivateUserMutation.isPending}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
             >
-              {deleteUserMutation.isPending ? "Deleting..." : "Delete User"}
+              {reactivateUserMutation.isPending ? "Reactivating..." : "Reactivate"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Permanent Delete Dialog */}
+      <Dialog open={showPermanentDeleteDialog} onOpenChange={setShowPermanentDeleteDialog}>
+        <DialogContent className="max-w-112 border-border/80 bg-card/95 backdrop-blur-md">
+          <DialogHeader>
+            <DialogTitle className="text-red-500 flex items-center gap-2">
+              <Trash2 className="h-5 w-5" />
+              Permanent Delete
+            </DialogTitle>
+            <DialogDescription>
+              Permanently delete user record for {editingUser?.name}.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 my-2">
+            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 text-xs text-red-400 space-y-1">
+              <p className="font-semibold">Strict System Guardrails:</p>
+              <p>This action is ONLY allowed if the user has zero linked activities (no approvals, requests, suggestions, comments, or assets). If database references are found, the system will block deletion.</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="deleteReason" className="text-xs font-semibold text-muted-foreground">
+                Reason for Permanent Deletion <span className="text-red-500">*</span>
+              </Label>
+              <Textarea
+                id="deleteReason"
+                placeholder="Enter justification (min 10 characters)..."
+                value={lifecycleReason}
+                onChange={(e) => setLifecycleReason(e.target.value)}
+                className="h-20 resize-none bg-muted/50 border-border"
+              />
+              <p className="text-[10px] text-muted-foreground text-right">
+                {lifecycleReason.trim().length}/10 characters minimum
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button type="button" variant="outline" onClick={() => setShowPermanentDeleteDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={async () => {
+                if (lifecycleReason.trim().length < 10) {
+                  toast.error("Reason must be at least 10 characters");
+                  return;
+                }
+                await permanentDeleteUserMutation.mutateAsync({
+                  userId: editingUser.id,
+                  reason: lifecycleReason,
+                });
+              }}
+              disabled={permanentDeleteUserMutation.isPending || lifecycleReason.trim().length < 10}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {permanentDeleteUserMutation.isPending ? "Deleting..." : "Permanently Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Anonymize Dialog */}
+      <Dialog open={showAnonymizeDialog} onOpenChange={setShowAnonymizeDialog}>
+        <DialogContent className="max-w-112 border-border/80 bg-card/95 backdrop-blur-md">
+          <DialogHeader>
+            <DialogTitle className="text-muted-foreground flex items-center gap-2">
+              <UserX className="h-5 w-5 text-gray-500" />
+              Anonymize User (Privacy Request)
+            </DialogTitle>
+            <DialogDescription>
+              Scrub PII fields for {editingUser?.name}.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 my-2">
+            <div className="bg-gray-500/10 border border-gray-500/20 rounded-xl p-4 text-xs text-muted-foreground space-y-1">
+              <p className="font-semibold text-foreground">Compliance Erasure:</p>
+              <p>Replaces name, email, phone number, and avatar with anonymized tokens. The record is soft-deleted, but all historical workflow attribution and database integrity remain completely intact.</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="anonymizeReason" className="text-xs font-semibold text-muted-foreground">
+                Reason / Authority for Erasure <span className="text-red-500">*</span>
+              </Label>
+              <Textarea
+                id="anonymizeReason"
+                placeholder="Enter privacy compliance reason (min 10 characters)..."
+                value={lifecycleReason}
+                onChange={(e) => setLifecycleReason(e.target.value)}
+                className="h-20 resize-none bg-muted/50 border-border"
+              />
+              <p className="text-[10px] text-muted-foreground text-right">
+                {lifecycleReason.trim().length}/10 characters minimum
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button type="button" variant="outline" onClick={() => setShowAnonymizeDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={async () => {
+                if (lifecycleReason.trim().length < 10) {
+                  toast.error("Reason must be at least 10 characters");
+                  return;
+                }
+                await anonymizeUserMutation.mutateAsync({
+                  userId: editingUser.id,
+                  reason: lifecycleReason,
+                });
+              }}
+              disabled={anonymizeUserMutation.isPending || lifecycleReason.trim().length < 10}
+              className="bg-gray-600 hover:bg-gray-700 text-white border-none"
+            >
+              {anonymizeUserMutation.isPending ? "Anonymizing..." : "Anonymize User"}
             </Button>
           </DialogFooter>
         </DialogContent>

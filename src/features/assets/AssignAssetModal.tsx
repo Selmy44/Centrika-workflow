@@ -47,7 +47,7 @@ interface AssignAssetModalProps {
 }
 
 const AssignAssetModal = ({ open, onOpenChange, asset, onSuccess }: AssignAssetModalProps) => {
-  const { data: users = [], isLoading: usersLoading } = trpc.users.listAll.useQuery(undefined, {
+  const { data: users = [], isLoading: usersLoading } = trpc.users.listAllActive.useQuery(undefined, {
     enabled: open
   });
 
