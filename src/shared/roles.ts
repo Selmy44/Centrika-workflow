@@ -35,3 +35,18 @@ export function parseAdditionalRoles(roles: string | null | undefined): string[]
     .map(r => r.trim())
     .filter(Boolean);
 }
+
+export const ROLE_LABELS: Record<string, string> = {
+  user: "Employee",
+  admin: "Admin",
+  hr: "HR",
+  head_of_department: "Head of Department",
+  head_of_finance: "Head of Finance",
+  ceo_md: "CEO/MD",
+};
+
+export function formatRole(role: string | null | undefined): string {
+  if (!role) return "";
+  return ROLE_LABELS[role.toLowerCase()] || role.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+}
+

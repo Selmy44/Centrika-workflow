@@ -8,11 +8,12 @@ import { getFrontendUrl } from "../core/env";
 import { Role } from "@prisma/client";
 
 const ROLE_LABELS: Record<string, string> = {
+  user: "Employee",
   admin: "Admin",
-  hr: "Human Resources",
+  hr: "HR",
   head_of_department: "Head of Department",
   head_of_finance: "Head of Finance",
-  ceo_md: "CEO / Managing Director",
+  ceo_md: "CEO/MD",
 };
 
 export const suggestionsRouter = router({

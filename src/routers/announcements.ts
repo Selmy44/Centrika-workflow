@@ -7,10 +7,12 @@ import { sendEmail, emailTemplates } from "../core/email";
 import { getFrontendUrl } from "../core/env";
 
 const ROLE_LABELS: Record<string, string> = {
+  user: "Employee",
   admin: "Admin",
   hr: "HR",
   head_of_department: "Head of Department",
-  ceo_md: "CEO / Managing Director",
+  head_of_finance: "Head of Finance",
+  ceo_md: "CEO/MD",
 };
 
 export const announcementsRouter = router({

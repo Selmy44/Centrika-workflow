@@ -1,5 +1,6 @@
 import { protectedProcedure, router } from "../core/trpc";
 import { getFrontendUrl } from "../core/env";
+import { formatRole } from "../shared/roles";
 import { prisma } from "../db";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
@@ -89,10 +90,7 @@ export const invitationsRouter = router({
         const inviteLink = `${frontendUrl}/accept-invite/${token}`;
 
         // Convert role to display format
-        const roleDisplay = input.role === "head_of_department" ? "Department Head" :
-          input.role === "head_of_finance" ? "Finance" :
-            input.role === "ceo_md" ? "CEO/MD" :
-              input.role.charAt(0).toUpperCase() + input.role.slice(1);
+        const roleDisplay = formatRole(input.role);
 
         const emailData = emailTemplates.userInvitationEmail(
           input.name,
@@ -201,10 +199,7 @@ export const invitationsRouter = router({
         const inviteLink = `${frontendUrl}/accept-invite/${inv.token}`;
 
         // Convert role to display format
-        const roleDisplay = inv.role === "head_of_department" ? "Department Head" :
-          inv.role === "head_of_finance" ? "Finance" :
-            inv.role === "ceo_md" ? "CEO/MD" :
-              inv.role.charAt(0).toUpperCase() + inv.role.slice(1);
+        const roleDisplay = formatRole(inv.role);
 
         const emailData = emailTemplates.userInvitationEmail(
           inv.name || "User",
