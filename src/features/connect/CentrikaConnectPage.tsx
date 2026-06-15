@@ -36,10 +36,11 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
 
 const ROLE_LABELS: Record<string, string> = {
+  user: "Employee",
   admin: "Admin",
   hr: "HR",
-  head_of_department: "HOD",
-  head_of_finance: "Finance",
+  head_of_department: "Head of Department",
+  head_of_finance: "Head of Finance",
   ceo_md: "CEO/MD",
 };
 
