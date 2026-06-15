@@ -559,16 +559,28 @@ function DashboardLayoutContent({
                     {user?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || "-"}
                   </AvatarFallback>
                 </Avatar>
-                <div className="hidden lg:flex flex-col">
-                  <p className="text-xs font-black text-slate-900 dark:text-slate-100 truncate leading-tight w-40">
-                    {user?.name || "-"}
-                  </p>
+                 <div className="hidden lg:flex flex-col">
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-xs font-black text-slate-900 dark:text-slate-100 truncate leading-tight max-w-[140px]">
+                      {user?.name || "-"}
+                    </p>
+                    <span className={`text-[7px] font-black px-1.5 py-0.5 rounded-xs uppercase tracking-wider shrink-0 ${
+                      user?.role === 'admin' ? 'bg-red-500/10 text-red-500 border border-red-500/20 dark:bg-red-500/20 dark:text-red-400' :
+                      user?.role === 'hr' ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20 dark:bg-blue-500/20 dark:text-blue-400' :
+                      user?.role === 'head_of_department' ? 'bg-purple-500/10 text-purple-500 border border-purple-500/20 dark:bg-purple-500/20 dark:text-purple-400' :
+                      user?.role === 'head_of_finance' ? 'bg-purple-500/10 text-purple-500 border border-purple-500/20 dark:bg-purple-500/20 dark:text-purple-400' :
+                      user?.role === 'ceo_md' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20 dark:bg-amber-500/20 dark:text-amber-400' :
+                      'bg-gray-500/10 text-gray-500 border border-gray-500/20 dark:bg-gray-500/20 dark:text-gray-400'
+                    }`}>
+                      {formatRole(user?.role)}
+                    </span>
+                  </div>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <p className="text-[10px] font-bold text-[#3b6dae] truncate uppercase tracking-widest leading-none">
-                      {user?.position || formatRole(user?.role)}
+                    <p className="text-[10px] font-bold text-[#3b6dae] truncate uppercase tracking-widest leading-none max-w-[120px]">
+                      {user?.position || "Member"}
                     </p>
                     <span className="text-[10px] text-[#3b6dae]/30">•</span>
-                    <p className="text-[10px] font-bold text-[#3b6dae]/60 truncate uppercase tracking-widest leading-none">
+                    <p className="text-[10px] font-bold text-[#3b6dae]/60 truncate uppercase tracking-widest leading-none max-w-[120px]">
                       {typeof user?.department === 'object' ? (user?.department?.name || "Corporate") : (user?.department || "Corporate")}
                     </p>
                   </div>
