@@ -789,6 +789,23 @@ export const appRouter = router({
           data: { staffId: generatedStaffId }
         });
 
+        // Send welcome email with temporary password to the new user
+        try {
+          const welcomeEmail = emailTemplates.welcomeEmail(input.name, input.email, {
+            dept: "SYSTEM",
+            pos: "USER",
+            topic: "WELCOME",
+            action: "ACCOUNT-CREATED",
+            level: "NORMAL",
+            appUrl: getFrontendUrl(ctx.req),
+            recipientEmail: input.email,
+          }, tempPassword);
+          await sendEmail(input.email, welcomeEmail.subject, welcomeEmail.html);
+        } catch (emailError) {
+          console.error("[CreateUser] Failed to send welcome email:", emailError);
+          // Don't fail user creation if email fails — admin still gets the temp password in the response
+        }
+
         return {
           success: true,
           message: `User created! Temporary password: ${tempPassword}`,
