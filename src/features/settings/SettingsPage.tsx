@@ -81,6 +81,11 @@ export default function Settings() {
         phoneNumber: editPhoneNumber,
       });
       await utils.auth.me.invalidate();
+      utils.employees.list?.invalidate?.();
+      utils.employees.getDetail?.invalidate?.();
+      utils.users.listAll?.invalidate?.();
+      utils.users.listHeads?.invalidate?.();
+      utils.users.listAllActive?.invalidate?.();
       setIsEditingProfile(false);
       toast.success("Profile updated successfully!");
     } catch (error: any) {

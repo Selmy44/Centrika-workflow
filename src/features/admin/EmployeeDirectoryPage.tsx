@@ -252,7 +252,6 @@ export default function EmployeeDirectory() {
                 <PreviewItem icon={<Calendar className="h-4 w-4 text-[#3b6dae]" />} label="Joined Date" value={employeeDetail.dateOfEmployment || "N/A"} />
                 <PreviewItem icon={<Cake className="h-4 w-4 text-pink-400" />} label="Date of Birth" value={employeeDetail.dateOfBirth || "Not provided"} />
                 <PreviewItem icon={<Briefcase className="h-4 w-4 text-amber-500" />} label="Contract Type" value={employeeDetail.contractType || "Full-time"} />
-                <PreviewItem icon={<Calendar className="h-4 w-4 text-[#3b6dae]" />} label="Contract Duration" value={`${employeeDetail.contractStart || "N/A"} to ${employeeDetail.contractEnd || "Present"}`} />
               </div>
 
               {employeeDetail.jobDescription && (

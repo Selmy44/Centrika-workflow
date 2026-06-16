@@ -96,10 +96,6 @@ const EmployeeProfilePage = () => {
     return <Badge className={cls}>{status}</Badge>;
   };
 
-  const employmentWindow = employee.contractStart || employee.contractEnd
-    ? `${employee.contractStart || "Start date pending"} to ${employee.contractEnd || "Open-ended"}`
-    : "Contract dates not captured";
-
   return (
     <DashboardLayout>
       <div className="space-y-8 p-4 lg:p-8 animate-in fade-in duration-500">
@@ -294,10 +290,6 @@ const EmployeeProfilePage = () => {
                         <InfoItem label="Role" value={employee.role} />
                         <InfoItem label="Employment Date" value={employee.dateOfEmployment || "N/A"} />
                         <InfoItem label="Contract Type" value={employee.contractType || "Full-Time"} />
-                      </div>
-                      <div className="rounded-2xl border border-border/40 bg-slate-50/80 p-4 dark:bg-slate-950/30">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Contract Window</p>
-                        <p className="mt-2 text-sm font-bold text-slate-800 dark:text-white">{employmentWindow}</p>
                       </div>
                       <div className="rounded-2xl border border-border/40 bg-slate-50/80 p-4 dark:bg-slate-950/30">
                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Job Description</p>

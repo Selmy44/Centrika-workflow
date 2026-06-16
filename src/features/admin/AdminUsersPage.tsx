@@ -31,7 +31,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Loader2, Edit2, Trash2, Plus, Mail, User, RotateCw, X, MoreHorizontal, Key, Phone, ShieldOff, UserCheck, UserX } from "lucide-react";
+import { Loader2, Edit2, Trash2, Plus, Mail, User, RotateCw, X, MoreHorizontal, Key, Phone, ShieldOff, UserCheck, UserX, Check, ChevronsUpDown } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { InviteUserModal } from "@/components/InviteUserModal";
@@ -39,6 +39,131 @@ import SingleDatePicker from "@/components/SingleDatePicker";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, CheckCircle2, XCircle, Clock, ExternalLink } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
+interface ManagerSelectProps {
+  value: string;
+  onChange: (value: string) => void;
+  users: any[];
+  excludeUserId?: number;
+}
+
+function ManagerSelect({ value, onChange, users, excludeUserId }: ManagerSelectProps) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const isCircular = (candidateId: number, currentUserId: number, allUsers: any[]): boolean => {
+    if (candidateId === currentUserId) return true;
+    let current = allUsers.find(u => u.id === candidateId);
+    const visited = new Set<number>([currentUserId]);
+    while (current) {
+      if (visited.has(current.id)) return true;
+      visited.add(current.id);
+      if (!current.managerId) break;
+      current = allUsers.find(u => u.id === current.managerId);
+    }
+    return false;
+  };
+
+  const filteredOptions = users.filter(u => {
+    if (excludeUserId && u.id === excludeUserId) return false;
+    if (excludeUserId && isCircular(u.id, excludeUserId, users)) return false;
+    if (u.status === "Inactive") return false; // Exclude deactivated users from manager selector
+    
+    const term = search.toLowerCase();
+    return (
+      u.name?.toLowerCase().includes(term) ||
+      u.email?.toLowerCase().includes(term) ||
+      u.position?.toLowerCase().includes(term)
+    );
+  });
+
+  const selectedUser = users.find(u => String(u.id) === value);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between font-normal text-xs h-10 border-slate-200 dark:border-slate-800"
+        >
+          {selectedUser ? (
+            <span className="truncate">{selectedUser.name} ({selectedUser.position || "Staff"})</span>
+          ) : (
+            <span className="text-muted-foreground">Select Manager</span>
+          )}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[320px] p-0" align="start">
+        <Command>
+          <CommandInput
+            placeholder="Search manager by name or position..."
+            value={search}
+            onValueChange={setSearch}
+            className="h-9"
+          />
+          <CommandList>
+            <CommandEmpty>No manager found.</CommandEmpty>
+            <CommandGroup>
+              {value && (
+                <CommandItem
+                  onSelect={() => {
+                    onChange("");
+                    setOpen(false);
+                    setSearch("");
+                  }}
+                  className="text-red-500 font-medium cursor-pointer"
+                >
+                  <X className="mr-2 h-4 w-4" />
+                  Clear Manager
+                </CommandItem>
+              )}
+              {filteredOptions.map((u) => (
+                <CommandItem
+                  key={u.id}
+                  value={`${u.name} ${u.position || ""}`}
+                  onSelect={() => {
+                    onChange(String(u.id));
+                    setOpen(false);
+                    setSearch("");
+                  }}
+                  className="cursor-pointer"
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      String(u.id) === value ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-xs text-slate-800 dark:text-slate-100">{u.name}</span>
+                    <span className="text-[10px] text-muted-foreground">{u.position || "Staff"}</span>
+                  </div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 export default function AdminUsers() {
   const { isAuthenticated, user, hasRole } = useAuth();
@@ -82,23 +207,35 @@ export default function AdminUsers() {
   const [createDateOfBirth, setCreateDateOfBirth] = useState("");
   const [createJobDescription, setCreateJobDescription] = useState("");
   const [createContractType, setCreateContractType] = useState("");
-  const [createContractStart, setCreateContractStart] = useState("");
-  const [createContractEnd, setCreateContractEnd] = useState("");
+
   const [createGender, setCreateGender] = useState("");
   
   const [editDateOfBirth, setEditDateOfBirth] = useState("");
   const [editJobDescription, setEditJobDescription] = useState("");
   const [editContractType, setEditContractType] = useState("");
-  const [editContractStart, setEditContractStart] = useState("");
-  const [editContractEnd, setEditContractEnd] = useState("");
   const [editPosition, setEditPosition] = useState("");
   const [editGender, setEditGender] = useState("");
   const [profileImage, setProfileImage] = useState("");
   const [editProfileImage, setEditProfileImage] = useState("");
   const [createPhoneNumber, setCreatePhoneNumber] = useState("");
   const [editPhoneNumber, setEditPhoneNumber] = useState("");
+  const [editName, setEditName] = useState("");
+  const [editEmploymentDate, setEditEmploymentDate] = useState("");
+  const [createManagerId, setCreateManagerId] = useState("");
 
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  const utils = (trpc as any).useUtils();
+  
+  const invalidateAllUserCaches = () => {
+    utils.users.listAll.invalidate();
+    utils.employees.list.invalidate();
+    utils.employees.getDetail.invalidate();
+    utils.users.listHeads.invalidate();
+    utils.users.listAllActive?.invalidate?.();
+    utils.users.listStaffForBackup?.invalidate?.();
+    utils.users.getHRUsers?.invalidate?.();
+  };
 
   const { data: users, isLoading, refetch } = (trpc as any).users.listAll.useQuery(undefined, {
     enabled: isAuthenticated && canManageUsers,
@@ -115,7 +252,8 @@ export default function AdminUsers() {
       toast.success("User updated successfully!");
       setShowDialog(false);
       setEditingUser(null);
-      refetch();
+      invalidateAllUserCaches();
+      utils.employees.getDepartments?.invalidate?.();
     },
     onError: (error: any) => {
       toast.error(error.message || "Failed to update user");
@@ -140,7 +278,7 @@ export default function AdminUsers() {
       setShowDeactivateDialog(false);
       setLifecycleReason("");
       setEditingUser(null);
-      refetch();
+      invalidateAllUserCaches();
     },
     onError: (error: any) => {
       toast.error(error.message || "Failed to deactivate user");
@@ -152,7 +290,7 @@ export default function AdminUsers() {
       toast.success(data.message || "User reactivated successfully!");
       setShowReactivateDialog(false);
       setEditingUser(null);
-      refetch();
+      invalidateAllUserCaches();
     },
     onError: (error: any) => {
       toast.error(error.message || "Failed to reactivate user");
@@ -165,7 +303,7 @@ export default function AdminUsers() {
       setShowPermanentDeleteDialog(false);
       setLifecycleReason("");
       setEditingUser(null);
-      refetch();
+      invalidateAllUserCaches();
     },
     onError: (error: any) => {
       toast.error(error.message || "Failed to delete user");
@@ -178,7 +316,7 @@ export default function AdminUsers() {
       setShowAnonymizeDialog(false);
       setLifecycleReason("");
       setEditingUser(null);
-      refetch();
+      invalidateAllUserCaches();
     },
     onError: (error: any) => {
       toast.error(error.message || "Failed to anonymize user");
@@ -218,13 +356,12 @@ export default function AdminUsers() {
       setCreateDateOfBirth("");
       setCreateJobDescription("");
       setCreateContractType("");
-      setCreateContractStart("");
-      setCreateContractEnd("");
       setCreateGender("");
       setProfileImage("");
       setCreatePhoneNumber("");
+      setCreateManagerId("");
       setValidationErrors({});
-      refetch();
+      invalidateAllUserCaches();
     },
     onError: (error: any) => {
       toast.error(error.message || "Failed to create user");
@@ -261,6 +398,8 @@ export default function AdminUsers() {
 
   const handleEditClick = (userData: any) => {
     setEditingUser(userData);
+    setEditName(userData.name || "");
+    setEditEmploymentDate(userData.dateOfEmployment || "");
     setRole(userData.role || "user");
     setDepartment(userData.departmentId ? String(userData.departmentId) : "");
     setManagerId(userData.managerId ? String(userData.managerId) : "");
@@ -269,8 +408,6 @@ export default function AdminUsers() {
     setEditDateOfBirth(userData.dateOfBirth || "");
     setEditJobDescription(userData.jobDescription || "");
     setEditContractType(userData.contractType || "");
-    setEditContractStart(userData.contractStart || "");
-    setEditContractEnd(userData.contractEnd || "");
     setEditGender(userData.gender || "");
     setEditProfileImage(userData.profileImage || "");
     setEditPhoneNumber(userData.phoneNumber || "");
@@ -281,15 +418,22 @@ export default function AdminUsers() {
     if (!editingUser) return;
 
     const errors: Record<string, string> = {};
+    if (!editName.trim()) {
+      errors.name = "Full Name is required";
+    } else if (editName.trim().length < 2) {
+      errors.name = "Name must be at least 2 characters";
+    }
+
     if (!editGender) {
       errors.gender = "Gender must be selected";
     }
-    if (editContractType) {
-      if (!editContractStart) {
-        errors.contractStart = "Contract Start Date is required when Contract Type is selected";
-      }
-      if ((editContractType === "Full-time" || editContractType === "Contract") && !editContractEnd) {
-        errors.contractEnd = "Contract End Date is required for Full-time or Contract employee types";
+
+    // Check staff ID format manually if changed by an Admin
+    const isAdmin = checkIsAdmin(user);
+    if (isAdmin && staffId && staffId !== editingUser.staffId) {
+      const staffIdRegex = /^CTK-\d{4}-\d{2}-\d{2} \d{3,}$/;
+      if (!staffIdRegex.test(staffId)) {
+        errors.staffId = "Staff ID must match format: CTK-YYYY-MM-DD XXX (e.g. CTK-2025-07-01 092)";
       }
     }
 
@@ -301,16 +445,16 @@ export default function AdminUsers() {
     try {
       await updateUserMutation.mutateAsync({
         userId: editingUser.id,
+        name: editName,
         role: role as any,
         departmentId: department ? parseInt(department) : undefined,
         managerId: managerId ? parseInt(managerId) : undefined,
         staffId: staffId || undefined,
+        dateOfEmployment: editEmploymentDate || undefined,
         position: editPosition || undefined,
         dateOfBirth: editDateOfBirth || undefined,
         jobDescription: editJobDescription || undefined,
         contractType: editContractType || undefined,
-        contractStart: editContractStart || undefined,
-        contractEnd: editContractEnd || undefined,
         gender: editGender || undefined,
         profileImage: editProfileImage || undefined,
         phoneNumber: editPhoneNumber || undefined,
@@ -564,133 +708,204 @@ export default function AdminUsers() {
             </TabsList>
             
             <TabsContent value="general" className="space-y-4 max-h-135 overflow-y-auto px-1">
-              <div className="space-y-2">
-                <Label>User</Label>
-                <div className="p-3 bg-muted rounded-lg">
-                  <p className="font-medium text-foreground">{editingUser?.name}</p>
-                  <p className="text-sm text-muted-foreground">{editingUser?.email}</p>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="staffId">Staff ID</Label>
-                <Input
-                  id="staffId"
-                  placeholder="e.g. CTK-2025-10-14 081"
-                  value={staffId}
-                  onChange={(e) => setStaffId(e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="role">Role</Label>
-                <Select value={role} onValueChange={setRole}>
-                  <SelectTrigger title="Select User Role" aria-label="Select User Role">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="user">Employee</SelectItem>
-                    <SelectItem value="head_of_department">Head of Department</SelectItem>
-                    <SelectItem value="hr">HR</SelectItem>
-                    <SelectItem value="head_of_finance">Head of Finance</SelectItem>
-                    <SelectItem value="ceo_md">CEO/MD</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="editGender" className={validationErrors.gender ? "text-red-500" : ""}>Gender <span className="text-red-500">*</span></Label>
-                <Select value={editGender} onValueChange={(val) => {
-                  setEditGender(val);
-                  if (validationErrors.gender) {
-                    setValidationErrors((prev) => {
-                      const copy = { ...prev };
-                      delete copy.gender;
-                      return copy;
-                    });
-                  }
-                }}>
-                  <SelectTrigger className={validationErrors.gender ? "border-red-500 focus:ring-red-500" : ""}>
-                    <SelectValue placeholder="Select gender" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="male">Male</SelectItem>
-                    <SelectItem value="female">Female</SelectItem>
-                  </SelectContent>
-                </Select>
-                {validationErrors.gender && <p className="text-xs text-red-500">{validationErrors.gender}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="department">Department</Label>
-                <Select value={department} onValueChange={setDepartment}>
-                  <SelectTrigger aria-label="Select department">
-                    <SelectValue placeholder="Select department" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {departments?.map((dept: any) => (
-                      <SelectItem key={dept.id} value={String(dept.id)}>
-                        {dept.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="managerId">Manager ID</Label>
-                <Input
-                  id="managerId"
-                  placeholder="Manager's user ID"
-                  type="number"
-                  value={managerId}
-                  onChange={(e) => setManagerId(e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="editPosition">Position</Label>
-                <Input
-                  id="editPosition"
-                  value={editPosition}
-                  onChange={(e) => setEditPosition(e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="editProfileImage">Profile Image URL</Label>
-                <Input
-                  id="editProfileImage"
-                  placeholder="https://example.com/photo.jpg"
-                  value={editProfileImage}
-                  onChange={(e) => setEditProfileImage(e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="editPhoneNumber">Phone Number</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <Input
-                    id="editPhoneNumber"
-                    placeholder="+250..."
-                    value={editPhoneNumber}
-                    onChange={(e) => setEditPhoneNumber(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+              {/* Group 1: Basic Information */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Basic Information</h4>
+                
                 <div className="space-y-2">
-                  <Label>Date of Birth</Label>
-                  <SingleDatePicker
-                    value={editDateOfBirth}
-                    onChange={setEditDateOfBirth}
-                    label="Select birthday"
+                  <Label htmlFor="editName" className={validationErrors.name ? "text-red-500" : ""}>Full Name <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="editName"
+                    placeholder="Enter full name"
+                    value={editName}
+                    onChange={(e) => {
+                      setEditName(e.target.value);
+                      if (validationErrors.name) {
+                        setValidationErrors((prev) => {
+                          const copy = { ...prev };
+                          delete copy.name;
+                          return copy;
+                        });
+                      }
+                    }}
+                    className={validationErrors.name ? "border-red-500 focus-visible:ring-red-500" : ""}
+                  />
+                  {validationErrors.name && <p className="text-xs text-red-500">{validationErrors.name}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="editEmail">Email Address (Read-only Login Identity)</Label>
+                  <Input
+                    id="editEmail"
+                    value={editingUser?.email || ""}
+                    disabled
+                    className="bg-muted/50 text-muted-foreground cursor-not-allowed"
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="editPhoneNumber">Phone Number</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Input
+                      id="editPhoneNumber"
+                      placeholder="+250..."
+                      value={editPhoneNumber}
+                      onChange={(e) => setEditPhoneNumber(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="editProfileImage">Profile Image URL</Label>
+                  <Input
+                    id="editProfileImage"
+                    placeholder="https://example.com/photo.jpg"
+                    value={editProfileImage}
+                    onChange={(e) => setEditProfileImage(e.target.value)}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="editGender" className={validationErrors.gender ? "text-red-500" : ""}>Gender <span className="text-red-500">*</span></Label>
+                    <Select value={editGender} onValueChange={(val) => {
+                      setEditGender(val);
+                      if (validationErrors.gender) {
+                        setValidationErrors((prev) => {
+                          const copy = { ...prev };
+                          delete copy.gender;
+                          return copy;
+                        });
+                      }
+                    }}>
+                      <SelectTrigger className={validationErrors.gender ? "border-red-500 focus:ring-red-500" : ""}>
+                        <SelectValue placeholder="Select gender" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {validationErrors.gender && <p className="text-xs text-red-500">{validationErrors.gender}</p>}
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Date of Birth</Label>
+                    <SingleDatePicker
+                      value={editDateOfBirth}
+                      onChange={setEditDateOfBirth}
+                      label="Select birthday"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <hr className="border-t border-slate-100 dark:border-slate-800 my-4" />
+
+              {/* Group 2: Employment & Hierarchy */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Employment & Hierarchy</h4>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="department">Department</Label>
+                  <Select value={department} onValueChange={setDepartment}>
+                    <SelectTrigger aria-label="Select department">
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departments?.map((dept: any) => (
+                        <SelectItem key={dept.id} value={String(dept.id)}>
+                          {dept.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="editPosition">Position</Label>
+                  <Input
+                    id="editPosition"
+                    placeholder="e.g. Software Engineer"
+                    value={editPosition}
+                    onChange={(e) => setEditPosition(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Date of Employment</Label>
+                  <SingleDatePicker
+                    value={editEmploymentDate}
+                    onChange={setEditEmploymentDate}
+                    label="Select date"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="staffId" className={validationErrors.staffId ? "text-red-500" : ""}>Staff ID</Label>
+                  <Input
+                    id="staffId"
+                    placeholder="e.g. CTK-2025-10-14 081"
+                    value={staffId}
+                    onChange={(e) => {
+                      setStaffId(e.target.value);
+                      if (validationErrors.staffId) {
+                        setValidationErrors((prev) => {
+                          const copy = { ...prev };
+                          delete copy.staffId;
+                          return copy;
+                        });
+                      }
+                    }}
+                    disabled={!checkIsAdmin(user)}
+                    className={cn(
+                      validationErrors.staffId ? "border-red-500 focus-visible:ring-red-500" : "",
+                      !checkIsAdmin(user) ? "bg-muted/50 text-muted-foreground cursor-not-allowed" : ""
+                    )}
+                  />
+                  {validationErrors.staffId && <p className="text-xs text-red-500">{validationErrors.staffId}</p>}
+                  <p className="text-[10px] text-muted-foreground">
+                    {!checkIsAdmin(user)
+                      ? "Staff ID is system-managed and only changeable by Administrators."
+                      : "System-managed format: CTK-YYYY-MM-DD XXX. Must be unique."}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Manager</Label>
+                  <ManagerSelect
+                    value={managerId}
+                    onChange={setManagerId}
+                    users={users || []}
+                    excludeUserId={editingUser?.id}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="role">Role</Label>
+                  <Select value={role} onValueChange={setRole}>
+                    <SelectTrigger title="Select User Role" aria-label="Select User Role">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="user">Employee</SelectItem>
+                      <SelectItem value="head_of_department">Head of Department</SelectItem>
+                      <SelectItem value="hr">HR</SelectItem>
+                      <SelectItem value="head_of_finance">Head of Finance</SelectItem>
+                      <SelectItem value="ceo_md">CEO/MD</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <hr className="border-t border-slate-100 dark:border-slate-800 my-4" />
+
+              {/* Group 3: Contract Details */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Contract Details</h4>
+                
                 <div className="space-y-2">
                   <Label className={validationErrors.contractType ? "text-red-500" : ""}>Contract Type</Label>
                   <Select value={editContractType} onValueChange={(val) => {
@@ -715,60 +930,25 @@ export default function AdminUsers() {
                   </Select>
                   {validationErrors.contractType && <p className="text-xs text-red-500">{validationErrors.contractType}</p>}
                 </div>
+
+
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className={validationErrors.contractStart ? "text-red-500" : ""}>
-                    Contract Start {editContractType && <span className="text-red-500">*</span>}
-                  </Label>
-                  <SingleDatePicker
-                    value={editContractStart}
-                    onChange={(val) => {
-                      setEditContractStart(val);
-                      if (validationErrors.contractStart) {
-                        setValidationErrors((prev) => {
-                          const copy = { ...prev };
-                          delete copy.contractStart;
-                          return copy;
-                        });
-                      }
-                    }}
-                    className={validationErrors.contractStart ? "border-red-500 focus-visible:ring-red-500" : ""}
-                  />
-                  {validationErrors.contractStart && <p className="text-xs text-red-500">{validationErrors.contractStart}</p>}
-                </div>
-                <div className="space-y-2">
-                  <Label className={validationErrors.contractEnd ? "text-red-500" : ""}>
-                    Contract End {(editContractType === "Full-time" || editContractType === "Contract") && <span className="text-red-500">*</span>}
-                  </Label>
-                  <SingleDatePicker
-                    value={editContractEnd}
-                    onChange={(val) => {
-                      setEditContractEnd(val);
-                      if (validationErrors.contractEnd) {
-                        setValidationErrors((prev) => {
-                          const copy = { ...prev };
-                          delete copy.contractEnd;
-                          return copy;
-                        });
-                      }
-                    }}
-                    className={validationErrors.contractEnd ? "border-red-500 focus-visible:ring-red-500" : ""}
-                  />
-                  {validationErrors.contractEnd && <p className="text-xs text-red-500">{validationErrors.contractEnd}</p>}
-                </div>
-              </div>
+              <hr className="border-t border-slate-100 dark:border-slate-800 my-4" />
 
-              <div className="space-y-2">
-                <Label htmlFor="editJobDesc">Job Description</Label>
-                <Textarea
-                  id="editJobDesc"
-                  placeholder="Enter key responsibilities..."
-                  className="min-h-25"
-                  value={editJobDescription}
-                  onChange={(e) => setEditJobDescription(e.target.value)}
-                />
+              {/* Group 4: Job Details */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Job Details</h4>
+                <div className="space-y-2">
+                  <Label htmlFor="editJobDesc">Job Description</Label>
+                  <Textarea
+                    id="editJobDesc"
+                    placeholder="Enter key responsibilities..."
+                    className="min-h-25"
+                    value={editJobDescription}
+                    onChange={(e) => setEditJobDescription(e.target.value)}
+                  />
+                </div>
               </div>
             </TabsContent>
 
@@ -1089,106 +1269,59 @@ export default function AdminUsers() {
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="createName" className={validationErrors.name ? "text-red-500" : ""}>Full Name <span className="text-red-500">*</span></Label>
-              <div className="relative">
-                <User className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${validationErrors.name ? "text-red-500" : "text-gray-400"}`} />
-                <Input
-                  id="createName"
-                  placeholder="Enter full name"
-                  value={createName}
-                  onChange={(e) => {
-                    setCreateName(e.target.value);
-                    if (validationErrors.name) {
-                      setValidationErrors((prev) => {
-                        const copy = { ...prev };
-                        delete copy.name;
-                        return copy;
-                      });
-                    }
-                  }}
-                  className={`pl-9 ${validationErrors.name ? "border-red-500 focus-visible:ring-red-500" : ""}`}
-                />
-              </div>
-              {validationErrors.name && <p className="text-xs text-red-500">{validationErrors.name}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="createEmail" className={validationErrors.email ? "text-red-500" : ""}>Email <span className="text-red-500">*</span></Label>
-              <div className="relative">
-                <Mail className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${validationErrors.email ? "text-red-500" : "text-gray-400"}`} />
-                <Input
-                  id="createEmail"
-                  type="email"
-                  placeholder="user@centrika.rw"
-                  value={createEmail}
-                  onChange={(e) => {
-                    setCreateEmail(e.target.value);
-                    if (validationErrors.email) {
-                      setValidationErrors((prev) => {
-                        const copy = { ...prev };
-                        delete copy.email;
-                        return copy;
-                      });
-                    }
-                  }}
-                  className={`pl-9 ${validationErrors.email ? "border-red-500 focus-visible:ring-red-500" : ""}`}
-                />
-              </div>
-              {validationErrors.email && <p className="text-xs text-red-500">{validationErrors.email}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="createDepartment" className={validationErrors.department ? "text-red-500" : ""}>Department <span className="text-red-500">*</span></Label>
-              <Select 
-                value={createDepartmentId} 
-                onValueChange={(val) => {
-                  setCreateDepartmentId(val);
-                  if (validationErrors.department) {
-                    setValidationErrors((prev) => {
-                      const copy = { ...prev };
-                      delete copy.department;
-                      return copy;
-                    });
-                  }
-                }}
-              >
-                <SelectTrigger className={validationErrors.department ? "border-red-500 focus:ring-red-500" : ""} aria-label="Select department">
-                  <SelectValue placeholder="Select department" />
-                </SelectTrigger>
-                <SelectContent>
-                  {departments?.map((dept: any) => (
-                    <SelectItem key={dept.id} value={String(dept.id)}>
-                      {dept.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {validationErrors.department && <p className="text-xs text-red-500">{validationErrors.department}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="createPosition">Position</Label>
-                <Input
-                  id="createPosition"
-                  placeholder="e.g., Software Engineer"
-                  value={createPosition}
-                  onChange={(e) => setCreatePosition(e.target.value)}
-                />
+            {/* Group 1: Basic Information */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Basic Information</h4>
+              
+              <div className="space-y-2">
+                <Label htmlFor="createName" className={validationErrors.name ? "text-red-500" : ""}>Full Name <span className="text-red-500">*</span></Label>
+                <div className="relative">
+                  <User className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${validationErrors.name ? "text-red-500" : "text-gray-400"}`} />
+                  <Input
+                    id="createName"
+                    placeholder="Enter full name"
+                    value={createName}
+                    onChange={(e) => {
+                      setCreateName(e.target.value);
+                      if (validationErrors.name) {
+                        setValidationErrors((prev) => {
+                          const copy = { ...prev };
+                          delete copy.name;
+                          return copy;
+                        });
+                      }
+                    }}
+                    className={`pl-9 ${validationErrors.name ? "border-red-500 focus-visible:ring-red-500" : ""}`}
+                  />
+                </div>
+                {validationErrors.name && <p className="text-xs text-red-500">{validationErrors.name}</p>}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="createProfileImage">Profile Image URL</Label>
+                <Label htmlFor="createEmail" className={validationErrors.email ? "text-red-500" : ""}>Email <span className="text-red-500">*</span></Label>
                 <div className="relative">
+                  <Mail className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${validationErrors.email ? "text-red-500" : "text-gray-400"}`} />
                   <Input
-                    id="createProfileImage"
-                    placeholder="https://example.com/photo.jpg"
-                    value={profileImage}
-                    onChange={(e) => setProfileImage(e.target.value)}
+                    id="createEmail"
+                    type="email"
+                    placeholder="user@centrika.rw"
+                    value={createEmail}
+                    onChange={(e) => {
+                      setCreateEmail(e.target.value);
+                      if (validationErrors.email) {
+                        setValidationErrors((prev) => {
+                          const copy = { ...prev };
+                          delete copy.email;
+                          return copy;
+                        });
+                      }
+                    }}
+                    className={`pl-9 ${validationErrors.email ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                   />
                 </div>
+                {validationErrors.email && <p className="text-xs text-red-500">{validationErrors.email}</p>}
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="createPhoneNumber">Phone Number</Label>
                 <div className="relative">
@@ -1203,148 +1336,153 @@ export default function AdminUsers() {
                 </div>
               </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="createDate">Date of Employment</Label>
-              <SingleDatePicker
-                value={createEmploymentDate}
-                onChange={setCreateEmploymentDate}
-                label="Pick a date"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="createRole">Role</Label>
-              <Select value={createRole} onValueChange={setCreateRole}>
-                <SelectTrigger aria-label="Select role">
-                  <SelectValue placeholder="Select role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="user">Employee</SelectItem>
-                  <SelectItem value="head_of_department">Head of Department</SelectItem>
-                  <SelectItem value="hr">HR</SelectItem>
-                  <SelectItem value="head_of_finance">Head of Finance</SelectItem>
-                  <SelectItem value="ceo_md">CEO/MD</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="createGender" className={validationErrors.gender ? "text-red-500" : ""}>Gender <span className="text-red-500">*</span></Label>
-              <Select value={createGender} onValueChange={(val) => {
-                setCreateGender(val);
-                if (validationErrors.gender) {
-                  setValidationErrors((prev) => {
-                    const copy = { ...prev };
-                    delete copy.gender;
-                    return copy;
-                  });
-                }
-              }}>
-                <SelectTrigger className={validationErrors.gender ? "border-red-500 focus:ring-red-500" : ""}>
-                  <SelectValue placeholder="Select gender" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="male">Male</SelectItem>
-                  <SelectItem value="female">Female</SelectItem>
-                </SelectContent>
-              </Select>
-              {validationErrors.gender && <p className="text-xs text-red-500">{validationErrors.gender}</p>}
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Date of Birth</Label>
-                <SingleDatePicker
-                  value={createDateOfBirth}
-                  onChange={setCreateDateOfBirth}
+                <Label htmlFor="createProfileImage">Profile Image URL</Label>
+                <Input
+                  id="createProfileImage"
+                  placeholder="https://example.com/photo.jpg"
+                  value={profileImage}
+                  onChange={(e) => setProfileImage(e.target.value)}
                 />
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="createGender" className={validationErrors.gender ? "text-red-500" : ""}>Gender <span className="text-red-500">*</span></Label>
+                  <Select value={createGender} onValueChange={(val) => {
+                    setCreateGender(val);
+                    if (validationErrors.gender) {
+                      setValidationErrors((prev) => {
+                        const copy = { ...prev };
+                        delete copy.gender;
+                        return copy;
+                      });
+                    }
+                  }}>
+                    <SelectTrigger className={validationErrors.gender ? "border-red-500 focus:ring-red-500" : ""}>
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {validationErrors.gender && <p className="text-xs text-red-500">{validationErrors.gender}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label>Date of Birth</Label>
+                  <SingleDatePicker
+                    value={createDateOfBirth}
+                    onChange={setCreateDateOfBirth}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <hr className="border-t border-slate-100 dark:border-slate-800 my-4" />
+
+            {/* Group 2: Employment & Hierarchy */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Employment & Hierarchy</h4>
+
               <div className="space-y-2">
-                <Label className={validationErrors.contractType ? "text-red-500" : ""}>Contract Type</Label>
-                <Select value={createContractType} onValueChange={(val) => {
-                  setCreateContractType(val);
-                  if (validationErrors.contractType) {
-                    setValidationErrors((prev) => {
-                      const copy = { ...prev };
-                      delete copy.contractType;
-                      return copy;
-                    });
-                  }
-                }}>
-                  <SelectTrigger className={validationErrors.contractType ? "border-red-500 focus:ring-red-500" : ""} aria-label="Select contract type">
-                    <SelectValue placeholder="Select type" />
+                <Label htmlFor="createDepartment" className={validationErrors.department ? "text-red-500" : ""}>Department <span className="text-red-500">*</span></Label>
+                <Select 
+                  value={createDepartmentId} 
+                  onValueChange={(val) => {
+                    setCreateDepartmentId(val);
+                    if (validationErrors.department) {
+                      setValidationErrors((prev) => {
+                        const copy = { ...prev };
+                        delete copy.department;
+                        return copy;
+                      });
+                    }
+                  }}
+                >
+                  <SelectTrigger className={validationErrors.department ? "border-red-500 focus:ring-red-500" : ""} aria-label="Select department">
+                    <SelectValue placeholder="Select department" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Full-time">Full-time</SelectItem>
-                    <SelectItem value="Part-time">Part-time</SelectItem>
-                    <SelectItem value="Contract">Contract</SelectItem>
-                    <SelectItem value="Internship">Internship</SelectItem>
+                    {departments?.map((dept: any) => (
+                      <SelectItem key={dept.id} value={String(dept.id)}>
+                        {dept.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-                {validationErrors.contractType && <p className="text-xs text-red-500">{validationErrors.contractType}</p>}
+                {validationErrors.department && <p className="text-xs text-red-500">{validationErrors.department}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="createPosition">Position</Label>
+                <Input
+                  id="createPosition"
+                  placeholder="e.g. Software Engineer"
+                  value={createPosition}
+                  onChange={(e) => setCreatePosition(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="createDate">Date of Employment</Label>
+                <SingleDatePicker
+                  value={createEmploymentDate}
+                  onChange={setCreateEmploymentDate}
+                  label="Pick a date"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Staff ID</Label>
+                <div className="p-3 bg-muted/30 rounded-lg border border-dashed border-slate-200 dark:border-slate-800 text-[11px] text-muted-foreground">
+                  Staff ID will be auto-generated upon creation (e.g. CTK-YYYY-MM-DD ID).
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Manager</Label>
+                <ManagerSelect
+                  value={createManagerId}
+                  onChange={setCreateManagerId}
+                  users={users || []}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="createRole">Role</Label>
+                <Select value={createRole} onValueChange={setCreateRole}>
+                  <SelectTrigger aria-label="Select role">
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="user">Employee</SelectItem>
+                    <SelectItem value="head_of_department">Head of Department</SelectItem>
+                    <SelectItem value="hr">HR</SelectItem>
+                    <SelectItem value="head_of_finance">Head of Finance</SelectItem>
+                    <SelectItem value="ceo_md">CEO/MD</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className={validationErrors.contractStart ? "text-red-500" : ""}>
-                  Contract Start {createContractType && <span className="text-red-500">*</span>}
-                </Label>
-                <SingleDatePicker
-                  value={createContractStart}
-                  onChange={(val) => {
-                    setCreateContractStart(val);
-                    if (validationErrors.contractStart) {
-                      setValidationErrors((prev) => {
-                        const copy = { ...prev };
-                        delete copy.contractStart;
-                        return copy;
-                      });
-                    }
-                  }}
-                  className={validationErrors.contractStart ? "border-red-500 focus-visible:ring-red-500" : ""}
-                />
-                {validationErrors.contractStart && <p className="text-xs text-red-500">{validationErrors.contractStart}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label className={validationErrors.contractEnd ? "text-red-500" : ""}>
-                  Contract End {(createContractType === "Full-time" || createContractType === "Contract") && <span className="text-red-500">*</span>}
-                </Label>
-                <SingleDatePicker
-                  value={createContractEnd}
-                  onChange={(val) => {
-                    setCreateContractEnd(val);
-                    if (validationErrors.contractEnd) {
-                      setValidationErrors((prev) => {
-                        const copy = { ...prev };
-                        delete copy.contractEnd;
-                        return copy;
-                      });
-                    }
-                  }}
-                  className={validationErrors.contractEnd ? "border-red-500 focus-visible:ring-red-500" : ""}
-                />
-                {validationErrors.contractEnd && <p className="text-xs text-red-500">{validationErrors.contractEnd}</p>}
-              </div>
-            </div>
+            <hr className="border-t border-slate-100 dark:border-slate-800 my-4" />
 
-            <div className="space-y-2">
-              <Label htmlFor="createJobDesc">Job Description</Label>
-              <Textarea
-                id="createJobDesc"
-                placeholder="Key responsibilities..."
-                className="min-h-20"
-                value={createJobDescription}
-                onChange={(e) => setCreateJobDescription(e.target.value)}
-              />
+            {/* Group 4: Job Details */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Job Details</h4>
+              <div className="space-y-2">
+                <Label htmlFor="createJobDesc">Job Description</Label>
+                <Textarea
+                  id="createJobDesc"
+                  placeholder="Key responsibilities..."
+                  className="min-h-20"
+                  value={createJobDescription}
+                  onChange={(e) => setCreateJobDescription(e.target.value)}
+                />
+              </div>
             </div>
-{/* 
-            <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-              <p className="text-xs text-blue-700 dark:text-blue-300">
-                <strong>Note:</strong> You can grant any role in the system during registration. The selected role will grant immediate access privileges to the user.
-              </p>
-            </div> */}
           </div>
 
           <DialogFooter>
@@ -1363,15 +1501,6 @@ export default function AdminUsers() {
                 if (!createDepartmentId) errors.department = "Department must be selected";
                 if (!createGender) errors.gender = "Gender must be selected";
 
-                if (createContractType) {
-                  if (!createContractStart) {
-                    errors.contractStart = "Contract Start Date is required when Contract Type is selected";
-                  }
-                  if ((createContractType === "Full-time" || createContractType === "Contract") && !createContractEnd) {
-                    errors.contractEnd = "Contract End Date is required for Full-time or Contract employee types";
-                  }
-                }
-
                 if (Object.keys(errors).length > 0) {
                   setValidationErrors(errors);
                   return;
@@ -1388,10 +1517,9 @@ export default function AdminUsers() {
                     dateOfBirth: createDateOfBirth,
                     jobDescription: createJobDescription,
                     contractType: createContractType,
-                    contractStart: createContractStart,
-                    contractEnd: createContractEnd,
                     gender: createGender,
                     phoneNumber: createPhoneNumber,
+                    managerId: createManagerId ? parseInt(createManagerId) : undefined,
                   });
                 } catch (error: any) {
                   console.error("Mutation failed:", error);
