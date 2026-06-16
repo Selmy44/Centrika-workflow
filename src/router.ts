@@ -932,15 +932,13 @@ export const appRouter = router({
             staffId: finalStaffId,
             dateOfEmployment: input.dateOfEmployment,
             position: input.position,
-            // @ts-ignore - resolve stale IDE Prisma type cache
             dateOfBirth: input.dateOfBirth,
             jobDescription: input.jobDescription,
             contractType: input.contractType,
             phoneNumber: input.phoneNumber,
             gender: input.gender,
             profileImage: input.profileImage,
-            updatedAt: new Date(),
-          }
+          } as any
         });
 
         const auditReason = beforeUser.staffId !== finalStaffId
