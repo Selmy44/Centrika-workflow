@@ -803,12 +803,12 @@ export const appRouter = router({
           await sendEmail(input.email, welcomeEmail.subject, welcomeEmail.html);
         } catch (emailError) {
           console.error("[CreateUser] Failed to send welcome email:", emailError);
-          // Don't fail user creation if email fails — admin still gets the temp password in the response
+          // Don't fail user creation if email fails
         }
 
         return {
           success: true,
-          message: `User created! Temporary password: ${tempPassword}`,
+          message: "User created successfully. A welcome email with login credentials has been sent.",
           user: newUser
         };
       }),
