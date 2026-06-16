@@ -345,7 +345,7 @@ export default function AdminUsers() {
 
   const createUserMutation = (trpc as any).users.createUser.useMutation({
     onSuccess: (data: any) => {
-      toast.success(`User created! Temporary password: ${data.message.split(': ')[1]}`);
+      toast.success(data.message || "User created successfully. A welcome email with login credentials has been sent.");
       setShowCreateDialog(false);
       setCreateEmail("");
       setCreateName("");
