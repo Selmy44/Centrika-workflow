@@ -54,24 +54,6 @@ export const appRouter = router({
         dateOfBirth: z.string().optional(),
         jobDescription: z.string().optional(),
         contractType: z.string().optional(),
-        contractStart: z.string().optional(),
-        contractEnd: z.string().optional(),
-      }).refine((data) => {
-        if (data.contractType && (data.contractType === "Full-time" || data.contractType === "Contract")) {
-          return !!data.contractEnd && data.contractEnd.length >= 10;
-        }
-        return true;
-      }, {
-        message: "Contract End Date is required for Full-time or Contract employee types",
-        path: ["contractEnd"]
-      }).refine((data) => {
-        if (data.contractType) {
-          return !!data.contractStart && data.contractStart.length >= 10;
-        }
-        return true;
-      }, {
-        message: "Contract Start Date is required when Contract Type is selected",
-        path: ["contractStart"]
       }))
       .mutation(async ({ ctx, input }) => {
         // Only HR and Admin can register users
@@ -133,8 +115,6 @@ export const appRouter = router({
             dateOfBirth: input.dateOfBirth,
             jobDescription: input.jobDescription,
             contractType: input.contractType,
-            contractStart: input.contractStart,
-            contractEnd: input.contractEnd,
             lastSignedIn: new Date(),
           }
         });
@@ -356,8 +336,6 @@ export const appRouter = router({
         dateOfBirth: z.string().optional(),
         jobDescription: z.string().optional(),
         contractType: z.string().optional(),
-        contractStart: z.string().optional(),
-        contractEnd: z.string().optional(),
         gender: z.string().optional(),
         phoneNumber: z.string().optional(),
       }))
@@ -394,8 +372,6 @@ export const appRouter = router({
             dateOfBirth: input.dateOfBirth,
             jobDescription: input.jobDescription,
             contractType: input.contractType,
-            contractStart: input.contractStart,
-            contractEnd: input.contractEnd,
             updatedAt: new Date(),
           }
         });
@@ -754,26 +730,9 @@ export const appRouter = router({
         dateOfBirth: z.string().optional(),
         jobDescription: z.string().optional(),
         contractType: z.string().optional(),
-        contractStart: z.string().optional(),
-        contractEnd: z.string().optional(),
         phoneNumber: z.string().optional(),
         gender: z.enum(["male", "female"] as const, { error: "Gender must be selected" }),
-      }).refine((data) => {
-        if (data.contractType && (data.contractType === "Full-time" || data.contractType === "Contract")) {
-          return !!data.contractEnd && data.contractEnd.length >= 10;
-        }
-        return true;
-      }, {
-        message: "Contract End Date is required for Full-time or Contract employee types",
-        path: ["contractEnd"]
-      }).refine((data) => {
-        if (data.contractType) {
-          return !!data.contractStart && data.contractStart.length >= 10;
-        }
-        return true;
-      }, {
-        message: "Contract Start Date is required when Contract Type is selected",
-        path: ["contractStart"]
+        managerId: z.number().optional().nullable(),
       }))
       .mutation(async ({ ctx, input }) => {
         const additionalRoles = parseAdditionalRoles(ctx.user.additionalRoles);
@@ -811,14 +770,13 @@ export const appRouter = router({
             loginMethod: "email",
             role: input.role,
             departmentId: input.departmentId,
+            managerId: input.managerId,
             position: input.position || "Staff",
             dateOfEmployment,
             // @ts-ignore - resolve stale IDE Prisma type cache
             dateOfBirth: input.dateOfBirth,
             jobDescription: input.jobDescription,
             contractType: input.contractType,
-            contractStart: input.contractStart,
-            contractEnd: input.contractEnd,
             phoneNumber: input.phoneNumber,
             gender: input.gender,
             staffId: "", // Will be generated below
@@ -841,35 +799,19 @@ export const appRouter = router({
     updateUser: protectedProcedure
       .input(z.object({
         userId: z.number(),
+        name: z.string().min(2, "Name must be at least 2 characters").optional(),
         role: z.enum(["user", "admin", "hr", "head_of_department", "head_of_finance", "ceo_md"] as const),
         departmentId: z.number().optional().nullable(),
         managerId: z.number().optional().nullable(),
         staffId: z.string().optional(),
+        dateOfEmployment: z.string().optional(),
         position: z.string().optional(),
         dateOfBirth: z.string().optional(),
         jobDescription: z.string().optional(),
         contractType: z.string().optional(),
-        contractStart: z.string().optional(),
-        contractEnd: z.string().optional(),
         phoneNumber: z.string().optional(),
         gender: z.enum(["male", "female"] as const, { error: "Gender must be selected" }).optional(),
         profileImage: z.string().optional(),
-      }).refine((data) => {
-        if (data.contractType && (data.contractType === "Full-time" || data.contractType === "Contract")) {
-          return !!data.contractEnd && data.contractEnd.length >= 10;
-        }
-        return true;
-      }, {
-        message: "Contract End Date is required for Full-time or Contract employee types",
-        path: ["contractEnd"]
-      }).refine((data) => {
-        if (data.contractType) {
-          return !!data.contractStart && data.contractStart.length >= 10;
-        }
-        return true;
-      }, {
-        message: "Contract Start Date is required when Contract Type is selected",
-        path: ["contractStart"]
       }))
       .mutation(async ({ ctx, input }) => {
         const additionalRoles = parseAdditionalRoles(ctx.user.additionalRoles);
@@ -884,20 +826,99 @@ export const appRouter = router({
           where: { id: input.userId }
         });
 
+        if (!beforeUser) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+        }
+
+        // 1. Self-reporting & Circular reporting check
+        if (input.managerId) {
+          if (input.managerId === input.userId) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "A user cannot report to themselves."
+            });
+          }
+
+          let currentId = input.managerId;
+          const visited = new Set<number>([input.userId]);
+          while (currentId) {
+            if (visited.has(currentId)) {
+              throw new TRPCError({
+                code: "BAD_REQUEST",
+                message: "Circular reporting detected. The selected manager reports back to this user."
+              });
+            }
+            visited.add(currentId);
+
+            const manager = await prisma.user.findUnique({
+              where: { id: currentId },
+              select: { managerId: true }
+            });
+            if (!manager || !manager.managerId) {
+              break;
+            }
+            currentId = manager.managerId;
+          }
+        }
+
+        // 2. Staff ID manual change vs sync rules
+        let finalStaffId = input.staffId !== undefined ? input.staffId : beforeUser.staffId;
+
+        if (input.staffId !== undefined && input.staffId !== beforeUser.staffId) {
+          // Only admin can change staffId manually
+          const isAdmin = ctx.user.role === "admin" || additionalRoles.includes("admin");
+          if (!isAdmin) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: "Only Administrators are allowed to edit the Staff ID manually."
+            });
+          }
+
+          // Format check (CTK-YYYY-MM-DD XXX)
+          const staffIdRegex = /^CTK-\d{4}-\d{2}-\d{2} \d{3,}$/;
+          if (!staffIdRegex.test(input.staffId)) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Staff ID must match the format: CTK-YYYY-MM-DD XXX (e.g. CTK-2025-07-01 092)"
+            });
+          }
+
+          // Uniqueness check
+          const existingStaff = await prisma.user.findFirst({
+            where: {
+              staffId: input.staffId,
+              id: { not: input.userId }
+            }
+          });
+          if (existingStaff) {
+            throw new TRPCError({
+              code: "CONFLICT",
+              message: `Staff ID "${input.staffId}" is already assigned to another user.`
+            });
+          }
+        } else if (
+          input.dateOfEmployment &&
+          input.dateOfEmployment !== beforeUser.dateOfEmployment &&
+          (input.staffId === undefined || input.staffId === beforeUser.staffId)
+        ) {
+          // Auto-generate/sync Staff ID to match new employment date
+          finalStaffId = `CTK-${input.dateOfEmployment} ${String(beforeUser.id).padStart(3, '0')}`;
+        }
+
         const updatedUser = await prisma.user.update({
           where: { id: input.userId },
           data: {
+            name: input.name,
             role: input.role,
             departmentId: input.departmentId,
             managerId: input.managerId,
-            staffId: input.staffId,
+            staffId: finalStaffId,
+            dateOfEmployment: input.dateOfEmployment,
             position: input.position,
             // @ts-ignore - resolve stale IDE Prisma type cache
             dateOfBirth: input.dateOfBirth,
             jobDescription: input.jobDescription,
             contractType: input.contractType,
-            contractStart: input.contractStart,
-            contractEnd: input.contractEnd,
             phoneNumber: input.phoneNumber,
             gender: input.gender,
             profileImage: input.profileImage,
@@ -905,12 +926,16 @@ export const appRouter = router({
           }
         });
 
+        const auditReason = beforeUser.staffId !== finalStaffId
+          ? `Staff ID changed from "${beforeUser.staffId || ""}" to "${finalStaffId || ""}". User details updated.`
+          : "User details updated by Admin/HR";
+
         await prisma.userAuditLog.create({
           data: {
             actorId: ctx.user.id,
             targetUserId: input.userId,
             action: "edit",
-            reason: "User details updated by Admin/HR",
+            reason: auditReason,
             beforeState: JSON.stringify(beforeUser),
             afterState: JSON.stringify(updatedUser)
           }
