@@ -7,8 +7,7 @@ import { sendEmail, emailTemplates } from "./email";
  * Generate a random 6-digit OTP code
  */
 export function generateOtpCode(): string {
-  // return crypto.randomInt(100000, 999999).toString(); // Use this for production random OTP
-  return "123456";
+  return crypto.randomInt(100000, 999999).toString();
 }
 
 /**
@@ -67,11 +66,8 @@ export async function sendOtp(
 
         const userName = userRecord?.name || "User";
         const emailTemplate = emailTemplates.otpEmail(userName, code, {
-          dept: userRecord?.department?.name || "SYSTEM",
-          pos: userRecord?.position || "USER",
           topic: "SECURITY",
-          action: "OTP-CODE",
-          level: "URGENT"
+          action: "LOGIN-CODE",
         }, 10);
 
         const success = await sendEmail(
@@ -86,18 +82,16 @@ export async function sendOtp(
           return {
             success: true,
             message: `OTP generated but email delivery may have failed`,
-            code, // For testing
           };
         }
 
-        console.log(`[OTP] OTP sent to ${destination} for user ${userId}: ${code}`);
+        console.log(`[OTP] OTP sent to ${destination} for user ${userId}`);
       } catch (emailError) {
         console.error(`[OTP] Email sending error:`, emailError);
         // Still return success as OTP is stored
         return {
           success: true,
           message: `OTP generated successfully`,
-          code, // For testing
         };
       }
     }
@@ -105,7 +99,6 @@ export async function sendOtp(
     return {
       success: true,
       message: `OTP sent via ${method}`,
-      code, // REMOVE THIS IN PRODUCTION - only for testing
     };
   } catch (error) {
     console.error("[OTP] Generation failed:", error);

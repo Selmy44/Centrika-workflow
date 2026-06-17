@@ -90,6 +90,46 @@ export function buildLink(url: string, recipientEmail?: string): string {
 }
 
 // Email templates
+
+/**
+ * The Centrika logo is served from the deployed frontend's public directory.
+ * Falls back to a data URI placeholder if no app URL is available.
+ */
+function getLogoUrl(appUrl?: string): string {
+  const base = (appUrl || ENV.appUrl || "").replace(/\/$/, "");
+  return base ? `${base}/logo/logo1.png` : "";
+}
+
+/**
+ * Generates a branded email header with the Centrika logo, wordmark, and contextual title.
+ * @param title - The main heading (e.g. "Your Login Code", "Password Reset")
+ * @param gradient - CSS gradient string for the background
+ * @param subtitle - Optional subtitle below the title
+ * @param appUrl - The app URL to resolve the logo from
+ */
+function emailHeader(title: string, gradient: string, appUrl?: string, subtitle?: string): string {
+  const logoUrl = getLogoUrl(appUrl);
+  const logoHtml = logoUrl
+    ? `<img src="${logoUrl}" alt="Centrika" width="52" height="52" style="display: block; margin: 0 auto 12px auto; border-radius: 50%; border: 2px solid rgba(255,255,255,0.3);" />`
+    : "";
+  const subtitleHtml = subtitle
+    ? `<p style="margin: 8px 0 0 0; font-size: 13px; opacity: 0.85;">${subtitle}</p>`
+    : "";
+  return `
+    <div style="background: ${gradient}; padding: 36px 40px 28px 40px; color: white; text-align: center;">
+      ${logoHtml}
+      <div style="font-size: 26px; font-weight: 800; letter-spacing: 3px; margin-bottom: 8px; font-family: Arial, Helvetica, sans-serif;">CENTRIKA</div>
+      <h1 style="margin: 0; font-size: 20px; font-weight: 400;">${title}</h1>
+      ${subtitleHtml}
+    </div>`;
+}
+
+const DEFAULT_GRADIENT = "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
+const GREEN_GRADIENT = "linear-gradient(135deg, #28a745 0%, #20c997 100%)";
+const RED_GRADIENT = "linear-gradient(135deg, #dc3545 0%, #c82333 100%)";
+const BLUE_GRADIENT = "linear-gradient(135deg, #3b6dae 0%, #2d5385 100%)";
+const GOLD_GRADIENT = "linear-gradient(135deg, #c79d2d 0%, #a67c00 100%)";
+
 export const emailTemplates = {
   welcomeEmail: (name: string, email: string, meta: EmailMetadata, password?: string) => {
     const appUrl = (meta.appUrl ?? ENV.appUrl).replace(/\/$/, "");
@@ -98,9 +138,7 @@ export const emailTemplates = {
       subject: formatEmailSubject(meta),
       html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; color: white; text-align: center;">
-          <h1>Welcome to Centrika OnePortal</h1>
-        </div>
+        ${emailHeader("Welcome to OnePortal", DEFAULT_GRADIENT, appUrl, "Your account is ready")}
         <div style="padding: 40px; background: #f9f9f9;">
           <p style="font-size: 16px; color: #333;">Hello <strong>${name}</strong>,</p>
           
@@ -138,9 +176,7 @@ export const emailTemplates = {
     subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; color: white; text-align: center;">
-          <h1>Password Reset</h1>
-        </div>
+        ${emailHeader("Password Reset", DEFAULT_GRADIENT, meta.appUrl, "Secure Account Recovery")}
         <div style="padding: 40px; background: #f9f9f9;">
           <p style="font-size: 16px; color: #333;">Hello <strong>${name}</strong>,</p>
           
@@ -179,9 +215,7 @@ export const emailTemplates = {
     subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; color: white; text-align: center;">
-          <h1>Password Changed</h1>
-        </div>
+        ${emailHeader("Password Changed", DEFAULT_GRADIENT, meta.appUrl, "Security Update")}
         <div style="padding: 40px; background: #f9f9f9;">
           <p style="font-size: 16px; color: #333;">Hello <strong>${name}</strong>,</p>
           
@@ -204,13 +238,11 @@ export const emailTemplates = {
     `,
   }),
 
-  otpEmail: (name: string, code: string, meta: EmailMetadata, expiryMinutes: number = 10) => ({
-    subject: formatEmailSubject(meta),
+  otpEmail: (name: string, code: string, _meta: EmailMetadata, expiryMinutes: number = 10) => ({
+    subject: "Your Centrika OnePortal Login Code",
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; color: white; text-align: center;">
-          <h1>Your Login Code</h1>
-        </div>
+        ${emailHeader("Your Login Code", DEFAULT_GRADIENT, undefined, "OnePortal — Secure Access")}
         <div style="padding: 40px; background: #f9f9f9;">
           <p style="font-size: 16px; color: #333;">Hello <strong>${name}</strong>,</p>
           
@@ -232,7 +264,7 @@ export const emailTemplates = {
           </p>
 
           <p style="font-size: 12px; color: #999; margin-top: 30px;">
-            This is an automated message. Please do not reply to this email.
+            This is an automated message from Centrika OnePortal. Please do not reply to this email.
           </p>
         </div>
         <div style="background: #333; padding: 20px; color: white; text-align: center; font-size: 12px;">
@@ -246,9 +278,7 @@ export const emailTemplates = {
     subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; color: white; text-align: center;">
-          <h1>Secure Login Link</h1>
-        </div>
+        ${emailHeader("Secure Login Link", DEFAULT_GRADIENT, meta.appUrl, "OnePortal — Secure Access")}
         <div style="padding: 40px; background: #f9f9f9;">
           <p style="font-size: 16px; color: #333;">Hello <strong>${name}</strong>,</p>
           
@@ -286,9 +316,7 @@ export const emailTemplates = {
     subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; color: white; text-align: center;">
-          <h1>MFA Setup Verification</h1>
-        </div>
+        ${emailHeader("MFA Setup Verification", DEFAULT_GRADIENT, undefined, "Secure Your Account")}
         <div style="padding: 40px; background: #f9f9f9;">
           <p style="font-size: 16px; color: #333;">Hello <strong>${name}</strong>,</p>
           
@@ -324,9 +352,7 @@ export const emailTemplates = {
       subject: formatEmailSubject(meta),
       html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; color: white; text-align: center;">
-          <h1>New Leave Request</h1>
-        </div>
+        ${emailHeader("New Leave Request", DEFAULT_GRADIENT, appUrl, "Action Required")}
         <div style="padding: 40px; background: #f9f9f9;">
           <p style="font-size: 16px; color: #333;">Hello <strong>${hodName}</strong>,</p>
           
@@ -371,9 +397,7 @@ export const emailTemplates = {
       subject: formatEmailSubject(meta),
       html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); padding: 40px; color: white; text-align: center;">
-          <h1>✓ Leave Request Approved</h1>
-        </div>
+        ${emailHeader("✓ Leave Request Approved", GREEN_GRADIENT, appUrl)}
         <div style="padding: 40px; background: #f9f9f9;">
           <p style="font-size: 16px; color: #333;">Hello <strong>${employeeName}</strong>,</p>
           
@@ -418,9 +442,7 @@ export const emailTemplates = {
       subject: formatEmailSubject(meta),
       html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); padding: 40px; color: white; text-align: center;">
-          <h1>Leave Request Rejected</h1>
-        </div>
+        ${emailHeader("Leave Request Rejected", RED_GRADIENT, appUrl)}
         <div style="padding: 40px; background: #f9f9f9;">
           <p style="font-size: 16px; color: #333;">Hello <strong>${employeeName}</strong>,</p>
           
@@ -461,9 +483,7 @@ export const emailTemplates = {
     subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; color: white; text-align: center;">
-          <h1>You're Invited to Centrika OnePortal</h1>
-        </div>
+        ${emailHeader("You're Invited!", DEFAULT_GRADIENT, meta.appUrl, "Join Centrika OnePortal")}
         <div style="padding: 40px; background: #f9f9f9;">
           <p style="font-size: 16px; color: #333;">Hello <strong>${name}</strong>,</p>
           
@@ -537,10 +557,7 @@ export const emailTemplates = {
     subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); padding: 40px; color: white; text-align: center;">
-          <h1>✓ Leave Request Approved</h1>
-          <p style="margin: 10px 0 0 0; font-size: 14px; opacity: 0.9;">For your records and reporting</p>
-        </div>
+        ${emailHeader("✓ Leave Request Approved", GREEN_GRADIENT, appUrl, "For your records and reporting")}
         <div style="padding: 40px; background: #f9f9f9;">
           <p style="font-size: 16px; color: #333;">Hello <strong>${recipientName}</strong>,</p>
           
@@ -592,9 +609,7 @@ export const emailTemplates = {
       subject: formatEmailSubject(meta),
       html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; color: white; text-align: center;">
-          <h1>New Request Awaiting Approval</h1>
-        </div>
+        ${emailHeader("New Request Awaiting Approval", DEFAULT_GRADIENT, appUrl, "Action Required")}
         <div style="padding: 40px; background: #f9f9f9;">
           <p style="font-size: 16px; color: #333;">Hello <strong>${approverName}</strong>,</p>
           
@@ -631,9 +646,7 @@ export const emailTemplates = {
       subject: formatEmailSubject(meta),
       html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); padding: 40px; color: white; text-align: center;">
-          <h1>✓ Request Approved</h1>
-        </div>
+        ${emailHeader("✓ Request Approved", GREEN_GRADIENT, appUrl)}
         <div style="padding: 40px; background: #f9f9f9;">
           <p style="font-size: 16px; color: #333;">Hello <strong>${employeeName}</strong>,</p>
           <p style="font-size: 14px; color: #666; line-height: 1.6;">
@@ -662,9 +675,7 @@ export const emailTemplates = {
       subject: formatEmailSubject(meta),
       html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); padding: 40px; color: white; text-align: center;">
-          <h1>Request Rejected</h1>
-        </div>
+        ${emailHeader("Request Rejected", RED_GRADIENT, appUrl)}
         <div style="padding: 40px; background: #f9f9f9;">
           <p style="font-size: 16px; color: #333;">Hello <strong>${employeeName}</strong>,</p>
           <p style="font-size: 14px; color: #666; line-height: 1.6;">
@@ -693,10 +704,7 @@ export const emailTemplates = {
     subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: linear-gradient(135deg, ${actionType === "APPROVED" ? "#28a745 0%, #20c997 100%" : "#dc3545 0%, #c82333 100%"}); padding: 40px; color: white; text-align: center;">
-          <h1>Request ${actionType}</h1>
-          <p style="margin: 10px 0 0 0; font-size: 14px; opacity: 0.9;">For your records and reporting</p>
-        </div>
+        ${emailHeader(`Request ${actionType}`, actionType === "APPROVED" ? GREEN_GRADIENT : RED_GRADIENT, appUrl, "For your records and reporting")}
         <div style="padding: 40px; background: #f9f9f9;">
           <p style="font-size: 16px; color: #333;">Hello <strong>${recipientName}</strong>,</p>
           
@@ -727,10 +735,7 @@ export const emailTemplates = {
     subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: linear-gradient(135deg, #3b6dae 0%, #2d5385 100%); padding: 40px; color: white; text-align: center;">
-          <h1 style="margin: 0; font-size: 22px;">📢 New Internal Communication</h1>
-          <p style="margin: 10px 0 0 0; font-size: 14px; opacity: 0.9;">Centrika OnePortal</p>
-        </div>
+        ${emailHeader("📢 New Internal Communication", BLUE_GRADIENT, meta.appUrl)}
         <div style="padding: 40px; background: #f9f9f9;">
           <p style="font-size: 16px; color: #333;">Hello <strong>${recipientName}</strong>,</p>
           
@@ -769,10 +774,7 @@ export const emailTemplates = {
     subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: linear-gradient(135deg, #c79d2d 0%, #a67c00 100%); padding: 40px; color: white; text-align: center;">
-          <h1 style="margin: 0; font-size: 22px;">💬 New Comment Added</h1>
-          <p style="margin: 10px 0 0 0; font-size: 14px; opacity: 0.9;">Centrika OnePortal</p>
-        </div>
+        ${emailHeader("💬 New Comment Added", GOLD_GRADIENT, meta.appUrl)}
         <div style="padding: 40px; background: #f9f9f9;">
           <p style="font-size: 16px; color: #333;">Hello <strong>${recipientName}</strong>,</p>
           
@@ -810,10 +812,7 @@ export const emailTemplates = {
     subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: linear-gradient(135deg, #c79d2d 0%, #a67c00 100%); padding: 40px; color: white; text-align: center;">
-          <h1 style="margin: 0; font-size: 22px;">📥 Incoming Feedback</h1>
-          <p style="margin: 10px 0 0 0; font-size: 14px; opacity: 0.9;">Centrika OnePortal</p>
-        </div>
+        ${emailHeader("📥 Incoming Feedback", GOLD_GRADIENT, meta.appUrl)}
         <div style="padding: 40px; background: #f9f9f9;">
           <p style="font-size: 16px; color: #333;">Hello <strong>${recipientName}</strong>,</p>
           
@@ -847,9 +846,7 @@ export const emailTemplates = {
     subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: linear-gradient(135deg, #3b6dae 0%, #2d5385 100%); padding: 40px; color: white; text-align: center;">
-          <h1 style="margin: 0; font-size: 22px;">📩 Feedback Reply</h1>
-        </div>
+        ${emailHeader("📩 Feedback Reply", BLUE_GRADIENT, meta.appUrl)}
         <div style="padding: 40px; background: #f9f9f9;">
           <p style="font-size: 16px; color: #333;">Hello <strong>${recipientName}</strong>,</p>
           
