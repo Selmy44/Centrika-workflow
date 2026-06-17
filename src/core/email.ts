@@ -1,5 +1,11 @@
 import nodemailer from "nodemailer";
+import path from "path";
+import fs from "fs";
 import { ENV } from "./env";
+
+// Resolve the logo once at startup — the file lives in backend/frontend-logo/
+const LOGO_PATH = path.resolve(process.cwd(), "frontend-logo/centrikaLogo.png");
+const LOGO_EXISTS = fs.existsSync(LOGO_PATH);
 
 // Initialize email transporter
 let transporter: nodemailer.Transporter | null = null;
@@ -32,6 +38,11 @@ export async function sendEmail(to: string, subject: string, html: string) {
 
     const emailTransporter = getTransporter();
 
+    // Build attachments — include the logo as a CID inline attachment if available
+    const attachments: nodemailer.SendMailOptions["attachments"] = LOGO_EXISTS
+      ? [{ filename: "centrika-logo.png", path: LOGO_PATH, cid: "centrika-logo" }]
+      : [];
+
     // Add timeout to prevent hanging
     await Promise.race([
       emailTransporter.sendMail({
@@ -39,9 +50,10 @@ export async function sendEmail(to: string, subject: string, html: string) {
         to,
         subject,
         html,
+        attachments,
       }),
       new Promise<void>((_, reject) =>
-        setTimeout(() => reject(new Error("Email send timeout")), 5000)
+        setTimeout(() => reject(new Error("Email send timeout")), 10000)
       )
     ]);
 
@@ -92,33 +104,19 @@ export function buildLink(url: string, recipientEmail?: string): string {
 // Email templates
 
 /**
- * The Centrika logo is served from the deployed frontend's public directory.
- * Falls back to a data URI placeholder if no app URL is available.
- */
-function getLogoUrl(appUrl?: string): string {
-  const base = (appUrl || ENV.appUrl || "").replace(/\/$/, "");
-  return base ? `${base}/logo/logo1.png` : "";
-}
-
-/**
  * Generates a branded email header with the Centrika logo, wordmark, and contextual title.
+ * The logo is embedded via CID inline attachment (referenced as cid:centrika-logo).
  * @param title - The main heading (e.g. "Your Login Code", "Password Reset")
  * @param gradient - CSS gradient string for the background
  * @param subtitle - Optional subtitle below the title
- * @param appUrl - The app URL to resolve the logo from
  */
-function emailHeader(title: string, gradient: string, appUrl?: string, subtitle?: string): string {
-  const logoUrl = getLogoUrl(appUrl);
-  const logoHtml = logoUrl
-    ? `<img src="${logoUrl}" alt="Centrika" width="52" height="52" style="display: block; margin: 0 auto 12px auto; border-radius: 50%; border: 2px solid rgba(255,255,255,0.3);" />`
-    : "";
+function emailHeader(title: string, gradient: string, _appUrl?: string, subtitle?: string): string {
   const subtitleHtml = subtitle
     ? `<p style="margin: 8px 0 0 0; font-size: 13px; opacity: 0.85;">${subtitle}</p>`
     : "";
   return `
     <div style="background: ${gradient}; padding: 36px 40px 28px 40px; color: white; text-align: center;">
-      ${logoHtml}
-      <div style="font-size: 26px; font-weight: 800; letter-spacing: 3px; margin-bottom: 8px; font-family: Arial, Helvetica, sans-serif;">CENTRIKA</div>
+      <img src="cid:centrika-logo" alt="Centrika" width="160" height="120" style="display: block; margin: 0 auto 14px auto;" />
       <h1 style="margin: 0; font-size: 20px; font-weight: 400;">${title}</h1>
       ${subtitleHtml}
     </div>`;
@@ -278,7 +276,7 @@ export const emailTemplates = {
     subject: formatEmailSubject(meta),
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        ${emailHeader("Secure Login Link", DEFAULT_GRADIENT, meta.appUrl, "OnePortal — Secure Access")}
+        ${emailHeader("Secure Login Link", DEFAULT_GRADIENT, meta.appUrl)}
         <div style="padding: 40px; background: #f9f9f9;">
           <p style="font-size: 16px; color: #333;">Hello <strong>${name}</strong>,</p>
           
