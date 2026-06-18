@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer, Eye, AlertCircle, User, Building2 } from "lucide-react";
+import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer, Eye, AlertCircle, User, Building2, Paperclip } from "lucide-react";
+import ApprovalChainPreview from "@/components/forms/ApprovalChainPreview";
+import { ApprovalRoutePreview } from "@/components/forms/ApprovalRoutePreview";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
@@ -77,6 +79,7 @@ export default function LeaveRequestForm({
     staffId: "",
     department: "",
     position: "",
+    workEmail: "",
     dateOfEmployment: "",
     reportingManager: "",
     leaveType: "annual" as "annual" | "sick" | "parental" | "personal" | "unpaid",
@@ -107,6 +110,8 @@ export default function LeaveRequestForm({
     handoverPersonPosition: "",
     handoverPersonDepartment: "",
     handoverResponsibilities: "",
+    handoverDocument: null as File | null,
+    handoverDocumentUrl: "",
   });
 
   const [approvalComments, setApprovalComments] = useState("");
@@ -187,6 +192,7 @@ export default function LeaveRequestForm({
         staffId: user.staffId || "",
         department: deptName || "",
         position: user.position || "",
+        workEmail: user.email || "",
         dateOfEmployment: user.dateOfEmployment || "",
         reportingManager: autoFillData.managerId ? String(autoFillData.managerId) : "",
         leaveType: initialLeaveType || prev.leaveType,
@@ -591,7 +597,7 @@ export default function LeaveRequestForm({
           </div>
         )}
 
-        {/* REQUEST HEADER SECTION - Responsive Grid */}
+        {/* REQUEST HEADER SECTION (hidden — kept for future use) =====
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-2 lg:gap-3 px-3 lg:px-6 py-2 lg:py-3 text-xs lg:text-sm items-end">
           <div>
             <p className="font-semibold text-blue-600 mb-1 text-[10px] lg:text-xs">CTK</p>
@@ -612,6 +618,7 @@ export default function LeaveRequestForm({
             <Input value={form.employeeName} className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed" disabled />
           </div>
         </div>
+        ===== */}
 
         {/* REQUEST DETAILS */}
         <div className="">
@@ -619,20 +626,26 @@ export default function LeaveRequestForm({
 
           {/* 1. EMPLOYEE INFORMATION */}
           <Section title="1. EMPLOYEE INFORMATION">
-            <Row label="1.1 Employee Full Name">
+            <Row label="1.1 Request Number">
+              <Input value={form.documentId} className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" disabled />
+            </Row>
+            <Row label="1.2 Employee Full Name">
               <Input value={form.employeeName} className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" disabled />
             </Row>
-            <Row label="1.2 Date of Employment">
-              <Input type="date" value={form.dateOfEmployment} className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" disabled />
-            </Row>
-            <Row label="1.3 Staff ID">
-              <Input value={form.staffId} className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" disabled />
-            </Row>
-            <Row label="1.4 Department">
+            <Row label="1.3 Department">
               <Input value={form.department} className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" disabled />
+            </Row>
+            <Row label="1.4 Employee / Staff ID">
+              <Input value={form.staffId} className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" disabled />
             </Row>
             <Row label="1.5 Position / Title">
               <Input value={form.position} className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" disabled />
+            </Row>
+            <Row label="1.6 Date of Employment">
+              <Input type="date" value={form.dateOfEmployment} className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" disabled />
+            </Row>
+            <Row label="1.7 Work Email">
+              <Input value={form.workEmail} className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" disabled />
             </Row>
           </Section>
 
@@ -757,6 +770,18 @@ export default function LeaveRequestForm({
                         </div>
                       </div>
                     )}
+
+                    {/* Handover Document (read-only) */}
+                    {form.handoverDocumentUrl && (
+                      <div>
+                        <label className="text-xs font-semibold text-blue-900 dark:text-blue-300 mb-1 block">Handover Document</label>
+                        <div className="flex items-center gap-2">
+                          <a href={form.handoverDocumentUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 font-medium hover:underline flex items-center gap-1">
+                            <Paperclip size={12} /> View attached document
+                          </a>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   /* ── EDIT MODE ── */
@@ -836,9 +861,35 @@ export default function LeaveRequestForm({
                       <Textarea
                         value={form.handoverResponsibilities}
                         onChange={(e) => setForm({ ...form, handoverResponsibilities: e.target.value })}
-                        placeholder="Describe the tasks, duties, and ongoing projects being handed to the cover person..."
+                        placeholder="List the tasks / duties the cover person will handle..."
                         className="min-h-20 border-blue-300 dark:border-[#3b6dae]/40 text-xs"
                       />
+                    </div>
+
+                    {/* Attach Handover Document */}
+                    <div>
+                      <label className="text-xs font-semibold text-blue-900 dark:text-blue-300 mb-1 block">Attach Handover Document *</label>
+                      {form.handoverDocument ? (
+                        <div className="flex items-center gap-3 bg-blue-50 dark:bg-[#1a385c] rounded-lg border border-blue-200 dark:border-[#3b6dae]/30 p-3">
+                          <Paperclip size={14} className="text-blue-600 shrink-0" />
+                          <span className="text-xs font-medium text-blue-800 dark:text-blue-200 flex-1 truncate">{form.handoverDocument.name}</span>
+                          <button type="button" onClick={() => setForm({ ...form, handoverDocument: null })} className="text-red-500 hover:text-red-700 text-xs font-semibold">Remove</button>
+                        </div>
+                      ) : form.handoverDocumentUrl ? (
+                        <div className="flex items-center gap-3 bg-blue-50 dark:bg-[#1a385c] rounded-lg border border-blue-200 dark:border-[#3b6dae]/30 p-3">
+                          <Paperclip size={14} className="text-blue-600 shrink-0" />
+                          <a href={form.handoverDocumentUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-blue-600 hover:underline flex-1">View attached document</a>
+                          <button type="button" onClick={() => setForm({ ...form, handoverDocumentUrl: "" })} className="text-red-500 hover:text-red-700 text-xs font-semibold">Remove</button>
+                        </div>
+                      ) : (
+                        <label className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-blue-300 dark:border-[#3b6dae]/50 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-[#1a385c]/50 transition-all duration-200 w-fit">
+                          <span className="text-xs font-bold text-blue-600 dark:text-blue-400">+ Attach handover document</span>
+                          <input type="file" className="hidden" accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg" onChange={(e) => { if (e.target.files?.[0]) { setForm({ ...form, handoverDocument: e.target.files[0] }); } }} />
+                        </label>
+                      )}
+                      {!form.handoverDocument && !form.handoverDocumentUrl && (
+                        <p className="text-xs text-gray-400 dark:text-slate-500 mt-1.5 ml-1">Required before submission</p>
+                      )}
                     </div>
                   </>
                 )}
@@ -849,25 +900,31 @@ export default function LeaveRequestForm({
           {/* Continuing LEAVE DETAILS for remaining fields */}
           <Section title="2. LEAVE DETAILS (CONT.)">
             <Row label="2.4 Will you be outside the country?">
-              <div className="flex gap-4">
-                <label className="flex items-center gap-2 text-xs">
-                  <input
-                    type="radio"
-                    checked={form.outsideCountry === "yes"}
-                    onChange={() => setForm({ ...form, outsideCountry: "yes" })}
-                    disabled={effectiveIsReadOnly}
-                    className="w-3.5 h-3.5"
-                  /> Yes
-                </label>
-                <label className="flex items-center gap-2 text-xs">
-                  <input
-                    type="radio"
-                    checked={form.outsideCountry === "no"}
-                    onChange={() => setForm({ ...form, outsideCountry: "no" })}
-                    disabled={effectiveIsReadOnly}
-                    className="w-3.5 h-3.5"
-                  /> No
-                </label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => !effectiveIsReadOnly && setForm({ ...form, outsideCountry: "yes" })}
+                  disabled={effectiveIsReadOnly}
+                  className={`px-5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
+                    form.outsideCountry === "yes"
+                      ? "bg-[#2d3a6d] text-white border-[#2d3a6d] shadow-sm"
+                      : "bg-white dark:bg-[#1f426b] text-gray-600 dark:text-slate-300 border-gray-300 dark:border-[#3b6dae]/40 hover:border-[#2d3a6d] hover:text-[#2d3a6d]"
+                  } ${effectiveIsReadOnly ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
+                >
+                  Yes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => !effectiveIsReadOnly && setForm({ ...form, outsideCountry: "no" })}
+                  disabled={effectiveIsReadOnly}
+                  className={`px-5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
+                    form.outsideCountry === "no"
+                      ? "bg-[#2d3a6d] text-white border-[#2d3a6d] shadow-sm"
+                      : "bg-white dark:bg-[#1f426b] text-gray-600 dark:text-slate-300 border-gray-300 dark:border-[#3b6dae]/40 hover:border-[#2d3a6d] hover:text-[#2d3a6d]"
+                  } ${effectiveIsReadOnly ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
+                >
+                  No
+                </button>
               </div>
             </Row>
           </Section>
@@ -878,17 +935,19 @@ export default function LeaveRequestForm({
               <Row label="3.2 Supporting Document">
                 <div className="space-y-2">
                   {!effectiveIsReadOnly && (
-                    <input
-                      type="file"
-                      onChange={(e) => {
-                        if (e.target.files?.[0]) {
-                          setForm({ ...form, supportingDocument: e.target.files[0] });
-                        }
-                      }}
-                      className="text-xs"
-                    />
+                    form.supportingDocument ? (
+                      <div className="flex items-center gap-3 bg-blue-50 dark:bg-[#1a385c] rounded-lg border border-blue-200 dark:border-[#3b6dae]/30 p-3">
+                        <Paperclip size={14} className="text-blue-600 shrink-0" />
+                        <span className="text-xs font-medium text-blue-800 dark:text-blue-200 flex-1 truncate">{form.supportingDocument.name}</span>
+                        <button type="button" onClick={() => setForm({ ...form, supportingDocument: null })} className="text-red-500 hover:text-red-700 text-xs font-semibold">Remove</button>
+                      </div>
+                    ) : (
+                      <label className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-blue-300 dark:border-[#3b6dae]/50 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-[#1a385c]/50 transition-all duration-200 w-fit">
+                        <span className="text-xs font-bold text-blue-600 dark:text-blue-400">+ Attach supporting document</span>
+                        <input type="file" className="hidden" onChange={(e) => { if (e.target.files?.[0]) { setForm({ ...form, supportingDocument: e.target.files[0] }); } }} />
+                      </label>
+                    )
                   )}
-                  {form.supportingDocument && <p className="text-xs text-green-600 font-semibold">✓ {form.supportingDocument.name}</p>}
                   {form.supportingDocumentUrl && (
                     <div className="flex items-center gap-2 mt-1">
                       <p className="text-xs text-blue-600 font-medium">Attached: Document</p>
@@ -908,43 +967,53 @@ export default function LeaveRequestForm({
               <div className="space-y-3">
                 {!effectiveIsReadOnly ? (
                   <>
-                    <div className="flex gap-4 mb-4">
-                      <label className="flex items-center gap-2 cursor-pointer ">
-                        <input
-                          type="radio"
-                          checked={form.signatureMethod === "draw"}
-                          onChange={() => setForm({ ...form, signatureMethod: "draw", employeeSignature: null })}
-                          className="w-4 h-4 accent-blue-600"
-                        />
-                        <span className="text-[8px] md:text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600">Draw Signature</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          checked={form.signatureMethod === "upload"}
-                          onChange={() => setForm({ ...form, signatureMethod: "upload", employeeSignature: null })}
-                          className="w-4 h-4 accent-blue-600"
-                        />
-                        <span className="text-[8px] md:text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600">Upload Image</span>
-                      </label>
+                    <div className="flex gap-2 mb-3">
+                      <button
+                        type="button"
+                        onClick={() => setForm({ ...form, signatureMethod: "draw", employeeSignature: null, employeeSignatureUrl: "" })}
+                        className={`px-5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
+                          form.signatureMethod === "draw"
+                            ? "bg-[#2d3a6d] text-white border-[#2d3a6d] shadow-sm"
+                            : "bg-white dark:bg-[#1f426b] text-gray-600 dark:text-slate-300 border-gray-300 dark:border-[#3b6dae]/40 hover:border-[#2d3a6d] hover:text-[#2d3a6d]"
+                        } cursor-pointer`}
+                      >
+                        Draw
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setForm({ ...form, signatureMethod: "upload", employeeSignature: null, employeeSignatureUrl: "" })}
+                        className={`px-5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
+                          form.signatureMethod === "upload"
+                            ? "bg-[#2d3a6d] text-white border-[#2d3a6d] shadow-sm"
+                            : "bg-white dark:bg-[#1f426b] text-gray-600 dark:text-slate-300 border-gray-300 dark:border-[#3b6dae]/40 hover:border-[#2d3a6d] hover:text-[#2d3a6d]"
+                        } cursor-pointer`}
+                      >
+                        Upload image
+                      </button>
                     </div>
 
                     {form.signatureMethod === "upload" ? (
                       <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => {
-                            if (e.target.files?.[0]) {
-                              const file = e.target.files[0];
-                              setForm({ ...form, employeeSignature: file });
-                              const reader = new FileReader();
-                              reader.onload = (ev) => setForm((prev: any) => ({ ...prev, employeeSignatureUrl: ev.target?.result as string }));
-                              reader.readAsDataURL(file);
-                            }
-                          }}
-                          className="text-xs block w-full text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all"
-                        />
+                        {form.employeeSignatureUrl ? (
+                          <div className="flex items-center gap-3 bg-blue-50 dark:bg-[#1a385c] rounded-lg border border-blue-200 dark:border-[#3b6dae]/30 p-3">
+                            <Paperclip size={14} className="text-blue-600 shrink-0" />
+                            <span className="text-xs font-medium text-blue-800 dark:text-blue-200 flex-1 truncate">{form.employeeSignature?.name || "Signature image"}</span>
+                            <button type="button" onClick={() => setForm({ ...form, employeeSignature: null, employeeSignatureUrl: "" })} className="text-red-500 hover:text-red-700 text-xs font-semibold">Remove</button>
+                          </div>
+                        ) : (
+                          <label className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-blue-300 dark:border-[#3b6dae]/50 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-[#1a385c]/50 transition-all duration-200 w-fit">
+                            <span className="text-xs font-bold text-blue-600 dark:text-blue-400">+ Upload signature image</span>
+                            <input type="file" className="hidden" accept="image/*" onChange={(e) => {
+                              if (e.target.files?.[0]) {
+                                const file = e.target.files[0];
+                                setForm({ ...form, employeeSignature: file });
+                                const reader = new FileReader();
+                                reader.onload = (ev) => setForm((prev: any) => ({ ...prev, employeeSignatureUrl: ev.target?.result as string }));
+                                reader.readAsDataURL(file);
+                              }
+                            }} />
+                          </label>
+                        )}
                       </div>
                     ) : (
                       <SignaturePad 
@@ -958,7 +1027,7 @@ export default function LeaveRequestForm({
                       />
                     )}
                     
-                    {form.employeeSignatureUrl && (
+                    {form.employeeSignatureUrl && form.signatureMethod === "upload" && (
                        <div className="mt-2 animate-in zoom-in duration-300">
                           <img src={form.employeeSignatureUrl} alt="sig" className="h-16 w-full md:w-auto object-contain" />
                        </div>
@@ -967,42 +1036,50 @@ export default function LeaveRequestForm({
                 ) : (
                   <div className="space-y-1">
                     {form.employeeSignatureUrl ? (
-                      <img src={form.employeeSignatureUrl} alt="sig" className="h-16 object-contain" />
+                      <>
+                        <img src={form.employeeSignatureUrl} alt="sig" className="h-16 object-contain" />
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">{form.employeeName || requestData?.user?.name || ""}</p>
+                      </>
                     ) : (
                       <p className="text-xs italic text-gray-500">No signature</p>
                     )}
                   </div>
                 )}
-                <div className="mt-4 w-full md:w-[240px]">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-blue-900 mb-1.5 opacity-60">Signature Date</p>
-                  <Input
-                    value={form.signatureDate || new Date().toISOString().split("T")[0]}
-                    readOnly
-                    className="h-9 bg-slate-50 dark:bg-slate-900/50 text-slate-600 dark:text-slate-400 font-bold cursor-not-allowed w-full border-blue-100 dark:border-blue-900/30 text-xs rounded-xl"
-                  />
-                </div>
+
               </div>
             </Row>
           </Section>
 
-          {/* 4. APPROVAL WORKFLOW */}
-          <Section title="4. APPROVAL WORKFLOW">
-            {/* Always show 4.1 Line Manager/HOD section so the HOD signature is visible to everyone */}
-            <Row label="4.1 Line Manager / HOD">
-              <Input
-                value={uniqueHeads.find((h: any) => h.id === parseInt(form.reportingManager))?.name || "Not assigned"}
-                className="w-full h-8 border-blue-300 dark:border-[#3b6dae]/40 bg-gray-100 dark:bg-[#295482] text-black dark:text-slate-100 font-medium cursor-not-allowed mt-1 mb-1 max-w-[400px]"
-                disabled
-              />
-              {form.managerSignatureUrl && (
-                <div className="mt-2">
-                  <p className="text-xs text-gray-500 mb-1">Approved by Manager:</p>
-                  <img src={form.managerSignatureUrl} alt="Manager Signature" className="h-10 object-contain" />
-                </div>
-              )}
-            </Row>
+          {/* Draft-only: approval route preview (no section header) */}
+          {!isReadOnly && !isApprover && (() => {
+            const empInitials = (user?.name || "Me").split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
+            const managerFromHeads = headsOfDept.data?.find((h: any) => h.id === Number(autoFillData?.managerId || form.reportingManager));
+            const mgrName = managerFromHeads?.name || autoFillData?.managerName || "HOD";
+            const mgrInitials = mgrName !== "HOD" ? mgrName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) : "HOD";
+            return (
+              <ApprovalRoutePreview steps={[
+                { initials: empInitials, name: user?.name || "You", role: "Submitter", isSubmitter: true },
+                { initials: mgrInitials, name: mgrName, role: "Line Manager / HOD" },
+              ]} />
+            );
+          })()}
 
-
+          {/* 4. APPROVER SIGNATURES — only for approver view and after resolution */}
+          {(isApprover || requestData?.status === "approved" || requestData?.status === "rejected") && (
+          <Section title="4. APPROVER SIGNATURES">
+            {/* Approved/rejected: show actual HOD signature only */}
+            {form.managerSignatureUrl && (requestData?.status === "approved" || requestData?.status === "rejected") && (() => {
+              const hodApproval = requestData?.approvals?.find((a: any) => a.approvalLevel === "head_of_department");
+              const hodName = savedFormData.data?.managerSignerName || hodApproval?.approver?.name || requestData?.initialApprover?.name || "Line Manager / HOD";
+              return (
+                <Row label="4.1 HOD / Line Manager">
+                  <div className="py-1">
+                    <img src={form.managerSignatureUrl} alt="Manager Signature" className="h-10 object-contain" />
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">✓ {hodName}</p>
+                  </div>
+                </Row>
+              );
+            })()}
 
             {requestData?.status === "rejected" && (
               <div className="p-4 border border-red-300 dark:border-red-900/50 rounded-lg bg-red-50 dark:bg-red-950/30 mb-4">
@@ -1019,62 +1096,69 @@ export default function LeaveRequestForm({
             )}
 
             {isApprover && requestData?.status !== "approved" && requestData?.status !== "rejected" && (
-              <div className="p-4 border-b border-blue-400 dark:border-[#3b6dae]/50 bg-blue-50/30">
-                <h3 className="text-sm font-bold text-blue-700 mb-3">Your Approval ({(requestData?.currentApprovalLevel || user?.role || "Approver").replace(/_/g, " ")})</h3>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-xs font-semibold block mb-1">Comments</label>
-                    <Textarea value={approvalComments} onChange={(e) => setApprovalComments(e.target.value)} disabled={isReadOnly} placeholder="Add comments..." className="text-xs border-blue-300 dark:border-[#3b6dae]/40" />
+              <div className="border-t border-blue-200 dark:border-[#3b6dae]/40">
+                <Row label="5.2 Your Comment">
+                  <div className="space-y-3 py-1 w-full">
+                    <Textarea
+                      value={approvalComments}
+                      onChange={(e) => setApprovalComments(e.target.value)}
+                      disabled={isReadOnly}
+                      placeholder="Add your comments or observations here..."
+                      className="min-h-20 text-xs border-blue-300 dark:border-[#3b6dae]/40 bg-white dark:bg-[#1a385c]"
+                    />
                   </div>
-                  <div>
-                    <label className="text-xs font-semibold block mb-1">Signature</label>
+                </Row>
+                <Row label="5.3 Your Signature">
+                  <div className="space-y-3 py-1 w-full">
                     {!isReadOnly ? (
-                      <div className="space-y-3">
-                        <div className="flex gap-4 mb-4">
-                          <label className="flex items-center gap-2 cursor-pointer group">
-                            <input
-                              type="radio"
-                              checked={approverSignatureMethod === "draw"}
-                              onChange={() => {
-                                setApproverSignatureMethod("draw");
-                                setApproverSignature(null);
-                                setApproverSignatureUrl("");
-                              }}
-                              className="w-4 h-4 accent-blue-600"
-                            />
-                            <span className="text-xs font-black uppercase tracking-widest text-[#3b6dae] group-hover:text-blue-600">DRAW SIGNATURE</span>
-                          </label>
-                          <label className="flex items-center gap-2 cursor-pointer group">
-                            <input
-                              type="radio"
-                              checked={approverSignatureMethod === "upload"}
-                              onChange={() => {
-                                setApproverSignatureMethod("upload");
-                                setApproverSignature(null);
-                                setApproverSignatureUrl("");
-                              }}
-                              className="w-4 h-4 accent-blue-600"
-                            />
-                            <span className="text-xs font-black uppercase tracking-widest text-[#3b6dae] group-hover:text-blue-600">UPLOAD IMAGE</span>
-                          </label>
+                      <>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => { setApproverSignatureMethod("draw"); setApproverSignature(null); setApproverSignatureUrl(""); }}
+                            className={`px-5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
+                              approverSignatureMethod === "draw"
+                                ? "bg-[#2d3a6d] text-white border-[#2d3a6d] shadow-sm"
+                                : "bg-white dark:bg-[#1f426b] text-gray-600 dark:text-slate-300 border-gray-300 dark:border-[#3b6dae]/40 hover:border-[#2d3a6d] hover:text-[#2d3a6d]"
+                            } cursor-pointer`}
+                          >
+                            Draw
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setApproverSignatureMethod("upload"); setApproverSignature(null); setApproverSignatureUrl(""); }}
+                            className={`px-5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
+                              approverSignatureMethod === "upload"
+                                ? "bg-[#2d3a6d] text-white border-[#2d3a6d] shadow-sm"
+                                : "bg-white dark:bg-[#1f426b] text-gray-600 dark:text-slate-300 border-gray-300 dark:border-[#3b6dae]/40 hover:border-[#2d3a6d] hover:text-[#2d3a6d]"
+                            } cursor-pointer`}
+                          >
+                            Upload image
+                          </button>
                         </div>
 
                         {approverSignatureMethod === "upload" ? (
                           <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0] || null;
-                                setApproverSignature(file);
-                                if (file) {
-                                  const reader = new FileReader();
-                                  reader.onload = (ev) => setApproverSignatureUrl(ev.target?.result as string);
-                                  reader.readAsDataURL(file);
-                                }
-                              }}
-                              className="text-xs block w-full text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all border border-blue-200 dark:border-[#3b6dae]/30 p-1.5 rounded-lg"
-                            />
+                            {approverSignatureUrl ? (
+                              <div className="flex items-center gap-3 bg-blue-50 dark:bg-[#1a385c] rounded-lg border border-blue-200 dark:border-[#3b6dae]/30 p-3">
+                                <Paperclip size={14} className="text-blue-600 shrink-0" />
+                                <span className="text-xs font-medium text-blue-800 dark:text-blue-200 flex-1 truncate">{approverSignature?.name || "Signature image"}</span>
+                                <button type="button" onClick={() => { setApproverSignature(null); setApproverSignatureUrl(""); }} className="text-red-500 hover:text-red-700 text-xs font-semibold">Remove</button>
+                              </div>
+                            ) : (
+                              <label className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-blue-300 dark:border-[#3b6dae]/50 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-[#1a385c]/50 transition-all duration-200 w-fit">
+                                <span className="text-xs font-bold text-blue-600 dark:text-blue-400">+ Upload signature image</span>
+                                <input type="file" className="hidden" accept="image/*" onChange={(e) => {
+                                  const file = e.target.files?.[0] || null;
+                                  setApproverSignature(file);
+                                  if (file) {
+                                    const reader = new FileReader();
+                                    reader.onload = (ev) => setApproverSignatureUrl(ev.target?.result as string);
+                                    reader.readAsDataURL(file);
+                                  }
+                                }} />
+                              </label>
+                            )}
                           </div>
                         ) : (
                           <SignaturePad 
@@ -1090,24 +1174,35 @@ export default function LeaveRequestForm({
                           />
                         )}
 
-                        {approverSignatureUrl && (
+                        {approverSignatureUrl && approverSignatureMethod === "upload" && (
                           <div className="mt-2 animate-in zoom-in duration-300">
-                            <img
-                              src={approverSignatureUrl}
-                              alt="Signature Preview"
-                              className="h-10 object-contain"
-                            />
+                            <img src={approverSignatureUrl} alt="Signature Preview" className="h-10 object-contain" />
                           </div>
                         )}
-                      </div>
+                      </>
                     ) : (
                       <p className="text-xs italic text-gray-500">Signature on file</p>
                     )}
                   </div>
-                </div>
+                </Row>
               </div>
             )}
           </Section>
+          )}
+
+          {/* 5. APPROVAL CHAIN (preview) */}
+          {(effectiveIsReadOnly || requestData?.status === "pending" || requestData?.status === "approved" || requestData?.status === "rejected") && (
+            <Section title="5. APPROVAL CHAIN (preview)">
+              <div className="px-3 lg:px-4 py-3 lg:py-4">
+                <ApprovalChainPreview
+                  requestType="leave"
+                  currentApprovalLevel={requestData?.currentApprovalLevel}
+                  status={requestData?.status || "draft"}
+                  approvals={requestData?.approvals || []}
+                />
+              </div>
+            </Section>
+          )}
         </div>
 
         {/* ACTIONS & FOOTER */}

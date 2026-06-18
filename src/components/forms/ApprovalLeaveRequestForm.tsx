@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Phone, Mail, Globe, MapPin } from "lucide-react";
+import { Phone, Mail, Globe, MapPin, Paperclip } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -217,51 +217,53 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
             {/* Signature Section */}
             <div>
               <label className="text-sm font-semibold text-gray-700">Your Signature</label>
-              <div className="flex flex-wrap gap-3 md:gap-4 my-2">
-                <label className="flex items-center gap-2 cursor-pointer group">
-                  <input
-                    type="radio"
-                    checked={signatureMethod === "draw"}
-                    onChange={() => {
-                      setSignatureMethod("draw");
-                      setSignatureFile(null);
-                      setSignaturePreview("");
-                    }}
-                    className="w-4 h-4 accent-blue-600"
-                  />
-                  <span className="text-xs font-black uppercase tracking-widest text-[#3b6dae] group-hover:text-blue-800">Draw Signature</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer group">
-                  <input
-                    type="radio"
-                    checked={signatureMethod === "upload"}
-                    onChange={() => {
-                      setSignatureMethod("upload");
-                      setSignatureFile(null);
-                      setSignaturePreview("");
-                    }}
-                    className="w-4 h-4 accent-blue-600"
-                  />
-                  <span className="text-xs font-black uppercase tracking-widest text-[#3b6dae] group-hover:text-blue-800">Upload Image</span>
-                </label>
+              <div className="flex gap-2 my-2">
+                <button
+                  type="button"
+                  onClick={() => { setSignatureMethod("draw"); setSignatureFile(null); setSignaturePreview(""); }}
+                  className={`px-5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
+                    signatureMethod === "draw"
+                      ? "bg-[#2d3a6d] text-white border-[#2d3a6d] shadow-sm"
+                      : "bg-white dark:bg-[#1f426b] text-gray-600 dark:text-slate-300 border-gray-300 dark:border-[#3b6dae]/40 hover:border-[#2d3a6d] hover:text-[#2d3a6d]"
+                  } cursor-pointer`}
+                >
+                  Draw
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setSignatureMethod("upload"); setSignatureFile(null); setSignaturePreview(""); }}
+                  className={`px-5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
+                    signatureMethod === "upload"
+                      ? "bg-[#2d3a6d] text-white border-[#2d3a6d] shadow-sm"
+                      : "bg-white dark:bg-[#1f426b] text-gray-600 dark:text-slate-300 border-gray-300 dark:border-[#3b6dae]/40 hover:border-[#2d3a6d] hover:text-[#2d3a6d]"
+                  } cursor-pointer`}
+                >
+                  Upload image
+                </button>
               </div>
 
               {signatureMethod === "upload" ? (
-                <div className="border-2 border-dashed border-yellow-400 rounded-lg p-4 bg-white dark:bg-[#1f426b] animate-in fade-in slide-in-from-top-2 duration-300">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        setSignatureFile(file);
-                        const reader = new FileReader();
-                        reader.onload = (ev) => setSignaturePreview(ev.target?.result as string);
-                        reader.readAsDataURL(file);
-                      }
-                    }}
-                    className="block w-full text-sm text-gray-600 dark:text-slate-400"
-                  />
+                <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                  {signaturePreview ? (
+                    <div className="flex items-center gap-3 bg-blue-50 dark:bg-[#1a385c] rounded-lg border border-blue-200 dark:border-[#3b6dae]/30 p-3">
+                      <Paperclip size={14} className="text-blue-600 shrink-0" />
+                      <span className="text-xs font-medium text-blue-800 dark:text-blue-200 flex-1 truncate">{signatureFile?.name || "Signature image"}</span>
+                      <button type="button" onClick={() => { setSignaturePreview(""); setSignatureFile(null); }} className="text-red-500 hover:text-red-700 text-xs font-semibold">Remove</button>
+                    </div>
+                  ) : (
+                    <label className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-blue-300 dark:border-[#3b6dae]/50 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-[#1a385c]/50 transition-all duration-200 w-fit">
+                      <span className="text-xs font-bold text-blue-600 dark:text-blue-400">+ Upload signature image</span>
+                      <input type="file" className="hidden" accept="image/*" onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setSignatureFile(file);
+                          const reader = new FileReader();
+                          reader.onload = (ev) => setSignaturePreview(ev.target?.result as string);
+                          reader.readAsDataURL(file);
+                        }
+                      }} />
+                    </label>
+                  )}
                 </div>
               ) : (
                 <div className="animate-in fade-in slide-in-from-top-2 duration-300">
@@ -279,19 +281,9 @@ export default function ApprovalLeaveRequestForm({ request, onApprove, onReject,
                 </div>
               )}
 
-              {signaturePreview && (
+              {signaturePreview && signatureMethod === "upload" && (
                 <div className="mt-3 p-2 bg-gray-50 dark:bg-[#1a385c] rounded animate-in zoom-in duration-300">
                   <img src={signaturePreview} alt="signature" className="h-24 object-contain mx-auto" />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSignaturePreview("");
-                      setSignatureFile(null);
-                    }}
-                    className="block mx-auto mt-2 text-[10px] text-red-600 hover:text-red-800 font-bold uppercase underline"
-                  >
-                    Clear and Change
-                  </button>
                 </div>
               )}
             </div>

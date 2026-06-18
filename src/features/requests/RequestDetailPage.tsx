@@ -11,7 +11,7 @@ import UnpaidLeaveForm from "@/components/forms/UnpaidLeaveForm";
 import SickLeaveForm from "@/components/forms/SickLeaveForm";
 import AnnualLeaveForm from "@/components/forms/AnnualLeaveForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -34,11 +34,20 @@ export default function RequestDetail() {
     { enabled: isAuthenticated && requestId > 0 }
   );
 
+  // Auto-mark related notifications as read when form is opened
+  const markReadByRequestId = (trpc as any).notifications.markReadByRequestId.useMutation();
+  const notifMarkedRef = useRef(false);
+
   // Find the specific request from the list
   useEffect(() => {
     if (specificRequest) {
       // Use the specific request query which always has fresh data
       setRequestData(specificRequest);
+      // Mark any related notifications as read (only once)
+      if (!notifMarkedRef.current) {
+        notifMarkedRef.current = true;
+        markReadByRequestId.mutate({ requestId: specificRequest.id });
+      }
     } else if (allRequests && allRequests.length > 0) {
       // Fallback to list if specific query hasn't loaded
       const found = allRequests.find((r: any) => r.id === requestId);

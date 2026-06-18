@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer, Package, Eye } from "lucide-react";
+import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer, Package, Eye, Paperclip } from "lucide-react";
+import ApprovalChainPreview from "@/components/forms/ApprovalChainPreview";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -206,62 +207,56 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
                     </div>
                 )}
 
-                {/* ===== REQUEST HEADER SECTION ===== */}
+                {/* ===== REQUEST HEADER SECTION (hidden — kept for future use) =====
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-2.5 lg:gap-3 px-3 lg:px-6 py-2 lg:py-3 text-xs lg:text-sm items-end">
                     <div>
                         <p className="font-semibold text-blue-600 mb-1 text-xs uppercase">Department</p>
                         <div className="flex gap-0 items-center">
                             <span className="text-blue-600 font-bold text-xs whitespace-nowrap">CTK - </span>
-                            <Input
-                                value={employee?.department || "N/A"}
-                                className="w-full h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed border-l-0"
-                                disabled
-                            />
+                            <Input value={employee?.department || "N/A"} className="w-full h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed border-l-0" disabled />
                         </div>
                     </div>
                     <div>
                         <p className="font-semibold text-blue-600 mb-1 text-xs uppercase">Date Submitted</p>
-                        <Input
-                            type="text"
-                            value={requestData?.createdAt ? new Date(requestData.createdAt).toLocaleDateString() : "N/A"}
-                            className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
-                            disabled
-                        />
+                        <Input type="text" value={requestData?.createdAt ? new Date(requestData.createdAt).toLocaleDateString() : "N/A"} className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed" disabled />
                     </div>
                     <div>
                         <p className="font-semibold text-blue-600 text-xs mb-1 uppercase">Staff ID</p>
-                        <Input
-                            value={employee?.staffId || "N/A"}
-                            className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
-                            disabled
-                        />
+                        <Input value={employee?.staffId || "N/A"} className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed" disabled />
                     </div>
                     <div>
                         <p className="font-semibold text-blue-600 text-xs mb-1 uppercase">Employee Name</p>
-                        <Input
-                            value={employee?.name || "N/A"}
-                            className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
-                            disabled
-                        />
+                        <Input value={employee?.name || "N/A"} className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed" disabled />
                     </div>
                 </div>
+                ===== */}
 
                 {/* ===== REQUEST DETAILS ===== */}
                 <div className="border-t border-[#3b6dae]">
-                    <div className="bg-[#3b6dae] text-white font-bold px-4 py-2 text-sm flex items-center gap-2">
-                        <Package size={16} /> ASSET REQUEST DETAILS: #{requestData?.id}
-                    </div>
+                    <div className="bg-[#3b6dae] text-white font-bold px-4 py-2 text-sm">REQUEST DETAILS</div>
 
                     {/* 1. EMPLOYEE INFORMATION */}
                     <Section title="1. EMPLOYEE INFORMATION">
-                        <Row label="1.1 Employee Full Name">
-                            <Input value={employee?.name || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" />
+                        <Row label="1.1 Request Number">
+                            <Input value={`AR-${requestData?.id || ''}`} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" />
                         </Row>
-                        <Row label="1.2 Position / Title">
-                            <Input value={employee?.position || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" />
+                        <Row label="1.2 Employee Full Name">
+                            <Input value={employee?.name || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" />
                         </Row>
                         <Row label="1.3 Department">
                             <Input value={employee?.department || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" />
+                        </Row>
+                        <Row label="1.4 Employee / Staff ID">
+                            <Input value={employee?.staffId || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" />
+                        </Row>
+                        <Row label="1.5 Position / Title">
+                            <Input value={employee?.position || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" />
+                        </Row>
+                        <Row label="1.6 Date of Employment">
+                            <Input value={employee?.dateOfEmployment || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" />
+                        </Row>
+                        <Row label="1.7 Work Email">
+                            <Input value={employee?.email || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium" />
                         </Row>
                     </Section>
 
@@ -309,8 +304,9 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
                         <Row label="4.1 Employee Signature">
                             <div className="mt-1 mb-2">
                                 {formDataDynamic?.employeeSignatureUrl ? (
-                                    <div className="p-2 rounded inline-block bg-white dark:bg-[#1f426b]">
+                                    <div className="py-1">
                                         <img src={formDataDynamic.employeeSignatureUrl} alt="Employee Signature" className="h-12 object-contain" />
+                                        <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">{requestData?.user?.name || "Employee"}</p>
                                     </div>
                                 ) : (
                                     <p className="text-xs italic text-gray-500 mt-2">No signature provided</p>
@@ -319,107 +315,102 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
                         </Row>
                     </Section>
 
-                    {/* 5. APPROVAL WORKFLOW */}
-                    <Section title="5. APPROVAL WORKFLOW">
-                        {/* Always show previous approvals if they exist */}
+                    {/* 5. APPROVER SIGNATURES */}
+                    <Section title="5. APPROVER SIGNATURES">
                         {formDataDynamic?.managerSignatureUrl && (
                             <Row label="5.1 Line Manager / HOD">
                                 <div className="mt-2">
-                                    <p className="text-xs text-gray-500 mb-1">Approved by HOD:</p>
                                     <img src={formDataDynamic.managerSignatureUrl} alt="HOD Signature" className="h-10 object-contain" />
+                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">✓ {formDataDynamic?.managerSignerName || requestData?.approvals?.find((a: any) => a.approvalLevel === "head_of_department")?.approver?.name || ""}</p>
                                 </div>
                             </Row>
                         )}
                         {formDataDynamic?.hrSignatureUrl && (
                             <Row label="5.2 HR Review">
                                 <div className="mt-2">
-                                    <p className="text-xs text-gray-500 mb-1">Approved by HR:</p>
                                     <img src={formDataDynamic.hrSignatureUrl} alt="HR Signature" className="h-10 object-contain" />
+                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">✓ {formDataDynamic?.hrSignerName || requestData?.approvals?.find((a: any) => a.approvalLevel === "hr")?.approver?.name || ""}</p>
                                 </div>
                             </Row>
                         )}
                         {formDataDynamic?.financeSignatureUrl && (
                             <Row label="5.3 Head of Finance">
                                 <div className="mt-2">
-                                    <p className="text-xs text-gray-500 mb-1">Approved by Head of Finance:</p>
                                     <img src={formDataDynamic.financeSignatureUrl} alt="Finance Signature" className="h-10 object-contain" />
+                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">✓ {formDataDynamic?.financeSignerName || requestData?.approvals?.find((a: any) => a.approvalLevel === "head_of_finance")?.approver?.name || ""}</p>
                                 </div>
                             </Row>
                         )}
                         {formDataDynamic?.ceoSignatureUrl && (
                             <Row label="5.4 CEO / MD">
                                 <div className="mt-2">
-                                    <p className="text-xs text-gray-500 mb-1">Final Approval by CEO/MD:</p>
                                     <img src={formDataDynamic.ceoSignatureUrl} alt="CEO Signature" className="h-10 object-contain" />
+                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">✓ {formDataDynamic?.ceoSignerName || requestData?.approvals?.find((a: any) => a.approvalLevel === "ceo_md" || a.approvalLevel === "md")?.approver?.name || ""}</p>
                                 </div>
                             </Row>
                         )}
 
                         {!approvalSectionIsReadOnly && isCurrentApprover && (
-                            <div className="p-4 bg-blue-50/50 mt-2">
-                                <h3 className="text-sm font-bold text-blue-700 mb-3 text-center border-b border-blue-200 dark:border-[#3b6dae]/30 pb-2">
-                                    Wait for Your Approval: {getApprovalLevelLabel().toUpperCase()}
-                                </h3>
-                                <Row label="Your Comments">
-                                    <Textarea
-                                        placeholder="Add your comments or observations..."
-                                        value={approvalComments}
-                                        onChange={(e) => setApprovalComments(e.target.value)}
-                                        className="border-blue-300 dark:border-[#3b6dae]/40 min-h-20 text-xs"
-                                    />
+                            <div className="border-t border-blue-200 dark:border-[#3b6dae]/40">
+                                <Row label="5.5 Your Comment">
+                                    <div className="space-y-3 py-1 w-full">
+                                        <Textarea
+                                            placeholder="Add your comments or observations here..."
+                                            value={approvalComments}
+                                            onChange={(e) => setApprovalComments(e.target.value)}
+                                            className="min-h-20 text-xs border-blue-300 dark:border-[#3b6dae]/40 bg-white dark:bg-[#1a385c]"
+                                        />
+                                    </div>
                                 </Row>
-
-                                {/* Signature Upload */}
-                                <Row label="Your Signature">
-                                    <div className="space-y-3">
-                                        {!approvalSectionIsReadOnly && (
-                                            <div className="flex gap-4 mb-4">
-                                                <label className="flex items-center gap-2 cursor-pointer group">
-                                                    <input
-                                                        type="radio"
-                                                        checked={signatureMethod === "draw"}
-                                                        onChange={() => {
-                                                            setSignatureMethod("draw");
-                                                            setSignatureFile(null);
-                                                            setSignaturePreview("");
-                                                        }}
-                                                        className="w-4 h-4 accent-blue-600"
-                                                    />
-                                                    <span className="text-xs font-black uppercase tracking-widest text-[#3b6dae] group-hover:text-blue-600">DRAW SIGNATURE</span>
-                                                </label>
-                                                <label className="flex items-center gap-2 cursor-pointer group">
-                                                    <input
-                                                        type="radio"
-                                                        checked={signatureMethod === "upload"}
-                                                        onChange={() => {
-                                                            setSignatureMethod("upload");
-                                                            setSignatureFile(null);
-                                                            setSignaturePreview("");
-                                                        }}
-                                                        className="w-4 h-4 accent-blue-600"
-                                                    />
-                                                    <span className="text-xs font-black uppercase tracking-widest text-[#3b6dae] group-hover:text-blue-600">UPLOAD IMAGE</span>
-                                                </label>
-                                            </div>
-                                        )}
+                                <Row label="5.3 Your Signature">
+                                    <div className="space-y-3 py-1 w-full">
+                                        <div className="flex gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => { setSignatureMethod("draw"); setSignatureFile(null); setSignaturePreview(""); }}
+                                                className={`px-5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
+                                                    signatureMethod === "draw"
+                                                        ? "bg-[#2d3a6d] text-white border-[#2d3a6d] shadow-sm"
+                                                        : "bg-white dark:bg-[#1f426b] text-gray-600 dark:text-slate-300 border-gray-300 dark:border-[#3b6dae]/40 hover:border-[#2d3a6d] hover:text-[#2d3a6d]"
+                                                } cursor-pointer`}
+                                            >
+                                                Draw
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => { setSignatureMethod("upload"); setSignatureFile(null); setSignaturePreview(""); }}
+                                                className={`px-5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
+                                                    signatureMethod === "upload"
+                                                        ? "bg-[#2d3a6d] text-white border-[#2d3a6d] shadow-sm"
+                                                        : "bg-white dark:bg-[#1f426b] text-gray-600 dark:text-slate-300 border-gray-300 dark:border-[#3b6dae]/40 hover:border-[#2d3a6d] hover:text-[#2d3a6d]"
+                                                } cursor-pointer`}
+                                            >
+                                                Upload image
+                                            </button>
+                                        </div>
 
                                         {signatureMethod === "upload" ? (
                                             <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                                                <input
-                                                    type="file"
-                                                    accept="image/*"
-                                                    onChange={(e) => {
-                                                        const file = e.target.files?.[0];
-                                                        if (file) {
-                                                            setSignatureFile(file);
-                                                            const reader = new FileReader();
-                                                            reader.onload = (ev) => setSignaturePreview(ev.target?.result as string);
-                                                            reader.readAsDataURL(file);
-                                                        }
-                                                    }}
-                                                    disabled={isLoading}
-                                                    className="text-xs block w-full text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all border border-blue-200 dark:border-[#3b6dae]/30 p-1.5 rounded-lg"
-                                                />
+                                                {signaturePreview ? (
+                                                    <div className="flex items-center gap-3 bg-blue-50 dark:bg-[#1a385c] rounded-lg border border-blue-200 dark:border-[#3b6dae]/30 p-3">
+                                                        <Paperclip size={14} className="text-blue-600 shrink-0" />
+                                                        <span className="text-xs font-medium text-blue-800 dark:text-blue-200 flex-1 truncate">{signatureFile?.name || "Signature image"}</span>
+                                                        <button type="button" onClick={() => { setSignatureFile(null); setSignaturePreview(""); }} className="text-red-500 hover:text-red-700 text-xs font-semibold">Remove</button>
+                                                    </div>
+                                                ) : (
+                                                    <label className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-blue-300 dark:border-[#3b6dae]/50 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-[#1a385c]/50 transition-all duration-200 w-fit">
+                                                        <span className="text-xs font-bold text-blue-600 dark:text-blue-400">+ Upload signature image</span>
+                                                        <input type="file" className="hidden" accept="image/*" onChange={(e) => {
+                                                            const file = e.target.files?.[0];
+                                                            if (file) {
+                                                                setSignatureFile(file);
+                                                                const reader = new FileReader();
+                                                                reader.onload = (ev) => setSignaturePreview(ev.target?.result as string);
+                                                                reader.readAsDataURL(file);
+                                                            }
+                                                        }} />
+                                                    </label>
+                                                )}
                                             </div>
                                         ) : (
                                             <SignaturePad 
@@ -435,32 +426,28 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
                                             />
                                         )}
 
-                                        {signaturePreview && (
-                                            <div className="space-y-2 animate-in zoom-in duration-300">
+                                        {signaturePreview && signatureMethod === "upload" && (
+                                            <div className="mt-2 animate-in zoom-in duration-300">
                                                 <img src={signaturePreview} alt="approver-signature" className="h-12 object-contain" />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setSignaturePreview("");
-                                                        setSignatureFile(null);
-                                                    }}
-                                                    className="text-[10px] text-red-600 hover:text-red-800 font-bold uppercase underline underline-offset-2"
-                                                >
-                                                    Clear Signature
-                                                </button>
                                             </div>
                                         )}
                                     </div>
                                 </Row>
                             </div>
                         )}
-                        {approvalSectionIsReadOnly && (
-                            <Row label="Status">
-                                <div className={`px-4 py-2 rounded text-sm font-bold inline-block ${isRequestApproved ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200'}`}>
-                                    {isRequestApproved ? "✓ FULLY APPROVED" : "✗ REJECTED"}
-                                </div>
-                            </Row>
-                        )}
+
+                    </Section>
+
+                    {/* 6. APPROVAL CHAIN (preview) */}
+                    <Section title="6. APPROVAL CHAIN (preview)">
+                        <div className="px-3 lg:px-4 py-3 lg:py-4">
+                            <ApprovalChainPreview
+                                requestType="asset"
+                                currentApprovalLevel={requestData?.currentApprovalLevel}
+                                status={requestData?.status || "draft"}
+                                approvals={requestData?.approvals || []}
+                            />
+                        </div>
                     </Section>
                 </div>
 

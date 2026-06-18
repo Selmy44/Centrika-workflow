@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
 import { formatDateTime } from "@/lib/dateFormatter";
-import { Loader2, FileText, Car, DollarSign, CheckCircle, XCircle, Clock, Eye, Package, Search } from "lucide-react";
+import { Loader2, FileText, Car, DollarSign, CheckCircle, XCircle, Clock, Eye, Package, Search, Paperclip } from "lucide-react";
 import { Link, useSearch } from "wouter";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
@@ -59,6 +59,9 @@ export default function Approvals() {
   const [activeTab, setActiveTab] = useState<"all" | "pending" | "approved" | "rejected">("all");
   const [isProcessingApproval, setIsProcessingApproval] = useState(false);
   const [signatureMethod, setSignatureMethod] = useState<"upload" | "draw">("draw");
+
+  // Mark notifications as read when a form is opened
+  const markReadByRequestId = (trpc as any).notifications.markReadByRequestId.useMutation();
 
   const { data: pendingRequests, isLoading: pendingLoading, refetch } = (trpc as any).requests.listPendingApprovals.useQuery(undefined, {
     enabled: isAuthenticated && (user?.role !== "user" || !!user?.additionalRoles),
@@ -106,6 +109,8 @@ export default function Approvals() {
         autoOpenAttempted.current = true;
         setSelectedRequest(request);
         setShowFullFormDialog(true);
+        // Mark as read since we're opening directly from notification
+        markReadByRequestId.mutate({ requestId: request.id });
       }
     }
   }, [requestIdFromUrl, pendingRequests]);
@@ -479,6 +484,8 @@ export default function Approvals() {
                             onClick={() => {
                               setSelectedRequest(request);
                               setShowFullFormDialog(true);
+                              // Mark related notifications as read when form is opened
+                              markReadByRequestId.mutate({ requestId: request.id });
                             }}
                           >
                             <FileText size={16} className="mr-2" />
@@ -517,53 +524,52 @@ export default function Approvals() {
               <div>
                 <label className="text-sm font-medium">Signature (Optional)</label>
                 <div className="mt-4">
-                  <div className="flex gap-4 mb-4">
-                    <label className="flex items-center gap-2 cursor-pointer group">
-                      <input
-                        type="radio"
-                        checked={signatureMethod === "draw"}
-                        onChange={() => {
-                          setSignatureMethod("draw");
-                          setSignatureFile(null);
-                          setApproverSignatureUrl("");
-                        }}
-                        className="w-4 h-4 accent-blue-600"
-                      />
-                      <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600">Draw Signature</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer group">
-                      <input
-                        type="radio"
-                        checked={signatureMethod === "upload"}
-                        onChange={() => {
-                          setSignatureMethod("upload");
-                          setSignatureFile(null);
-                          setApproverSignatureUrl("");
-                        }}
-                        className="w-4 h-4 accent-blue-600"
-                      />
-                      <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600">Upload Image</span>
-                    </label>
+                  <div className="flex gap-2 mb-3">
+                    <button
+                      type="button"
+                      onClick={() => { setSignatureMethod("draw"); setSignatureFile(null); setApproverSignatureUrl(""); }}
+                      className={`px-5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
+                        signatureMethod === "draw"
+                          ? "bg-[#2d3a6d] text-white border-[#2d3a6d] shadow-sm"
+                          : "bg-white dark:bg-[#1f426b] text-gray-600 dark:text-slate-300 border-gray-300 dark:border-[#3b6dae]/40 hover:border-[#2d3a6d] hover:text-[#2d3a6d]"
+                      } cursor-pointer`}
+                    >
+                      Draw
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setSignatureMethod("upload"); setSignatureFile(null); setApproverSignatureUrl(""); }}
+                      className={`px-5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
+                        signatureMethod === "upload"
+                          ? "bg-[#2d3a6d] text-white border-[#2d3a6d] shadow-sm"
+                          : "bg-white dark:bg-[#1f426b] text-gray-600 dark:text-slate-300 border-gray-300 dark:border-[#3b6dae]/40 hover:border-[#2d3a6d] hover:text-[#2d3a6d]"
+                      } cursor-pointer`}
+                    >
+                      Upload image
+                    </button>
                   </div>
 
                   {signatureMethod === "upload" ? (
-                    <div className="border-2 border-dashed border-border rounded-lg p-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0] || null;
-                          setSignatureFile(file);
-                          if (file) {
-                             const reader = new FileReader();
-                             reader.onload = (ev) => setApproverSignatureUrl(ev.target?.result as string);
-                             reader.readAsDataURL(file);
-                          }
-                        }}
-                        className="w-full text-xs"
-                      />
-                      {signatureFile && (
-                        <p className="text-xs text-muted-foreground mt-2 font-semibold">Selected: {signatureFile.name}</p>
+                    <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                      {approverSignatureUrl ? (
+                        <div className="flex items-center gap-3 bg-blue-50 dark:bg-[#1a385c] rounded-lg border border-blue-200 dark:border-[#3b6dae]/30 p-3">
+                          <Paperclip size={14} className="text-blue-600 shrink-0" />
+                          <span className="text-xs font-medium text-blue-800 dark:text-blue-200 flex-1 truncate">{signatureFile?.name || "Signature image"}</span>
+                          <button type="button" onClick={() => { setSignatureFile(null); setApproverSignatureUrl(""); }} className="text-red-500 hover:text-red-700 text-xs font-semibold">Remove</button>
+                        </div>
+                      ) : (
+                        <label className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-blue-300 dark:border-[#3b6dae]/50 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-[#1a385c]/50 transition-all duration-200 w-fit">
+                          <span className="text-xs font-bold text-blue-600 dark:text-blue-400">+ Upload signature image</span>
+                          <input type="file" className="hidden" accept="image/*" onChange={(e) => {
+                            const file = e.target.files?.[0] || null;
+                            setSignatureFile(file);
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onload = (ev) => setApproverSignatureUrl(ev.target?.result as string);
+                              reader.readAsDataURL(file);
+                            }
+                          }} />
+                        </label>
                       )}
                     </div>
                   ) : (

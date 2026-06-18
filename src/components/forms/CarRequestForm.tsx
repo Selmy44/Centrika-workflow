@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer, Car, Eye } from "lucide-react";
+import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer, Car, Eye, Paperclip } from "lucide-react";
+import ApprovalChainPreview from "@/components/forms/ApprovalChainPreview";
+import { ApprovalRoutePreview } from "@/components/forms/ApprovalRoutePreview";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -50,6 +52,8 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
     dateOfEmployment: "",
     staffId: "",
     position: "",
+    workEmail: "",
+    requestNumber: "",
     employeeSignatureUrl: "",
     signaturePreview: "",
     signatureFile: null as File | null,
@@ -139,6 +143,7 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
         staffId: user.staffId || "",
         department: user.department?.name || "",
         position: user.position || "",
+        workEmail: user.email || "",
         dateOfEmployment: autoFillData.dateOfEmployment || "",
         reportingManager: autoFillData.managerId ? String(autoFillData.managerId) : "",
       }));
@@ -304,44 +309,28 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
           CAR REQUEST FORM
         </div>
 
-        {/* ===== REQUEST HEADER SECTION - Responsive Grid ===== */}
+        {/* ===== REQUEST HEADER SECTION (hidden — kept for future use) =====
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-2 lg:gap-3 px-3 lg:px-6 py-2 lg:py-3 text-xs lg:text-sm items-end">
           <div>
             <p className="font-semibold text-blue-600 mb-1 text-[10px] lg:text-xs">CTK</p>
             <div className="flex gap-0 items-center">
-              <Input
-                value="CTK"
-                className="w-full h-6 lg:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] lg:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
-                disabled
-              />
+              <Input value="CTK" className="w-full h-6 lg:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] lg:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed" disabled />
             </div>
           </div>
           <div>
             <p className="font-semibold text-blue-600 mb-1 text-[10px] lg:text-xs">Date of Request</p>
-            <Input
-              type="text"
-              value={new Date().toISOString().split('T')[0]}
-              className="h-6 lg:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] lg:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
-              disabled
-            />
+            <Input type="text" value={new Date().toISOString().split('T')[0]} className="h-6 lg:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] lg:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed" disabled />
           </div>
           <div>
             <p className="font-semibold text-blue-600 text-xs mb-1">Staff ID</p>
-            <Input
-              value={form.staffId}
-              className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
-              disabled
-            />
+            <Input value={form.staffId} className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed" disabled />
           </div>
           <div>
             <p className="font-semibold text-blue-600 text-xs mb-1">Employee Name</p>
-            <Input
-              value={form.employeeName}
-              className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
-              disabled
-            />
+            <Input value={form.employeeName} className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed" disabled />
           </div>
         </div>
+        ===== */}
 
         {/* ===== REQUEST DETAILS ===== */}
         <div className="">
@@ -349,31 +338,30 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
 
           {/* 1. EMPLOYEE INFORMATION */}
           <Section title="1. EMPLOYEE INFORMATION">
-            <Row label="1.1 Employee Full Name">
+            <Row label="1.1 Request Number">
+              <Input
+                value={form.requestNumber || `CR-${requestData?.id || ''}`}
+                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
+                disabled
+              />
+            </Row>
+            <Row label="1.2 Employee Full Name">
               <Input
                 value={form.employeeName}
                 className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
                 disabled
               />
             </Row>
-            <Row label="1.2 Date of Employment">
-              <Input
-                type="date"
-                value={form.dateOfEmployment}
-                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
-                disabled
-              />
-            </Row>
-            <Row label="1.3 Staff ID">
-              <Input
-                value={form.staffId}
-                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
-                disabled
-              />
-            </Row>
-            <Row label="1.4 Department">
+            <Row label="1.3 Department">
               <Input
                 value={form.department}
+                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
+                disabled
+              />
+            </Row>
+            <Row label="1.4 Employee / Staff ID">
+              <Input
+                value={form.staffId}
                 className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
                 disabled
               />
@@ -381,6 +369,21 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
             <Row label="1.5 Position / Title">
               <Input
                 value={form.position}
+                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
+                disabled
+              />
+            </Row>
+            <Row label="1.6 Date of Employment">
+              <Input
+                type="date"
+                value={form.dateOfEmployment}
+                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
+                disabled
+              />
+            </Row>
+            <Row label="1.7 Work Email">
+              <Input
+                value={form.workEmail}
                 className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
                 disabled
               />
@@ -498,58 +501,64 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
                 {isReadOnly ? (
                   <div className="space-y-1">
                     {form.employeeSignatureUrl ? (
-                      <div className="p-2 border border-blue-200 dark:border-[#3b6dae]/30 rounded inline-block bg-white dark:bg-[#1f426b]">
+                      <>
                         <img src={form.employeeSignatureUrl} alt="Employee Signature" className="h-14 object-contain" />
-                      </div>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">{form.employeeName || requestData?.user?.name || ""}</p>
+                      </>
                     ) : (
                       <p className="text-xs italic text-gray-500">No signature provided</p>
                     )}
                   </div>
                 ) : (
                   <>
-                    <div className="flex gap-4 mb-4">
-                      <label className="flex items-center gap-2 cursor-pointer group">
-                        <input
-                          type="radio"
-                          checked={form.signatureMethod === "draw"}
-                          onChange={() => setForm({ ...form, signatureMethod: "draw", signatureFile: null })}
-                          className="w-4 h-4 accent-blue-600"
-                        />
-                        <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600">Draw Signature</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer group">
-                        <input
-                          type="radio"
-                          checked={form.signatureMethod === "upload"}
-                          onChange={() => setForm({ ...form, signatureMethod: "upload", signatureFile: null })}
-                          className="w-4 h-4 accent-blue-600"
-                        />
-                        <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600">Upload Image</span>
-                      </label>
+                    <div className="flex gap-2 mb-3">
+                      <button
+                        type="button"
+                        onClick={() => setForm({ ...form, signatureMethod: "draw", signatureFile: null, employeeSignatureUrl: "" })}
+                        className={`px-5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
+                          form.signatureMethod === "draw"
+                            ? "bg-[#2d3a6d] text-white border-[#2d3a6d] shadow-sm"
+                            : "bg-white dark:bg-[#1f426b] text-gray-600 dark:text-slate-300 border-gray-300 dark:border-[#3b6dae]/40 hover:border-[#2d3a6d] hover:text-[#2d3a6d]"
+                        } cursor-pointer`}
+                      >
+                        Draw
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setForm({ ...form, signatureMethod: "upload", signatureFile: null, employeeSignatureUrl: "" })}
+                        className={`px-5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
+                          form.signatureMethod === "upload"
+                            ? "bg-[#2d3a6d] text-white border-[#2d3a6d] shadow-sm"
+                            : "bg-white dark:bg-[#1f426b] text-gray-600 dark:text-slate-300 border-gray-300 dark:border-[#3b6dae]/40 hover:border-[#2d3a6d] hover:text-[#2d3a6d]"
+                        } cursor-pointer`}
+                      >
+                        Upload image
+                      </button>
                     </div>
 
                     {form.signatureMethod === "upload" ? (
                       <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              const reader = new FileReader();
-                              reader.onload = (ev) => {
-                                setForm((prev) => ({ 
-                                  ...prev, 
-                                  signatureFile: file, 
-                                  signaturePreview: URL.createObjectURL(file),
-                                  employeeSignatureUrl: ev.target?.result as string 
-                                }));
-                              };
-                              reader.readAsDataURL(file);
-                            }
-                          }}
-                          className="text-xs block w-full text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all"
-                        />
+                        {form.employeeSignatureUrl ? (
+                          <div className="flex items-center gap-3 bg-blue-50 dark:bg-[#1a385c] rounded-lg border border-blue-200 dark:border-[#3b6dae]/30 p-3">
+                            <Paperclip size={14} className="text-blue-600 shrink-0" />
+                            <span className="text-xs font-medium text-blue-800 dark:text-blue-200 flex-1 truncate">{form.signatureFile?.name || "Signature image"}</span>
+                            <button type="button" onClick={() => setForm({ ...form, signatureFile: null, employeeSignatureUrl: "" })} className="text-red-500 hover:text-red-700 text-xs font-semibold">Remove</button>
+                          </div>
+                        ) : (
+                          <label className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-blue-300 dark:border-[#3b6dae]/50 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-[#1a385c]/50 transition-all duration-200 w-fit">
+                            <span className="text-xs font-bold text-blue-600 dark:text-blue-400">+ Upload signature image</span>
+                            <input type="file" className="hidden" accept="image/*" onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onload = (ev) => {
+                                  setForm((prev) => ({ ...prev, signatureFile: file, signaturePreview: URL.createObjectURL(file), employeeSignatureUrl: ev.target?.result as string }));
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            }} />
+                          </label>
+                        )}
                       </div>
                     ) : (
                       <SignaturePad 
@@ -563,7 +572,7 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
                       />
                     )}
                     
-                    {form.employeeSignatureUrl && (
+                    {form.employeeSignatureUrl && form.signatureMethod === "upload" && (
                       <div className="mt-2 animate-in zoom-in duration-300">
                         <img src={form.employeeSignatureUrl} alt="sig" className="h-16 object-contain" />
                       </div>
@@ -574,22 +583,49 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
             </Row>
           </Section>
 
-          {/* 6. APPROVAL WORKFLOW */}
-          <Section title="6. APPROVAL WORKFLOW">
-            <Row label="6.1 HR Approver">
-              <div className="flex flex-col gap-1 w-full">
-                <p className="text-xs text-gray-500 italic mt-1 mb-1">
-                  This request is routed directly to <span className="font-semibold text-blue-600">HR</span> for approval.
-                </p>
-                {isReadOnly && form.hrSignatureUrl && (
-                  <div className="mt-1">
-                    <p className="text-[10px] text-green-600 font-semibold mb-0.5">✓ Approved by HR</p>
+          {/* Draft-only: approval route preview (no section header) */}
+          {!isReadOnly && (() => {
+            const empInitials = (user?.name || "Me").split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
+            return (
+              <ApprovalRoutePreview steps={[
+                { initials: empInitials, name: user?.name || "You", role: "Submitter", isSubmitter: true },
+                { initials: "HR", name: "HR Department", role: "HR Approver" },
+              ]} />
+            );
+          })()}
+
+          {/* 6. APPROVER SIGNATURES — only after resolution */}
+          {(requestData?.status === "approved" || requestData?.status === "rejected") && (
+          <Section title="6. APPROVER SIGNATURES">
+            {/* Approved/rejected: show actual HR signature only */}
+            {form.hrSignatureUrl && (requestData?.status === "approved" || requestData?.status === "rejected") && (() => {
+              const hrApproval = requestData?.approvals?.find((a: any) => a.approvalLevel === "hr");
+              const hrName = savedFormData.data?.hrSignerName || hrApproval?.approver?.name || "HR Department";
+              return (
+                <Row label="6.1 HR Approver">
+                  <div className="py-1">
                     <img src={form.hrSignatureUrl} alt="HR Signature" className="h-10 object-contain" />
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">✓ {hrName}</p>
                   </div>
-                )}
-              </div>
-            </Row>
+                </Row>
+              );
+            })()}
           </Section>
+          )}
+
+          {/* 7. APPROVAL CHAIN (preview) */}
+          {(isReadOnly || requestData?.status === "pending" || requestData?.status === "approved" || requestData?.status === "rejected") && (
+            <Section title="7. APPROVAL CHAIN (preview)">
+              <div className="px-3 lg:px-4 py-3 lg:py-4">
+                <ApprovalChainPreview
+                  requestType="car"
+                  currentApprovalLevel={requestData?.currentApprovalLevel}
+                  status={requestData?.status || "draft"}
+                  approvals={requestData?.approvals || []}
+                />
+              </div>
+            </Section>
+          )}
         </div>
 
         {/* ===== ACTIONS ===== */}

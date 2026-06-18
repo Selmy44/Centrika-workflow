@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer, Package, Eye } from "lucide-react";
+import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer, Package, Eye, Paperclip } from "lucide-react";
+import ApprovalChainPreview from "@/components/forms/ApprovalChainPreview";
+import { ApprovalRoutePreview } from "@/components/forms/ApprovalRoutePreview";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -56,6 +58,7 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
         staffId: "",
         department: "",
         position: "",
+        workEmail: "",
         dateOfEmployment: "",
         title: "",
         itemName: "",
@@ -102,6 +105,7 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                 staffId: autoFillData.staffId || "",
                 department: autoFillData.department || "",
                 position: autoFillData.position || "",
+                workEmail: user.email || "",
                 dateOfEmployment: autoFillData.dateOfEmployment || "",
                 reportingManager: autoFillData.managerId ? String(autoFillData.managerId) : "",
             }));
@@ -292,44 +296,28 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                     Asset / Property Request Form
                 </div>
 
-                {/* ===== REQUEST HEADER SECTION - Responsive Grid ===== */}
+                {/* ===== REQUEST HEADER SECTION (hidden — kept for future use) =====
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-2 lg:gap-3 px-3 lg:px-6 py-2 lg:py-3 text-xs lg:text-sm items-end">
                     <div>
                         <p className="font-semibold text-blue-600 mb-1 text-[10px] lg:text-xs uppercase tracking-tighter">CTK</p>
                         <div className="flex gap-0 items-center">
-                            <Input
-                                value="CTK"
-                                className="w-full h-6 lg:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] lg:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
-                                disabled
-                            />
+                            <Input value="CTK" className="w-full h-6 lg:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] lg:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed" disabled />
                         </div>
                     </div>
                     <div>
                         <p className="font-semibold text-blue-600 mb-1 text-[10px] lg:text-xs uppercase tracking-tighter">Date of Request</p>
-                        <Input
-                            type="text"
-                            value={new Date().toISOString().split('T')[0]}
-                            className="h-6 lg:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] lg:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
-                            disabled
-                        />
+                        <Input type="text" value={new Date().toISOString().split('T')[0]} className="h-6 lg:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] lg:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed" disabled />
                     </div>
                     <div>
                         <p className="font-semibold text-blue-600 text-[10px] lg:text-xs mb-1 uppercase tracking-tighter">Request Number</p>
-                        <Input
-                            value={form.requestNumber}
-                            className="h-6 lg:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] lg:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
-                            disabled
-                        />
+                        <Input value={form.requestNumber} className="h-6 lg:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] lg:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed" disabled />
                     </div>
                     <div>
                         <p className="font-semibold text-blue-600 text-xs mb-1 uppercase tracking-tighter">Employee Name</p>
-                        <Input
-                            value={form.employeeName}
-                            className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed"
-                            disabled
-                        />
+                        <Input value={form.employeeName} className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed" disabled />
                     </div>
                 </div>
+                ===== */}
 
                 {/* ===== REQUEST DETAILS ===== */}
                 <div className="border-t border-[#3b6dae]">
@@ -339,16 +327,16 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
 
                     {/* 1. EMPLOYEE INFORMATION */}
                     <Section title="1. EMPLOYEE INFORMATION">
-                        <Row label="1.1 Employee Full Name">
+                        <Row label="1.1 Request Number">
                             <Input
-                                value={form.employeeName}
+                                value={form.requestNumber}
                                 className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
                                 disabled
                             />
                         </Row>
-                        <Row label="1.2 Employee / Staff ID">
+                        <Row label="1.2 Employee Full Name">
                             <Input
-                                value={form.staffId}
+                                value={form.employeeName}
                                 className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
                                 disabled
                             />
@@ -360,9 +348,31 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                                 disabled
                             />
                         </Row>
-                        <Row label="1.4 Position / Title">
+                        <Row label="1.4 Employee / Staff ID">
+                            <Input
+                                value={form.staffId}
+                                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
+                                disabled
+                            />
+                        </Row>
+                        <Row label="1.5 Position / Title">
                             <Input
                                 value={form.position}
+                                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
+                                disabled
+                            />
+                        </Row>
+                        <Row label="1.6 Date of Employment">
+                            <Input
+                                type="date"
+                                value={form.dateOfEmployment}
+                                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
+                                disabled
+                            />
+                        </Row>
+                        <Row label="1.7 Work Email">
+                            <Input
+                                value={form.workEmail}
                                 className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
                                 disabled
                             />
@@ -449,17 +459,19 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                         <Row label="2.6 Technical Specifications / Quote">
                             <div className="space-y-2">
                                 {!isReadOnly && (
-                                    <input
-                                        type="file"
-                                        onChange={(e) => {
-                                            if (e.target.files?.[0]) {
-                                                setForm({ ...form, supportingDocument: e.target.files[0] });
-                                            }
-                                        }}
-                                        className="text-xs"
-                                    />
+                                    form.supportingDocument ? (
+                                        <div className="flex items-center gap-3 bg-blue-50 dark:bg-[#1a385c] rounded-lg border border-blue-200 dark:border-[#3b6dae]/30 p-3">
+                                            <Paperclip size={14} className="text-blue-600 shrink-0" />
+                                            <span className="text-xs font-medium text-blue-800 dark:text-blue-200 flex-1 truncate">{form.supportingDocument.name}</span>
+                                            <button type="button" onClick={() => setForm({ ...form, supportingDocument: null })} className="text-red-500 hover:text-red-700 text-xs font-semibold">Remove</button>
+                                        </div>
+                                    ) : (
+                                        <label className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-blue-300 dark:border-[#3b6dae]/50 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-[#1a385c]/50 transition-all duration-200 w-fit">
+                                            <span className="text-xs font-bold text-blue-600 dark:text-blue-400">+ Attach specs / quote</span>
+                                            <input type="file" className="hidden" onChange={(e) => { if (e.target.files?.[0]) { setForm({ ...form, supportingDocument: e.target.files[0] }); } }} />
+                                        </label>
+                                    )
                                 )}
-                                {form.supportingDocument && <p className="text-xs text-green-600 font-semibold">✓ {form.supportingDocument.name}</p>}
                                 {form.supportingDocumentUrl && (
                                     <div className="flex items-center gap-2 mt-1">
                                         <p className="text-xs text-blue-600 font-medium">Attached: Document</p>
@@ -475,60 +487,69 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                         </Row>
                     </Section>
 
-                    {/* 3. APPROVAL WORKFLOW */}
                     {/* 3. EMPLOYEE SIGNATURE */}
                     <Section title="3. EMPLOYEE SIGNATURE">
                         <Row label="3.1 Your Signature">
                             <div className="space-y-3 w-full">
                                 {isReadOnly ? (
                                     <div className="space-y-1">
-                                        {form.employeeSignatureUrl ? <img src={form.employeeSignatureUrl} alt="sig" className="h-16 object-contain" /> : <p className="text-xs italic text-gray-500">No signature</p>}
+                                        {form.employeeSignatureUrl ? (
+                                          <>
+                                            <img src={form.employeeSignatureUrl} alt="sig" className="h-16 object-contain" />
+                                            <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">{form.employeeName || requestData?.user?.name || ""}</p>
+                                          </>
+                                        ) : <p className="text-xs italic text-gray-500">No signature</p>}
                                     </div>
                                 ) : (
                                     <>
-                                        <div className="flex gap-4 mb-4">
-                                            <label className="flex items-center gap-2 cursor-pointer group">
-                                                <input
-                                                    type="radio"
-                                                    checked={form.signatureMethod === "draw"}
-                                                    onChange={() => setForm({ ...form, signatureMethod: "draw", signatureFile: null })}
-                                                    className="w-4 h-4 accent-blue-600"
-                                                />
-                                                <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600">Draw Signature</span>
-                                            </label>
-                                            <label className="flex items-center gap-2 cursor-pointer group">
-                                                <input
-                                                    type="radio"
-                                                    checked={form.signatureMethod === "upload"}
-                                                    onChange={() => setForm({ ...form, signatureMethod: "upload", signatureFile: null })}
-                                                    className="w-4 h-4 accent-blue-600"
-                                                />
-                                                <span className="text-xs font-black uppercase tracking-widest text-slate-500 group-hover:text-blue-600">Upload Image</span>
-                                            </label>
+                                        <div className="flex gap-2 mb-3">
+                                            <button
+                                                type="button"
+                                                onClick={() => setForm({ ...form, signatureMethod: "draw", signatureFile: null, employeeSignatureUrl: "" })}
+                                                className={`px-5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
+                                                    form.signatureMethod === "draw"
+                                                        ? "bg-[#2d3a6d] text-white border-[#2d3a6d] shadow-sm"
+                                                        : "bg-white dark:bg-[#1f426b] text-gray-600 dark:text-slate-300 border-gray-300 dark:border-[#3b6dae]/40 hover:border-[#2d3a6d] hover:text-[#2d3a6d]"
+                                                } cursor-pointer`}
+                                            >
+                                                Draw
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setForm({ ...form, signatureMethod: "upload", signatureFile: null, employeeSignatureUrl: "" })}
+                                                className={`px-5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
+                                                    form.signatureMethod === "upload"
+                                                        ? "bg-[#2d3a6d] text-white border-[#2d3a6d] shadow-sm"
+                                                        : "bg-white dark:bg-[#1f426b] text-gray-600 dark:text-slate-300 border-gray-300 dark:border-[#3b6dae]/40 hover:border-[#2d3a6d] hover:text-[#2d3a6d]"
+                                                } cursor-pointer`}
+                                            >
+                                                Upload image
+                                            </button>
                                         </div>
 
                                         {form.signatureMethod === "upload" ? (
                                             <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                                                <input
-                                                    type="file"
-                                                    accept="image/*"
-                                                    onChange={(e) => {
-                                                        const file = e.target.files?.[0];
-                                                        if (file) {
-                                                            const reader = new FileReader();
-                                                            reader.onload = (ev) => {
-                                                                setForm({ 
-                                                                    ...form, 
-                                                                    signatureFile: file, 
-                                                                    signaturePreview: URL.createObjectURL(file),
-                                                                    employeeSignatureUrl: ev.target?.result as string 
-                                                                });
-                                                            };
-                                                            reader.readAsDataURL(file);
-                                                        }
-                                                    }}
-                                                    className="text-xs block w-full text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all"
-                                                />
+                                                {form.employeeSignatureUrl ? (
+                                                    <div className="flex items-center gap-3 bg-blue-50 dark:bg-[#1a385c] rounded-lg border border-blue-200 dark:border-[#3b6dae]/30 p-3">
+                                                        <Paperclip size={14} className="text-blue-600 shrink-0" />
+                                                        <span className="text-xs font-medium text-blue-800 dark:text-blue-200 flex-1 truncate">{form.signatureFile?.name || "Signature image"}</span>
+                                                        <button type="button" onClick={() => setForm({ ...form, signatureFile: null, employeeSignatureUrl: "" })} className="text-red-500 hover:text-red-700 text-xs font-semibold">Remove</button>
+                                                    </div>
+                                                ) : (
+                                                    <label className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-blue-300 dark:border-[#3b6dae]/50 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-[#1a385c]/50 transition-all duration-200 w-fit">
+                                                        <span className="text-xs font-bold text-blue-600 dark:text-blue-400">+ Upload signature image</span>
+                                                        <input type="file" className="hidden" accept="image/*" onChange={(e) => {
+                                                            const file = e.target.files?.[0];
+                                                            if (file) {
+                                                                const reader = new FileReader();
+                                                                reader.onload = (ev) => {
+                                                                    setForm({ ...form, signatureFile: file, signaturePreview: URL.createObjectURL(file), employeeSignatureUrl: ev.target?.result as string });
+                                                                };
+                                                                reader.readAsDataURL(file);
+                                                            }
+                                                        }} />
+                                                    </label>
+                                                )}
                                             </div>
                                         ) : (
                                             <SignaturePad 
@@ -542,7 +563,7 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                                             />
                                         )}
                                         
-                                        {form.employeeSignatureUrl && (
+                                        {form.employeeSignatureUrl && form.signatureMethod === "upload" && (
                                            <div className="mt-2 animate-in zoom-in duration-300">
                                               <img src={form.employeeSignatureUrl} alt="sig" className="h-16 object-contain" />
                                            </div>
@@ -553,48 +574,78 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                         </Row>
                     </Section>
 
-                    {/* 4. APPROVAL WORKFLOW */}
-                    <Section title="4. APPROVAL WORKFLOW">
-                        <Row label="4.1 Line Manager / HOD">
-                            <div className="flex flex-col gap-1 w-full">
-                                <Input
-                                    value={uniqueHeads.find((h: any) => h.id === parseInt(form.reportingManager))?.name || "Not assigned"}
-                                    className="w-full h-8 border-blue-300 dark:border-[#3b6dae]/40 bg-gray-100 dark:bg-[#295482] text-black dark:text-slate-100 font-medium cursor-not-allowed mt-1 mb-1 max-w-[400px]"
-                                    disabled
-                                />
-                                {isReadOnly && (savedFormData.data?.managerSignatureUrl || requestData?.managerSignatureUrl) && (
-                                    <div className="mt-1">
-                                        <p className="text-[10px] text-green-600 font-semibold mb-0.5">✓ Approved by HOD</p>
-                                        <img src={savedFormData.data?.managerSignatureUrl || requestData?.managerSignatureUrl} alt="HOD Signature" className="h-10 object-contain" />
+                    {/* Draft-only: approval route preview (no section header) */}
+                    {!isReadOnly && (() => {
+                        const empInitials = (user?.name || "Me").split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
+                        const managerFromHeads = heads.find((h: any) => h.id === Number(autoFillData?.managerId || form.reportingManager));
+                        const mgrName = managerFromHeads?.name || autoFillData?.managerName || "HOD";
+                        const mgrInitials = mgrName !== "HOD" ? mgrName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) : "HOD";
+                        return (
+                            <ApprovalRoutePreview steps={[
+                                { initials: empInitials, name: user?.name || "You", role: "Submitter", isSubmitter: true },
+                                { initials: mgrInitials, name: mgrName, role: "Line Manager / HOD" },
+                                { initials: "HR", name: "HR Department", role: "HR Review" },
+                                { initials: "FIN", name: "Head of Finance", role: "Finance" },
+                            ]} />
+                        );
+                    })()}
+
+                    {/* 4. APPROVER SIGNATURES — only after resolution */}
+                    {(requestData?.status === "approved" || requestData?.status === "rejected") && (
+                    <Section title="4. APPROVER SIGNATURES">
+                        {/* Approved/rejected: show actual signatures only */}
+                        {(requestData?.status === "approved" || requestData?.status === "rejected") && (() => {
+                            const hodApproval = requestData?.approvals?.find((a: any) => a.approvalLevel === "head_of_department");
+                            const hodName = savedFormData.data?.managerSignerName || hodApproval?.approver?.name || "Line Manager / HOD";
+                            const hodSig = savedFormData.data?.managerSignatureUrl || requestData?.managerSignatureUrl;
+
+                            const hrApproval = requestData?.approvals?.find((a: any) => a.approvalLevel === "hr");
+                            const hrName = savedFormData.data?.hrSignerName || hrApproval?.approver?.name || "HR Department";
+                            const hrSig = savedFormData.data?.hrSignatureUrl || requestData?.hrSignatureUrl;
+
+                            const finApproval = requestData?.approvals?.find((a: any) => a.approvalLevel === "head_of_finance");
+                            const finName = savedFormData.data?.financeSignerName || finApproval?.approver?.name || "Head of Finance";
+                            const finSig = savedFormData.data?.financeSignatureUrl || requestData?.financeSignatureUrl;
+
+                            const ceoApproval = requestData?.approvals?.find((a: any) => a.approvalLevel === "ceo_md" || a.approvalLevel === "md");
+                            const ceoName = savedFormData.data?.ceoSignerName || ceoApproval?.approver?.name || "CEO / MD";
+                            const ceoSig = savedFormData.data?.ceoSignatureUrl || requestData?.ceoSignatureUrl;
+
+                            const renderSlot = (label: string, name: string, sigUrl?: string, altText?: string) => sigUrl ? (
+                                <Row label={label}>
+                                    <div className="py-1">
+                                        <img src={sigUrl} alt={altText || "Signature"} className="h-10 object-contain" />
+                                        <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">✓ {name}</p>
                                     </div>
-                                )}
-                            </div>
-                        </Row>
-                        {isReadOnly && (savedFormData.data?.hrSignatureUrl || requestData?.hrSignatureUrl) && (
-                            <Row label="4.2 HR Review">
-                                <div className="mt-1">
-                                    <p className="text-[10px] text-green-600 font-semibold mb-0.5">✓ Approved by HR</p>
-                                    <img src={savedFormData.data?.hrSignatureUrl || requestData?.hrSignatureUrl} alt="HR Signature" className="h-10 object-contain" />
-                                </div>
-                            </Row>
-                        )}
-                        {isReadOnly && (savedFormData.data?.financeSignatureUrl || requestData?.financeSignatureUrl) && (
-                            <Row label="4.3 Head of Finance">
-                                <div className="mt-1">
-                                    <p className="text-[10px] text-green-600 font-semibold mb-0.5">✓ Approved by Head of Finance</p>
-                                    <img src={savedFormData.data?.financeSignatureUrl || requestData?.financeSignatureUrl} alt="Finance Signature" className="h-10 object-contain" />
-                                </div>
-                            </Row>
-                        )}
-                        {isReadOnly && (savedFormData.data?.ceoSignatureUrl || requestData?.ceoSignatureUrl) && (
-                            <Row label="4.4 CEO / MD">
-                                <div className="mt-1">
-                                    <p className="text-[10px] text-green-600 font-semibold mb-0.5">✓ Final Approval by CEO/MD</p>
-                                    <img src={savedFormData.data?.ceoSignatureUrl || requestData?.ceoSignatureUrl} alt="CEO Signature" className="h-10 object-contain" />
-                                </div>
-                            </Row>
-                        )}
+                                </Row>
+                            ) : null;
+
+                            return (
+                                <>
+                                    {renderSlot("4.1 HOD / Line Manager", hodName, hodSig, "HOD Signature")}
+                                    {renderSlot("4.2 HR Review", hrName, hrSig, "HR Signature")}
+                                    {renderSlot("4.3 Head of Finance", finName, finSig, "Finance Signature")}
+                                    {ceoSig && renderSlot("4.4 CEO / MD", ceoName, ceoSig, "CEO Signature")}
+                                </>
+                            );
+                        })()}
                     </Section>
+                    )}
+
+
+                    {/* 5. APPROVAL CHAIN (preview) */}
+                    {(isReadOnly || requestData?.status === "pending" || requestData?.status === "approved" || requestData?.status === "rejected") && (
+                        <Section title="5. APPROVAL CHAIN (preview)">
+                            <div className="px-3 lg:px-4 py-3 lg:py-4">
+                                <ApprovalChainPreview
+                                    requestType="asset"
+                                    currentApprovalLevel={requestData?.currentApprovalLevel}
+                                    status={requestData?.status || "draft"}
+                                    approvals={requestData?.approvals || []}
+                                />
+                            </div>
+                        </Section>
+                    )}
                 </div>
 
                 {/* ===== ACTIONS ===== */}
