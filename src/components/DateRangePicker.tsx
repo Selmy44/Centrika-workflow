@@ -291,10 +291,7 @@ export default function DateRangePicker({
           <div className="px-3 md:px-4 py-2 md:py-3 rounded-lg border-2 border-blue-300 dark:border-blue-500/50 bg-blue-50 dark:bg-blue-900/30 text-center shrink-0">
             <div className="text-[10px] md:text-xs text-blue-600 dark:text-blue-300">Duration</div>
             <div className="font-bold text-base md:text-lg text-blue-900 dark:text-blue-100 leading-tight">
-              {isFixedDuration
-                ? calculateWorkingDays(startDate, endDate)
-                : Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1}{" "}
-              days
+            {calculateWorkingDays(startDate, endDate)} business days
             </div>
           </div>
         )}
@@ -436,10 +433,7 @@ export default function DateRangePicker({
                       <span className="font-semibold">{formatDate(endDate)}</span>
                     </p>
                     <p className="text-xs md:text-sm text-blue-600 dark:text-blue-300 mt-1 font-bold">
-                      {isFixedDuration
-                        ? calculateWorkingDays(startDate, endDate)
-                        : Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1}{" "}
-                      days
+                      {calculateWorkingDays(startDate, endDate)} business days
                     </p>
                   </div>
                   <button

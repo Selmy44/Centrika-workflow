@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Loader2, Phone, Mail, Globe, MapPin, AlertCircle } from "lucide-react";
+import { Loader2, Phone, Mail, Globe, MapPin, AlertCircle, User, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -101,6 +101,13 @@ export default function AnnualLeaveForm({
     signatureDate: new Date().toISOString().split("T")[0],
     signatureMethod: "draw" as "upload" | "draw",
     managerSignatureUrl: "",
+    handoverPersonId: "",
+    handoverPersonName: "",
+    handoverPersonPhone: "",
+    handoverPersonEmail: "",
+    handoverPersonPosition: "",
+    handoverPersonDepartment: "",
+    handoverResponsibilities: "",
   });
 
   const { data: heads = [] } = trpc.users.listHeads.useQuery(undefined, {
@@ -119,6 +126,9 @@ export default function AnnualLeaveForm({
   const createLeave = trpc.requests.createLeaveRequest.useMutation();
   const submitRequest = trpc.requests.submitRequest.useMutation();
   const storeFormData = (trpc as any).requests.storeLeaveFormData.useMutation();
+
+  // Fetch staff list for handover person picker
+  const staffForBackup = (trpc as any).users.listStaffForBackup.useQuery();
 
   // Fetch saved form data for draft/read-only views
   const savedFormData = (trpc as any).requests.getLeaveFormData.useQuery(
@@ -152,6 +162,12 @@ export default function AnnualLeaveForm({
         leaveDaysTaken: requestData.leaveRequest?.leaveDaysTaken?.toString() || prev.leaveDaysTaken,
         leaveDaysRemaining: requestData.leaveRequest?.leaveDaysRemaining?.toString() || prev.leaveDaysRemaining,
         reportingManager: requestData.initialApproverId?.toString() || prev.reportingManager,
+        // Handover fields from the LeaveRequest DB record
+        handoverPersonName: requestData.leaveRequest?.backupPersonName || prev.handoverPersonName,
+        handoverPersonPhone: requestData.leaveRequest?.backupPersonPhone || prev.handoverPersonPhone,
+        handoverPersonId: requestData.leaveRequest?.handoverPersonId ? String(requestData.leaveRequest.handoverPersonId) : prev.handoverPersonId,
+        handoverPersonEmail: requestData.leaveRequest?.handoverPersonEmail || prev.handoverPersonEmail,
+        handoverResponsibilities: requestData.leaveRequest?.handoverResponsibilities || prev.handoverResponsibilities,
       }));
     }
   }, [requestData]);
@@ -188,6 +204,14 @@ export default function AnnualLeaveForm({
       toast.error("Contact details during leave are required");
       return false;
     }
+    if (!form.handoverPersonId) {
+      toast.error("Please select a cover person for handover");
+      return false;
+    }
+    if (!form.handoverResponsibilities.trim()) {
+      toast.error("Please describe the responsibilities being handed over");
+      return false;
+    }
     if (!form.reportingManager) {
       toast.error("Please select a reporting manager / HOD");
       return false;
@@ -222,6 +246,11 @@ export default function AnnualLeaveForm({
         leaveDaysEntitled: parseInt(form.leaveDaysEntitled) || 0,
         leaveDaysTaken: parseInt(form.leaveDaysTaken) || 0,
         leaveDaysRequested: parseInt(form.leaveDaysRequested) || 0,
+        backupPersonName: form.handoverPersonName || undefined,
+        backupPersonPhone: form.handoverPersonPhone || undefined,
+        handoverPersonId: form.handoverPersonId ? parseInt(form.handoverPersonId) : undefined,
+        handoverPersonEmail: form.handoverPersonEmail || undefined,
+        handoverResponsibilities: form.handoverResponsibilities || undefined,
       });
 
       const requestId = (created as any)?.id as number;
@@ -301,8 +330,8 @@ export default function AnnualLeaveForm({
           Annual Leave Request Form
         </div>
 
-        {/* ELIGIBILITY WARNING BANNER */}
-        {!isEligible && (
+        {/* ELIGIBILITY WARNING BANNER — only shown to the employee creating the form, never to approvers */}
+        {!isEligible && !effectiveIsReadOnly && (
           <div className="mx-3 lg:mx-6 mt-4 mb-2 bg-amber-50 dark:bg-amber-950/20 border-l-4 border-amber-500 p-4 rounded-lg flex items-start gap-3 shadow-xs">
             <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
             <div>
@@ -457,6 +486,13 @@ export default function AnnualLeaveForm({
                     setIsEligible(data.isEligible);
                   }
                 }}
+                readOnlyData={effectiveIsReadOnly ? {
+                  entitled: parseInt(form.leaveDaysEntitled) || 0,
+                  taken: parseInt(form.leaveDaysTaken) || 0,
+                  requested: parseInt(form.leaveDaysRequested) || 0,
+                  remaining: parseInt(form.leaveDaysRemaining) || 0,
+                  isEligible: true,
+                } : undefined}
               />
             </div>
 
@@ -493,15 +529,150 @@ export default function AnnualLeaveForm({
                 </label>
               </div>
             </Row>
-            <Row label="2.4 Contact During Leave">
-              <Textarea
-                value={form.contactDuringLeave}
-                onChange={(e) => setForm({ ...form, contactDuringLeave: e.target.value })}
-                placeholder="Provide contact details or person covering for you..."
-                className={`min-h-20 border-blue-300 dark:border-[#3b6dae]/40 text-xs ${effectiveIsReadOnly ? 'bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100' : ''}`}
-                disabled={effectiveIsReadOnly}
-              />
-            </Row>
+          </Section>
+
+          {/* LEAVE HANDOVER — Separate section with its own blue header */}
+          <Section title="LEAVE HANDOVER">
+            <div className="px-3 lg:px-6 py-3 lg:py-4">
+              <div className="space-y-4 w-full">
+                {effectiveIsReadOnly ? (
+                  /* ── READ-ONLY / APPROVER VIEW ── */
+                  <div className="space-y-4">
+                    {/* Cover Person Card — matches the edit-mode blue card design */}
+                    <div>
+                      <label className="text-xs font-semibold text-blue-900 dark:text-blue-300 mb-2 block">Cover Person</label>
+                      {form.handoverPersonName ? (
+                        <div className="bg-blue-50 dark:bg-[#1a385c] rounded-lg border border-blue-200 dark:border-[#3b6dae]/30 p-3 space-y-1.5">
+                          <div className="flex items-center gap-2">
+                            <User size={14} className="text-blue-600 shrink-0" />
+                            <span className="text-xs font-bold text-blue-800 dark:text-blue-200">{form.handoverPersonName}</span>
+                          </div>
+                          {form.handoverPersonPhone && (
+                            <div className="flex items-center gap-2">
+                              <Phone size={12} className="text-blue-500 shrink-0" />
+                              <span className="text-xs text-blue-700 dark:text-blue-300">{form.handoverPersonPhone}</span>
+                            </div>
+                          )}
+                          {form.handoverPersonEmail && (
+                            <div className="flex items-center gap-2">
+                              <Mail size={12} className="text-blue-500 shrink-0" />
+                              <span className="text-xs text-blue-700 dark:text-blue-300">{form.handoverPersonEmail}</span>
+                            </div>
+                          )}
+                          {(form.handoverPersonDepartment || form.handoverPersonPosition) && (
+                            <div className="flex items-center gap-2">
+                              <Building2 size={12} className="text-blue-500 shrink-0" />
+                              <span className="text-xs text-blue-700 dark:text-blue-300">
+                                {form.handoverPersonDepartment}{form.handoverPersonPosition ? ` \u2022 ${form.handoverPersonPosition}` : ""}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground italic">No cover person selected</p>
+                      )}
+                    </div>
+
+                    {/* Responsibilities */}
+                    {form.handoverResponsibilities && (
+                      <div>
+                        <label className="text-xs font-semibold text-blue-900 dark:text-blue-300 mb-1 block">Responsibilities / Tasks Being Handed Over</label>
+                        <div className="bg-blue-50 dark:bg-[#1a385c] rounded-lg border border-blue-200 dark:border-[#3b6dae]/30 p-3">
+                          <p className="text-xs whitespace-pre-wrap text-blue-800 dark:text-blue-200">{form.handoverResponsibilities}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  /* ── EDIT MODE ── */
+                  <>
+                    {/* Cover Person Dropdown */}
+                    <div>
+                      <label className="text-xs font-semibold text-blue-900 dark:text-blue-300 mb-1 block">Cover Person *</label>
+                      <Select
+                        value={form.handoverPersonId}
+                        onValueChange={(val) => {
+                          const selectedStaff = staffForBackup.data?.find((s: any) => String(s.id) === val);
+                          setForm({
+                            ...form,
+                            handoverPersonId: val,
+                            handoverPersonName: selectedStaff?.name || "",
+                            handoverPersonPhone: selectedStaff?.phoneNumber || "",
+                            handoverPersonEmail: selectedStaff?.email || "",
+                            handoverPersonPosition: selectedStaff?.position || "",
+                            handoverPersonDepartment: selectedStaff?.department || "",
+                            contactDuringLeave: `Handover to: ${selectedStaff?.name || ""}${selectedStaff?.phoneNumber ? " | Tel: " + selectedStaff.phoneNumber : ""}`,
+                          });
+                        }}
+                      >
+                        <SelectTrigger className="h-8 w-full border-blue-300 dark:border-[#3b6dae]/40 text-xs">
+                          <SelectValue placeholder="Select a staff member to cover for you..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {staffForBackup.data
+                            ?.filter((s: any) => s.id !== user?.id)
+                            .map((s: any) => (
+                              <SelectItem key={s.id} value={String(s.id)}>
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{s.name}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {s.position && <span>{s.position} \u2022 </span>}
+                                    {s.department}
+                                  </span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Auto-populated Contact Details */}
+                    {form.handoverPersonId && (
+                      <div className="bg-blue-50 dark:bg-[#1a385c] rounded-lg border border-blue-200 dark:border-[#3b6dae]/30 p-3 space-y-1.5 animate-in fade-in duration-300">
+                        <div className="flex items-center gap-2">
+                          <User size={14} className="text-blue-600 shrink-0" />
+                          <span className="text-xs font-bold text-blue-800 dark:text-blue-200">{form.handoverPersonName}</span>
+                        </div>
+                        {form.handoverPersonPhone && (
+                          <div className="flex items-center gap-2">
+                            <Phone size={12} className="text-blue-500 shrink-0" />
+                            <span className="text-xs text-blue-700 dark:text-blue-300">{form.handoverPersonPhone}</span>
+                          </div>
+                        )}
+                        {form.handoverPersonEmail && (
+                          <div className="flex items-center gap-2">
+                            <Mail size={12} className="text-blue-500 shrink-0" />
+                            <span className="text-xs text-blue-700 dark:text-blue-300">{form.handoverPersonEmail}</span>
+                          </div>
+                        )}
+                        {(form.handoverPersonDepartment || form.handoverPersonPosition) && (
+                          <div className="flex items-center gap-2">
+                            <Building2 size={12} className="text-blue-500 shrink-0" />
+                            <span className="text-xs text-blue-700 dark:text-blue-300">
+                              {form.handoverPersonDepartment}{form.handoverPersonPosition ? ` \u2022 ${form.handoverPersonPosition}` : ""}
+                            </span>
+                          </div>
+                        )}
+                        {!form.handoverPersonPhone && (
+                          <p className="text-xs text-amber-600 dark:text-amber-400 italic">No phone number on file for this staff member</p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Handover Responsibilities */}
+                    <div>
+                      <label className="text-xs font-semibold text-blue-900 dark:text-blue-300 mb-1 block">Responsibilities / Tasks Being Handed Over *</label>
+                      <Textarea
+                        value={form.handoverResponsibilities}
+                        onChange={(e) => setForm({ ...form, handoverResponsibilities: e.target.value })}
+                        placeholder="Describe the tasks, duties, and ongoing projects being handed to the cover person..."
+                        className="min-h-20 border-blue-300 dark:border-[#3b6dae]/40 text-xs"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
           </Section>
 
           {/* 3. EMPLOYEE SIGNATURE */}

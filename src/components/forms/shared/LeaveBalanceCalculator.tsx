@@ -1,8 +1,21 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { calculateWorkingDays } from "@/utils/leaveCalculator";
-import { Calculator, Calendar, Clock, AlertCircle, CheckCircle2, History } from "lucide-react";
+import { Calculator, Calendar, Clock, AlertCircle, CheckCircle2, History, Lock } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+
+/**
+ * Frozen snapshot data for approver/read-only views.
+ * When provided, the calculator skips all live queries and displays
+ * exactly the values that were saved at submission time.
+ */
+interface ReadOnlyData {
+  entitled: number | "Unlimited";
+  taken: number;
+  requested: number;
+  remaining: number | "Unlimited";
+  isEligible?: boolean;
+}
 
 interface LeaveBalanceCalculatorProps {
   leaveType: "annual" | "sick" | "paternity" | "maternity" | "unpaid" | "personal" | "parental" | string;
@@ -11,6 +24,8 @@ interface LeaveBalanceCalculatorProps {
   alreadyTaken?: number; // Optional now, since we auto-calculate by default
   onTakenChange?: (val: number) => void;
   onCalculated: (data: { requested: number; remaining: number | "Unlimited"; entitled: number | "Unlimited"; taken: number; takenLeaveDates?: string[]; isEligible?: boolean }) => void;
+  /** When provided, component becomes a pure display — no live queries, no recalculation */
+  readOnlyData?: ReadOnlyData;
 }
 
 export function LeaveBalanceCalculator({
@@ -18,12 +33,146 @@ export function LeaveBalanceCalculator({
   startDate,
   endDate,
   onCalculated,
+  readOnlyData,
 }: LeaveBalanceCalculatorProps) {
+  const { user } = useAuth();
+  const isReadOnly = !!readOnlyData;
+  
+  // ═══════════════════════════════════════════════════════════════
+  // READ-ONLY MODE: Use frozen snapshot data from the submitted form
+  // ═══════════════════════════════════════════════════════════════
+  if (isReadOnly) {
+    const roEntitled = readOnlyData.entitled;
+    const roTaken = readOnlyData.taken; // Only approved leave days
+    const roRequested = readOnlyData.requested;
+    // "Current Balance" = Entitlement - Already Taken (approved only)
+    const roCurrentBalance = roEntitled === "Unlimited" ? "Unlimited" : (Number(roEntitled) - roTaken);
+    // "New Balance" = Current Balance - Requested Days (what remains after this request is approved)
+    const roNewBalance = roEntitled === "Unlimited" ? "Unlimited" : (Number(roCurrentBalance) - roRequested);
+    const roIsNegative = typeof roNewBalance === "number" && roNewBalance < 0;
+
+    return (
+      <div className="mt-6 mb-4 flex flex-col gap-6">
+        {/* PART 1: LEAVE SUMMARY (Read-Only) */}
+        <div className="rounded-xl border border-blue-100 dark:border-blue-900 bg-white dark:bg-[#1f426b] overflow-hidden shadow-sm">
+          <div className="bg-blue-600 px-4 py-2.5 flex flex-col md:flex-row items-center gap-2 text-white">
+            <History className="w-4 h-4 opacity-90" />
+            <h3 className="text-sm font-semibold tracking-wide">Employee Leave Summary</h3>
+            <span className="text-[9px] bg-white/20 text-white px-2 py-0.5 rounded-full md:ml-auto uppercase tracking-wider font-bold shadow-sm border border-white/10 flex items-center gap-1">
+              <Lock className="w-2.5 h-2.5" /> Snapshot
+            </span>
+          </div>
+          <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50/50 dark:bg-[#2a4365]/50">
+            <div className="bg-white dark:bg-[#1f426b] rounded-lg p-3 border shadow-sm text-center">
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Entitlement</p>
+              <p className="text-2xl font-bold text-slate-700 dark:text-slate-200">{roEntitled}</p>
+            </div>
+            <div className="bg-white dark:bg-[#1f426b] rounded-lg p-3 border shadow-sm text-center">
+              <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-1">Already Taken</p>
+              <p className="text-2xl font-bold text-amber-600 dark:text-amber-500">{roTaken}</p>
+            </div>
+            <div className="bg-white dark:bg-[#1f426b] rounded-lg p-3 border shadow-sm text-center">
+              <p className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${typeof roCurrentBalance === "number" && roCurrentBalance < 0 ? "text-red-600" : "text-green-600"}`}>Current Balance</p>
+              <p className={`text-2xl font-bold ${typeof roCurrentBalance === "number" && roCurrentBalance < 0 ? "text-red-600 dark:text-red-500" : "text-green-600 dark:text-green-500"}`}>{roCurrentBalance}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* PART 2: LEAVE CALCULATOR (Read-Only) */}
+        <div className="rounded-xl border border-blue-100 dark:border-blue-900 bg-gradient-to-br from-blue-50/50 to-white dark:from-slate-900 dark:to-slate-800/50 overflow-hidden shadow-sm">
+          <div className="bg-[#3b6dae] px-4 py-2.5 flex flex-col md:flex-row items-center gap-2 text-white">
+            <Calculator className="w-4 h-4 opacity-90" />
+            <h3 className="text-sm font-semibold tracking-wide">Leave Duration Calculator</h3>
+            <span className="text-[10px] text-blue-100 md:ml-auto flex items-center gap-1">
+              <Calendar className="w-3 h-3" /> Calendar Linked
+            </span>
+          </div>
+          <div className="p-4 md:p-5 flex flex-col gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-white dark:bg-[#1f426b] rounded-lg p-3 md:p-4 border border-border shadow-sm flex items-center gap-4">
+                <div className="bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 p-2.5 rounded-full shrink-0">
+                  <Calendar className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Requested Days</p>
+                  <p className="text-2xl md:text-3xl font-bold text-purple-600 dark:text-purple-400">{roRequested}</p>
+                </div>
+              </div>
+              <div className={`rounded-lg p-3 md:p-4 border shadow-sm flex items-center gap-4 transition-colors ${
+                roIsNegative 
+                  ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' 
+                  : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+              }`}>
+                <div className={`p-2.5 rounded-full shrink-0 ${
+                  roIsNegative 
+                    ? 'bg-red-200 dark:bg-red-800 text-red-700 dark:text-red-300' 
+                    : 'bg-green-200 dark:bg-green-800 text-green-700 dark:text-green-300'
+                }`}>
+                  {roIsNegative ? <AlertCircle className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">New Balance</p>
+                  <p className={`text-2xl md:text-3xl font-bold ${
+                    roIsNegative ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
+                  }`}>{roNewBalance}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Progress Bar Display */}
+            {typeof roEntitled === "number" && (
+              <div className="mt-2 px-1">
+                <div className="flex justify-between text-[10px] mb-1 font-medium text-muted-foreground">
+                  <span>{Math.round(((roTaken + roRequested) / roEntitled) * 100)}% Utilized</span>
+                  <span>{roEntitled} Days Entitlement</span>
+                </div>
+                <div className="h-2 w-full bg-slate-200 dark:bg-[#2c5282] rounded-full overflow-hidden flex">
+                  <div 
+                    className="h-full bg-amber-400 transition-all duration-500"
+                    style={{ width: `${Math.min(100, (roTaken / roEntitled) * 100)}%` }}
+                    title={`Taken: ${roTaken}`}
+                  />
+                  <div 
+                    className={`h-full transition-all duration-500 ${roIsNegative ? 'bg-red-500' : 'bg-purple-500'}`}
+                    style={{ width: `${Math.min(100, (roRequested / roEntitled) * 100)}%` }}
+                    title={`Requested: ${roRequested}`}
+                  />
+                </div>
+                <div className="flex gap-4 mt-2 justify-end">
+                  <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                    <span className="w-2 h-2 rounded-full bg-amber-400"></span> Taken
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                    <span className={`w-2 h-2 rounded-full ${roIsNegative ? 'bg-red-500' : 'bg-purple-500'}`}></span> Requested
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // LIVE MODE: Original behavior — query current user's balance
+  // ═══════════════════════════════════════════════════════════════
+  return <LeaveBalanceCalculatorLive leaveType={leaveType} startDate={startDate} endDate={endDate} onCalculated={onCalculated} />;
+}
+
+/** Internal component for the live (non-read-only) calculator */
+function LeaveBalanceCalculatorLive({
+  leaveType,
+  startDate,
+  endDate,
+  onCalculated,
+}: Omit<LeaveBalanceCalculatorProps, "readOnlyData">) {
   const { user } = useAuth();
   
   // Fetch user's accurate leave balance from the backend (for Annual Leave primarily)
   const leaveBalanceQuery = trpc.requests.getLeaveBalance.useQuery(undefined, {
-    staleTime: 60000,
+    staleTime: 5000, // Refresh balance every 5 seconds for responsiveness
+    refetchOnMount: "always", // Always refetch when component mounts
   });
 
   const [requestedDays, setRequestedDays] = useState(0);
@@ -94,7 +243,10 @@ export function LeaveBalanceCalculator({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [requestedDays, entitledDays, historyTaken, leaveBalanceQuery.data?.takenLeaveDates, leaveBalanceQuery.data?.isEligibleForAnnualLeave]);
 
+  // "Already Taken" = only approved leave days (from backend)
+  // "Current Balance" = Entitlement - Already Taken
   const currentBalance = entitledDays === "Unlimited" ? "Unlimited" : (Number(entitledDays) - historyTaken);
+  // "New Balance" = Current Balance - Requested Days (what remains after approval)
   const newBalance = entitledDays === "Unlimited" ? "Unlimited" : (Number(currentBalance) - requestedDays);
   const isNegative = typeof newBalance === "number" && newBalance < 0;
 
@@ -125,8 +277,8 @@ export function LeaveBalanceCalculator({
             )}
           </div>
           <div className="bg-white dark:bg-[#1f426b] rounded-lg p-3 border shadow-sm text-center">
-            <p className="text-[10px] font-bold text-green-600 uppercase tracking-wider mb-1">Current Balance</p>
-            <p className="text-2xl font-bold text-green-600 dark:text-green-500">{currentBalance}</p>
+            <p className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${typeof currentBalance === "number" && currentBalance < 0 ? "text-red-600" : "text-green-600"}`}>Current Balance</p>
+            <p className={`text-2xl font-bold ${typeof currentBalance === "number" && currentBalance < 0 ? "text-red-600 dark:text-red-500" : "text-green-600 dark:text-green-500"}`}>{currentBalance}</p>
           </div>
         </div>
       </div>
@@ -186,7 +338,7 @@ export function LeaveBalanceCalculator({
           {typeof entitledDays === "number" && (
             <div className="mt-2 px-1">
               <div className="flex justify-between text-[10px] mb-1 font-medium text-muted-foreground">
-                <span>0% Utilized</span>
+                <span>{Math.round(((historyTaken + requestedDays) / entitledDays) * 100)}% Utilized</span>
                 <span>{entitledDays} Days Entitlement</span>
               </div>
               <div className="h-2 w-full bg-slate-200 dark:bg-[#2c5282] rounded-full overflow-hidden flex">

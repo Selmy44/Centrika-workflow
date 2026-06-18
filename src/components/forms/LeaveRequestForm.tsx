@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer, Eye, AlertCircle } from "lucide-react";
+import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer, Eye, AlertCircle, User, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
@@ -102,6 +102,11 @@ export default function LeaveRequestForm({
     documentId: "",
     managerSignatureUrl: "",
     signatureMethod: "draw" as "upload" | "draw",
+    handoverPersonId: "",
+    handoverPersonEmail: "",
+    handoverPersonPosition: "",
+    handoverPersonDepartment: "",
+    handoverResponsibilities: "",
   });
 
   const [approvalComments, setApprovalComments] = useState("");
@@ -161,6 +166,13 @@ export default function LeaveRequestForm({
         contactDuringLeave: lr?.reason || prev.contactDuringLeave,
         reportingManager: requestData.initialApproverId ? String(requestData.initialApproverId) : prev.reportingManager,
         dateOfEmployment: requestData.user?.dateOfEmployment || prev.dateOfEmployment,
+        // Handover fields from the LeaveRequest DB record
+        backupPersonName: lr?.backupPersonName || prev.backupPersonName,
+        backupPersonPhone: lr?.backupPersonPhone || prev.backupPersonPhone,
+        backupPersonId: lr?.handoverPersonId ? String(lr.handoverPersonId) : prev.backupPersonId,
+        handoverPersonId: lr?.handoverPersonId ? String(lr.handoverPersonId) : prev.handoverPersonId,
+        handoverPersonEmail: lr?.handoverPersonEmail || prev.handoverPersonEmail,
+        handoverResponsibilities: lr?.handoverResponsibilities || prev.handoverResponsibilities,
       }));
     } else if (user && !requestId) {
       const deptName = typeof user.department === 'object' ? user.department?.name : (user.department || "");
@@ -255,7 +267,11 @@ export default function LeaveRequestForm({
       return false;
     }
     if (!form.backupPersonId) {
-      toast.error("Please select a backup person");
+      toast.error("Please select a backup/cover person");
+      return false;
+    }
+    if (!form.handoverResponsibilities?.trim()) {
+      toast.error("Please describe the responsibilities being handed over");
       return false;
     }
     const remaining = Number(form.leaveDaysRemaining);
@@ -357,6 +373,9 @@ export default function LeaveRequestForm({
         leaveDaysRequested: Number(form.leaveDaysRequested) || 0,
         backupPersonName: form.backupPersonName || undefined,
         backupPersonPhone: form.backupPersonPhone || undefined,
+        handoverPersonId: form.backupPersonId ? parseInt(form.backupPersonId) : undefined,
+        handoverPersonEmail: form.handoverPersonEmail || undefined,
+        handoverResponsibilities: form.handoverResponsibilities || undefined,
       };
 
       let requestId: number;
@@ -447,6 +466,9 @@ export default function LeaveRequestForm({
         leaveDaysRequested: Number(form.leaveDaysRequested) || 0,
         backupPersonName: form.backupPersonName || undefined,
         backupPersonPhone: form.backupPersonPhone || undefined,
+        handoverPersonId: form.backupPersonId ? parseInt(form.backupPersonId) : undefined,
+        handoverPersonEmail: form.handoverPersonEmail || undefined,
+        handoverResponsibilities: form.handoverResponsibilities || undefined,
       };
 
       let requestId: number;
@@ -553,8 +575,8 @@ export default function LeaveRequestForm({
           {config.title || "LEAVE REQUEST FORM"}
         </div>
 
-        {/* ELIGIBILITY WARNING BANNER */}
-        {form.leaveType === "annual" && !isEligible && (
+        {/* ELIGIBILITY WARNING BANNER — only shown to the employee creating the form, never to approvers */}
+        {form.leaveType === "annual" && !isEligible && !effectiveIsReadOnly && (
           <div className="mx-3 lg:mx-6 mt-4 mb-2 bg-amber-50 dark:bg-amber-950/20 border-l-4 border-amber-500 p-4 rounded-lg flex items-start gap-3 shadow-xs">
             <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
             <div>
@@ -666,6 +688,13 @@ export default function LeaveRequestForm({
                     setIsEligible(data.isEligible);
                   }
                 }}
+                readOnlyData={effectiveIsReadOnly ? {
+                  entitled: Number(form.leaveDaysEntitled) || (resolvedLeaveType === "unpaid" ? "Unlimited" as const : 0),
+                  taken: parseInt(form.leaveDaysTaken) || 0,
+                  requested: Number(form.leaveDaysRequested) || 0,
+                  remaining: resolvedLeaveType === "unpaid" ? "Unlimited" as const : (Number(form.leaveDaysRemaining) || 0),
+                  isEligible: true,
+                } : undefined}
               />
             </div>
 
@@ -675,72 +704,151 @@ export default function LeaveRequestForm({
                 <span className="text-xs font-medium text-gray-600 dark:text-slate-400">Day(s)</span>
               </div>
             </Row>
-            <Row label="2.4 Backup Person">
-              <div className="space-y-2 py-1">
+          </Section>
+
+          {/* LEAVE HANDOVER — Separate section with its own blue header */}
+          <Section title="LEAVE HANDOVER">
+            <div className="px-3 lg:px-6 py-3 lg:py-4">
+              <div className="space-y-4 w-full">
                 {effectiveIsReadOnly ? (
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold text-blue-900 dark:text-blue-300">Name:</span>
-                      <span className="text-xs font-medium">{form.backupPersonName || "Not selected"}</span>
+                  /* ── READ-ONLY / APPROVER VIEW ── */
+                  <div className="space-y-4">
+                    {/* Cover Person Card — matches the edit-mode blue card design */}
+                    <div>
+                      <label className="text-xs font-semibold text-blue-900 dark:text-blue-300 mb-2 block">Cover Person</label>
+                      {form.backupPersonName ? (
+                        <div className="bg-blue-50 dark:bg-[#1a385c] rounded-lg border border-blue-200 dark:border-[#3b6dae]/30 p-3 space-y-1.5">
+                          <div className="flex items-center gap-2">
+                            <User size={14} className="text-blue-600 shrink-0" />
+                            <span className="text-xs font-bold text-blue-800 dark:text-blue-200">{form.backupPersonName}</span>
+                          </div>
+                          {form.backupPersonPhone && (
+                            <div className="flex items-center gap-2">
+                              <Phone size={12} className="text-blue-500 shrink-0" />
+                              <span className="text-xs text-blue-700 dark:text-blue-300">{form.backupPersonPhone}</span>
+                            </div>
+                          )}
+                          {form.handoverPersonEmail && (
+                            <div className="flex items-center gap-2">
+                              <Mail size={12} className="text-blue-500 shrink-0" />
+                              <span className="text-xs text-blue-700 dark:text-blue-300">{form.handoverPersonEmail}</span>
+                            </div>
+                          )}
+                          {(form.handoverPersonDepartment || form.handoverPersonPosition) && (
+                            <div className="flex items-center gap-2">
+                              <Building2 size={12} className="text-blue-500 shrink-0" />
+                              <span className="text-xs text-blue-700 dark:text-blue-300">
+                                {form.handoverPersonDepartment}{form.handoverPersonPosition ? ` \u2022 ${form.handoverPersonPosition}` : ""}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground italic">No cover person selected</p>
+                      )}
                     </div>
-                    {form.backupPersonPhone && (
-                      <div className="flex items-center gap-2">
-                        <Phone size={12} className="text-blue-600" />
-                        <span className="text-xs font-medium">{form.backupPersonPhone}</span>
+
+                    {/* Responsibilities */}
+                    {form.handoverResponsibilities && (
+                      <div>
+                        <label className="text-xs font-semibold text-blue-900 dark:text-blue-300 mb-1 block">Responsibilities / Tasks Being Handed Over</label>
+                        <div className="bg-blue-50 dark:bg-[#1a385c] rounded-lg border border-blue-200 dark:border-[#3b6dae]/30 p-3">
+                          <p className="text-xs whitespace-pre-wrap text-blue-800 dark:text-blue-200">{form.handoverResponsibilities}</p>
+                        </div>
                       </div>
                     )}
                   </div>
                 ) : (
+                  /* ── EDIT MODE ── */
                   <>
-                    <Select
-                      value={form.backupPersonId}
-                      onValueChange={(val) => {
-                        const selectedStaff = staffForBackup.data?.find((s: any) => String(s.id) === val);
-                        setForm({
-                          ...form,
-                          backupPersonId: val,
-                          backupPersonName: selectedStaff?.name || "",
-                          backupPersonPhone: selectedStaff?.phoneNumber || "",
-                          contactDuringLeave: `Backup: ${selectedStaff?.name || ""}${selectedStaff?.phoneNumber ? " | Tel: " + selectedStaff.phoneNumber : ""}`,
-                        });
-                      }}
-                    >
-                      <SelectTrigger className="h-8 w-full border-blue-300 dark:border-[#3b6dae]/40 text-xs">
-                        <SelectValue placeholder="Select a backup person..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {staffForBackup.data
-                          ?.filter((s: any) => s.id !== user?.id)
-                          .map((s: any) => (
-                            <SelectItem key={s.id} value={String(s.id)}>
-                              <div className="flex flex-col">
-                                <span className="font-medium">{s.name}</span>
-                                <span className="text-xs text-muted-foreground">
-                                  {s.phoneNumber && <span>{s.phoneNumber} • </span>}
-                                  {s.department?.name || s.department}
-                                </span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                    {form.backupPersonPhone && (
-                      <div className="flex items-center gap-2 bg-blue-50 dark:bg-[#1a385c] rounded px-3 py-1.5 border border-blue-200 dark:border-[#3b6dae]/30">
-                        <Phone size={14} className="text-blue-600 shrink-0" />
-                        <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">{form.backupPersonPhone}</span>
-                        {form.backupPersonName && (
-                          <span className="text-xs text-gray-500 dark:text-slate-400 ml-1">— {form.backupPersonName}</span>
+                    <div>
+                      <label className="text-xs font-semibold text-blue-900 dark:text-blue-300 mb-1 block">Cover Person *</label>
+                      <Select
+                        value={form.backupPersonId}
+                        onValueChange={(val) => {
+                          const selectedStaff = staffForBackup.data?.find((s: any) => String(s.id) === val);
+                          setForm({
+                            ...form,
+                            backupPersonId: val,
+                            backupPersonName: selectedStaff?.name || "",
+                            backupPersonPhone: selectedStaff?.phoneNumber || "",
+                            handoverPersonId: val,
+                            handoverPersonEmail: selectedStaff?.email || "",
+                            handoverPersonPosition: selectedStaff?.position || "",
+                            handoverPersonDepartment: selectedStaff?.department?.name || selectedStaff?.department || "",
+                            contactDuringLeave: `Handover to: ${selectedStaff?.name || ""}${selectedStaff?.phoneNumber ? " | Tel: " + selectedStaff.phoneNumber : ""}`,
+                          });
+                        }}
+                      >
+                        <SelectTrigger className="h-8 w-full border-blue-300 dark:border-[#3b6dae]/40 text-xs">
+                          <SelectValue placeholder="Select a staff member to cover for you..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {staffForBackup.data
+                            ?.filter((s: any) => s.id !== user?.id)
+                            .map((s: any) => (
+                              <SelectItem key={s.id} value={String(s.id)}>
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{s.name}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {s.position && <span>{s.position} \u2022 </span>}
+                                    {s.department?.name || s.department}
+                                  </span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {form.backupPersonId && (
+                      <div className="bg-blue-50 dark:bg-[#1a385c] rounded-lg border border-blue-200 dark:border-[#3b6dae]/30 p-3 space-y-1.5 animate-in fade-in duration-300">
+                        <div className="flex items-center gap-2">
+                          <User size={14} className="text-blue-600 shrink-0" />
+                          <span className="text-xs font-bold text-blue-800 dark:text-blue-200">{form.backupPersonName}</span>
+                        </div>
+                        {form.backupPersonPhone && (
+                          <div className="flex items-center gap-2">
+                            <Phone size={12} className="text-blue-500 shrink-0" />
+                            <span className="text-xs text-blue-700 dark:text-blue-300">{form.backupPersonPhone}</span>
+                          </div>
+                        )}
+                        {form.handoverPersonEmail && (
+                          <div className="flex items-center gap-2">
+                            <Mail size={12} className="text-blue-500 shrink-0" />
+                            <span className="text-xs text-blue-700 dark:text-blue-300">{form.handoverPersonEmail}</span>
+                          </div>
+                        )}
+                        {(form.handoverPersonDepartment || form.handoverPersonPosition) && (
+                          <div className="flex items-center gap-2">
+                            <Building2 size={12} className="text-blue-500 shrink-0" />
+                            <span className="text-xs text-blue-700 dark:text-blue-300">
+                              {form.handoverPersonDepartment}{form.handoverPersonPosition ? ` \u2022 ${form.handoverPersonPosition}` : ""}
+                            </span>
+                          </div>
+                        )}
+                        {!form.backupPersonPhone && (
+                          <p className="text-xs text-amber-600 dark:text-amber-400 italic">No phone number on file for this staff member</p>
                         )}
                       </div>
                     )}
-                    {form.backupPersonId && !form.backupPersonPhone && (
-                      <p className="text-xs text-amber-600 dark:text-amber-400 italic">No phone number on file for this staff member</p>
-                    )}
+                    <div>
+                      <label className="text-xs font-semibold text-blue-900 dark:text-blue-300 mb-1 block">Responsibilities / Tasks Being Handed Over *</label>
+                      <Textarea
+                        value={form.handoverResponsibilities}
+                        onChange={(e) => setForm({ ...form, handoverResponsibilities: e.target.value })}
+                        placeholder="Describe the tasks, duties, and ongoing projects being handed to the cover person..."
+                        className="min-h-20 border-blue-300 dark:border-[#3b6dae]/40 text-xs"
+                      />
+                    </div>
                   </>
                 )}
               </div>
-            </Row>
-            <Row label="2.5 Will you be outside the country?">
+            </div>
+          </Section>
+
+          {/* Continuing LEAVE DETAILS for remaining fields */}
+          <Section title="2. LEAVE DETAILS (CONT.)">
+            <Row label="2.4 Will you be outside the country?">
               <div className="flex gap-4">
                 <label className="flex items-center gap-2 text-xs">
                   <input
