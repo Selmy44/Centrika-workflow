@@ -106,6 +106,9 @@ export const requestsRouter = router({
         leaveDaysRequested: z.number().optional(),
         backupPersonName: z.string().optional(),
         backupPersonPhone: z.string().optional(),
+        handoverPersonId: z.number().optional(),
+        handoverPersonEmail: z.string().optional(),
+        handoverResponsibilities: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -150,6 +153,9 @@ export const requestsRouter = router({
               leaveDaysRemaining: Math.round(remaining * 100) / 100,
               backupPersonName: input.backupPersonName ?? null,
               backupPersonPhone: input.backupPersonPhone ?? null,
+              handoverPersonId: input.handoverPersonId ?? null,
+              handoverPersonEmail: input.handoverPersonEmail ?? null,
+              handoverResponsibilities: input.handoverResponsibilities ?? null,
             },
           },
         },
@@ -173,6 +179,9 @@ export const requestsRouter = router({
         leaveDaysRequested: z.number().optional(),
         backupPersonName: z.string().optional(),
         backupPersonPhone: z.string().optional(),
+        handoverPersonId: z.number().optional(),
+        handoverPersonEmail: z.string().optional(),
+        handoverResponsibilities: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -219,6 +228,9 @@ export const requestsRouter = router({
               leaveDaysRemaining: Math.round(remaining * 100) / 100,
               backupPersonName: input.backupPersonName ?? null,
               backupPersonPhone: input.backupPersonPhone ?? null,
+              handoverPersonId: input.handoverPersonId ?? null,
+              handoverPersonEmail: input.handoverPersonEmail ?? null,
+              handoverResponsibilities: input.handoverResponsibilities ?? null,
             },
           },
         },
@@ -734,7 +746,7 @@ export const requestsRouter = router({
     .mutation(async ({ ctx, input }) => {
       const request = await prisma.request.findUnique({
         where: { id: input.requestId },
-        include: { user: { include: { department: true } } }
+        include: { user: { include: { department: true } }, leaveRequest: true }
       });
 
       if (!request) throw new TRPCError({ code: "NOT_FOUND" });
@@ -744,6 +756,83 @@ export const requestsRouter = router({
           where: { id: input.requestId },
           data: { status: "approved", updatedAt: new Date() }
         });
+
+        // ── Recalculate leave balance when a leave request is approved ──
+        if (request.type === "leave" && request.leaveRequest?.leaveType === "annual") {
+          try {
+            const leaveCalc = calculateAnnualLeaveBalance(request.user.dateOfEmployment);
+            const currentYear = new Date().getFullYear();
+
+            // Get or create the balance record
+            let balance = await prisma.leaveBalance.findFirst({ where: { userId: request.userId, year: currentYear } });
+            if (!balance) {
+              balance = await prisma.leaveBalance.create({
+                data: {
+                  userId: request.userId,
+                  year: currentYear,
+                  annualLeaveEntitled: Math.round(leaveCalc.totalAnnualLeave * 100) / 100,
+                  annualLeaveCarryover: 0,
+                  annualLeaveTaken: 0,
+                  annualLeaveRemaining: Math.round(leaveCalc.totalAnnualLeave * 100) / 100,
+                  sickLeave: 10,
+                  personalLeave: 3,
+                }
+              });
+            }
+
+            // Sum ALL approved annual leave days for this user
+            const approvedAnnualLeaves = await prisma.request.findMany({
+              where: {
+                userId: request.userId,
+                type: "leave",
+                status: "approved",
+                leaveRequest: { leaveType: "annual" }
+              },
+              include: { leaveRequest: true }
+            });
+            const totalUsedAnnual = approvedAnnualLeaves.reduce((sum: number, r: any) => sum + (r.leaveRequest?.leaveDaysRequested || 0), 0);
+            const remaining = (leaveCalc.totalAnnualLeave + (balance.annualLeaveCarryover || 0)) - totalUsedAnnual;
+
+            await prisma.leaveBalance.update({
+              where: { id: balance.id },
+              data: {
+                annualLeaveEntitled: Math.round(leaveCalc.totalAnnualLeave * 100) / 100,
+                annualLeaveTaken: totalUsedAnnual,
+                annualLeaveRemaining: Math.round(remaining * 100) / 100,
+                updatedAt: new Date(),
+              }
+            });
+
+            // Also update the snapshot values (leaveDaysTaken, leaveDaysRemaining, leaveDaysEntitled)
+            // on ALL existing annual LeaveRequest records for this user, so read-only
+            // form views (approver, requester, admin) always show the current 'Already Taken'.
+            const allAnnualLeaveRequests = await prisma.leaveRequest.findMany({
+              where: {
+                leaveType: "annual",
+                request: { userId: request.userId }
+              },
+              select: { id: true, leaveDaysRequested: true }
+            });
+            for (const lr of allAnnualLeaveRequests) {
+              const lrRequested = lr.leaveDaysRequested || 0;
+              const lrRemaining = Math.round(leaveCalc.totalAnnualLeave * 100) / 100 - totalUsedAnnual;
+              await prisma.leaveRequest.update({
+                where: { id: lr.id },
+                data: {
+                  leaveDaysTaken: totalUsedAnnual,
+                  leaveDaysEntitled: Math.round(leaveCalc.totalAnnualLeave * 100) / 100,
+                  leaveDaysRemaining: Math.round(lrRemaining * 100) / 100,
+                }
+              });
+            }
+
+            console.log(`[finalApprove] Updated leave balance for user ${request.userId}: taken=${totalUsedAnnual}, remaining=${Math.round(remaining * 100) / 100}`);
+          } catch (error) {
+            console.error("[finalApprove] Failed to update leave balance:", error);
+            // Don't throw — the approval itself succeeded, balance will self-correct on next getLeaveBalance call
+          }
+        }
+
         await prisma.notification.create({
           data: {
             userId: request.userId,
@@ -1212,6 +1301,20 @@ export const requestsRouter = router({
         annualLeaveTaken: totalUsedAnnual,
         annualLeaveRemaining: Math.round(remaining * 100) / 100,
         updatedAt: new Date(),
+      }
+    });
+
+    // Sync the snapshot values on all annual LeaveRequest records for this user
+    // so read-only form views always display up-to-date 'Already Taken' values.
+    await prisma.leaveRequest.updateMany({
+      where: {
+        leaveType: "annual",
+        request: { userId: ctx.user.id }
+      },
+      data: {
+        leaveDaysTaken: totalUsedAnnual,
+        leaveDaysEntitled: Math.round(leaveCalc.totalAnnualLeave * 100) / 100,
+        leaveDaysRemaining: Math.round(remaining * 100) / 100,
       }
     });
 

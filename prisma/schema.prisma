@@ -67,6 +67,7 @@ enum AttachmentType {
   hr_signature
   ceo_signature
   supporting_document
+  handover_document
 }
 
 enum NotificationType {
@@ -186,6 +187,7 @@ model User {
   announcementCommentLikes AnnouncementCommentLike[]   @relation("UserAnnouncementCommentLikes")
   suggestionLikes        SuggestionLike[]              @relation("UserSuggestionLikes")
   suggestionReplyLikes   SuggestionReplyLike[]         @relation("UserSuggestionReplyLikes")
+  leaveHandovers         LeaveRequest[]                @relation("LeaveHandoverPerson")
 
   @@map("users")
 }
@@ -257,26 +259,30 @@ model RequestAttachment {
 }
 
 model LeaveRequest {
-  id                      Int               @id @default(autoincrement())
-  requestId               Int               @unique @map("request_id")
-  leaveType               LeaveType         @map("leave_type")
-  parentalLeaveType       ParentalLeaveType? @map("parental_leave_type")
-  startDate               String            @map("start_date") @db.VarChar(10)
-  endDate                 String            @map("end_date") @db.VarChar(10)
-  reason                  String?
-  createdAt               DateTime          @default(now()) @map("created_at")
-  leaveDaysRequested      Int?              @map("leave_days_requested")
-  leaveDaysEntitled       Int?              @map("leave_days_entitled")
-  leaveDaysTaken          Int?              @map("leave_days_taken")
-  leaveDaysRemaining      Int?              @map("leave_days_remaining")
-  employeeSignatureFileId Int?              @map("employee_signature_file_id")
-  managerSignatureFileId  Int?              @map("manager_signature_file_id")
-  backupPersonName        String?           @map("backup_person_name") @db.VarChar(255)
-  backupPersonPhone       String?           @map("backup_person_phone") @db.VarChar(20)
+  id                       Int               @id @default(autoincrement())
+  requestId                Int               @unique @map("request_id")
+  leaveType                LeaveType         @map("leave_type")
+  parentalLeaveType        ParentalLeaveType? @map("parental_leave_type")
+  startDate                String            @map("start_date") @db.VarChar(10)
+  endDate                  String            @map("end_date") @db.VarChar(10)
+  reason                   String?
+  createdAt                DateTime          @default(now()) @map("created_at")
+  leaveDaysRequested       Int?              @map("leave_days_requested")
+  leaveDaysEntitled        Int?              @map("leave_days_entitled")
+  leaveDaysTaken           Int?              @map("leave_days_taken")
+  leaveDaysRemaining       Int?              @map("leave_days_remaining")
+  employeeSignatureFileId  Int?              @map("employee_signature_file_id")
+  managerSignatureFileId   Int?              @map("manager_signature_file_id")
+  backupPersonName         String?           @map("backup_person_name") @db.VarChar(255)
+  backupPersonPhone        String?           @map("backup_person_phone") @db.VarChar(20)
+  handoverPersonId         Int?              @map("handover_person_id")
+  handoverPersonEmail      String?           @map("handover_person_email") @db.VarChar(320)
+  handoverResponsibilities String?           @map("handover_responsibilities") @db.Text
 
-  request                 Request           @relation(fields: [requestId], references: [id], onDelete: Cascade)
-  employeeSignature       RequestAttachment? @relation("EmployeeSignature", fields: [employeeSignatureFileId], references: [id])
-  managerSignature        RequestAttachment? @relation("ManagerSignature", fields: [managerSignatureFileId], references: [id])
+  request                  Request           @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  employeeSignature        RequestAttachment? @relation("EmployeeSignature", fields: [employeeSignatureFileId], references: [id])
+  managerSignature         RequestAttachment? @relation("ManagerSignature", fields: [managerSignatureFileId], references: [id])
+  handoverPerson           User?             @relation("LeaveHandoverPerson", fields: [handoverPersonId], references: [id])
 
   @@map("leave_requests")
 }
