@@ -1470,8 +1470,9 @@ export const requestsRouter = router({
       const submission = await prisma.formSubmission.findUnique({ where: { requestId: input.requestId } });
       if (submission) {
         const parsed = JSON.parse(submission.formData);
-        const hod = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "head_of_department" }, include: { signature: true } });
+        const hod = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "head_of_department" }, include: { signature: true, approver: true } });
         if (hod?.signature) parsed.managerSignatureUrl = hod.signature.fileUrl;
+        if (hod?.approver) parsed.managerSignerName = hod.approver.name;
         parsed.requestId = input.requestId;
         return parsed;
       }
@@ -1495,10 +1496,12 @@ export const requestsRouter = router({
       const submission = await prisma.formSubmission.findUnique({ where: { requestId: input.requestId } });
       if (submission) {
         const parsed = JSON.parse(submission.formData);
-        const hod = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "head_of_department" }, include: { signature: true } });
+        const hod = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "head_of_department" }, include: { signature: true, approver: true } });
         if (hod?.signature) parsed.managerSignatureUrl = hod.signature.fileUrl;
-        const hr = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "hr" }, include: { signature: true } });
+        if (hod?.approver) parsed.managerSignerName = hod.approver.name;
+        const hr = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "hr" }, include: { signature: true, approver: true } });
         if (hr?.signature) parsed.hrSignatureUrl = hr.signature.fileUrl;
+        if (hr?.approver) parsed.hrSignerName = hr.approver.name;
         parsed.requestId = input.requestId;
         return parsed;
       }
@@ -1522,14 +1525,18 @@ export const requestsRouter = router({
       const submission = await prisma.formSubmission.findUnique({ where: { requestId: input.requestId } });
       if (submission) {
         const parsed = JSON.parse(submission.formData);
-        const hod = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "head_of_department" }, include: { signature: true } });
+        const hod = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "head_of_department" }, include: { signature: true, approver: true } });
         if (hod?.signature) parsed.managerSignatureUrl = hod.signature.fileUrl;
-        const finance = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "head_of_finance" }, include: { signature: true } });
+        if (hod?.approver) parsed.managerSignerName = hod.approver.name;
+        const finance = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "head_of_finance" }, include: { signature: true, approver: true } });
         if (finance?.signature) parsed.financeSignatureUrl = finance.signature.fileUrl;
-        const hr = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "hr" }, include: { signature: true } });
+        if (finance?.approver) parsed.financeSignerName = finance.approver.name;
+        const hr = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "hr" }, include: { signature: true, approver: true } });
         if (hr?.signature) parsed.hrSignatureUrl = hr.signature.fileUrl;
-        const ceo = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "ceo_md" }, include: { signature: true } });
+        if (hr?.approver) parsed.hrSignerName = hr.approver.name;
+        const ceo = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "ceo_md" }, include: { signature: true, approver: true } });
         if (ceo?.signature) parsed.ceoSignatureUrl = ceo.signature.fileUrl;
+        if (ceo?.approver) parsed.ceoSignerName = ceo.approver.name;
         parsed.requestId = input.requestId;
         return parsed;
       }
@@ -1553,14 +1560,18 @@ export const requestsRouter = router({
       const submission = await prisma.formSubmission.findUnique({ where: { requestId: input.requestId } });
       if (submission) {
         const parsed = JSON.parse(submission.formData);
-        const hod = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "head_of_department" }, include: { signature: true } });
+        const hod = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "head_of_department" }, include: { signature: true, approver: true } });
         if (hod?.signature) parsed.managerSignatureUrl = hod.signature.fileUrl;
-        const finance = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "head_of_finance" }, include: { signature: true } });
+        if (hod?.approver) parsed.managerSignerName = hod.approver.name;
+        const finance = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "head_of_finance" }, include: { signature: true, approver: true } });
         if (finance?.signature) parsed.financeSignatureUrl = finance.signature.fileUrl;
-        const hr = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "hr" }, include: { signature: true } });
+        if (finance?.approver) parsed.financeSignerName = finance.approver.name;
+        const hr = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "hr" }, include: { signature: true, approver: true } });
         if (hr?.signature) parsed.hrSignatureUrl = hr.signature.fileUrl;
-        const ceo = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "ceo_md" }, include: { signature: true } });
+        if (hr?.approver) parsed.hrSignerName = hr.approver.name;
+        const ceo = await prisma.requestApproval.findFirst({ where: { requestId: input.requestId, approvalLevel: "ceo_md" }, include: { signature: true, approver: true } });
         if (ceo?.signature) parsed.ceoSignatureUrl = ceo.signature.fileUrl;
+        if (ceo?.approver) parsed.ceoSignerName = ceo.approver.name;
         parsed.requestId = input.requestId;
         return parsed;
       }

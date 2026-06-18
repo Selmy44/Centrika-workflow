@@ -82,4 +82,18 @@ export const notificationsRouter = router({
 
     return { success: true };
   }),
+
+  markReadByRequestId: protectedProcedure
+    .input(z.object({ requestId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      await prisma.notification.updateMany({
+        where: {
+          userId: ctx.user.id,
+          requestId: input.requestId,
+          isRead: false,
+        },
+        data: { isRead: true },
+      });
+      return { success: true };
+    }),
 });
