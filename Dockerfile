@@ -27,6 +27,9 @@ COPY tsconfig.json ./
 # Copy all scripts for seeding
 COPY scripts ./scripts
 
+# Copy logo for email templates (CID inline attachment)
+COPY frontend-logo ./frontend-logo
+
 # Expose application port
 EXPOSE 3000
 

@@ -6,6 +6,7 @@ import { ENV } from "./env";
 // Resolve the logo once at startup — the file lives in backend/frontend-logo/
 const LOGO_PATH = path.resolve(process.cwd(), "frontend-logo/centrikaLogo.png");
 const LOGO_EXISTS = fs.existsSync(LOGO_PATH);
+console.log(`[Email] Logo path: ${LOGO_PATH} | Exists: ${LOGO_EXISTS}`);
 
 // Initialize email transporter
 let transporter: nodemailer.Transporter | null = null;
