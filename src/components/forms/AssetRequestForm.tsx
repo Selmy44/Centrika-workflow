@@ -125,10 +125,10 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
     const savedFormData = (trpc as any).requests.getAssetFormData.useQuery(
         { requestId: requestData?.id || 0 },
         {
-          enabled: !!requestData?.id && (isReadOnly || requestData?.status === "draft"),
-          staleTime: 5 * 60 * 1000,
-          gcTime: 10 * 60 * 1000,
-          refetchOnWindowFocus: false,
+            enabled: !!requestData?.id && (isReadOnly || requestData?.status === "draft"),
+            staleTime: 5 * 60 * 1000,
+            gcTime: 10 * 60 * 1000,
+            refetchOnWindowFocus: false,
         }
     );
 
@@ -159,10 +159,6 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
 
     const handleSubmit = async (submit: boolean) => {
         if (submit) {
-            if (!form.reportingManager) {
-                toast.error("Please select a Line Manager / HOD before submitting");
-                return;
-            }
             if (!form.title.trim()) {
                 toast.error("Request title is required");
                 return;
@@ -185,10 +181,10 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
         try {
             // Check if we're updating an existing draft request
             const isEditing = requestData?.id && requestData?.status === "draft";
-            
+
             // Parse estimated cost, defaulting to 0 for drafts
             const parsedCost = form.estimatedCost ? Number(form.estimatedCost.replace(/,/g, "")) : 0;
-            
+
             const payload = {
                 title: form.title || `Asset Request: ${form.itemName}`,
                 itemName: form.itemName,
@@ -211,10 +207,10 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                 const created = await createAsset.mutateAsync(payload);
                 requestId = (created as any)?.id as number;
             }
-            
+
             if (requestId) {
                 let finalSupportingDocUrl = form.supportingDocumentUrl;
-                
+
                 // Handle file upload if a new file is selected
                 if (form.supportingDocument) {
                     try {
@@ -405,8 +401,8 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                             />
                         </Row>
                         <Row label="2.3 Asset Category">
-                            <Select 
-                                value={form.category} 
+                            <Select
+                                value={form.category}
                                 onValueChange={v => setForm({ ...form, category: v })}
                                 disabled={isReadOnly}
                             >
@@ -436,8 +432,8 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                                     className="border-blue-300 dark:border-[#3b6dae]/40 h-8 text-xs font-bold text-blue-800"
                                     disabled={isReadOnly}
                                 />
-                                <Select 
-                                    value={form.currency} 
+                                <Select
+                                    value={form.currency}
                                     onValueChange={v => setForm({ ...form, currency: v })}
                                     disabled={isReadOnly}
                                 >
@@ -490,48 +486,6 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                                 )}
                             </div>
                         </Row>
-                        <Row label="2.7 Line Manager / HOD">
-                            {isReadOnly ? (
-                                <Input
-                                    value={
-                                        (() => {
-                                            const found = uniqueHeads.find((h: any) => h.id === Number(form.reportingManager));
-                                            return (found as any)?.name || (form.reportingManager ? `ID: ${form.reportingManager}` : "Not assigned");
-                                        })()
-                                    }
-                                    className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium"
-                                    disabled
-                                />
-                            ) : (
-                                <div className="flex flex-col gap-1 w-full">
-                                    <Select
-                                        value={form.reportingManager}
-                                        onValueChange={v => setForm((prev: any) => ({ ...prev, reportingManager: v }))}
-                                    >
-                                        <SelectTrigger className="w-full h-8 border-blue-300 dark:border-[#3b6dae]/40 text-xs">
-                                            <SelectValue placeholder="-- Select Line Manager / HOD --" />
-                                        </SelectTrigger>
-                                        <SelectContent className="bg-white dark:bg-[#1f426b] border-blue-200 dark:border-[#3b6dae]/30">
-                                            {(uniqueHeads as any[]).map((h: any) => (
-                                                <SelectItem key={h.id} value={String(h.id)} className="focus:bg-blue-500 focus:text-white">
-                                                    {h.name}{h.department?.name ? ` — ${h.department.name}` : ""}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    {!form.reportingManager && (
-                                        <p className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
-                                            ⚠ Required — select your Line Manager or Head of Department
-                                        </p>
-                                    )}
-                                    {form.reportingManager && (
-                                        <p className="text-[10px] text-green-600 dark:text-green-400 font-medium">
-                                            ✓ Auto-resolved from your profile. Change if needed.
-                                        </p>
-                                    )}
-                                </div>
-                            )}
-                        </Row>
                     </Section>
 
                     {/* 3. EMPLOYEE SIGNATURE */}
@@ -541,10 +495,10 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                                 {isReadOnly ? (
                                     <div className="space-y-1">
                                         {form.employeeSignatureUrl ? (
-                                          <>
-                                            <img src={form.employeeSignatureUrl} alt="sig" className="h-16 object-contain" />
-                                            <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">{form.employeeName || requestData?.user?.name || ""}</p>
-                                          </>
+                                            <>
+                                                <img src={form.employeeSignatureUrl} alt="sig" className="h-16 object-contain" />
+                                                <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">{form.employeeName || requestData?.user?.name || ""}</p>
+                                            </>
                                         ) : <p className="text-xs italic text-gray-500">No signature</p>}
                                     </div>
                                 ) : (
@@ -553,22 +507,20 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                                             <button
                                                 type="button"
                                                 onClick={() => setForm({ ...form, signatureMethod: "draw", signatureFile: null, employeeSignatureUrl: "" })}
-                                                className={`px-5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
-                                                    form.signatureMethod === "draw"
+                                                className={`px-5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${form.signatureMethod === "draw"
                                                         ? "bg-[#2d3a6d] text-white border-[#2d3a6d] shadow-sm"
                                                         : "bg-white dark:bg-[#1f426b] text-gray-600 dark:text-slate-300 border-gray-300 dark:border-[#3b6dae]/40 hover:border-[#2d3a6d] hover:text-[#2d3a6d]"
-                                                } cursor-pointer`}
+                                                    } cursor-pointer`}
                                             >
                                                 Draw
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={() => setForm({ ...form, signatureMethod: "upload", signatureFile: null, employeeSignatureUrl: "" })}
-                                                className={`px-5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
-                                                    form.signatureMethod === "upload"
+                                                className={`px-5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${form.signatureMethod === "upload"
                                                         ? "bg-[#2d3a6d] text-white border-[#2d3a6d] shadow-sm"
                                                         : "bg-white dark:bg-[#1f426b] text-gray-600 dark:text-slate-300 border-gray-300 dark:border-[#3b6dae]/40 hover:border-[#2d3a6d] hover:text-[#2d3a6d]"
-                                                } cursor-pointer`}
+                                                    } cursor-pointer`}
                                             >
                                                 Upload image
                                             </button>
@@ -599,7 +551,7 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                                                 )}
                                             </div>
                                         ) : (
-                                            <SignaturePad 
+                                            <SignaturePad
                                                 onSave={(dataUrl) => {
                                                     const file = base64ToFile(dataUrl, "signature.png");
                                                     setForm({ ...form, signatureFile: file, employeeSignatureUrl: dataUrl });
@@ -609,11 +561,11 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                                                 }}
                                             />
                                         )}
-                                        
+
                                         {form.employeeSignatureUrl && form.signatureMethod === "upload" && (
-                                           <div className="mt-2 animate-in zoom-in duration-300">
-                                              <img src={form.employeeSignatureUrl} alt="sig" className="h-16 object-contain" />
-                                           </div>
+                                            <div className="mt-2 animate-in zoom-in duration-300">
+                                                <img src={form.employeeSignatureUrl} alt="sig" className="h-16 object-contain" />
+                                            </div>
                                         )}
                                     </>
                                 )}
@@ -639,44 +591,44 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
 
                     {/* 4. APPROVER SIGNATURES — only after resolution */}
                     {(requestData?.status === "approved" || requestData?.status === "rejected") && (
-                    <Section title="4. APPROVER SIGNATURES">
-                        {/* Approved/rejected: show actual signatures only */}
-                        {(requestData?.status === "approved" || requestData?.status === "rejected") && (() => {
-                            const hodApproval = requestData?.approvals?.find((a: any) => a.approvalLevel === "head_of_department");
-                            const hodName = savedFormData.data?.managerSignerName || hodApproval?.approver?.name || "Line Manager / HOD";
-                            const hodSig = savedFormData.data?.managerSignatureUrl || requestData?.managerSignatureUrl;
+                        <Section title="4. APPROVER SIGNATURES">
+                            {/* Approved/rejected: show actual signatures only */}
+                            {(requestData?.status === "approved" || requestData?.status === "rejected") && (() => {
+                                const hodApproval = requestData?.approvals?.find((a: any) => a.approvalLevel === "head_of_department");
+                                const hodName = savedFormData.data?.managerSignerName || hodApproval?.approver?.name || "Line Manager / HOD";
+                                const hodSig = savedFormData.data?.managerSignatureUrl || requestData?.managerSignatureUrl;
 
-                            const hrApproval = requestData?.approvals?.find((a: any) => a.approvalLevel === "hr");
-                            const hrName = savedFormData.data?.hrSignerName || hrApproval?.approver?.name || "HR Department";
-                            const hrSig = savedFormData.data?.hrSignatureUrl || requestData?.hrSignatureUrl;
+                                const hrApproval = requestData?.approvals?.find((a: any) => a.approvalLevel === "hr");
+                                const hrName = savedFormData.data?.hrSignerName || hrApproval?.approver?.name || "HR Department";
+                                const hrSig = savedFormData.data?.hrSignatureUrl || requestData?.hrSignatureUrl;
 
-                            const finApproval = requestData?.approvals?.find((a: any) => a.approvalLevel === "head_of_finance");
-                            const finName = savedFormData.data?.financeSignerName || finApproval?.approver?.name || "Head of Finance";
-                            const finSig = savedFormData.data?.financeSignatureUrl || requestData?.financeSignatureUrl;
+                                const finApproval = requestData?.approvals?.find((a: any) => a.approvalLevel === "head_of_finance");
+                                const finName = savedFormData.data?.financeSignerName || finApproval?.approver?.name || "Head of Finance";
+                                const finSig = savedFormData.data?.financeSignatureUrl || requestData?.financeSignatureUrl;
 
-                            const ceoApproval = requestData?.approvals?.find((a: any) => a.approvalLevel === "ceo_md" || a.approvalLevel === "md");
-                            const ceoName = savedFormData.data?.ceoSignerName || ceoApproval?.approver?.name || "CEO / MD";
-                            const ceoSig = savedFormData.data?.ceoSignatureUrl || requestData?.ceoSignatureUrl;
+                                const ceoApproval = requestData?.approvals?.find((a: any) => a.approvalLevel === "ceo_md" || a.approvalLevel === "md");
+                                const ceoName = savedFormData.data?.ceoSignerName || ceoApproval?.approver?.name || "CEO / MD";
+                                const ceoSig = savedFormData.data?.ceoSignatureUrl || requestData?.ceoSignatureUrl;
 
-                            const renderSlot = (label: string, name: string, sigUrl?: string, altText?: string) => sigUrl ? (
-                                <Row label={label}>
-                                    <div className="py-1">
-                                        <img src={sigUrl} alt={altText || "Signature"} className="h-10 object-contain" />
-                                        <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">✓ {name}</p>
-                                    </div>
-                                </Row>
-                            ) : null;
+                                const renderSlot = (label: string, name: string, sigUrl?: string, altText?: string) => sigUrl ? (
+                                    <Row label={label}>
+                                        <div className="py-1">
+                                            <img src={sigUrl} alt={altText || "Signature"} className="h-10 object-contain" />
+                                            <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">✓ {name}</p>
+                                        </div>
+                                    </Row>
+                                ) : null;
 
-                            return (
-                                <>
-                                    {renderSlot("4.1 HOD / Line Manager", hodName, hodSig, "HOD Signature")}
-                                    {renderSlot("4.2 HR Review", hrName, hrSig, "HR Signature")}
-                                    {renderSlot("4.3 Head of Finance", finName, finSig, "Finance Signature")}
-                                    {ceoSig && renderSlot("4.4 CEO / MD", ceoName, ceoSig, "CEO Signature")}
-                                </>
-                            );
-                        })()}
-                    </Section>
+                                return (
+                                    <>
+                                        {renderSlot("4.1 HOD / Line Manager", hodName, hodSig, "HOD Signature")}
+                                        {renderSlot("4.2 HR Review", hrName, hrSig, "HR Signature")}
+                                        {renderSlot("4.3 Head of Finance", finName, finSig, "Finance Signature")}
+                                        {ceoSig && renderSlot("4.4 CEO / MD", ceoName, ceoSig, "CEO Signature")}
+                                    </>
+                                );
+                            })()}
+                        </Section>
                     )}
 
 
