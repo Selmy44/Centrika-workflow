@@ -472,6 +472,7 @@ export const requestsRouter = router({
           ...(input?.includeNonSubmitted ? {} : { NOT: { status: { in: ["draft", "cancelled"] } } })
         },
         include: {
+          user: { include: { department: true } },
           leaveRequest: true,
           carRequest: true,
           expenditureRequest: true,
@@ -491,6 +492,7 @@ export const requestsRouter = router({
       const request = await prisma.request.findUnique({
         where: { id: input.id },
         include: {
+          user: { include: { department: true } },
           leaveRequest: true,
           carRequest: true,
           expenditureRequest: true,
@@ -541,7 +543,24 @@ export const requestsRouter = router({
         initialLevel = firstStep.roleResponsible;
 
         if (initialLevel === "head_of_department") {
+          // 1. Use explicit approver if provided by the form
+          // 2. Fall back to employee's assigned manager
+          // 3. Fall back to the HOD of the employee's own department
+          // 4. Last resort: any active HOD
           approverId = input.initialApproverId || request.user.managerId || 0;
+          if (!approverId && request.user.departmentId) {
+            const deptHod = await prisma.user.findFirst({
+              where: {
+                status: "Active",
+                departmentId: request.user.departmentId,
+                OR: [
+                  { role: "head_of_department" },
+                  { additionalRoles: { contains: "head_of_department" } },
+                ],
+              },
+            });
+            approverId = deptHod?.id || 0;
+          }
         } else {
           approverId = (await prisma.user.findFirst({
             where: { OR: [{ role: initialLevel as any }, { additionalRoles: { contains: initialLevel } }] }
@@ -557,15 +576,34 @@ export const requestsRouter = router({
         } else {
           initialLevel = "head_of_department";
           approverId = input.initialApproverId || request.user.managerId || 0;
+          if (!approverId && request.user.departmentId) {
+            const deptHod = await prisma.user.findFirst({
+              where: {
+                status: "Active",
+                departmentId: request.user.departmentId,
+                OR: [
+                  { role: "head_of_department" },
+                  { additionalRoles: { contains: "head_of_department" } },
+                ],
+              },
+            });
+            approverId = deptHod?.id || 0;
+          }
         }
       }
 
-      // If no specific approverId but we have a role, we still proceed if it's a role-based pooling level (HR, Finance, CEO)
-      // but for HOD we really need a specific ID.
+      // Final safety net: if still no HOD found by department, pick any active HOD
       if (!approverId && initialLevel === "head_of_department") {
-        // Find ANY HOD if none assigned? Better to throw error or find a default.
-        const defaultHod = await prisma.user.findFirst({ where: { role: "head_of_department" } });
-        approverId = defaultHod?.id || 0;
+        const anyHod = await prisma.user.findFirst({
+          where: {
+            status: "Active",
+            OR: [
+              { role: "head_of_department" },
+              { additionalRoles: { contains: "head_of_department" } },
+            ],
+          },
+        });
+        approverId = anyHod?.id || 0;
       }
 
       if (!approverId && !["hr", "head_of_finance", "ceo_md"].includes(initialLevel)) {
