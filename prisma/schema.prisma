@@ -1,0 +1,910 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  user
+  admin
+  hr
+  head_of_department
+  head_of_finance
+  ceo_md
+}
+
+enum RequestType {
+  leave
+  car
+  expenditure
+  asset
+}
+
+enum RequestStatus {
+  draft
+  pending
+  approved
+  rejected
+  cancelled
+  escalated
+}
+
+enum LeaveType {
+  annual
+  sick
+  personal
+  unpaid
+  parental
+}
+
+enum ParentalLeaveType {
+  paternity
+  maternity
+}
+
+enum ApprovalStatus {
+  pending
+  approved
+  rejected
+  cancelled
+}
+
+enum ApprovalLevel {
+  head_of_department
+  hr
+  head_of_finance
+  ceo_md
+  final
+  md
+}
+
+enum AttachmentType {
+  employee_signature
+  manager_signature
+  hr_signature
+  ceo_signature
+  supporting_document
+  handover_document
+}
+
+enum NotificationType {
+  request_submitted
+  request_approved
+  request_rejected
+  approval_needed
+  approval_completed
+  escalation_notification
+  new_comment
+  workflow_update
+  announcement_posted
+  new_suggestion
+  feedback_reply
+}
+
+enum MfaMethod {
+  email
+  sms
+  totp
+}
+
+enum AssetCategory {
+  it_equipment
+  furniture
+  vehicles
+  software
+  other
+}
+
+enum AssetStatus {
+  available
+  assigned
+  in_maintenance
+  retired
+  lost
+}
+
+enum AssignmentStatus {
+  active
+  returned
+}
+
+enum AssetDocumentType {
+  invoice
+  warranty
+  contract
+  photo
+  maintenance_report
+  other
+}
+
+model User {
+  id                Int      @id @default(autoincrement())
+  openId            String   @unique @map("open_id") @db.VarChar(64)
+  name              String?
+  email             String?  @unique @db.VarChar(320)
+  password          String?
+  gender            String?  @db.VarChar(10)
+  loginMethod       String?  @map("login_method") @db.VarChar(64)
+  role              Role     @default(user)
+  additionalRoles   String?  @map("additional_roles")
+  departmentId      Int?     @map("department_id")
+  position          String?  @db.VarChar(255)
+  phoneNumber       String?  @map("phone_number") @db.VarChar(20)
+  location          String?  @db.VarChar(255)
+  status            String?  @default("Active") @db.VarChar(50)
+  staffId           String?  @map("staff_id") @db.VarChar(50)
+  dateOfEmployment  String?  @map("date_of_employment") @db.VarChar(10)
+  managerId         Int?     @map("manager_id")
+  profileImage      String?  @map("profile_image")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at")
+  lastSignedIn      DateTime @default(now()) @map("last_signed_in")
+  dateOfBirth       String?  @map("date_of_birth") @db.VarChar(10)
+  jobDescription    String?  @map("job_description") @db.Text
+  contractType      String?  @map("contract_type") @db.VarChar(50)
+  contractStart     String?  @map("contract_start") @db.VarChar(10)
+  contractEnd       String?  @map("contract_end") @db.VarChar(10)
+  deactivatedAt      DateTime? @map("deactivated_at")
+  deactivationReason String?   @map("deactivation_reason") @db.Text
+
+  auditLogsAsActor  UserAuditLog[] @relation("AuditActor")
+  auditLogsAsTarget UserAuditLog[] @relation("AuditTarget")
+
+  department        Department? @relation("DepartmentUsers", fields: [departmentId], references: [id])
+  hodOfDepartment   Department? @relation("DepartmentHOD")
+  requests          Request[]
+  uploadedFiles     RequestAttachment[] @relation("UploadedBy")
+  approvals         RequestApproval[]
+  leaveBalances     LeaveBalance[]
+  resetTokens       PasswordResetToken[]
+  notifications     Notification[] @relation("NotificationUser")
+  triggeredNotifications Notification[] @relation("TriggeredByUser")
+  mfaMethods        MfaMethodSettings[]
+  otpTokens         OtpToken[]
+  magicLinks        MagicLink[]
+  mfaSessions       MfaSession[]
+  manager           User?    @relation("UserManager", fields: [managerId], references: [id])
+  subordinates      User[]   @relation("UserManager")
+  sentInvitations   Invitation[]
+  approvalLogs      ApprovalLog[]
+  comments          RequestComment[]
+  announcementComments AnnouncementComment[] @relation("UserAnnouncementComments")
+  announcements     Announcement[]   @relation("UserAnnouncements")
+  suggestions       Suggestion[]
+  suggestionReplies SuggestionReply[] @relation("UserSuggestionReplies")
+  employeeDocuments EmployeeDocument[] @relation("EmployeeDocs")
+  verifiedDocuments EmployeeDocument[] @relation("VerifiedDocs")
+  assignedAssets    AssetAssignment[] @relation("AssignedAssets")
+  assetsAssignedBy  AssetAssignment[] @relation("AssetsAssignedBy")
+  uploadedAssetDocs AssetDocument[]  @relation("UploadedAssetDocs")
+  loggedAssetMaintenance AssetMaintenance[] @relation("LoggedAssetMaintenance")
+  assetAuditLogs    AssetAuditLog[]  @relation("AssetAuditLogs")
+  suggestionReadStatuses SuggestionReadStatus[]
+  announcementLikes      AnnouncementLike[]            @relation("UserAnnouncementLikes")
+  announcementCommentLikes AnnouncementCommentLike[]   @relation("UserAnnouncementCommentLikes")
+  suggestionLikes        SuggestionLike[]              @relation("UserSuggestionLikes")
+  suggestionReplyLikes   SuggestionReplyLike[]         @relation("UserSuggestionReplyLikes")
+  leaveHandovers         LeaveRequest[]                @relation("LeaveHandoverPerson")
+
+  @@map("users")
+}
+
+model Department {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique @db.VarChar(255)
+  description String?
+  hodId       Int?     @unique @map("hod_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  hod           User?          @relation("DepartmentHOD", fields: [hodId], references: [id], onDelete: SetNull)
+  users         User[]         @relation("DepartmentUsers")
+  announcements Announcement[]
+  budgets       Budget[]
+
+  @@map("departments")
+}
+
+model Request {
+  id                   Int           @id @default(autoincrement())
+  userId               Int           @map("user_id")
+  type                 RequestType
+  status               RequestStatus @default(draft)
+  title                String        @db.VarChar(255)
+  description          String?
+  currentApprovalLevel ApprovalLevel @default(head_of_department) @map("current_approval_level")
+  initialApproverId    Int?          @map("initial_approver_id")
+  createdAt            DateTime      @default(now()) @map("created_at")
+  updatedAt            DateTime      @default(now()) @updatedAt @map("updated_at")
+
+  user                 User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attachments          RequestAttachment[]
+  leaveRequest         LeaveRequest?
+  carRequest           CarRequest?
+  expenditureRequest   ExpenditureRequest?
+  assetRequest         AssetRequest?
+  approvals            RequestApproval[]
+  notifications        Notification[]
+  formSubmission       FormSubmission?
+  approvalLogs         ApprovalLog[]
+  comments             RequestComment[]
+  budgetUsages         BudgetUsage[]
+  voucher              Voucher?
+
+  @@map("requests")
+}
+
+model RequestAttachment {
+  id          Int            @id @default(autoincrement())
+  requestId   Int            @map("request_id")
+  fileName    String         @map("file_name") @db.VarChar(255)
+  fileUrl     String         @map("file_url")
+  fileKey     String         @map("file_key") @db.VarChar(255)
+  mimeType    String?        @map("mime_type") @db.VarChar(100)
+  type        AttachmentType? @default(supporting_document)
+  uploadedBy  Int            @map("uploaded_by")
+  createdAt   DateTime       @default(now()) @map("created_at")
+
+  request     Request        @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  uploader    User           @relation("UploadedBy", fields: [uploadedBy], references: [id], onDelete: Cascade)
+  
+  leaveEmployeeSig  LeaveRequest[] @relation("EmployeeSignature")
+  leaveManagerSig   LeaveRequest[] @relation("ManagerSignature")
+  approvalSig       RequestApproval[]
+
+  @@map("request_attachments")
+}
+
+model LeaveRequest {
+  id                       Int               @id @default(autoincrement())
+  requestId                Int               @unique @map("request_id")
+  leaveType                LeaveType         @map("leave_type")
+  parentalLeaveType        ParentalLeaveType? @map("parental_leave_type")
+  startDate                String            @map("start_date") @db.VarChar(10)
+  endDate                  String            @map("end_date") @db.VarChar(10)
+  reason                   String?
+  createdAt                DateTime          @default(now()) @map("created_at")
+  leaveDaysRequested       Int?              @map("leave_days_requested")
+  leaveDaysEntitled        Int?              @map("leave_days_entitled")
+  leaveDaysTaken           Int?              @map("leave_days_taken")
+  leaveDaysRemaining       Int?              @map("leave_days_remaining")
+  employeeSignatureFileId  Int?              @map("employee_signature_file_id")
+  managerSignatureFileId   Int?              @map("manager_signature_file_id")
+  backupPersonName         String?           @map("backup_person_name") @db.VarChar(255)
+  backupPersonPhone        String?           @map("backup_person_phone") @db.VarChar(20)
+  handoverPersonId         Int?              @map("handover_person_id")
+  handoverPersonEmail      String?           @map("handover_person_email") @db.VarChar(320)
+  handoverResponsibilities String?           @map("handover_responsibilities") @db.Text
+
+  request                  Request           @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  employeeSignature        RequestAttachment? @relation("EmployeeSignature", fields: [employeeSignatureFileId], references: [id])
+  managerSignature         RequestAttachment? @relation("ManagerSignature", fields: [managerSignatureFileId], references: [id])
+  handoverPerson           User?             @relation("LeaveHandoverPerson", fields: [handoverPersonId], references: [id])
+
+  @@map("leave_requests")
+}
+
+model CarRequest {
+  id            Int      @id @default(autoincrement())
+  requestId     Int      @unique @map("request_id")
+  destination   String   @db.VarChar(255)
+  purpose       String?
+  departureDate String   @map("departure_date") @db.VarChar(10)
+  departureTime String?  @map("departure_time") @db.VarChar(5)
+  passengers    Int      @default(1)
+  driverName    String?  @map("driver_name") @db.VarChar(255)
+  carInfo       String?  @map("car_info") @db.VarChar(255)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  request       Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@map("car_requests")
+}
+
+model ExpenditureRequest {
+  id          Int      @id @default(autoincrement())
+  requestId   Int      @unique @map("request_id")
+  amount      Int
+  currency    String   @default("RWF") @db.VarChar(3)
+  department  String?  @db.VarChar(255)
+  category    String?  @db.VarChar(255)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  request     Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@map("expenditure_requests")
+}
+
+model AssetRequest {
+  id            Int      @id @default(autoincrement())
+  requestId     Int      @unique @map("request_id")
+  itemName      String   @map("item_name") @db.VarChar(255)
+  description   String?
+  estimatedCost Int      @map("estimated_cost")
+  currency      String   @default("RWF") @db.VarChar(3)
+  category      String?  @db.VarChar(255)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  request       Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@map("asset_requests")
+}
+
+model RequestApproval {
+  id              Int            @id @default(autoincrement())
+  requestId       Int            @map("request_id")
+  approverId      Int            @map("approver_id")
+  approvalLevel   ApprovalLevel  @map("approval_level")
+  status          ApprovalStatus @default(pending)
+  comments        String?
+  signatureFileId Int?           @map("signature_file_id")
+  approvalDate    DateTime?      @map("approval_date")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @default(now()) @updatedAt @map("updated_at")
+
+  request         Request        @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  approver        User           @relation(fields: [approverId], references: [id], onDelete: Cascade)
+  signature       RequestAttachment? @relation(fields: [signatureFileId], references: [id])
+
+  @@map("request_approvals")
+}
+
+model LeaveBalance {
+  id                   Int      @id @default(autoincrement())
+  userId               Int      @map("user_id")
+  year                 Int
+  annualLeaveEntitled  Int      @default(18) @map("annual_leave_entitled")
+  annualLeaveCarryover Int      @default(0) @map("annual_leave_carryover")
+  annualLeaveTaken     Int      @default(0) @map("annual_leave_taken")
+  annualLeaveRemaining Int      @default(18) @map("annual_leave_remaining")
+  sickLeave            Int      @default(10) @map("sick_leave")
+  personalLeave        Int      @default(3) @map("personal_leave")
+  updatedAt            DateTime @default(now()) @updatedAt @map("updated_at")
+
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("leave_balances")
+}
+
+model PasswordResetToken {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @map("user_id")
+  token     String    @unique @db.VarChar(255)
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_reset_tokens")
+}
+
+model Notification {
+  id                Int              @id @default(autoincrement())
+  userId            Int              @map("user_id")
+  requestId         Int?             @map("request_id")
+  triggeredByUserId Int              @map("triggered_by_user_id")
+  type              NotificationType
+  title             String           @db.VarChar(255)
+  message           String?
+  isRead            Boolean          @default(false) @map("is_read")
+  createdAt         DateTime         @default(now()) @map("created_at")
+  announcementId    Int?             @map("announcement_id")
+  suggestionId      Int?             @map("suggestion_id")
+
+  user              User             @relation("NotificationUser", fields: [userId], references: [id], onDelete: Cascade)
+  request           Request?         @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  triggeredByUser   User             @relation("TriggeredByUser", fields: [triggeredByUserId], references: [id], onDelete: Cascade)
+  announcement      Announcement?    @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  suggestion        Suggestion?      @relation("NotificationSuggestion", fields: [suggestionId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model FormSubmission {
+  id        Int      @id @default(autoincrement())
+  requestId Int      @unique @map("request_id")
+  formData  String   @map("form_data")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  request   Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@map("form_submissions")
+}
+
+model MfaMethodSettings {
+  id           Int       @id @default(autoincrement())
+  userId       Int       @map("user_id")
+  method       MfaMethod
+  phoneNumber  String?   @map("phone_number") @db.VarChar(20)
+  isEnabled    Boolean   @default(false) @map("is_enabled")
+  isVerified   Boolean   @default(false) @map("is_verified")
+  backupCodes  String?   @map("backup_codes")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("mfa_methods")
+}
+
+model OtpToken {
+  id          Int       @id @default(autoincrement())
+  userId      Int       @map("user_id")
+  code        String    @db.VarChar(6)
+  method      MfaMethod
+  destination String?   @db.VarChar(320)
+  expiresAt   DateTime  @map("expires_at")
+  attempts    Int       @default(0)
+  usedAt      DateTime? @map("used_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("otp_tokens")
+}
+
+model MagicLink {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @map("user_id")
+  token     String    @unique @db.VarChar(255)
+  expiresAt DateTime  @map("expires_at")
+  isUsed    Boolean   @default(false) @map("is_used")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("magic_links")
+}
+
+model MfaSession {
+  id            Int      @id @default(autoincrement())
+  userId        Int      @map("user_id")
+  sessionToken  String   @unique @map("session_token") @db.VarChar(255)
+  loginMethod   String   @map("login_method") @db.VarChar(64)
+  isMfaVerified Boolean  @default(false) @map("is_mfa_verified")
+  expiresAt     DateTime @map("expires_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("mfa_sessions")
+}
+
+model Invitation {
+  id        Int      @id @default(autoincrement())
+  email     String   @db.VarChar(320)
+  token     String   @unique @db.VarChar(255)
+  role      Role     @default(user)
+  name      String?
+  createdBy Int      @map("created_by")
+  status    String   @default("pending") @db.VarChar(50)
+  expiresAt DateTime @map("expires_at")
+  acceptedAt DateTime? @map("accepted_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  creator   User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+
+  @@map("invitations")
+}
+
+model WorkflowConfig {
+  id          Int           @id @default(autoincrement())
+  requestType RequestType   @unique @map("request_type")
+  name        String        @db.VarChar(255)
+  description String?
+  isActive    Boolean       @default(true) @map("is_active")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @default(now()) @updatedAt @map("updated_at")
+
+  steps       WorkflowStep[]
+
+  @@map("workflow_configs")
+}
+
+model WorkflowStep {
+  id               Int            @id @default(autoincrement())
+  workflowConfigId Int            @map("workflow_config_id")
+  stepOrder        Int            @map("step_order")
+  stepName         String         @map("step_name") @db.VarChar(255)
+  roleResponsible  Role           @map("role_responsible")
+  statusLabel      String         @map("status_label") @db.VarChar(255)
+  isFinal          Boolean        @default(false) @map("is_final")
+  notifyRoles      String?        @map("notify_roles")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @default(now()) @updatedAt @map("updated_at")
+
+  config           WorkflowConfig @relation(fields: [workflowConfigId], references: [id], onDelete: Cascade)
+  escalationRules  EscalationRule[]
+
+  @@map("workflow_steps")
+}
+
+model EscalationRule {
+  id                Int      @id @default(autoincrement())
+  workflowStepId    Int      @map("workflow_step_id")
+  conditionColumn   String   @map("condition_column") @db.VarChar(255)
+  conditionOperator String   @map("condition_operator") @db.VarChar(10)
+  conditionValue    String   @map("condition_value") @db.VarChar(255)
+  targetRole        Role     @map("target_role")
+  notifyRoles       String?  @map("notify_roles")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at")
+
+  step              WorkflowStep @relation(fields: [workflowStepId], references: [id], onDelete: Cascade)
+
+  @@map("escalation_rules")
+}
+
+model ApprovalLog {
+  id        Int      @id @default(autoincrement())
+  requestId Int      @map("request_id")
+  userId    Int      @map("user_id")
+  action    String   @db.VarChar(50)
+  stepName  String?  @map("step_name") @db.VarChar(255)
+  comments  String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  request   Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("approval_logs")
+}
+
+model RequestComment {
+  id        Int      @id @default(autoincrement())
+  requestId Int      @map("request_id")
+  userId    Int      @map("user_id")
+  content   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  request   Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("request_comments")
+}
+
+model Announcement {
+  id           Int         @id @default(autoincrement())
+  title        String
+  content      String      @db.Text
+  authorId     Int         @map("author_id")
+  departmentId Int?        @map("department_id")
+  createdAt    DateTime    @default(now()) @map("created_at")
+
+  author       User        @relation("UserAnnouncements", fields: [authorId], references: [id], onDelete: Cascade)
+  department   Department? @relation(fields: [departmentId], references: [id])
+  comments     AnnouncementComment[]
+  notifications Notification[]
+  likes        AnnouncementLike[]
+
+  @@map("announcements")
+}
+
+model Suggestion {
+  id          Int      @id @default(autoincrement())
+  title       String?  @db.VarChar(255)
+  content     String   @db.Text
+  isAnonymous Boolean  @default(true) @map("is_anonymous")
+  userId      Int?     @map("user_id") // Optional link to user if not anonymous
+  targetRoles Role[]   @map("target_roles")
+  targetUserIds Int[]  @default([]) @map("target_user_ids")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  replies     SuggestionReply[]
+  notifications Notification[] @relation("NotificationSuggestion")
+  attachments SuggestionAttachment[]
+  readStatuses SuggestionReadStatus[]
+  likes        SuggestionLike[]
+
+  @@map("suggestions")
+}
+
+model SuggestionReply {
+  id           Int      @id @default(autoincrement())
+  content      String   @db.Text
+  suggestionId Int      @map("suggestion_id")
+  userId       Int      @map("user_id") // The person responding
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  suggestion   Suggestion @relation(fields: [suggestionId], references: [id], onDelete: Cascade)
+  user         User       @relation("UserSuggestionReplies", fields: [userId], references: [id], onDelete: Cascade)
+  attachments  SuggestionAttachment[]
+  likes        SuggestionReplyLike[]
+
+  @@map("suggestion_replies")
+}
+
+model SuggestionAttachment {
+  id           Int      @id @default(autoincrement())
+  suggestionId Int?     @map("suggestion_id")
+  replyId      Int?     @map("reply_id")
+  fileName     String   @map("file_name") @db.VarChar(255)
+  fileUrl      String   @map("file_url")
+  fileKey      String   @map("file_key") @db.VarChar(255)
+  mimeType     String?  @map("mime_type") @db.VarChar(100)
+  fileSize     Int?     @map("file_size")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  suggestion   Suggestion? @relation(fields: [suggestionId], references: [id], onDelete: Cascade)
+  reply        SuggestionReply? @relation(fields: [replyId], references: [id], onDelete: Cascade)
+
+  @@map("suggestion_attachments")
+}
+
+model SuggestionReadStatus {
+  id           Int      @id @default(autoincrement())
+  suggestionId Int      @map("suggestion_id")
+  userId       Int      @map("user_id")
+  lastReadAt   DateTime @default(now()) @map("last_read_at")
+
+  suggestion   Suggestion @relation(fields: [suggestionId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([suggestionId, userId])
+  @@map("suggestion_read_statuses")
+}
+
+model Policy {
+  id          Int      @id @default(autoincrement())
+  title       String   @db.VarChar(255)
+  category    String   @db.VarChar(100)
+  content     String   @db.Text
+  lastUpdated DateTime @default(now()) @map("last_updated")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("policies")
+}
+
+model EmployeeDocument {
+  id          Int       @id @default(autoincrement())
+  userId      Int       @map("user_id")
+  name        String    @db.VarChar(255)
+  fileUrl     String    @map("file_url")
+  fileKey     String    @map("file_key") @db.VarChar(255)
+  category    String    @db.VarChar(100)
+  status      String    @default("pending") @db.VarChar(50) // pending, verified, rejected
+  verifiedBy  Int?      @map("verified_by")
+  verifiedAt  DateTime? @map("verified_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  user        User      @relation("EmployeeDocs", fields: [userId], references: [id], onDelete: Cascade)
+  verifier    User?     @relation("VerifiedDocs", fields: [verifiedBy], references: [id], onDelete: SetNull)
+
+  @@map("employee_documents")
+}
+
+model Budget {
+  id              Int           @id @default(autoincrement())
+  departmentId    Int           @map("department_id")
+  year            Int
+  totalAmount     Decimal       @map("total_amount") @db.Decimal(18, 2)
+  currency        String        @default("RWF") @db.VarChar(3)
+  category        String?       @db.VarChar(100)
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @default(now()) @updatedAt @map("updated_at")
+
+  department      Department    @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  usages          BudgetUsage[]
+
+  @@unique([departmentId, year, category])
+  @@map("budgets")
+}
+
+model BudgetUsage {
+  id          Int      @id @default(autoincrement())
+  budgetId    Int      @map("budget_id")
+  amount      Decimal  @db.Decimal(18, 2)
+  requestId   Int?     @map("request_id")
+  type        String   @db.VarChar(20) // committed, actual
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  budget      Budget   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  request     Request? @relation(fields: [requestId], references: [id], onDelete: SetNull)
+
+  @@map("budget_usages")
+}
+
+model Voucher {
+  id            Int      @id @default(autoincrement())
+  requestId     Int      @unique @map("request_id")
+  voucherNumber String   @unique @map("voucher_number") @db.VarChar(50)
+  amount        Decimal  @db.Decimal(18, 2)
+  currency      String   @db.VarChar(3)
+  preparedBy    Int      @map("prepared_by")
+  approvedBy    Int?     @map("approved_by")
+  status        String   @default("pending") @db.VarChar(20) // pending, paid, cancelled
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at")
+
+  request       Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@map("vouchers")
+}
+
+model Asset {
+  id             Int           @id @default(autoincrement())
+  assetTag       String        @unique @map("asset_tag") @db.VarChar(100)
+  name           String        @db.VarChar(255)
+  category       AssetCategory @default(it_equipment)
+  serialNumber   String?       @map("serial_number") @db.VarChar(255)
+  purchaseDate   DateTime      @map("purchase_date")
+  purchaseCost   Decimal       @map("purchase_cost") @db.Decimal(18, 2)
+  currency       String        @default("RWF") @db.VarChar(3)
+  vendor         String?       @db.VarChar(255)
+  warrantyExpiry DateTime?     @map("warranty_expiry")
+  status         AssetStatus   @default(available)
+  location       String?       @db.VarChar(255)
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @default(now()) @updatedAt @map("updated_at")
+
+  assignments AssetAssignment[]
+  documents   AssetDocument[]
+  maintenance AssetMaintenance[]
+  auditLogs   AssetAuditLog[]
+
+  @@map("assets")
+}
+
+model AssetAssignment {
+  id                    Int              @id @default(autoincrement())
+  assetId               Int              @map("asset_id")
+  userId                Int              @map("user_id") // Employee holding the asset
+  assignedAt            DateTime         @map("assigned_at")
+  expectedReturnDate    DateTime?        @map("expected_return_date")
+  returnedAt            DateTime?        @map("returned_at")
+  conditionAtAssignment String?          @map("condition_at_assignment") @db.Text
+  conditionAtReturn     String?          @map("condition_at_return") @db.Text
+  status                AssignmentStatus @default(active)
+  assignedBy            Int              @map("assigned_by") // HR/Admin who assigned it
+  createdAt             DateTime         @default(now()) @map("created_at")
+  updatedAt             DateTime         @default(now()) @updatedAt @map("updated_at")
+
+  asset     Asset           @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  user      User            @relation("AssignedAssets", fields: [userId], references: [id], onDelete: Cascade)
+  assigner  User            @relation("AssetsAssignedBy", fields: [assignedBy], references: [id], onDelete: Cascade)
+  documents AssetDocument[]
+
+  @@map("asset_assignments")
+}
+
+model AssetDocument {
+  id           Int               @id @default(autoincrement())
+  assetId      Int               @map("asset_id")
+  assignmentId Int?              @map("assignment_id") // For assignment contracts
+  type         AssetDocumentType
+  fileName     String            @map("file_name") @db.VarChar(255)
+  fileUrl      String            @map("file_url")
+  fileKey      String            @map("file_key") @db.VarChar(255)
+  uploadedBy   Int               @map("uploaded_by")
+  createdAt    DateTime          @default(now()) @map("created_at")
+
+  asset      Asset            @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  assignment AssetAssignment? @relation(fields: [assignmentId], references: [id], onDelete: SetNull)
+  uploader   User             @relation("UploadedAssetDocs", fields: [uploadedBy], references: [id], onDelete: Cascade)
+
+  @@map("asset_documents")
+}
+
+model AssetMaintenance {
+  id              Int      @id @default(autoincrement())
+  assetId         Int      @map("asset_id")
+  maintenanceDate DateTime @map("maintenance_date")
+  cost            Decimal  @db.Decimal(18, 2)
+  vendor          String?  @db.VarChar(255)
+  description     String   @db.Text
+  loggedBy        Int      @map("logged_by")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
+
+  asset  Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  logger User  @relation("LoggedAssetMaintenance", fields: [loggedBy], references: [id], onDelete: Cascade)
+
+  @@map("asset_maintenance")
+}
+
+model AssetAuditLog {
+  id        Int      @id @default(autoincrement())
+  assetId   Int      @map("asset_id")
+  userId    Int      @map("user_id")
+  action    String   @db.VarChar(50)
+  details   String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  user  User  @relation("AssetAuditLogs", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("asset_audit_logs")
+}
+
+model AnnouncementComment {
+  id             Int          @id @default(autoincrement())
+  announcementId Int          @map("announcement_id")
+  userId         Int          @map("user_id")
+  content        String       @db.Text
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  user           User         @relation("UserAnnouncementComments", fields: [userId], references: [id], onDelete: Cascade)
+  likes          AnnouncementCommentLike[]
+
+  @@map("announcement_comments")
+}
+
+model AnnouncementLike {
+  id             Int          @id @default(autoincrement())
+  announcementId Int          @map("announcement_id")
+  userId         Int          @map("user_id")
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  user           User         @relation("UserAnnouncementLikes", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([announcementId, userId])
+  @@map("announcement_likes")
+}
+
+model AnnouncementCommentLike {
+  id        Int                 @id @default(autoincrement())
+  commentId Int                 @map("comment_id")
+  userId    Int                 @map("user_id")
+  createdAt DateTime            @default(now()) @map("created_at")
+
+  comment   AnnouncementComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User                @relation("UserAnnouncementCommentLikes", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId])
+  @@map("announcement_comment_likes")
+}
+
+model SuggestionLike {
+  id           Int        @id @default(autoincrement())
+  suggestionId Int        @map("suggestion_id")
+  userId       Int        @map("user_id")
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  suggestion   Suggestion @relation(fields: [suggestionId], references: [id], onDelete: Cascade)
+  user         User       @relation("UserSuggestionLikes", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([suggestionId, userId])
+  @@map("suggestion_likes")
+}
+
+model SuggestionReplyLike {
+  id        Int             @id @default(autoincrement())
+  replyId   Int             @map("reply_id")
+  userId    Int             @map("user_id")
+  createdAt DateTime        @default(now()) @map("created_at")
+
+  reply     SuggestionReply @relation(fields: [replyId], references: [id], onDelete: Cascade)
+  user      User            @relation("UserSuggestionReplyLikes", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([replyId, userId])
+  @@map("suggestion_reply_likes")
+}
+
+model UserAuditLog {
+  id           Int      @id @default(autoincrement())
+  actorId      Int      @map("actor_id")
+  targetUserId Int?     @map("target_user_id")
+  action       String   @db.VarChar(50) // edit, reset_password, deactivate, reactivate, delete, anonymize
+  reason       String?  @db.Text
+  beforeState  String?  @map("before_state") @db.Text // JSON snapshot
+  afterState   String?  @map("after_state") @db.Text  // JSON snapshot
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  actor        User     @relation("AuditActor", fields: [actorId], references: [id], onDelete: Cascade)
+  target       User?    @relation("AuditTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+
+  @@map("user_audit_logs")
+}
+
