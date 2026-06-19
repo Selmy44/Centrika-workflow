@@ -160,7 +160,7 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
     const handleSubmit = async (submit: boolean) => {
         if (submit) {
             if (!form.reportingManager) {
-                toast.error("Please select a reporting manager (HOD)");
+                toast.error("Please select a Line Manager / HOD before submitting");
                 return;
             }
             if (!form.title.trim()) {
@@ -489,6 +489,48 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                                     </div>
                                 )}
                             </div>
+                        </Row>
+                        <Row label="2.7 Line Manager / HOD">
+                            {isReadOnly ? (
+                                <Input
+                                    value={
+                                        (() => {
+                                            const found = uniqueHeads.find((h: any) => h.id === Number(form.reportingManager));
+                                            return (found as any)?.name || (form.reportingManager ? `ID: ${form.reportingManager}` : "Not assigned");
+                                        })()
+                                    }
+                                    className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium"
+                                    disabled
+                                />
+                            ) : (
+                                <div className="flex flex-col gap-1 w-full">
+                                    <Select
+                                        value={form.reportingManager}
+                                        onValueChange={v => setForm((prev: any) => ({ ...prev, reportingManager: v }))}
+                                    >
+                                        <SelectTrigger className="w-full h-8 border-blue-300 dark:border-[#3b6dae]/40 text-xs">
+                                            <SelectValue placeholder="-- Select Line Manager / HOD --" />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-white dark:bg-[#1f426b] border-blue-200 dark:border-[#3b6dae]/30">
+                                            {(uniqueHeads as any[]).map((h: any) => (
+                                                <SelectItem key={h.id} value={String(h.id)} className="focus:bg-blue-500 focus:text-white">
+                                                    {h.name}{h.department?.name ? ` — ${h.department.name}` : ""}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    {!form.reportingManager && (
+                                        <p className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+                                            ⚠ Required — select your Line Manager or Head of Department
+                                        </p>
+                                    )}
+                                    {form.reportingManager && (
+                                        <p className="text-[10px] text-green-600 dark:text-green-400 font-medium">
+                                            ✓ Auto-resolved from your profile. Change if needed.
+                                        </p>
+                                    )}
+                                </div>
+                            )}
                         </Row>
                     </Section>
 
