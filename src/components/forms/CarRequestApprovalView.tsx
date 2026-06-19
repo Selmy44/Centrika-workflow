@@ -411,6 +411,10 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                             className="bg-green-600 hover:bg-green-700 disabled:opacity-50"
                             size="sm"
                             onClick={() => {
+                                if (!approvalComments.trim()) {
+                                    toast.error("Please add your comment before approving");
+                                    return;
+                                }
                                 if (!signatureFile) {
                                     toast.error("Please provide your signature before approving");
                                     return;

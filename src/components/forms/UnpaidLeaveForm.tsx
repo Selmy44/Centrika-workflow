@@ -1059,7 +1059,7 @@ export default function UnpaidLeaveForm({
                   >
                     Reject Request
                   </Button>
-                  <Button disabled={isLoading || !approverSignature} onClick={() => { if (!approverSignature) { toast.error("Please provide your signature before approving"); return; } onApprove?.({ comments: approvalComments, signatureFile: approverSignature, selectedHR }); }} className="bg-green-600 hover:bg-green-700 disabled:opacity-50">
+                  <Button disabled={isLoading || !approverSignature} onClick={() => { if (!approvalComments.trim()) { toast.error("Please add your comment before approving"); return; } if (!approverSignature) { toast.error("Please provide your signature before approving"); return; } onApprove?.({ comments: approvalComments, signatureFile: approverSignature, selectedHR }); }} className="bg-green-600 hover:bg-green-700 disabled:opacity-50">
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Approve
                   </Button>

@@ -490,6 +490,7 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
                                 <Button
                                     disabled={isLoading || !signatureFile}
                                     onClick={() => {
+                                        if (!approvalComments.trim()) { toast.error("Please add your comment before approving"); return; }
                                         if (!signatureFile) { toast.error("Please provide your signature before approving"); return; }
                                         onApprove({ comments: approvalComments, signatureFile, escalateToCeo: false });
                                     }}
@@ -501,6 +502,7 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
                                 <Button
                                     disabled={isLoading || !signatureFile}
                                     onClick={() => {
+                                        if (!approvalComments.trim()) { toast.error("Please add your comment before approving"); return; }
                                         if (!signatureFile) { toast.error("Please provide your signature before approving"); return; }
                                         onApprove({ comments: approvalComments, signatureFile, escalateToCeo: true });
                                     }}
@@ -514,6 +516,7 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
                             <Button
                                 disabled={isLoading || !signatureFile}
                                 onClick={() => {
+                                    if (!approvalComments.trim()) { toast.error("Please add your comment before approving"); return; }
                                     if (!signatureFile) { toast.error("Please provide your signature before approving"); return; }
                                     onApprove({ comments: approvalComments, signatureFile });
                                 }}
