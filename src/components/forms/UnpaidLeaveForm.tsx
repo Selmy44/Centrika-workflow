@@ -143,7 +143,12 @@ export default function UnpaidLeaveForm({
   // Fetch saved form data for draft/read-only/approver views
   const savedFormData = (trpc as any).requests.getLeaveFormData.useQuery(
     { requestId: requestData?.id || 0 },
-    { enabled: !!requestData?.id && (isReadOnly || isApprover || requestData?.status === "draft") }
+    {
+      enabled: !!requestData?.id && (isReadOnly || isApprover || requestData?.status === "draft"),
+      staleTime: 5 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
+      refetchOnWindowFocus: false,
+    }
   );
 
   // Merge saved form data when available
@@ -159,7 +164,7 @@ export default function UnpaidLeaveForm({
     }
   }, [savedFormData.data]);
 
-  // Merge requestData fields directly to handle cases where form submission is missing or for additional robustness
+  // Merge requestData fields — always runs, including for read-only/approved views
   useEffect(() => {
     if (requestData) {
       setForm((prev) => ({
@@ -173,6 +178,13 @@ export default function UnpaidLeaveForm({
         leaveDaysTaken: requestData.leaveRequest?.leaveDaysTaken?.toString() || prev.leaveDaysTaken,
         leaveDaysRemaining: requestData.leaveRequest?.leaveDaysRemaining?.toString() || prev.leaveDaysRemaining,
         reportingManager: requestData.initialApproverId?.toString() || prev.reportingManager,
+        // Employee info from requestData.user — critical for read-only views
+        employeeName: requestData.user?.name || prev.employeeName,
+        staffId: requestData.user?.staffId || prev.staffId,
+        department: requestData.user?.department?.name || prev.department,
+        position: requestData.user?.position || prev.position,
+        workEmail: requestData.user?.email || prev.workEmail,
+        dateOfEmployment: requestData.user?.dateOfEmployment || prev.dateOfEmployment,
         // Handover fields from the LeaveRequest DB record
         handoverPersonName: requestData.leaveRequest?.backupPersonName || prev.handoverPersonName,
         handoverPersonPhone: requestData.leaveRequest?.backupPersonPhone || prev.handoverPersonPhone,
@@ -183,6 +195,7 @@ export default function UnpaidLeaveForm({
     }
   }, [requestData]);
 
+  // Auto-fill for new forms only — use prev.field || value to never overwrite existing data
   useEffect(() => {
     if (user && autoFillData && !effectiveIsReadOnly) {
       const sequence = String(Math.floor(Math.random() * 10000)).padStart(5, "0");
@@ -191,14 +204,14 @@ export default function UnpaidLeaveForm({
 
       setForm((prev) => ({
         ...prev,
-        documentId: docId,
-        employeeName: user.name || "",
-        staffId: user.staffId || "",
-        department: user.department?.name || "",
-        position: user.position || "",
-        workEmail: user.email || "",
-        dateOfEmployment: autoFillData.dateOfEmployment || "",
-        reportingManager: autoFillData.managerId ? String(autoFillData.managerId) : "",
+        documentId: prev.documentId || docId,
+        employeeName: prev.employeeName || user.name || "",
+        staffId: prev.staffId || user.staffId || "",
+        department: prev.department || user.department?.name || "",
+        position: prev.position || user.position || "",
+        workEmail: prev.workEmail || user.email || "",
+        dateOfEmployment: prev.dateOfEmployment || autoFillData.dateOfEmployment || "",
+        reportingManager: prev.reportingManager || (autoFillData.managerId ? String(autoFillData.managerId) : ""),
       }));
     }
   }, [user, autoFillData, effectiveIsReadOnly]);

@@ -73,6 +73,7 @@ export default function ExpenditureRequestForm({ requestData, isReadOnly = false
     supportingDocumentUrl: "",
   });
 
+  // Auto-fill for new forms only — use prev.field || value to never overwrite existing data
   useEffect(() => {
     if (user && autoFillData) {
       const sequence = String(Math.floor(Math.random() * 10000)).padStart(5, '0');
@@ -81,14 +82,14 @@ export default function ExpenditureRequestForm({ requestData, isReadOnly = false
 
       setForm(prev => ({
         ...prev,
-        requestNumber: docId,
-        employeeName: autoFillData.employeeName || user.name || "",
-        staffId: autoFillData.staffId || "",
-        department: autoFillData.department || "",
-        position: autoFillData.position || "",
-        workEmail: user.email || "",
-        dateOfEmployment: autoFillData.dateOfEmployment || "",
-        reportingManager: autoFillData.managerId ? String(autoFillData.managerId) : "",
+        requestNumber: prev.requestNumber || docId,
+        employeeName: prev.employeeName || autoFillData.employeeName || user.name || "",
+        staffId: prev.staffId || autoFillData.staffId || "",
+        department: prev.department || autoFillData.department || "",
+        position: prev.position || autoFillData.position || "",
+        workEmail: prev.workEmail || user.email || "",
+        dateOfEmployment: prev.dateOfEmployment || autoFillData.dateOfEmployment || "",
+        reportingManager: prev.reportingManager || (autoFillData.managerId ? String(autoFillData.managerId) : ""),
       }));
     }
   }, [user, autoFillData]);
@@ -111,7 +112,8 @@ export default function ExpenditureRequestForm({ requestData, isReadOnly = false
     { requestId: requestData?.id || 0 },
     {
       enabled: !!requestData?.id && (isReadOnly || requestData?.status === "draft"),
-      staleTime: 30_000,
+      staleTime: 5 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
       refetchOnWindowFocus: false,
     }
   );
@@ -121,6 +123,23 @@ export default function ExpenditureRequestForm({ requestData, isReadOnly = false
   const submitRequest = trpc.requests.submitRequest.useMutation();
   const storeFormData = trpc.requests.storeExpenditureFormData.useMutation();
   const uploadAttachment = (trpc as any).requests.uploadAttachment.useMutation();
+
+  // Merge requestData fields — always runs, including for read-only/approved views
+  const hasMergedRequestData = useRef(false);
+  useEffect(() => {
+    if (requestData) {
+      setForm((prev) => ({
+        ...prev,
+        // Employee info from requestData.user — critical for read-only views
+        employeeName: requestData.user?.name || prev.employeeName,
+        staffId: requestData.user?.staffId || prev.staffId,
+        department: requestData.user?.department?.name || prev.department,
+        position: requestData.user?.position || prev.position,
+        workEmail: requestData.user?.email || prev.workEmail,
+        dateOfEmployment: requestData.user?.dateOfEmployment || prev.dateOfEmployment,
+      }));
+    }
+  }, [requestData]);
 
   // Merge saved form data when available
   const hasMergedSavedData = useRef(false);

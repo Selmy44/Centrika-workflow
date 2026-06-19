@@ -130,7 +130,12 @@ export default function LeaveRequestForm({
   // Fetch the saved form JSON blob for approver/read-only views OR when editing draft forms
   const savedFormData = (trpc as any).requests.getLeaveFormData.useQuery(
     { requestId: requestData?.id || requestId || 0 },
-    { enabled: !!(requestData?.id || requestId) && (isReadOnly || !!onApprove || !!onReject || requestData?.status === "draft") }
+    {
+      enabled: !!(requestData?.id || requestId) && (isReadOnly || !!onApprove || !!onReject || requestData?.status === "draft"),
+      staleTime: 5 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
+      refetchOnWindowFocus: false,
+    }
   );
 
   // Resolve parental leave to maternity/paternity based on the employee's gender

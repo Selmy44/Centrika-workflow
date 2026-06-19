@@ -124,7 +124,12 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
     // Fetch saved form data for draft/read-only views
     const savedFormData = (trpc as any).requests.getAssetFormData.useQuery(
         { requestId: requestData?.id || 0 },
-        { enabled: !!requestData?.id && (isReadOnly || requestData?.status === "draft") }
+        {
+          enabled: !!requestData?.id && (isReadOnly || requestData?.status === "draft"),
+          staleTime: 5 * 60 * 1000,
+          gcTime: 10 * 60 * 1000,
+          refetchOnWindowFocus: false,
+        }
     );
 
     const uniqueHeads = Array.from(
