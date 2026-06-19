@@ -999,7 +999,7 @@ export default function AnnualLeaveForm({
                   >
                     Reject Request
                   </Button>
-                  <Button disabled={isLoading} onClick={() => onApprove?.({ comments: approvalComments, signatureFile: approverSignature, selectedHR })} className="bg-green-600 hover:bg-green-700">
+                  <Button disabled={isLoading || !approverSignature} onClick={() => { if (!approverSignature) { toast.error("Please provide your signature before approving"); return; } onApprove?.({ comments: approvalComments, signatureFile: approverSignature, selectedHR }); }} className="bg-green-600 hover:bg-green-700 disabled:opacity-50">
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Approve
                   </Button>

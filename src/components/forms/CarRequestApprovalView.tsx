@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer, Eye, Paperclip } from "lucide-react";
+import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer, Eye, Paperclip, ArrowRight, ArrowLeftRight, Car } from "lucide-react";
 import ApprovalChainPreview from "@/components/forms/ApprovalChainPreview";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
@@ -158,8 +158,8 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                 </div>
 
                 {/* TITLE BAR */}
-                <div className="bg-yellow-500 text-white text-center font-bold py-2 text-lg tracking-wide">
-                    CAR REQUEST FORM — APPROVAL
+                <div className="bg-yellow-500 text-white text-center font-bold py-2 text-lg tracking-wide flex items-center justify-center gap-2">
+                    <Car size={18} /> CAR / TRANSPORT REQUEST FORM — APPROVAL
                 </div>
 
                 {/* REJECTION ALERT */}
@@ -186,59 +186,89 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                     <div className="bg-[#3b6dae] text-white font-bold px-4 py-2 text-sm">REQUEST DETAILS</div>
                     <Section title="1. EMPLOYEE INFORMATION">
                         <Row label="1.1 Request Number">
-                            <Input value={`CR-${requestData?.id || ''}`} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
+                            <Input value={formDataDynamic?.documentId || (() => { const d = requestData?.createdAt ? new Date(requestData.createdAt) : new Date(); return `CR-${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(requestData?.id||'').padStart(5,'0')}`; })()} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
                         </Row>
-                        <Row label="1.2 Employee Full Name">
+                        <Row label="1.2 Date of Request">
+                            <Input value={requestData?.createdAt ? (() => { const d = new Date(requestData.createdAt); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`; })() : "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
+                        </Row>
+                        <Row label="1.3 Employee Full Name">
                             <Input value={employee?.name || formDataDynamic?.employeeName || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
                         </Row>
-                        <Row label="1.3 Department">
+                        <Row label="1.4 Department">
                             <Input value={employee?.department?.name || formDataDynamic?.department || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
                         </Row>
-                        <Row label="1.4 Employee / Staff ID">
+                        <Row label="1.5 Employee / Staff ID">
                             <Input value={employee?.staffId || formDataDynamic?.staffId || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
                         </Row>
-                        <Row label="1.5 Position / Title">
+                        <Row label="1.6 Position / Title">
                             <Input value={employee?.position || formDataDynamic?.position || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
-                        </Row>
-                        <Row label="1.6 Date of Employment">
-                            <Input value={employee?.dateOfEmployment || formDataDynamic?.dateOfEmployment || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
                         </Row>
                         <Row label="1.7 Work Email">
                             <Input value={employee?.email || formDataDynamic?.workEmail || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
                         </Row>
                     </Section>
 
-                    <Section title="2. CAR REQUEST DETAILS">
-                        <Row label="2.1 Request ID">
-                            <Input value={`#${requestData?.id}`} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
+                    <Section title="2. TRIP DETAILS">
+                        <Row label="2.1 Trip Type">
+                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
+                                (formDataDynamic?.tripType || "round_trip") === "round_trip"
+                                    ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300"
+                                    : "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300"
+                            }`}>
+                                {(formDataDynamic?.tripType || "round_trip") === "round_trip"
+                                    ? <><ArrowLeftRight size={11} /> Round Trip</>
+                                    : <><ArrowRight size={11} /> One Way</>}
+                            </span>
                         </Row>
-                        <Row label="2.2 Destination">
+                        <Row label="2.2 Pickup Location">
+                            <Input value={formDataDynamic?.pickupLocation || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
+                        </Row>
+                        <Row label="2.3 Destination">
                             <Input value={car?.destination || formDataDynamic?.destination || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
                         </Row>
-                        <Row label="2.3 Request Title">
-                            <Input value={requestData?.title || formDataDynamic?.title || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
+                        <Row label="2.4 Departure Date">
+                            <Input value={(() => { const d = car?.departureDate || formDataDynamic?.departureDate || ""; if (!d) return "N/A"; const p = d.split("-"); return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : d; })()} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
                         </Row>
-                        <Row label="2.4 Purpose">
-                            <Textarea value={car?.purpose || formDataDynamic?.purpose || "N/A"} disabled className="min-h-16 border-blue-300 dark:border-[#3b6dae]/40 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium resize-none" />
+                        <Row label="2.5 Departure Time">
+                            <Input value={car?.departureTime || formDataDynamic?.departureTime || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
                         </Row>
-                        <Row label="2.5 Departure">
-                            <Input value={`${car?.departureDate || formDataDynamic?.departureDate || ""} ${car?.departureTime || formDataDynamic?.departureTime || ""}`} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
-                        </Row>
-                        <Row label="2.6 Passengers">
-                            <Input value={car?.passengers?.toString() || formDataDynamic?.passengers?.toString() || "0"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
-                        </Row>
-                        <Row label="2.7 Vehicle & Driver">
-                            <div className="space-y-1 w-full font-medium">
-                                <p className="text-[10px] text-gray-500 uppercase font-bold">Driver:</p>
-                                <Input value={car?.driverName || formDataDynamic?.driverName || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
-                                <p className="text-[10px] text-gray-500 uppercase font-bold mt-1">Vehicle:</p>
-                                <Input value={car?.carInfo || formDataDynamic?.carInfo || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
-                            </div>
+                        {(formDataDynamic?.tripType === "round_trip" || !formDataDynamic?.tripType) && (
+                            <>
+                                <Row label="2.6 Return Date">
+                                    <Input value={(() => { const d = formDataDynamic?.returnDate || ""; if (!d) return "N/A"; const p = d.split("-"); return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : d; })()} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
+                                </Row>
+                                {formDataDynamic?.returnTime && (
+                                    <Row label="2.7 Return Time">
+                                        <Input value={formDataDynamic.returnTime} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
+                                    </Row>
+                                )}
+                            </>
+                        )}
+                        <Row label="2.8 Passengers">
+                            <Input value={`${car?.passengers || formDataDynamic?.passengers || "1"} person(s)`} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
                         </Row>
                     </Section>
 
-                    <Section title="3. EMPLOYEE SIGNATURE">
-                        <Row label="3.1 Signature">
+                    <Section title="3. TRIP PURPOSE">
+                        <Row label="3.1 Request Title">
+                            <Input value={requestData?.title || formDataDynamic?.title || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
+                        </Row>
+                        <Row label="3.2 Purpose">
+                            <Textarea value={car?.purpose || formDataDynamic?.purpose || "N/A"} disabled className="min-h-16 border-blue-300 dark:border-[#3b6dae]/40 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium resize-none" />
+                        </Row>
+                    </Section>
+
+                    <Section title="4. DRIVER & VEHICLE">
+                        <Row label="4.1 Driver">
+                            <Input value={car?.driverName || formDataDynamic?.driverName || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
+                        </Row>
+                        <Row label="4.2 Assigned Vehicle">
+                            <Input value={car?.carInfo || formDataDynamic?.carInfo || "N/A"} disabled className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" />
+                        </Row>
+                    </Section>
+
+                    <Section title="5. EMPLOYEE SIGNATURE">
+                        <Row label="5.1 Signature">
                             {formDataDynamic?.employeeSignatureUrl ? (
                                 <div className="py-1">
                                     <img src={formDataDynamic.employeeSignatureUrl} alt="Employee Signature" className="h-14 object-contain" />
@@ -250,9 +280,9 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                         </Row>
                     </Section>
 
-                    <Section title="4. APPROVER SIGNATURES">
+                    <Section title="6. APPROVER SIGNATURES">
                         {(formDataDynamic?.hrSignatureUrl || requestData?.hrSignatureUrl) && (
-                            <Row label="4.1 Approved Signature">
+                            <Row label="6.1 Approved Signature">
                                 <div className="py-1">
                                     <img src={formDataDynamic?.hrSignatureUrl || requestData?.hrSignatureUrl} alt="Approver Signature" className="h-14 object-contain" />
                                     <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">{formDataDynamic?.hrSignerName || requestData?.approvals?.find((a: any) => a.approvalLevel === "hr")?.approver?.name || ""}</p>
@@ -263,7 +293,7 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                         {/* YOUR APPROVAL SECTION */}
                         {!approvalSectionIsReadOnly && (
                             <div className="border-t border-blue-200 dark:border-[#3b6dae]/40">
-                                <Row label="4.1 Your Comment">
+                                <Row label="6.2 Your Comment">
                                     <div className="space-y-3 py-1 w-full">
                                         <Textarea
                                             value={approvalComments}
@@ -273,7 +303,7 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                                         />
                                     </div>
                                 </Row>
-                                <Row label="4.2 Your Signature">
+                                <Row label="6.3 Your Signature">
                                     <div className="space-y-3 py-1 w-full">
                                         <div className="flex gap-2">
                                             <button
@@ -348,8 +378,8 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                         )}
                     </Section>
 
-                    {/* 5. APPROVAL CHAIN (preview) */}
-                    <Section title="5. APPROVAL CHAIN (preview)">
+                    {/* 7. APPROVAL CHAIN (preview) */}
+                    <Section title="7. APPROVAL CHAIN (preview)">
                         <div className="px-3 lg:px-4 py-3 lg:py-4">
                             <ApprovalChainPreview
                                 requestType="car"
@@ -378,11 +408,18 @@ export default function CarRequestApprovalView({ requestData, onApprove, onRejec
                     <div className="no-print flex flex-col lg:flex-row gap-2 p-3 md:p-6 bg-gray-50 lg:justify-end">
                         <Button variant="destructive" size="sm" onClick={() => setShowRejectDialog(true)} disabled={isLoading}>Reject</Button>
                         <Button
-                            className="bg-green-600 hover:bg-green-700"
+                            className="bg-green-600 hover:bg-green-700 disabled:opacity-50"
                             size="sm"
-                            onClick={() => onApprove({ comments: approvalComments, signatureFile: signatureFile || undefined })}
-                            disabled={isLoading}
+                            onClick={() => {
+                                if (!signatureFile) {
+                                    toast.error("Please provide your signature before approving");
+                                    return;
+                                }
+                                onApprove({ comments: approvalComments, signatureFile });
+                            }}
+                            disabled={isLoading || !signatureFile}
                         >
+                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Approve & Sign
                         </Button>
                     </div>

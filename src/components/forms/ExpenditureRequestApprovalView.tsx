@@ -506,17 +506,23 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
                         {requestData?.currentApprovalLevel === "head_of_finance" ? (
                             <>
                                 <Button
-                                    disabled={isLoading}
-                                    onClick={() => onApprove({ comments: approvalComments, signatureFile: signatureFile || undefined, escalateToCeo: false })}
-                                    className="bg-green-600 hover:bg-green-700"
+                                    disabled={isLoading || !signatureFile}
+                                    onClick={() => {
+                                        if (!signatureFile) { toast.error("Please provide your signature before approving"); return; }
+                                        onApprove({ comments: approvalComments, signatureFile, escalateToCeo: false });
+                                    }}
+                                    className="bg-green-600 hover:bg-green-700 disabled:opacity-50"
                                 >
                                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     Approve (Final)
                                 </Button>
                                 <Button
-                                    disabled={isLoading}
-                                    onClick={() => onApprove({ comments: approvalComments, signatureFile: signatureFile || undefined, escalateToCeo: true })}
-                                    className="bg-blue-600 hover:bg-blue-700"
+                                    disabled={isLoading || !signatureFile}
+                                    onClick={() => {
+                                        if (!signatureFile) { toast.error("Please provide your signature before approving"); return; }
+                                        onApprove({ comments: approvalComments, signatureFile, escalateToCeo: true });
+                                    }}
+                                    className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
                                 >
                                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     Approve & Forward to CEO/MD
@@ -524,12 +530,15 @@ export default function ExpenditureRequestApprovalView({ requestData, onApprove,
                             </>
                         ) : (
                             <Button
-                                disabled={isLoading}
-                                onClick={() => onApprove({ comments: approvalComments, signatureFile: signatureFile || undefined })}
-                                className="bg-green-600 hover:bg-green-700"
+                                disabled={isLoading || !signatureFile}
+                                onClick={() => {
+                                    if (!signatureFile) { toast.error("Please provide your signature before approving"); return; }
+                                    onApprove({ comments: approvalComments, signatureFile });
+                                }}
+                                className="bg-green-600 hover:bg-green-700 disabled:opacity-50"
                             >
                                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Approve {signatureFile ? "& Sign" : ""}
+                                Approve & Sign
                             </Button>
                         )}
                     </div>

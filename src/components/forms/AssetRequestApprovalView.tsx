@@ -488,17 +488,23 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
                         {requestData?.currentApprovalLevel === "head_of_finance" ? (
                             <>
                                 <Button
-                                    disabled={isLoading}
-                                    onClick={() => onApprove({ comments: approvalComments, signatureFile: signatureFile || undefined, escalateToCeo: false })}
-                                    className="bg-green-600 hover:bg-green-700 h-9 font-bold px-8 tracking-tight transition-all"
+                                    disabled={isLoading || !signatureFile}
+                                    onClick={() => {
+                                        if (!signatureFile) { toast.error("Please provide your signature before approving"); return; }
+                                        onApprove({ comments: approvalComments, signatureFile, escalateToCeo: false });
+                                    }}
+                                    className="bg-green-600 hover:bg-green-700 h-9 font-bold px-8 tracking-tight transition-all disabled:opacity-50"
                                 >
                                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     APPROVE (FINAL)
                                 </Button>
                                 <Button
-                                    disabled={isLoading}
-                                    onClick={() => onApprove({ comments: approvalComments, signatureFile: signatureFile || undefined, escalateToCeo: true })}
-                                    className="bg-blue-600 hover:bg-blue-700 h-9 font-bold px-8 tracking-tight transition-all"
+                                    disabled={isLoading || !signatureFile}
+                                    onClick={() => {
+                                        if (!signatureFile) { toast.error("Please provide your signature before approving"); return; }
+                                        onApprove({ comments: approvalComments, signatureFile, escalateToCeo: true });
+                                    }}
+                                    className="bg-blue-600 hover:bg-blue-700 h-9 font-bold px-8 tracking-tight transition-all disabled:opacity-50"
                                 >
                                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     APPROVE & FORWARD TO CEO/MD
@@ -506,12 +512,15 @@ export default function AssetRequestApprovalView({ requestData, onApprove, onRej
                             </>
                         ) : (
                             <Button
-                                disabled={isLoading}
-                                onClick={() => onApprove({ comments: approvalComments, signatureFile: signatureFile || undefined })}
-                                className="bg-green-600 hover:bg-green-700 h-9 font-bold px-8 tracking-tight transition-all"
+                                disabled={isLoading || !signatureFile}
+                                onClick={() => {
+                                    if (!signatureFile) { toast.error("Please provide your signature before approving"); return; }
+                                    onApprove({ comments: approvalComments, signatureFile });
+                                }}
+                                className="bg-green-600 hover:bg-green-700 h-9 font-bold px-8 tracking-tight transition-all disabled:opacity-50"
                             >
                                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                APPROVE {signatureFile ? "& SIGN" : "REQUEST"}
+                                APPROVE & SIGN
                             </Button>
                         )}
                     </div>

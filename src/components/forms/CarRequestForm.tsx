@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer, Car, Eye, Paperclip } from "lucide-react";
+import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer, Car, Eye, Paperclip, ArrowRight, ArrowLeftRight } from "lucide-react";
 import ApprovalChainPreview from "@/components/forms/ApprovalChainPreview";
 import { ApprovalRoutePreview } from "@/components/forms/ApprovalRoutePreview";
 import { toast } from "sonner";
@@ -25,11 +25,34 @@ import { SignaturePad } from "@/components/SignaturePad";
 import { fileToBase64 } from "@/lib/fileUtils";
 import { base64ToFile } from "@/lib/fileUtils";
 
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+/** Format an ISO date string (YYYY-MM-DD) to DD/MM/YYYY */
+function formatDate(isoDate: string): string {
+  if (!isoDate) return "";
+  const parts = isoDate.split("-");
+  if (parts.length !== 3) return isoDate;
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
+
+/** Generate a document ID: CR-YYYY-MM-NNNNN */
+function generateDocId(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const seq = String(Math.floor(Math.random() * 99999)).padStart(5, "0");
+  return `CR-${year}-${month}-${seq}`;
+}
+
+// ── Types ──────────────────────────────────────────────────────────────────────
+
 interface CarRequestFormProps {
   requestData?: any;
   isReadOnly?: boolean;
   onSuccess: () => void;
 }
+
+// ── Component ──────────────────────────────────────────────────────────────────
 
 export default function CarRequestForm({ requestData, isReadOnly = false, onSuccess }: CarRequestFormProps) {
   const { user, isAuthenticated } = useAuth();
@@ -38,22 +61,30 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [form, setForm] = useState({
-    title: "",
-    destination: "",
-    purpose: "",
-    departureDate: "",
-    departureTime: "",
-    passengers: "1",
-    driverName: "",
-    carInfo: "",
-    department: "",
-    reportingManager: "",
+    // Document / meta
+    documentId: "",
+    // Employee info (read-only, auto-filled)
     employeeName: "",
-    dateOfEmployment: "",
     staffId: "",
+    department: "",
     position: "",
     workEmail: "",
-    requestNumber: "",
+    reportingManager: "",
+    // Trip info
+    title: "",
+    destination: "",
+    pickupLocation: "",
+    purpose: "",
+    tripType: "round_trip" as "one_way" | "round_trip",
+    departureDate: "",
+    departureTime: "",
+    returnDate: "",
+    returnTime: "",
+    passengers: "1",
+    // Driver & vehicle
+    driverName: "",
+    carInfo: "",
+    // Signatures & attachments
     employeeSignatureUrl: "",
     signaturePreview: "",
     signatureFile: null as File | null,
@@ -64,29 +95,18 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
     hrSignatureUrl: "",
   });
 
+  // ── Queries & mutations ──────────────────────────────────────────────────────
+
   const { data: drivers = [] } = trpc.requests.getAvailableDrivers.useQuery(undefined, {
-    staleTime: Infinity,
-    gcTime: Infinity,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    refetchOnMount: false,
-    retry: 1,
+    staleTime: Infinity, gcTime: Infinity,
+    refetchOnWindowFocus: false, refetchOnReconnect: false, refetchOnMount: false, retry: 1,
   });
 
   const { data: heads = [] } = trpc.users.listHeads.useQuery(undefined, {
-    staleTime: Infinity,
-    gcTime: Infinity,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    refetchOnMount: false,
-    retry: 1,
+    staleTime: Infinity, gcTime: Infinity,
+    refetchOnWindowFocus: false, refetchOnReconnect: false, refetchOnMount: false, retry: 1,
   });
 
-  const uniqueHeads = Array.from(
-    new Map(heads.map((h: any) => [h.id, h])).values()
-  );
-
-  // Fetch saved form data for draft/read-only views
   const savedFormData = (trpc as any).requests.getCarFormData.useQuery(
     { requestId: requestData?.id || 0 },
     { enabled: !!requestData?.id && (isReadOnly || requestData?.status === "draft") }
@@ -98,16 +118,17 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
   const storeFormData = trpc.requests.storeCarFormData.useMutation();
   const uploadAttachment = (trpc as any).requests.uploadAttachment.useMutation();
 
-  // Merge saved form data when available
+  // ── Effects ──────────────────────────────────────────────────────────────────
+
+  // Restore saved form data (draft / read-only)
   useEffect(() => {
     if (savedFormData.data) {
       const d = savedFormData.data;
       setForm((prev: any) => ({
         ...prev,
-        ...d, // Spread all saved data first
-        // Then explicitly set file/signature fields that can't be serialized
+        ...d,
         employeeSignatureUrl: d.employeeSignatureUrl || prev.employeeSignatureUrl,
-        signatureFile: null, // Don't restore file objects
+        signatureFile: null,
         signaturePreview: d.signaturePreview || prev.signaturePreview,
         supportingDocumentUrl: d.supportingDocumentUrl || prev.supportingDocumentUrl,
         hrSignatureUrl: d.hrSignatureUrl || requestData?.hrSignatureUrl || prev.hrSignatureUrl || "",
@@ -116,7 +137,7 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
     }
   }, [savedFormData.data, requestData]);
 
-  // Merge requestData fields directly to handle cases where form submission is missing or for additional robustness
+  // Merge DB-level fields from requestData
   useEffect(() => {
     if (requestData) {
       setForm((prev) => ({
@@ -135,28 +156,31 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
     }
   }, [requestData]);
 
+  // Auto-fill employee info + generate document ID for new forms
   useEffect(() => {
-    if (user && autoFillData) {
+    if (user && autoFillData && !isReadOnly) {
       setForm((prev) => ({
         ...prev,
+        documentId: prev.documentId || generateDocId(),
         employeeName: user.name || "",
         staffId: user.staffId || "",
         department: user.department?.name || "",
         position: user.position || "",
         workEmail: user.email || "",
-        dateOfEmployment: autoFillData.dateOfEmployment || "",
         reportingManager: autoFillData.managerId ? String(autoFillData.managerId) : "",
       }));
     }
-  }, [user, autoFillData]);
+  }, [user, autoFillData, isReadOnly]);
+
+  // ── Validation ───────────────────────────────────────────────────────────────
 
   const validate = () => {
-    if (!form.driverName) {
-      toast.error("Please select a driver and vehicle");
-      return false;
-    }
     if (!form.destination.trim()) {
       toast.error("Destination is required");
+      return false;
+    }
+    if (!form.pickupLocation.trim()) {
+      toast.error("Pickup location is required");
       return false;
     }
     if (!form.departureDate) {
@@ -167,28 +191,39 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
       toast.error("Departure time is required");
       return false;
     }
+    if (form.tripType === "round_trip") {
+      if (!form.returnDate) {
+        toast.error("Return date is required for round trips");
+        return false;
+      }
+    }
+    if (!form.driverName) {
+      toast.error("Please select a driver and vehicle");
+      return false;
+    }
     const passengerCount = parseInt(form.passengers);
     if (isNaN(passengerCount) || passengerCount < 1 || passengerCount > 10) {
       toast.error("Passengers must be between 1 and 10");
       return false;
     }
     if (!form.employeeSignatureUrl) {
-      toast.error("Please upload your signature");
+      toast.error("Please provide your signature");
       return false;
     }
     return true;
   };
+
+  // ── Submit ───────────────────────────────────────────────────────────────────
 
   const handleSubmit = async (submit: boolean) => {
     if (submit && !validate()) return;
 
     setIsSubmitting(true);
     try {
-      // Check if we're updating an existing draft request
       const isEditing = requestData?.id && requestData?.status === "draft";
-      
+
       const payload = {
-        title: form.title || `Car Request to ${form.destination}`,
+        title: form.title || `Car Request — ${form.destination}`,
         destination: form.destination,
         purpose: form.purpose,
         departureDate: form.departureDate,
@@ -200,27 +235,21 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
 
       let requestId: number;
       if (isEditing) {
-        // Update existing draft
-        await updateCar.mutateAsync({
-          requestId: requestData.id,
-          ...payload,
-        });
+        await updateCar.mutateAsync({ requestId: requestData.id, ...payload });
         requestId = requestData.id;
       } else {
-        // Create new request
         const created = await createCar.mutateAsync(payload);
         requestId = (created as any)?.id as number;
       }
-      
+
       if (requestId) {
         let finalSupportingDocUrl = form.supportingDocumentUrl;
-        
-        // Handle file upload if a new file is selected
+
         if (form.supportingDocument) {
           try {
             const base64 = await fileToBase64(form.supportingDocument);
             const uploadResult = await uploadAttachment.mutateAsync({
-              requestId: requestId,
+              requestId,
               fileName: form.supportingDocument.name,
               fileData: base64,
               mimeType: form.supportingDocument.type,
@@ -234,25 +263,22 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
 
         try {
           await storeFormData.mutateAsync({
-            requestId: requestId,
-            formData: { 
-              ...form, 
-              signatureFile: null, 
-              supportingDocument: null, 
-              supportingDocumentUrl: finalSupportingDocUrl 
+            requestId,
+            formData: {
+              ...form,
+              signatureFile: null,
+              supportingDocument: null,
+              supportingDocumentUrl: finalSupportingDocUrl,
             },
           });
         } catch (e) { console.error("Failed to store form data", e); }
       }
 
       if (submit) {
-        // Car requests auto-route to HR — no initialApproverId needed
         await submitRequest.mutateAsync({ id: requestId });
       }
 
-      toast.success(
-        submit ? "🎉 Car request successfully submitted!" : "Draft saved"
-      );
+      toast.success(submit ? "🎉 Car request successfully submitted!" : "Draft saved");
       onSuccess();
     } catch (e: any) {
       toast.error(e.message || "Something went wrong");
@@ -263,22 +289,22 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
 
   if (!isAuthenticated) return null;
 
+  // ── Derived values ────────────────────────────────────────────────────────────
+
+  const displayDocId = form.documentId || (requestData?.id ? `CR-${new Date(requestData.createdAt).getFullYear()}-${String(new Date(requestData.createdAt).getMonth() + 1).padStart(2, "0")}-${String(requestData.id).padStart(5, "0")}` : "");
+  const todayDisplay = formatDate(new Date().toISOString().split("T")[0]);
+
+  // ── Render ────────────────────────────────────────────────────────────────────
+
   return (
     <div className="w-full bg-white dark:bg-[#1f426b] text-black dark:text-slate-100 px-4 leave-form-container relative dark:border-[#2b6cb0]/30">
 
       <div>
-        {/* ===== HEADER WITH LOGO AND CONTACT INFO ===== */}
+        {/* ===== HEADER ===== */}
         <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start px-3 lg:px-6 py-3 gap-4 lg:gap-8">
-          {/* LEFT: LOGO */}
           <div className="shrink-0">
-            <img
-              src="/logo/centrikaLogo.png"
-              alt="Centrika Logo"
-              className="h-14 lg:h-20 w-auto"
-            />
+            <img src="/logo/centrikaLogo.png" alt="Centrika Logo" className="h-14 lg:h-20 w-auto" />
           </div>
-
-          {/* RIGHT: CONTACT INFO WITH ICONS - STACKED VERTICALLY */}
           <div className="text-xs lg:text-sm flex-1 flex justify-start lg:justify-end">
             <div className="flex flex-col gap-2 lg:gap-3 items-start">
               <div className="flex items-center gap-2 min-w-0">
@@ -304,147 +330,169 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
           </div>
         </div>
 
-        {/* ===== TITLE BAR (YELLOW) ===== */}
-        <div className="bg-yellow-500 text-white text-center font-bold py-2 text-lg tracking-wide">
-          CAR REQUEST FORM
+        {/* ===== TITLE BAR ===== */}
+        <div className="bg-yellow-500 text-white text-center font-bold py-2 text-lg tracking-wide flex items-center justify-center gap-2">
+          <Car size={18} />
+          CAR / TRANSPORT REQUEST FORM
         </div>
 
-        {/* ===== REQUEST HEADER SECTION (hidden — kept for future use) =====
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-2 lg:gap-3 px-3 lg:px-6 py-2 lg:py-3 text-xs lg:text-sm items-end">
-          <div>
-            <p className="font-semibold text-blue-600 mb-1 text-[10px] lg:text-xs">CTK</p>
-            <div className="flex gap-0 items-center">
-              <Input value="CTK" className="w-full h-6 lg:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] lg:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed" disabled />
-            </div>
-          </div>
-          <div>
-            <p className="font-semibold text-blue-600 mb-1 text-[10px] lg:text-xs">Date of Request</p>
-            <Input type="text" value={new Date().toISOString().split('T')[0]} className="h-6 lg:h-7 border-blue-400 dark:border-[#3b6dae]/50 text-[10px] lg:text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed" disabled />
-          </div>
-          <div>
-            <p className="font-semibold text-blue-600 text-xs mb-1">Staff ID</p>
-            <Input value={form.staffId} className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed" disabled />
-          </div>
-          <div>
-            <p className="font-semibold text-blue-600 text-xs mb-1">Employee Name</p>
-            <Input value={form.employeeName} className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed" disabled />
-          </div>
-        </div>
-        ===== */}
-
-        {/* ===== REQUEST DETAILS ===== */}
+        {/* ===== FORM BODY ===== */}
         <div className="">
           <div className="bg-[#3b6dae] text-white font-bold px-4 py-2 text-sm">REQUEST DETAILS</div>
 
-          {/* 1. EMPLOYEE INFORMATION */}
+          {/* ── 1. EMPLOYEE INFORMATION ── */}
           <Section title="1. EMPLOYEE INFORMATION">
             <Row label="1.1 Request Number">
               <Input
-                value={form.requestNumber || `CR-${requestData?.id || ''}`}
-                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
+                value={displayDocId}
+                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium"
                 disabled
               />
             </Row>
-            <Row label="1.2 Employee Full Name">
+            <Row label="1.2 Date of Request">
               <Input
-                value={form.employeeName}
-                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
+                value={isReadOnly && requestData?.createdAt
+                  ? formatDate(new Date(requestData.createdAt).toISOString().split("T")[0])
+                  : todayDisplay}
+                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium"
                 disabled
               />
             </Row>
-            <Row label="1.3 Department">
-              <Input
-                value={form.department}
-                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
-                disabled
-              />
+            <Row label="1.3 Employee Full Name">
+              <Input value={form.employeeName} className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" disabled />
             </Row>
-            <Row label="1.4 Employee / Staff ID">
-              <Input
-                value={form.staffId}
-                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
-                disabled
-              />
+            <Row label="1.4 Department">
+              <Input value={form.department} className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" disabled />
             </Row>
-            <Row label="1.5 Position / Title">
-              <Input
-                value={form.position}
-                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
-                disabled
-              />
+            <Row label="1.5 Employee / Staff ID">
+              <Input value={form.staffId} className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" disabled />
             </Row>
-            <Row label="1.6 Date of Employment">
-              <Input
-                type="date"
-                value={form.dateOfEmployment}
-                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
-                disabled
-              />
+            <Row label="1.6 Position / Title">
+              <Input value={form.position} className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" disabled />
             </Row>
             <Row label="1.7 Work Email">
-              <Input
-                value={form.workEmail}
-                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
-                disabled
-              />
+              <Input value={form.workEmail} className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" disabled />
             </Row>
           </Section>
 
-          {/* 2. CAR REQUEST DETAILS */}
-          <Section title="2. CAR REQUEST DETAILS">
-            <Row label="2.1 Destination">
+          {/* ── 2. TRIP DETAILS ── */}
+          <Section title="2. TRIP DETAILS">
+            {/* Trip type toggle */}
+            <Row label={<span>2.1 Trip Type <span className="text-red-500">*</span></span>}>
+              {isReadOnly ? (
+                <div className="flex items-center gap-2">
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${form.tripType === "round_trip" ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300" : "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300"}`}>
+                    {form.tripType === "round_trip" ? <><ArrowLeftRight size={11} /> Round Trip</> : <><ArrowRight size={11} /> One Way</>}
+                  </span>
+                </div>
+              ) : (
+                <div className="flex gap-2 py-1">
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, tripType: "round_trip", returnDate: "", returnTime: "" })}
+                    className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 cursor-pointer ${form.tripType === "round_trip" ? "bg-[#3b6dae] text-white border-[#3b6dae] shadow-sm" : "bg-white dark:bg-[#1f426b] text-gray-600 dark:text-slate-300 border-gray-300 dark:border-[#3b6dae]/40 hover:border-[#3b6dae] hover:text-[#3b6dae]"}`}
+                  >
+                    <ArrowLeftRight size={11} /> Round Trip
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, tripType: "one_way", returnDate: "", returnTime: "" })}
+                    className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 cursor-pointer ${form.tripType === "one_way" ? "bg-[#3b6dae] text-white border-[#3b6dae] shadow-sm" : "bg-white dark:bg-[#1f426b] text-gray-600 dark:text-slate-300 border-gray-300 dark:border-[#3b6dae]/40 hover:border-[#3b6dae] hover:text-[#3b6dae]"}`}
+                  >
+                    <ArrowRight size={11} /> One Way
+                  </button>
+                </div>
+              )}
+            </Row>
+
+            <Row label={<span>2.2 Pickup Location <span className="text-red-500">*</span></span>}>
               <Input
-                placeholder="e.g., Kigali Downtown, Airport"
+                placeholder="e.g., Centrika Office — CHIC Building"
+                value={form.pickupLocation}
+                onChange={(e) => setForm({ ...form, pickupLocation: e.target.value })}
+                className={`border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs ${isReadOnly ? "bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" : ""}`}
+                disabled={isReadOnly}
+              />
+            </Row>
+
+            <Row label={<span>2.3 Destination <span className="text-red-500">*</span></span>}>
+              <Input
+                placeholder="e.g., Kigali International Airport"
                 value={form.destination}
                 onChange={(e) => setForm({ ...form, destination: e.target.value })}
-                className={`border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium' : ''}`}
+                className={`border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs ${isReadOnly ? "bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" : ""}`}
                 disabled={isReadOnly}
               />
             </Row>
-            <Row label="2.2 Request Title (Optional)">
-              <Input
-                placeholder="e.g., Client Meeting, Office Supply Run"
-                value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
-                className={`border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium' : ''}`}
-                disabled={isReadOnly}
-              />
-            </Row>
-            <Row label="2.3 Purpose (Optional)">
-              <Textarea
-                placeholder="Describe the purpose of the trip..."
-                value={form.purpose}
-                onChange={(e) => setForm({ ...form, purpose: e.target.value })}
-                className={`min-h-20 border-blue-300 dark:border-[#3b6dae]/40 text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium' : ''}`}
-                disabled={isReadOnly}
-              />
-            </Row>
-          </Section>
 
-          {/* 3. TRIP DETAILS */}
-          <Section title="3. TRIP DETAILS">
-            <Row label="3.1 Departure Date">
-              <SingleDatePicker
-                value={form.departureDate}
-                onChange={(date) => setForm({ ...form, departureDate: date })}
-                label=""
-                className={`border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs font-medium text-black dark:text-slate-100 ${isReadOnly ? 'bg-gray-100 dark:bg-[#295482] cursor-not-allowed' : 'bg-white dark:bg-[#1f426b]'}`}
-                disabled={isReadOnly}
-                disablePastDates={true}
-                highlightWeekends={true}
-                highlightToday={true}
-              />
+            <Row label={<span>2.4 Departure Date <span className="text-red-500">*</span></span>}>
+              {isReadOnly ? (
+                <Input
+                  value={formatDate(form.departureDate)}
+                  className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium"
+                  disabled
+                />
+              ) : (
+                <SingleDatePicker
+                  value={form.departureDate}
+                  onChange={(date) => setForm({ ...form, departureDate: date })}
+                  label=""
+                  className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs font-medium text-black dark:text-slate-100 bg-white dark:bg-[#1f426b]"
+                  disabled={false}
+                  disablePastDates={true}
+                  highlightWeekends={true}
+                  highlightToday={true}
+                />
+              )}
             </Row>
-            <Row label="3.2 Departure Time">
+
+            <Row label={<span>2.5 Departure Time <span className="text-red-500">*</span></span>}>
               <Input
                 type="time"
                 value={form.departureTime}
                 onChange={(e) => setForm({ ...form, departureTime: e.target.value })}
-                className={`border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium' : ''}`}
+                className={`border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs w-36 ${isReadOnly ? "bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" : ""}`}
                 disabled={isReadOnly}
+                placeholder="--:--"
               />
             </Row>
-            <Row label="3.3 Number of Passengers">
+
+            {/* Return fields — only for round trip */}
+            {form.tripType === "round_trip" && (
+              <>
+                <Row label={<span>2.6 Return Date <span className="text-red-500">*</span></span>}>
+                  {isReadOnly ? (
+                    <Input
+                      value={formatDate(form.returnDate)}
+                      className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium"
+                      disabled
+                    />
+                  ) : (
+                    <SingleDatePicker
+                      value={form.returnDate}
+                      onChange={(date) => setForm({ ...form, returnDate: date })}
+                      label=""
+                      className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs font-medium text-black dark:text-slate-100 bg-white dark:bg-[#1f426b]"
+                      disabled={false}
+                      disablePastDates={true}
+                      highlightWeekends={true}
+                      highlightToday={true}
+                    />
+                  )}
+                </Row>
+                <Row label="2.7 Return Time">
+                  <Input
+                    type="time"
+                    value={form.returnTime}
+                    onChange={(e) => setForm({ ...form, returnTime: e.target.value })}
+                    className={`border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs w-36 ${isReadOnly ? "bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" : ""}`}
+                    disabled={isReadOnly}
+                  />
+                </Row>
+              </>
+            )}
+
+            <Row label="2.8 Number of Passengers">
               <div className="flex gap-2 items-center">
                 <Input
                   type="number"
@@ -452,7 +500,7 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
                   max="10"
                   value={form.passengers}
                   onChange={(e) => setForm({ ...form, passengers: e.target.value })}
-                  className={`border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium w-24' : ''}`}
+                  className={`border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs w-20 ${isReadOnly ? "bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" : ""}`}
                   disabled={isReadOnly}
                 />
                 <span className="text-sm font-medium text-gray-600 dark:text-slate-400">Person(s)</span>
@@ -460,9 +508,31 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
             </Row>
           </Section>
 
-          {/* 4. DRIVER & VEHICLE */}
+          {/* ── 3. TRIP PURPOSE ── */}
+          <Section title="3. TRIP PURPOSE">
+            <Row label="3.1 Request Title (Optional)">
+              <Input
+                placeholder="e.g., Client Meeting, Airport Transfer"
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                className={`border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs ${isReadOnly ? "bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" : ""}`}
+                disabled={isReadOnly}
+              />
+            </Row>
+            <Row label="3.2 Purpose / Reason (Optional)">
+              <Textarea
+                placeholder="Describe the purpose of the trip in detail..."
+                value={form.purpose}
+                onChange={(e) => setForm({ ...form, purpose: e.target.value })}
+                className={`min-h-20 border-blue-300 dark:border-[#3b6dae]/40 text-xs ${isReadOnly ? "bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" : ""}`}
+                disabled={isReadOnly}
+              />
+            </Row>
+          </Section>
+
+          {/* ── 4. DRIVER & VEHICLE ── */}
           <Section title="4. DRIVER & VEHICLE">
-            <Row label="4.1 Select Driver & Car">
+            <Row label={<span>4.1 Select Driver & Car <span className="text-red-500">*</span></span>}>
               <Select
                 value={form.driverName}
                 onValueChange={(v) => {
@@ -471,7 +541,7 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
                 }}
                 disabled={isReadOnly}
               >
-                <SelectTrigger className={`w-full h-10 border-blue-300 dark:border-[#3b6dae]/40 text-black dark:text-slate-100 font-medium focus:ring-blue-500 ${isReadOnly ? 'bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium' : 'bg-white dark:bg-[#1f426b]'}`}>
+                <SelectTrigger className={`w-full h-10 border-blue-300 dark:border-[#3b6dae]/40 text-black dark:text-slate-100 font-medium focus:ring-blue-500 ${isReadOnly ? "bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100" : "bg-white dark:bg-[#1f426b]"}`}>
                   <SelectValue placeholder="-- Select a Driver --" />
                 </SelectTrigger>
                 <SelectContent className="bg-white dark:bg-[#1f426b] border-blue-200 dark:border-[#3b6dae]/30">
@@ -487,14 +557,14 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
               <Row label="4.2 Assigned Vehicle">
                 <Input
                   value={form.carInfo}
-                  className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
+                  className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium"
                   disabled
                 />
               </Row>
             )}
           </Section>
 
-          {/* 5. EMPLOYEE SIGNATURE */}
+          {/* ── 5. EMPLOYEE SIGNATURE ── */}
           <Section title="5. EMPLOYEE SIGNATURE">
             <Row label="5.1 Your Signature">
               <div className="space-y-3 w-full">
@@ -515,22 +585,14 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
                       <button
                         type="button"
                         onClick={() => setForm({ ...form, signatureMethod: "draw", signatureFile: null, employeeSignatureUrl: "" })}
-                        className={`px-5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
-                          form.signatureMethod === "draw"
-                            ? "bg-[#2d3a6d] text-white border-[#2d3a6d] shadow-sm"
-                            : "bg-white dark:bg-[#1f426b] text-gray-600 dark:text-slate-300 border-gray-300 dark:border-[#3b6dae]/40 hover:border-[#2d3a6d] hover:text-[#2d3a6d]"
-                        } cursor-pointer`}
+                        className={`px-5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${form.signatureMethod === "draw" ? "bg-[#2d3a6d] text-white border-[#2d3a6d] shadow-sm" : "bg-white dark:bg-[#1f426b] text-gray-600 dark:text-slate-300 border-gray-300 dark:border-[#3b6dae]/40 hover:border-[#2d3a6d] hover:text-[#2d3a6d]"} cursor-pointer`}
                       >
                         Draw
                       </button>
                       <button
                         type="button"
                         onClick={() => setForm({ ...form, signatureMethod: "upload", signatureFile: null, employeeSignatureUrl: "" })}
-                        className={`px-5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
-                          form.signatureMethod === "upload"
-                            ? "bg-[#2d3a6d] text-white border-[#2d3a6d] shadow-sm"
-                            : "bg-white dark:bg-[#1f426b] text-gray-600 dark:text-slate-300 border-gray-300 dark:border-[#3b6dae]/40 hover:border-[#2d3a6d] hover:text-[#2d3a6d]"
-                        } cursor-pointer`}
+                        className={`px-5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${form.signatureMethod === "upload" ? "bg-[#2d3a6d] text-white border-[#2d3a6d] shadow-sm" : "bg-white dark:bg-[#1f426b] text-gray-600 dark:text-slate-300 border-gray-300 dark:border-[#3b6dae]/40 hover:border-[#2d3a6d] hover:text-[#2d3a6d]"} cursor-pointer`}
                       >
                         Upload image
                       </button>
@@ -561,7 +623,7 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
                         )}
                       </div>
                     ) : (
-                      <SignaturePad 
+                      <SignaturePad
                         onSave={(dataUrl) => {
                           const file = base64ToFile(dataUrl, "signature.png");
                           setForm({ ...form, signatureFile: file, employeeSignatureUrl: dataUrl });
@@ -571,7 +633,7 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
                         }}
                       />
                     )}
-                    
+
                     {form.employeeSignatureUrl && form.signatureMethod === "upload" && (
                       <div className="mt-2 animate-in zoom-in duration-300">
                         <img src={form.employeeSignatureUrl} alt="sig" className="h-16 object-contain" />
@@ -597,7 +659,6 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
           {/* 6. APPROVER SIGNATURES — only after resolution */}
           {(requestData?.status === "approved" || requestData?.status === "rejected") && (
           <Section title="6. APPROVER SIGNATURES">
-            {/* Approved/rejected: show actual HR signature only */}
             {form.hrSignatureUrl && (requestData?.status === "approved" || requestData?.status === "rejected") && (() => {
               const hrApproval = requestData?.approvals?.find((a: any) => a.approvalLevel === "hr");
               const hrName = savedFormData.data?.hrSignerName || hrApproval?.approver?.name || "HR Department";
@@ -631,9 +692,7 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
         {/* ===== ACTIONS ===== */}
         {!isReadOnly && (
           <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center px-3 lg:px-6 py-3 lg:py-4 bg-gray-50 dark:bg-[#1a385c] gap-2 lg:gap-4 mt-6">
-            <div className="flex gap-2">
-              {/* Action buttons hidden until approved */}
-            </div>
+            <div className="flex gap-2">{/* Print/Download hidden until approved */}</div>
             <div className="flex flex-col lg:flex-row gap-2 w-full lg:justify-end">
               <Button
                 variant="outline"
@@ -650,7 +709,7 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
                 className="bg-blue-600 hover:bg-blue-700"
               >
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Submit Request
+                Submit for Approval
               </Button>
             </div>
           </div>
@@ -659,16 +718,16 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
         {/* ===== FOOTER ===== */}
         <div className="text-center text-xs text-gray-600 dark:text-slate-400 py-3 border-t border-gray-200 space-y-1">
           <p>www.centrika.rw</p>
-          <p>1 | Centrika Ltd | Motto: Delivering Tomorrow's Solutions Today</p>
+          <p>© {new Date().getFullYear()} | Centrika Ltd | Delivering Tomorrow's Solutions Today</p>
         </div>
       </div>
     </div>
   );
 }
 
-/* ========= Helper Components ========= */
+/* ── Helper Components ───────────────────────────────────────────────────────── */
 
-function Section({ title, children, className = "" }: { title: string, children: React.ReactNode, className?: string }) {
+function Section({ title, children, className = "" }: { title: string; children: React.ReactNode; className?: string }) {
   return (
     <div className={className}>
       <div className="lg:bg-[#3b6dae] lg:text-white font-bold px-4 py-2 text-sm">{title}</div>
@@ -677,9 +736,9 @@ function Section({ title, children, className = "" }: { title: string, children:
   );
 }
 
-function Row({ label, children, colSpan = false }: { label: React.ReactNode, children: React.ReactNode, colSpan?: boolean }) {
+function Row({ label, children, colSpan = false }: { label: React.ReactNode; children: React.ReactNode; colSpan?: boolean }) {
   return (
-    <div className={`grid ${colSpan ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-[220px_1fr]'} gap-0`}>
+    <div className={`grid ${colSpan ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-[220px_1fr]"} gap-0`}>
       {!colSpan && (
         <div className="px-2 lg:px-3 py-1.5 lg:py-2 font-medium lg:bg-blue-100 text-[#3b6dae] text-[10px] lg:text-xs flex items-center">
           {label}
