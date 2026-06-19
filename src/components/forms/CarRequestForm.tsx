@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer, Car, Eye, Paperclip, ArrowRight, ArrowLeftRight } from "lucide-react";
+import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer, Eye, Paperclip, ArrowRight, ArrowLeftRight } from "lucide-react";
 import ApprovalChainPreview from "@/components/forms/ApprovalChainPreview";
 import { ApprovalRoutePreview } from "@/components/forms/ApprovalRoutePreview";
 import { toast } from "sonner";
@@ -109,7 +109,12 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
 
   const savedFormData = (trpc as any).requests.getCarFormData.useQuery(
     { requestId: requestData?.id || 0 },
-    { enabled: !!requestData?.id && (isReadOnly || requestData?.status === "draft") }
+    {
+      enabled: !!requestData?.id && (isReadOnly || requestData?.status === "draft"),
+      staleTime: 5 * 60 * 1000,    // Serve from cache for 5 min — prevents blank flash
+      gcTime: 10 * 60 * 1000,
+      refetchOnWindowFocus: false,
+    }
   );
 
   const createCar = trpc.requests.createCarRequest.useMutation();
@@ -126,7 +131,22 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
       const d = savedFormData.data;
       setForm((prev: any) => ({
         ...prev,
-        ...d,
+        // Document / meta
+        documentId: d.documentId || prev.documentId,
+        // Trip info — only restore if there is a non-empty saved value
+        destination: d.destination || prev.destination,
+        pickupLocation: d.pickupLocation || prev.pickupLocation,
+        purpose: d.purpose || prev.purpose,
+        tripType: d.tripType || prev.tripType,
+        departureDate: d.departureDate || prev.departureDate,
+        departureTime: d.departureTime || prev.departureTime,
+        returnDate: d.returnDate || prev.returnDate,
+        returnTime: d.returnTime || prev.returnTime,
+        passengers: d.passengers || prev.passengers,
+        // Driver
+        driverName: d.driverName || prev.driverName,
+        carInfo: d.carInfo || prev.carInfo,
+        // Signatures
         employeeSignatureUrl: d.employeeSignatureUrl || prev.employeeSignatureUrl,
         signatureFile: null,
         signaturePreview: d.signaturePreview || prev.signaturePreview,
@@ -137,13 +157,15 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
     }
   }, [savedFormData.data, requestData]);
 
-  // Merge DB-level fields from requestData
+  // Merge DB-level fields from requestData (always runs — covers read-only views too)
   useEffect(() => {
     if (requestData) {
       setForm((prev) => ({
         ...prev,
+        // Signatures from DB
         managerSignatureUrl: requestData.managerSignatureUrl || prev.managerSignatureUrl || "",
         hrSignatureUrl: requestData.hrSignatureUrl || prev.hrSignatureUrl || "",
+        // Trip fields from carRequest relation
         destination: requestData.carRequest?.destination || prev.destination,
         purpose: requestData.carRequest?.purpose || prev.purpose,
         departureDate: requestData.carRequest?.departureDate || prev.departureDate,
@@ -152,22 +174,28 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
         driverName: requestData.carRequest?.driverName || prev.driverName,
         carInfo: requestData.carRequest?.carInfo || prev.carInfo,
         reportingManager: requestData.initialApproverId?.toString() || prev.reportingManager,
+        // Employee info from requestData.user — critical for read-only views
+        employeeName: requestData.user?.name || prev.employeeName,
+        staffId: requestData.user?.staffId || prev.staffId,
+        department: requestData.user?.department?.name || prev.department,
+        position: requestData.user?.position || prev.position,
+        workEmail: requestData.user?.email || prev.workEmail,
       }));
     }
   }, [requestData]);
 
-  // Auto-fill employee info + generate document ID for new forms
+  // Auto-fill employee info + generate document ID for new forms only
   useEffect(() => {
     if (user && autoFillData && !isReadOnly) {
       setForm((prev) => ({
         ...prev,
         documentId: prev.documentId || generateDocId(),
-        employeeName: user.name || "",
-        staffId: user.staffId || "",
-        department: user.department?.name || "",
-        position: user.position || "",
-        workEmail: user.email || "",
-        reportingManager: autoFillData.managerId ? String(autoFillData.managerId) : "",
+        employeeName: prev.employeeName || user.name || "",
+        staffId: prev.staffId || user.staffId || "",
+        department: prev.department || user.department?.name || "",
+        position: prev.position || user.position || "",
+        workEmail: prev.workEmail || user.email || "",
+        reportingManager: autoFillData.managerId ? String(autoFillData.managerId) : prev.reportingManager,
       }));
     }
   }, [user, autoFillData, isReadOnly]);
@@ -331,8 +359,7 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
         </div>
 
         {/* ===== TITLE BAR ===== */}
-        <div className="bg-yellow-500 text-white text-center font-bold py-2 text-lg tracking-wide flex items-center justify-center gap-2">
-          <Car size={18} />
+        <div className="bg-yellow-500 text-white text-center font-bold py-2 text-lg tracking-wide">
           CAR / TRANSPORT REQUEST FORM
         </div>
 
@@ -389,14 +416,14 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
                 <div className="flex gap-2 py-1">
                   <button
                     type="button"
-                    onClick={() => setForm({ ...form, tripType: "round_trip", returnDate: "", returnTime: "" })}
+                    onClick={() => setForm(prev => ({ ...prev, tripType: "round_trip", returnDate: "", returnTime: "" }))}
                     className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 cursor-pointer ${form.tripType === "round_trip" ? "bg-[#3b6dae] text-white border-[#3b6dae] shadow-sm" : "bg-white dark:bg-[#1f426b] text-gray-600 dark:text-slate-300 border-gray-300 dark:border-[#3b6dae]/40 hover:border-[#3b6dae] hover:text-[#3b6dae]"}`}
                   >
                     <ArrowLeftRight size={11} /> Round Trip
                   </button>
                   <button
                     type="button"
-                    onClick={() => setForm({ ...form, tripType: "one_way", returnDate: "", returnTime: "" })}
+                    onClick={() => setForm(prev => ({ ...prev, tripType: "one_way", returnDate: "", returnTime: "" }))}
                     className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 cursor-pointer ${form.tripType === "one_way" ? "bg-[#3b6dae] text-white border-[#3b6dae] shadow-sm" : "bg-white dark:bg-[#1f426b] text-gray-600 dark:text-slate-300 border-gray-300 dark:border-[#3b6dae]/40 hover:border-[#3b6dae] hover:text-[#3b6dae]"}`}
                   >
                     <ArrowRight size={11} /> One Way
@@ -409,7 +436,7 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
               <Input
                 placeholder="e.g., Centrika Office — CHIC Building"
                 value={form.pickupLocation}
-                onChange={(e) => setForm({ ...form, pickupLocation: e.target.value })}
+                onChange={(e) => setForm(prev => ({ ...prev, pickupLocation: e.target.value }))}
                 className={`border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs ${isReadOnly ? "bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" : ""}`}
                 disabled={isReadOnly}
               />
@@ -419,7 +446,7 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
               <Input
                 placeholder="e.g., Kigali International Airport"
                 value={form.destination}
-                onChange={(e) => setForm({ ...form, destination: e.target.value })}
+                onChange={(e) => setForm(prev => ({ ...prev, destination: e.target.value }))}
                 className={`border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs ${isReadOnly ? "bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" : ""}`}
                 disabled={isReadOnly}
               />
@@ -435,7 +462,7 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
               ) : (
                 <SingleDatePicker
                   value={form.departureDate}
-                  onChange={(date) => setForm({ ...form, departureDate: date })}
+                  onChange={(date) => setForm(prev => ({ ...prev, departureDate: date }))}
                   label=""
                   className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs font-medium text-black dark:text-slate-100 bg-white dark:bg-[#1f426b]"
                   disabled={false}
@@ -450,7 +477,7 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
               <Input
                 type="time"
                 value={form.departureTime}
-                onChange={(e) => setForm({ ...form, departureTime: e.target.value })}
+                onChange={(e) => setForm(prev => ({ ...prev, departureTime: e.target.value }))}
                 className={`border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs w-36 ${isReadOnly ? "bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" : ""}`}
                 disabled={isReadOnly}
                 placeholder="--:--"
@@ -470,7 +497,7 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
                   ) : (
                     <SingleDatePicker
                       value={form.returnDate}
-                      onChange={(date) => setForm({ ...form, returnDate: date })}
+                      onChange={(date) => setForm(prev => ({ ...prev, returnDate: date }))}
                       label=""
                       className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs font-medium text-black dark:text-slate-100 bg-white dark:bg-[#1f426b]"
                       disabled={false}
@@ -484,7 +511,7 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
                   <Input
                     type="time"
                     value={form.returnTime}
-                    onChange={(e) => setForm({ ...form, returnTime: e.target.value })}
+                    onChange={(e) => setForm(prev => ({ ...prev, returnTime: e.target.value }))}
                     className={`border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs w-36 ${isReadOnly ? "bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" : ""}`}
                     disabled={isReadOnly}
                   />
@@ -499,7 +526,7 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
                   min="1"
                   max="10"
                   value={form.passengers}
-                  onChange={(e) => setForm({ ...form, passengers: e.target.value })}
+                  onChange={(e) => setForm(prev => ({ ...prev, passengers: e.target.value }))}
                   className={`border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs w-20 ${isReadOnly ? "bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" : ""}`}
                   disabled={isReadOnly}
                 />
@@ -514,7 +541,7 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
               <Input
                 placeholder="e.g., Client Meeting, Airport Transfer"
                 value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                onChange={(e) => setForm(prev => ({ ...prev, title: e.target.value }))}
                 className={`border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs ${isReadOnly ? "bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" : ""}`}
                 disabled={isReadOnly}
               />
@@ -523,7 +550,7 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
               <Textarea
                 placeholder="Describe the purpose of the trip in detail..."
                 value={form.purpose}
-                onChange={(e) => setForm({ ...form, purpose: e.target.value })}
+                onChange={(e) => setForm(prev => ({ ...prev, purpose: e.target.value }))}
                 className={`min-h-20 border-blue-300 dark:border-[#3b6dae]/40 text-xs ${isReadOnly ? "bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium" : ""}`}
                 disabled={isReadOnly}
               />
@@ -537,7 +564,7 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
                 value={form.driverName}
                 onValueChange={(v) => {
                   const driver = drivers.find((d: any) => d.name === v);
-                  setForm({ ...form, driverName: v, carInfo: driver?.car || "" });
+                  setForm(prev => ({ ...prev, driverName: v, carInfo: driver?.car || "" }));
                 }}
                 disabled={isReadOnly}
               >
@@ -584,14 +611,14 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
                     <div className="flex gap-2 mb-3">
                       <button
                         type="button"
-                        onClick={() => setForm({ ...form, signatureMethod: "draw", signatureFile: null, employeeSignatureUrl: "" })}
+                        onClick={() => setForm(prev => ({ ...prev, signatureMethod: "draw", signatureFile: null, employeeSignatureUrl: "" }))}
                         className={`px-5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${form.signatureMethod === "draw" ? "bg-[#2d3a6d] text-white border-[#2d3a6d] shadow-sm" : "bg-white dark:bg-[#1f426b] text-gray-600 dark:text-slate-300 border-gray-300 dark:border-[#3b6dae]/40 hover:border-[#2d3a6d] hover:text-[#2d3a6d]"} cursor-pointer`}
                       >
                         Draw
                       </button>
                       <button
                         type="button"
-                        onClick={() => setForm({ ...form, signatureMethod: "upload", signatureFile: null, employeeSignatureUrl: "" })}
+                        onClick={() => setForm(prev => ({ ...prev, signatureMethod: "upload", signatureFile: null, employeeSignatureUrl: "" }))}
                         className={`px-5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${form.signatureMethod === "upload" ? "bg-[#2d3a6d] text-white border-[#2d3a6d] shadow-sm" : "bg-white dark:bg-[#1f426b] text-gray-600 dark:text-slate-300 border-gray-300 dark:border-[#3b6dae]/40 hover:border-[#2d3a6d] hover:text-[#2d3a6d]"} cursor-pointer`}
                       >
                         Upload image
@@ -604,7 +631,7 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
                           <div className="flex items-center gap-3 bg-blue-50 dark:bg-[#1a385c] rounded-lg border border-blue-200 dark:border-[#3b6dae]/30 p-3">
                             <Paperclip size={14} className="text-blue-600 shrink-0" />
                             <span className="text-xs font-medium text-blue-800 dark:text-blue-200 flex-1 truncate">{form.signatureFile?.name || "Signature image"}</span>
-                            <button type="button" onClick={() => setForm({ ...form, signatureFile: null, employeeSignatureUrl: "" })} className="text-red-500 hover:text-red-700 text-xs font-semibold">Remove</button>
+                            <button type="button" onClick={() => setForm(prev => ({ ...prev, signatureFile: null, employeeSignatureUrl: "" }))} className="text-red-500 hover:text-red-700 text-xs font-semibold">Remove</button>
                           </div>
                         ) : (
                           <label className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-blue-300 dark:border-[#3b6dae]/50 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-[#1a385c]/50 transition-all duration-200 w-fit">
@@ -626,10 +653,10 @@ export default function CarRequestForm({ requestData, isReadOnly = false, onSucc
                       <SignaturePad
                         onSave={(dataUrl) => {
                           const file = base64ToFile(dataUrl, "signature.png");
-                          setForm({ ...form, signatureFile: file, employeeSignatureUrl: dataUrl });
+                          setForm(prev => ({ ...prev, signatureFile: file, employeeSignatureUrl: dataUrl }));
                         }}
                         onClear={() => {
-                          setForm({ ...form, signatureFile: null, employeeSignatureUrl: "" });
+                          setForm(prev => ({ ...prev, signatureFile: null, employeeSignatureUrl: "" }));
                         }}
                       />
                     )}

@@ -26,12 +26,20 @@ export default function RequestDetail() {
 
   const { data: allRequests = [], isLoading } = trpc.requests.listUserRequests.useQuery({ includeNonSubmitted: true }, {
     enabled: isAuthenticated && requestId > 0,
+    staleTime: 5 * 60 * 1000,       // Serve from cache for 5 min — no blank flash on re-navigation
+    gcTime: 10 * 60 * 1000,         // Keep in memory for 10 min
+    refetchOnWindowFocus: false,    // Don't re-fetch just because user switched tabs
   });
 
   // Add a direct query for the specific request to ensure we always have latest data
   const { data: specificRequest, refetch: refetchSpecificRequest } = trpc.requests.getRequest.useQuery(
     { id: requestId },
-    { enabled: isAuthenticated && requestId > 0 }
+    {
+      enabled: isAuthenticated && requestId > 0,
+      staleTime: 3 * 60 * 1000,     // Fresh for 3 min — fast load, still re-validates
+      gcTime: 10 * 60 * 1000,
+      refetchOnWindowFocus: false,
+    }
   );
 
   // Auto-mark related notifications as read when form is opened
