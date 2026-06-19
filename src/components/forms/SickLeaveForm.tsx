@@ -286,6 +286,10 @@ export default function SickLeaveForm({
       toast.error("Please describe the responsibilities being handed over");
       return false;
     }
+    if (!form.employeeSignatureUrl) {
+      toast.error("Please provide your signature before submitting");
+      return false;
+    }
     return true;
   };
 

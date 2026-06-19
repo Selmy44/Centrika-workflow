@@ -167,8 +167,16 @@ export default function AssetRequestForm({ requestData, isReadOnly = false, onSu
                 toast.error("Item name is required");
                 return;
             }
+            if (!form.category.trim()) {
+                toast.error("Asset category is required");
+                return;
+            }
             if (!form.estimatedCost || Number(form.estimatedCost.replace(/,/g, "")) <= 0) {
                 toast.error("Estimated cost must be greater than 0");
+                return;
+            }
+            if (!form.description.trim()) {
+                toast.error("Item description / specifications is required");
                 return;
             }
             if (!form.employeeSignatureUrl) {

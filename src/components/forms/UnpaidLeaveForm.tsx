@@ -255,6 +255,10 @@ export default function UnpaidLeaveForm({
       toast.error("You must acknowledge that this is unpaid leave");
       return false;
     }
+    if (!form.employeeSignatureUrl) {
+      toast.error("Please provide your signature before submitting");
+      return false;
+    }
     return true;
   };
 

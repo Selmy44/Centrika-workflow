@@ -244,6 +244,10 @@ export default function AnnualLeaveForm({
       toast.error("You do not have enough leave balance for this request");
       return false;
     }
+    if (!form.employeeSignatureUrl) {
+      toast.error("Please provide your signature before submitting");
+      return false;
+    }
     return true;
   };
 

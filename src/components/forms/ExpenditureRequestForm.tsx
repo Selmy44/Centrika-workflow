@@ -168,6 +168,10 @@ export default function ExpenditureRequestForm({ requestData, isReadOnly = false
         toast.error("Amount must be greater than 0");
         return;
       }
+      if (!form.purpose.trim()) {
+        toast.error("Purpose / justification for this expenditure is required");
+        return;
+      }
       if (!form.employeeSignatureUrl) {
         toast.error("Please upload your signature");
         return;
