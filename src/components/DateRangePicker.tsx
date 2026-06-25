@@ -237,9 +237,9 @@ export default function DateRangePicker({
 
   return (
     <div ref={containerRef} className="relative w-full">
-      {/* ===== TRIGGER: Check-in / Check-out / Duration ===== */}
+      {/* ===== TRIGGER: Start Date / End Date / Duration ===== */}
       <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center">
-        {/* Check-in */}
+        {/* Start Date */}
         <div
           onClick={() => !disabled && setIsOpen(!isOpen)}
           className={`flex-1 px-3 md:px-4 py-2.5 md:py-3 border-2 rounded-lg cursor-pointer transition-colors ${
@@ -251,7 +251,7 @@ export default function DateRangePicker({
           <div className="flex items-center gap-2">
             <Calendar size={16} className="text-blue-600 dark:text-blue-400 shrink-0 md:w-[18px] md:h-[18px]" />
             <div className="flex flex-col min-w-0">
-              <span className="text-[10px] md:text-xs text-gray-500 dark:text-slate-400">Check-in</span>
+              <span className="text-[10px] md:text-xs text-gray-500 dark:text-slate-400">Start Date</span>
               <span className="font-semibold text-xs md:text-sm text-gray-900 dark:text-slate-100 truncate">
                 <span className="hidden sm:inline">{formatDate(startDate)}</span>
                 <span className="sm:hidden">{formatDateShort(startDate)}</span>
@@ -265,7 +265,7 @@ export default function DateRangePicker({
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </div>
 
-        {/* Check-out */}
+        {/* End Date */}
         <div
           onClick={() => !disabled && setIsOpen(!isOpen)}
           className={`flex-1 px-3 md:px-4 py-2.5 md:py-3 border-2 rounded-lg cursor-pointer transition-colors ${
@@ -277,7 +277,7 @@ export default function DateRangePicker({
           <div className="flex items-center gap-2">
             <Calendar size={16} className="text-blue-600 dark:text-blue-400 shrink-0 md:w-[18px] md:h-[18px]" />
             <div className="flex flex-col min-w-0">
-              <span className="text-[10px] md:text-xs text-gray-500 dark:text-slate-400">Check-out</span>
+              <span className="text-[10px] md:text-xs text-gray-500 dark:text-slate-400">End Date</span>
               <span className="font-semibold text-xs md:text-sm text-gray-900 dark:text-slate-100 truncate">
                 <span className="hidden sm:inline">{formatDate(endDate)}</span>
                 <span className="sm:hidden">{formatDateShort(endDate)}</span>
