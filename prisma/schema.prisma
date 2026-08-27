@@ -445,6 +445,7 @@ model OtpToken {
 
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId, usedAt])
   @@map("otp_tokens")
 }
 
