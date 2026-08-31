@@ -139,6 +139,7 @@ model User {
   dateOfEmployment  String?  @map("date_of_employment") @db.VarChar(10)
   managerId         Int?     @map("manager_id")
   profileImage      String?  @map("profile_image")
+  savedSignatureUrl String?  @map("saved_signature_url") @db.Text
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @default(now()) @updatedAt @map("updated_at")
   lastSignedIn      DateTime @default(now()) @map("last_signed_in")
