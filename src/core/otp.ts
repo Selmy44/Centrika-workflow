@@ -5,14 +5,9 @@ import { sendEmail, emailTemplates } from "./email";
 
 /**
  * Generate a random 6-digit OTP code
- *
- * TODO: REVERT BEFORE PRODUCTION
- * Currently hardcoded to "123456" for testing.
- * For production, uncomment the crypto line and remove the hardcoded return.
  */
 export function generateOtpCode(): string {
-  return "123456"; // TEMPORARY: hardcoded for testing
-  // return crypto.randomInt(100000, 999999).toString(); // PRODUCTION: uncomment this line
+  return crypto.randomInt(100000, 1000000).toString();
 }
 
 /**

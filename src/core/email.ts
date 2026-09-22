@@ -872,4 +872,72 @@ export const emailTemplates = {
     `,
   });
   },
+
+  temporaryPasswordEmail: (name: string, email: string, tempPassword: string, meta: EmailMetadata) => {
+    const ORANGE_GRADIENT = "linear-gradient(135deg, #e67e22 0%, #d35400 100%)";
+    const appUrl = (meta.appUrl ?? ENV.appUrl).replace(/\/$/, "");
+    const loginLink = buildLink(`${appUrl}/login`, meta.recipientEmail);
+    return ({
+      subject: `Your Temporary Password — Centrika OnePortal`,
+      html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        ${emailHeader("🔑 Your Login Credentials", ORANGE_GRADIENT, appUrl, "Action Required — Please log in and change your password")}
+        <div style="padding: 40px; background: #f9f9f9;">
+          <p style="font-size: 16px; color: #333;">Hello <strong>${name}</strong>,</p>
+          
+          <p style="font-size: 14px; color: #666; line-height: 1.6;">
+            An administrator has created your Centrika OnePortal account. 
+            Below are your login credentials. <strong style="color: #d35400;">Please use these to log in and change your password immediately.</strong>
+          </p>
+
+          <div style="background: white; padding: 24px; border-radius: 10px; margin: 24px 0; border: 2px solid #e67e22;">
+            <h3 style="color: #e67e22; margin-top: 0; margin-bottom: 16px;">Your Login Credentials</h3>
+            <table style="width: 100%; font-size: 14px; color: #333;">
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; width: 160px; vertical-align: top;">Email:</td>
+                <td style="padding: 8px 0;">${email}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; vertical-align: top;">Temporary Password:</td>
+                <td style="padding: 8px 0;">
+                  <code style="background: #fff3e0; padding: 6px 14px; border-radius: 6px; font-size: 18px; font-weight: bold; color: #d35400; letter-spacing: 2px; border: 1px solid #ffcc80;">${tempPassword}</code>
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="background: #fff3e0; padding: 16px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #e67e22;">
+            <h4 style="color: #e67e22; margin-top: 0; margin-bottom: 8px;">How to get started:</h4>
+            <ol style="font-size: 14px; color: #666; margin: 0; padding-left: 20px; line-height: 1.8;">
+              <li>Click the <strong>Log In</strong> button below</li>
+              <li>Enter your email address and the temporary password above</li>
+              <li>You will receive an OTP code on this email — enter it to complete login</li>
+              <li>Once logged in, go to your <strong>Profile</strong> and change your password</li>
+            </ol>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${loginLink}" style="background: linear-gradient(135deg, #e67e22 0%, #d35400 100%); color: white; padding: 14px 40px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 16px;">
+              Log In Now
+            </a>
+          </div>
+
+          <div style="background: #fce4ec; padding: 14px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #dc3545;">
+            <p style="font-size: 12px; color: #c62828; margin: 0;">
+              <strong>⚠️ Security Notice:</strong> This temporary password should be changed immediately after first login. 
+              Do not share this email or your password with anyone. Centrika staff will never ask for your password.
+            </p>
+          </div>
+
+          <p style="font-size: 12px; color: #999; margin-top: 30px;">
+            This is an automated message. Please do not reply to this email.
+          </p>
+        </div>
+        <div style="background: #333; padding: 20px; color: white; text-align: center; font-size: 12px;">
+          <p>&copy; 2026 Centrika. All rights reserved.</p>
+        </div>
+      </div>
+    `,
+    });
+  },
 };

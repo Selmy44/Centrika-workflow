@@ -1,28 +1,28 @@
 "use client";
 
 import React from "react";
-import { CheckCircle2, Clock, XCircle, ArrowRight } from "lucide-react";
+import { CheckCircle2, Clock, XCircle, ArrowRight, MinusCircle } from "lucide-react";
 
 /**
  * Approval chain definitions per request type.
  * Each step maps to a role key used in `currentApprovalLevel` and `approvals[].approvalLevel`.
  */
 const APPROVAL_CHAINS: Record<string, { role: string; label: string }[]> = {
-  leave: [{ role: "head_of_department", label: "Head of Dept" }],
-  car: [{ role: "hr", label: "HR" }],
+  leave: [{ role: "head_of_department", label: "Checked by (HOD)" }],
+  car: [{ role: "hr", label: "HR Review" }],
   expenditure: [
-    { role: "head_of_department", label: "Head of Dept" },
-    { role: "head_of_finance", label: "Head of Finance" },
-    { role: "ceo_md", label: "CEO / MD" },
+    { role: "head_of_department", label: "Checked by (HOD)" },
+    { role: "head_of_finance", label: "Reviewed by (Finance)" },
+    { role: "ceo_md", label: "Approved by (CEO / MD)" },
   ],
   asset: [
-    { role: "head_of_department", label: "Head of Dept" },
-    { role: "head_of_finance", label: "Head of Finance" },
-    { role: "ceo_md", label: "CEO / MD" },
+    { role: "head_of_department", label: "Checked by (HOD)" },
+    { role: "head_of_finance", label: "Reviewed by (Finance)" },
+    { role: "ceo_md", label: "Approved by (CEO / MD)" },
   ],
 };
 
-type StepStatus = "approved" | "pending" | "rejected" | "waiting";
+type StepStatus = "approved" | "pending" | "rejected" | "waiting" | "not_required";
 
 interface Approval {
   approvalLevel: string;
@@ -54,21 +54,31 @@ function resolveStepStatus(
   if (approval) {
     if (approval.status === "approved") return "approved";
     if (approval.status === "rejected") return "rejected";
-    if (approval.status === "pending") return "pending";
+    if (approval.status === "pending") {
+      if (requestStatus === "approved") return "not_required";
+      if (requestStatus === "rejected") return "waiting";
+      return "pending";
+    }
   }
 
-  // If the request is fully approved or rejected, steps without explicit records
-  // that come AFTER the current level are either done or irrelevant
-  if (requestStatus === "approved") return "approved";
+  // If the request is fully approved, any step without an explicit approval record was not required
+  if (requestStatus === "approved") return "not_required";
   if (requestStatus === "rejected") return "waiting";
 
-  // If this step's role matches the current approval level, it's pending
-  if (currentApprovalLevel === stepRole) return "pending";
+  // If this step's role matches the current approval level, it's pending (only while request is pending)
+  if (requestStatus === "pending" && currentApprovalLevel === stepRole) return "pending";
 
   return "waiting";
 }
 
-function getStepName(stepRole: string, approvals: Approval[], approverNames?: Record<string, string>): string {
+function getStepName(
+  stepRole: string,
+  approvals: Approval[],
+  approverNames?: Record<string, string>,
+  stepStatus?: StepStatus
+): string {
+  if (stepStatus === "not_required") return "Not required";
+
   if (approverNames?.[stepRole]) return approverNames[stepRole];
 
   const approval = approvals.find((a) => a.approvalLevel === stepRole);
@@ -113,6 +123,13 @@ const statusConfig: Record<StepStatus, { label: string; color: string; bg: strin
     border: "border-gray-200 dark:border-gray-700/50",
     icon: <Clock size={14} className="text-gray-300" />,
   },
+  not_required: {
+    label: "not required",
+    color: "text-slate-500 dark:text-slate-400",
+    bg: "bg-slate-50 dark:bg-slate-800/30",
+    border: "border-slate-200 dark:border-slate-700/50",
+    icon: <MinusCircle size={14} className="text-slate-400 dark:text-slate-500" />,
+  },
 };
 
 export default function ApprovalChainPreview({ requestType, currentApprovalLevel, status, approvals = [], approverNames }: Props) {
@@ -129,7 +146,7 @@ export default function ApprovalChainPreview({ requestType, currentApprovalLevel
         {chain.map((step, idx) => {
           const stepStatus = resolveStepStatus(step.role, approvals, currentApprovalLevel, status);
           const cfg = statusConfig[stepStatus];
-          const name = getStepName(step.role, approvals, approverNames);
+          const name = getStepName(step.role, approvals, approverNames, stepStatus);
 
           return (
             <React.Fragment key={step.role}>
@@ -168,7 +185,7 @@ export default function ApprovalChainPreview({ requestType, currentApprovalLevel
         {chain.map((step, idx) => {
           const stepStatus = resolveStepStatus(step.role, approvals, currentApprovalLevel, status);
           const cfg = statusConfig[stepStatus];
-          const name = getStepName(step.role, approvals, approverNames);
+          const name = getStepName(step.role, approvals, approverNames, stepStatus);
 
           return (
             <React.Fragment key={step.role}>

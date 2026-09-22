@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer, Eye, Paperclip } from "lucide-react";
+import { Loader2, Phone, Mail, Globe, MapPin, Download, Printer, Eye, Paperclip, Save, Send, Plus, Trash2, Calculator, ShoppingBag, Sparkles } from "lucide-react";
 import ApprovalChainPreview from "@/components/forms/ApprovalChainPreview";
 import { ApprovalRoutePreview } from "@/components/forms/ApprovalRoutePreview";
 import { toast } from "sonner";
@@ -10,6 +10,7 @@ import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useFormAutoFill } from "@/_core/hooks/useFormAutoFill";
 import { fileToBase64 } from "@/lib/fileUtils";
+import { exportFormToPdf, getActiveFormElement, printFormElement } from "@/lib/formExport";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +23,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { SignaturePad } from "@/components/SignaturePad";
+import { FormSignatureSelector } from "@/components/forms/FormSignatureSelector";
 
 const base64ToFile = (base64: string, filename: string) => {
   const arr = base64.split(",");
@@ -46,11 +48,48 @@ interface Props {
   onSuccess?: () => void;
 }
 
+export interface ExpenditureItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unitPrice: string;
+  subtotal: number;
+}
+
+export interface SupportingDocument {
+  id: string;
+  name: string;
+  url?: string;
+  file?: File | null;
+}
+
 export default function ExpenditureRequestForm({ requestData, isReadOnly = false, onSuccess }: Props) {
   const { user, isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
   const autoFillData = useFormAutoFill();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [savingAction, setSavingAction] = useState<"draft" | "submit" | null>(null);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [isPrintingForm, setIsPrintingForm] = useState(false);
+  const saveSignatureToProfile = (trpc as any).auth.saveSignature.useMutation();
+
+  const handlePrint = () => {
+    const formElement = getActiveFormElement();
+    if (!formElement) { toast.error("Form content not found for printing"); return; }
+    try {
+      setIsPrintingForm(true);
+      printFormElement({ element: formElement, title: `Expenditure Request - ${form.requestNumber || "Document"}` });
+    } catch { toast.error("Unable to open print view"); } finally { setIsPrintingForm(false); }
+  };
+
+  const handleDownloadPdf = async () => {
+    const formElement = getActiveFormElement();
+    if (!formElement) { toast.error("Form content not found for export"); return; }
+    try {
+      setIsExportingPdf(true);
+      await exportFormToPdf({ element: formElement, fileName: `expenditure-request-${form.requestNumber || Date.now()}.pdf` });
+      toast.success("PDF downloaded successfully");
+    } catch { toast.error("Failed to generate PDF"); } finally { setIsExportingPdf(false); }
+  };
 
   const [form, setForm] = useState({
     requestNumber: "",
@@ -63,15 +102,87 @@ export default function ExpenditureRequestForm({ requestData, isReadOnly = false
     expenseType: "",
     amount: "",
     currency: "RWF",
+    items: [
+      { id: "1", description: "", quantity: 1, unitPrice: "", subtotal: 0 }
+    ] as ExpenditureItem[],
     purpose: "",
     reportingManager: "",
+    checkedById: "",
+    checkedByName: "",
     employeeSignatureUrl: "",
     signaturePreview: "",
     signatureFile: null as File | null,
     signatureMethod: "draw" as "upload" | "draw",
+    supportingDocuments: [] as SupportingDocument[],
     supportingDocument: null as File | null,
     supportingDocumentUrl: "",
   });
+
+  const { data: staffList = [] } = (trpc as any).users.listStaffForBackup.useQuery();
+
+  const handleAddItem = () => {
+    setForm(prev => ({
+      ...prev,
+      items: [
+        ...prev.items,
+        { id: String(Date.now()), description: "", quantity: 1, unitPrice: "", subtotal: 0 }
+      ]
+    }));
+  };
+
+  const handleRemoveItem = (id: string) => {
+    setForm(prev => {
+      if (prev.items.length <= 1) return prev;
+      const updatedItems = prev.items.filter(item => item.id !== id);
+      const total = updatedItems.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(String(item.unitPrice || 0).replace(/,/g, ""))), 0);
+      return {
+        ...prev,
+        items: updatedItems,
+        amount: total > 0 ? total.toLocaleString() : prev.amount
+      };
+    });
+  };
+
+  const handleItemChange = (id: string, field: keyof ExpenditureItem, val: any) => {
+    setForm(prev => {
+      const updatedItems = prev.items.map(item => {
+        if (item.id !== id) return item;
+        const updated = { ...item, [field]: val };
+        const qty = Number(updated.quantity) || 0;
+        const unitP = Number(String(updated.unitPrice || 0).replace(/,/g, "")) || 0;
+        updated.subtotal = qty * unitP;
+        return updated;
+      });
+
+      const total = updatedItems.reduce((sum, item) => sum + item.subtotal, 0);
+      return {
+        ...prev,
+        items: updatedItems,
+        amount: total > 0 ? total.toLocaleString() : prev.amount
+      };
+    });
+  };
+
+  const handleAddSupportingFiles = (files: FileList | File[]) => {
+    const fileArray = Array.from(files);
+    if (!fileArray.length) return;
+    const newDocs: SupportingDocument[] = fileArray.map((file) => ({
+      id: String(Math.random()).slice(2, 10),
+      name: file.name,
+      file: file,
+    }));
+    setForm((prev) => ({
+      ...prev,
+      supportingDocuments: [...(prev.supportingDocuments || []), ...newDocs],
+    }));
+  };
+
+  const handleRemoveSupportingDoc = (id: string) => {
+    setForm((prev) => ({
+      ...prev,
+      supportingDocuments: (prev.supportingDocuments || []).filter((doc) => doc.id !== id),
+    }));
+  };
 
   // Auto-fill for new forms only — use prev.field || value to never overwrite existing data
   useEffect(() => {
@@ -111,10 +222,10 @@ export default function ExpenditureRequestForm({ requestData, isReadOnly = false
   const savedFormData = (trpc as any).requests.getExpenditureFormData.useQuery(
     { requestId: requestData?.id || 0 },
     {
-      enabled: !!requestData?.id && (isReadOnly || requestData?.status === "draft"),
-      staleTime: 5 * 60 * 1000,
-      gcTime: 10 * 60 * 1000,
-      refetchOnWindowFocus: false,
+      enabled: !!requestData?.id,
+      staleTime: 0,
+      refetchInterval: isReadOnly || requestData?.status !== "draft" ? 3000 : false,
+      refetchOnWindowFocus: true,
     }
   );
 
@@ -137,6 +248,13 @@ export default function ExpenditureRequestForm({ requestData, isReadOnly = false
         position: requestData.user?.position || prev.position,
         workEmail: requestData.user?.email || prev.workEmail,
         dateOfEmployment: requestData.user?.dateOfEmployment || prev.dateOfEmployment,
+        // Expenditure-specific fields from expenditureRequest relation
+        expenseType: requestData.expenditureRequest?.category || requestData.title || prev.expenseType,
+        amount: requestData.expenditureRequest?.amount ? String(requestData.expenditureRequest.amount) : prev.amount,
+        currency: requestData.expenditureRequest?.currency || prev.currency,
+        purpose: requestData.description || prev.purpose,
+        // Manager from DB
+        reportingManager: requestData.initialApproverId ? String(requestData.initialApproverId) : prev.reportingManager,
       }));
     }
   }, [requestData]);
@@ -147,12 +265,17 @@ export default function ExpenditureRequestForm({ requestData, isReadOnly = false
     if (savedFormData.data && !hasMergedSavedData.current) {
       hasMergedSavedData.current = true;
       const d = savedFormData.data;
+      const docsFromSaved = d.supportingDocuments && Array.isArray(d.supportingDocuments) && d.supportingDocuments.length > 0
+        ? d.supportingDocuments
+        : (d.supportingDocumentUrl ? [{ id: "legacy-1", name: "Supporting Document", url: d.supportingDocumentUrl }] : []);
+
       setForm((prev: any) => ({
         ...prev,
-        ...d, // Spread all saved data first
-        // Then explicitly set file/signature fields that can't be serialized
+        ...d,
+        supportingDocuments: docsFromSaved.length > 0 ? docsFromSaved : prev.supportingDocuments,
         employeeSignatureUrl: d.employeeSignatureUrl || prev.employeeSignatureUrl,
-        signatureFile: null, // Don't restore file objects
+        supportingDocumentUrl: d.supportingDocumentUrl || prev.supportingDocumentUrl,
+        signatureFile: null,
         signaturePreview: d.signaturePreview || prev.signaturePreview,
       }));
     }
@@ -160,12 +283,28 @@ export default function ExpenditureRequestForm({ requestData, isReadOnly = false
 
   const handleSubmit = async (submit: boolean) => {
     if (submit) {
-      if (!form.expenseType.trim()) {
-        toast.error("Type of expenditure is required");
+      if (!form.items || form.items.length === 0) {
+        toast.error("Please add at least one itemized item");
         return;
       }
+      for (let i = 0; i < form.items.length; i++) {
+        const itm = form.items[i];
+        if (!itm.description || !itm.description.trim()) {
+          toast.error(`Please provide description for Item #${i + 1}`);
+          return;
+        }
+        const price = Number(String(itm.unitPrice).replace(/,/g, ""));
+        if (isNaN(price) || price <= 0) {
+          toast.error(`Please provide a valid unit price for Item #${i + 1}`);
+          return;
+        }
+        if (!itm.quantity || itm.quantity < 1) {
+          toast.error(`Quantity for Item #${i + 1} must be at least 1`);
+          return;
+        }
+      }
       if (!form.amount || Number(form.amount.replace(/,/g, "")) <= 0) {
-        toast.error("Amount must be greater than 0");
+        toast.error("Total amount must be greater than 0");
         return;
       }
       if (!form.purpose.trim()) {
@@ -173,12 +312,16 @@ export default function ExpenditureRequestForm({ requestData, isReadOnly = false
         return;
       }
       if (!form.employeeSignatureUrl) {
-        toast.error("Please upload your signature");
+        toast.error("Please provide your signature");
+        return;
+      }
+      if (!form.reportingManager && !form.checkedById) {
+        toast.error("Please select a staff member for 'Checked by'");
         return;
       }
     }
 
-    setIsSubmitting(true);
+    setSavingAction(submit ? "submit" : "draft");
     try {
       // Check if we're updating an existing draft request
       const isEditing = requestData?.id && requestData?.status === "draft";
@@ -187,11 +330,12 @@ export default function ExpenditureRequestForm({ requestData, isReadOnly = false
       const parsedAmount = form.amount ? Number(form.amount.replace(/,/g, "")) : 0;
 
       const payload = {
-        title: form.expenseType || "Expenditure Request",
+        title: form.purpose ? (form.purpose.length > 80 ? form.purpose.slice(0, 77) + "..." : form.purpose) : "Expenditure Request",
+        description: form.purpose,
         amount: parsedAmount || 1, // Use 1 as minimum for validation (>0)
         currency: form.currency,
         department: form.department,
-        category: form.expenseType,
+        category: form.items[0]?.description || "Expenditure Request",
       };
 
       let requestId: number;
@@ -209,9 +353,30 @@ export default function ExpenditureRequestForm({ requestData, isReadOnly = false
       }
 
       if (requestId) {
-        let finalSupportingDocUrl = form.supportingDocumentUrl;
+        const uploadedDocs: SupportingDocument[] = [];
 
-        // Handle file upload if a new file is selected
+        // Upload any supporting document files
+        for (const doc of (form.supportingDocuments || [])) {
+          if (doc.url) {
+            uploadedDocs.push({ id: doc.id, name: doc.name, url: doc.url });
+          } else if (doc.file) {
+            try {
+              const base64 = await fileToBase64(doc.file);
+              const uploadResult = await uploadAttachment.mutateAsync({
+                requestId: requestId,
+                fileName: doc.file.name,
+                fileData: base64,
+                mimeType: doc.file.type || "application/octet-stream",
+                attachmentType: "supporting_document",
+              });
+              uploadedDocs.push({ id: doc.id, name: doc.file.name, url: uploadResult.fileUrl });
+            } catch (e) {
+              console.error("Failed to upload supporting document", e);
+            }
+          }
+        }
+
+        // Also handle legacy single file if present
         if (form.supportingDocument) {
           try {
             const base64 = await fileToBase64(form.supportingDocument);
@@ -219,14 +384,16 @@ export default function ExpenditureRequestForm({ requestData, isReadOnly = false
               requestId: requestId,
               fileName: form.supportingDocument.name,
               fileData: base64,
-              mimeType: form.supportingDocument.type,
+              mimeType: form.supportingDocument.type || "application/octet-stream",
               attachmentType: "supporting_document",
             });
-            finalSupportingDocUrl = uploadResult.fileUrl;
+            uploadedDocs.push({ id: "legacy-doc", name: form.supportingDocument.name, url: uploadResult.fileUrl });
           } catch (e) {
-            console.error("Failed to upload supporting document", e);
+            console.error("Failed to upload legacy supporting document", e);
           }
         }
+
+        const primaryDocUrl = uploadedDocs[0]?.url || form.supportingDocumentUrl;
 
         try {
           await storeFormData.mutateAsync({
@@ -235,7 +402,8 @@ export default function ExpenditureRequestForm({ requestData, isReadOnly = false
               ...form,
               signatureFile: null,
               supportingDocument: null,
-              supportingDocumentUrl: finalSupportingDocUrl
+              supportingDocuments: uploadedDocs,
+              supportingDocumentUrl: primaryDocUrl,
             },
           });
         } catch (e) { console.error("Failed to store form data", e); }
@@ -244,7 +412,7 @@ export default function ExpenditureRequestForm({ requestData, isReadOnly = false
       if (submit) {
         await submitRequest.mutateAsync({
           id: requestId,
-          initialApproverId: Number(form.reportingManager),
+          initialApproverId: Number(form.checkedById || form.reportingManager),
         });
       }
 
@@ -253,44 +421,49 @@ export default function ExpenditureRequestForm({ requestData, isReadOnly = false
     } catch (e: any) {
       toast.error(e.message || "Submission failed");
     } finally {
-      setIsSubmitting(false);
+      setSavingAction(null);
     }
   };
 
   if (!isAuthenticated) return null;
+
+  // Deterministic request number: prefer saved form data, fall back to DB-derived ID
+  const displayRequestNumber = form.requestNumber || (requestData?.id
+    ? `ER-${new Date(requestData.createdAt).getFullYear()}-${String(new Date(requestData.createdAt).getMonth() + 1).padStart(2, "0")}-${String(requestData.id).padStart(5, "0")}`
+    : "");
 
   return (
     <div className="w-full bg-white dark:bg-[#1f426b] text-black dark:text-slate-100 px-4 leave-form-container relative dark:border-[#2b6cb0]/30">
 
       <div>
         {/* ===== HEADER WITH LOGO AND CONTACT INFO ===== */}
-        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start px-3 lg:px-6 py-3 gap-4 lg:gap-8">
+        <div className="flex flex-row justify-between items-start px-3 lg:px-6 py-3 gap-4">
           <div className="shrink-0">
             <img
               src="/logo/centrikaLogo.png"
               alt="Centrika Logo"
-              className="h-14 lg:h-20 w-auto"
+              className="h-20 lg:h-24 w-auto"
             />
           </div>
-          <div className="text-xs lg:text-sm flex-1 flex justify-start lg:justify-end">
-            <div className="flex flex-col gap-2 lg:gap-3 items-start">
+          <div className="text-xs flex justify-end">
+            <div className="flex flex-col gap-1.5 items-start">
               <div className="flex items-center gap-2 min-w-0">
-                <Phone size={14} className="text-blue-600 shrink-0 lg:w-[16px] lg:h-[16px]" />
-                <span className="text-blue-600 font-semibold truncate text-[11px] lg:text-sm">+250 788 123 099</span>
+                <Phone size={13} className="text-blue-600 shrink-0" />
+                <span className="text-blue-600 font-semibold truncate text-[11px]">+250 788 123 099</span>
               </div>
               <div className="flex items-center gap-2 min-w-0">
-                <Mail size={14} className="text-blue-600 shrink-0 lg:w-[16px] lg:h-[16px]" />
-                <span className="text-blue-600 font-semibold truncate text-[11px] lg:text-sm">info@centrika.rw</span>
+                <Mail size={13} className="text-blue-600 shrink-0" />
+                <span className="text-blue-600 font-semibold truncate text-[11px]">info@centrika.rw</span>
               </div>
               <div className="flex items-center gap-2 min-w-0">
-                <Globe size={14} className="text-blue-600 shrink-0 lg:w-[16px] lg:h-[16px]" />
-                <span className="text-blue-600 font-semibold truncate text-[11px] lg:text-sm">www.centrika.rw</span>
+                <Globe size={13} className="text-blue-600 shrink-0" />
+                <span className="text-blue-600 font-semibold truncate text-[11px]">www.centrika.rw</span>
               </div>
               <div className="flex items-start gap-2">
-                <MapPin size={14} className="text-blue-600 shrink-0 mt-0.5 lg:w-[16px] lg:h-[16px]" />
+                <MapPin size={13} className="text-blue-600 shrink-0 mt-0.5" />
                 <div className="flex flex-col gap-0.5">
-                  <span className="text-blue-600 font-semibold text-[10px] lg:text-sm leading-tight">Room F002, 2nd Floor, CHIC Building,</span>
-                  <span className="text-blue-600 font-semibold text-[10px] lg:text-sm leading-tight">Plot 1007, KN2 Kigali-Rwanda</span>
+                  <span className="text-blue-600 font-semibold text-[10px] leading-tight">Room F002, 2nd Floor, CHIC Building,</span>
+                  <span className="text-blue-600 font-semibold text-[10px] leading-tight">Plot 1007, KN2 Kigali-Rwanda</span>
                 </div>
               </div>
             </div>
@@ -316,7 +489,7 @@ export default function ExpenditureRequestForm({ requestData, isReadOnly = false
           </div>
           <div>
             <p className="font-semibold text-blue-600 text-[10px] lg:text-xs mb-1">Request Number</p>
-            <Input value={form.requestNumber} className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed" disabled />
+            <Input value={displayRequestNumber} className="h-7 border-blue-400 dark:border-[#3b6dae]/50 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed" disabled />
           </div>
           <div>
             <p className="font-semibold text-blue-600 text-xs mb-1">Employee Name</p>
@@ -333,51 +506,22 @@ export default function ExpenditureRequestForm({ requestData, isReadOnly = false
           <Section title="1. EMPLOYEE INFORMATION">
             <Row label="1.1 Request Number">
               <Input
-                value={form.requestNumber}
-                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
+                value={displayRequestNumber}
+                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium"
                 disabled
               />
             </Row>
             <Row label="1.2 Employee Full Name">
               <Input
                 value={form.employeeName}
-                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
+                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium"
                 disabled
               />
             </Row>
             <Row label="1.3 Department">
               <Input
                 value={form.department}
-                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
-                disabled
-              />
-            </Row>
-            <Row label="1.4 Employee / Staff ID">
-              <Input
-                value={form.staffId}
-                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
-                disabled
-              />
-            </Row>
-            <Row label="1.5 Position / Title">
-              <Input
-                value={form.position}
-                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
-                disabled
-              />
-            </Row>
-            <Row label="1.6 Date of Employment">
-              <Input
-                type="date"
-                value={form.dateOfEmployment}
-                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
-                disabled
-              />
-            </Row>
-            <Row label="1.7 Work Email">
-              <Input
-                value={form.workEmail}
-                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 dark:text-slate-100 dark:!text-slate-100 dark:text-slate-100 font-medium"
+                className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium"
                 disabled
               />
             </Row>
@@ -385,29 +529,133 @@ export default function ExpenditureRequestForm({ requestData, isReadOnly = false
 
           {/* 2. EXPENDITURE DETAILS */}
           <Section title="2. EXPENDITURE DETAILS">
-            <Row label="2.1 Type of Expenditure">
-              <Input
-                value={form.expenseType}
-                onChange={e => setForm({ ...form, expenseType: e.target.value })}
-                placeholder="e.g., Office Supplies, Travel, Equipment"
-                className={`border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium' : ''}`}
-                disabled={isReadOnly}
-              />
+            <Row label="2.1 Items / Assets Breakdown" colSpan>
+              <div className="w-full my-2 space-y-3">
+                {/* Live Summary Bar */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-[#1a385c] dark:to-[#224775] border border-blue-200 dark:border-[#3b6dae]/40 rounded-lg p-3 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-[#3b6dae] dark:text-blue-300">
+                    <ShoppingBag size={16} />
+                    <span>Itemized Assets & Expenditures Breakdown</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs bg-white dark:bg-[#1f426b] px-2.5 py-1 rounded-full border border-blue-200 dark:border-[#3b6dae]/30 font-medium text-gray-700 dark:text-slate-200">
+                      {form.items.length} {form.items.length === 1 ? 'Item' : 'Items'}
+                    </span>
+                    <div className="flex items-center gap-1.5 bg-[#3b6dae] text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm">
+                      <Calculator size={13} />
+                      <span>Total: {form.currency} {(form.items.reduce((s, i) => s + (i.subtotal || 0), 0)).toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Items Table */}
+                <div className="overflow-x-auto rounded-lg border border-blue-200 dark:border-[#3b6dae]/30">
+                  <table className="w-full text-xs text-left">
+                    <thead className="bg-blue-100 dark:bg-[#295482] text-[#3b6dae] dark:text-slate-200 font-semibold">
+                      <tr>
+                        <th className="p-2.5 w-10 text-center">#</th>
+                        <th className="p-2.5 min-w-[200px]">Item / Asset Description</th>
+                        <th className="p-2.5 w-24 text-center">Qty</th>
+                        <th className="p-2.5 w-36">Unit Price ({form.currency})</th>
+                        <th className="p-2.5 w-36 text-right">Subtotal ({form.currency})</th>
+                        {!isReadOnly && <th className="p-2.5 w-12 text-center">Action</th>}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-[#3b6dae]/20 bg-white dark:bg-[#1f426b]">
+                      {form.items.map((item, idx) => (
+                        <tr key={item.id} className="hover:bg-blue-50/50 dark:hover:bg-[#1a385c]/40 transition-colors">
+                          <td className="p-2.5 text-center font-medium text-gray-500 dark:text-slate-400">
+                            {idx + 1}
+                          </td>
+                          <td className="p-2">
+                            <Input
+                              value={item.description}
+                              onChange={e => handleItemChange(item.id, "description", e.target.value)}
+                              placeholder={`Asset/Item #${idx + 1} name or specs`}
+                              className="h-7 text-xs border-blue-200 dark:border-[#3b6dae]/30"
+                              disabled={isReadOnly}
+                            />
+                          </td>
+                          <td className="p-2">
+                            <Input
+                              type="number"
+                              min={1}
+                              value={item.quantity}
+                              onChange={e => handleItemChange(item.id, "quantity", Math.max(1, parseInt(e.target.value) || 1))}
+                              className="h-7 text-xs text-center border-blue-200 dark:border-[#3b6dae]/30"
+                              disabled={isReadOnly}
+                            />
+                          </td>
+                          <td className="p-2">
+                            <Input
+                              type="text"
+                              value={item.unitPrice}
+                              onChange={e => {
+                                const raw = e.target.value.replace(/[^\d.]/g, "");
+                                handleItemChange(item.id, "unitPrice", raw);
+                              }}
+                              placeholder="0"
+                              className="h-7 text-xs border-blue-200 dark:border-[#3b6dae]/30"
+                              disabled={isReadOnly}
+                            />
+                          </td>
+                          <td className="p-2.5 text-right font-semibold text-blue-900 dark:text-blue-100">
+                            {(item.subtotal || 0).toLocaleString()}
+                          </td>
+                          {!isReadOnly && (
+                            <td className="p-2 text-center">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleRemoveItem(item.id)}
+                                disabled={form.items.length <= 1}
+                                className="h-7 w-7 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40 disabled:opacity-30"
+                              >
+                                <Trash2 size={14} />
+                              </Button>
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot className="bg-blue-50 dark:bg-[#1a385c] font-bold border-t-2 border-blue-200 dark:border-[#3b6dae]/40">
+                      <tr>
+                        <td colSpan={4} className="p-2.5 text-right text-gray-700 dark:text-slate-200">
+                          Grand Total Amount:
+                        </td>
+                        <td className="p-2.5 text-right text-sm text-[#3b6dae] dark:text-blue-300">
+                          {form.currency} {(form.items.reduce((s, i) => s + (i.subtotal || 0), 0)).toLocaleString()}
+                        </td>
+                        {!isReadOnly && <td></td>}
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+
+                {!isReadOnly && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddItem}
+                    className="mt-2 border-dashed border-blue-400 dark:border-[#3b6dae]/50 text-blue-600 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-[#1a385c] h-8 text-xs font-semibold flex items-center gap-1.5"
+                  >
+                    <Plus size={14} />
+                    Add Another Item / Asset
+                  </Button>
+                )}
+              </div>
             </Row>
-            <Row label="2.2 Amount">
-              <div className="flex gap-2 items-center">
+
+            <Row label="2.2 Total Amount & Currency">
+              <div className="flex gap-2 items-center w-full">
                 <Input
                   type="text"
-                  value={form.amount}
-                  onChange={e => {
-                    const rawValue = e.target.value.replace(/[^\d.]/g, "");
-                    const parts = rawValue.split(".");
-                    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-                    setForm({ ...form, amount: parts.join(".") });
-                  }}
+                  value={form.amount || (form.items.reduce((s, i) => s + (i.subtotal || 0), 0)).toLocaleString()}
                   placeholder="0"
-                  className={`border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium' : ''}`}
-                  disabled={isReadOnly}
+                  className="border-blue-300 dark:border-[#3b6dae]/40 h-7 text-xs bg-gray-100 dark:bg-[#295482] cursor-not-allowed !text-black dark:!text-slate-100 font-medium"
+                  disabled
                 />
                 <Select value={form.currency} onValueChange={v => setForm({ ...form, currency: v })} disabled={isReadOnly}>
                   <SelectTrigger className={`w-28 h-7 border-blue-300 dark:border-[#3b6dae]/40 text-xs ${isReadOnly ? 'bg-gray-100 dark:bg-[#295482] cursor-not-allowed' : ''}`}>
@@ -421,6 +669,7 @@ export default function ExpenditureRequestForm({ requestData, isReadOnly = false
                 </Select>
               </div>
             </Row>
+
             <Row label="2.3 Purpose / Justification">
               <Textarea
                 value={form.purpose}
@@ -430,32 +679,72 @@ export default function ExpenditureRequestForm({ requestData, isReadOnly = false
                 disabled={isReadOnly}
               />
             </Row>
-            <Row label="2.4 Proforma Invoice / Quote">
-              <div className="space-y-2">
-                {!isReadOnly && (
-                  form.supportingDocument ? (
-                    <div className="flex items-center gap-3 bg-blue-50 dark:bg-[#1a385c] rounded-lg border border-blue-200 dark:border-[#3b6dae]/30 p-3">
-                      <Paperclip size={14} className="text-blue-600 shrink-0" />
-                      <span className="text-xs font-medium text-blue-800 dark:text-blue-200 flex-1 truncate">{form.supportingDocument.name}</span>
-                      <button type="button" onClick={() => setForm({ ...form, supportingDocument: null })} className="text-red-500 hover:text-red-700 text-xs font-semibold">Remove</button>
-                    </div>
-                  ) : (
-                    <label className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-blue-300 dark:border-[#3b6dae]/50 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-[#1a385c]/50 transition-all duration-200 w-fit">
-                      <span className="text-xs font-bold text-blue-600 dark:text-blue-400">+ Attach proforma / quote</span>
-                      <input type="file" className="hidden" onChange={(e) => { if (e.target.files?.[0]) { setForm({ ...form, supportingDocument: e.target.files[0] }); } }} />
-                    </label>
-                  )
+            <Row label="2.4 Supporting doc" className="no-print">
+              <div className="space-y-2.5 w-full">
+                {/* List of attached documents */}
+                {(form.supportingDocuments || []).length > 0 && (
+                  <div className="space-y-2 max-w-2xl">
+                    {(form.supportingDocuments || []).map((doc) => (
+                      <div
+                        key={doc.id}
+                        className="flex items-center gap-3 bg-blue-50/70 dark:bg-[#1a385c] rounded-lg border border-blue-200 dark:border-[#3b6dae]/30 p-2.5"
+                      >
+                        <Paperclip size={14} className="text-blue-600 dark:text-blue-400 shrink-0" />
+                        <span className="text-xs font-medium text-blue-900 dark:text-blue-100 flex-1 truncate">
+                          {doc.name}
+                        </span>
+                        {doc.url && (
+                          <a href={doc.url} target="_blank" rel="noopener noreferrer">
+                            <Button size="sm" variant="outline" type="button" className="h-6 py-0 px-2 text-[10px] border-blue-200">
+                              <Eye size={12} className="mr-1" /> View
+                            </Button>
+                          </a>
+                        )}
+                        {!isReadOnly && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSupportingDoc(doc.id)}
+                            className="text-red-500 hover:text-red-700 text-xs font-semibold px-1"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 )}
-                {form.supportingDocumentUrl && (
-                  <div className="flex items-center gap-2 mt-1">
-                    <p className="text-xs text-blue-600 font-medium">Attached: Document</p>
+
+                {/* Legacy single document display fallback if supportingDocuments empty */}
+                {(form.supportingDocuments || []).length === 0 && form.supportingDocumentUrl && (
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs text-blue-600 font-medium">Attached Document</p>
                     <a href={form.supportingDocumentUrl} target="_blank" rel="noopener noreferrer">
-                      <Button size="sm" variant="outline" className="h-7 py-0 px-2 text-[10px] border-blue-200">
+                      <Button size="sm" variant="outline" type="button" className="h-7 py-0 px-2 text-[10px] border-blue-200">
                         <Eye size={12} className="mr-1" />
                         View
                       </Button>
                     </a>
                   </div>
+                )}
+
+                {/* Upload Button */}
+                {!isReadOnly && (
+                  <label className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-blue-300 dark:border-[#3b6dae]/50 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-[#1a385c]/50 transition-all duration-200 w-fit">
+                    <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
+                      + Attach supporting doc(s)
+                    </span>
+                    <input
+                      type="file"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files.length > 0) {
+                          handleAddSupportingFiles(e.target.files);
+                          e.target.value = "";
+                        }
+                      }}
+                    />
+                  </label>
                 )}
               </div>
             </Row>
@@ -463,153 +752,193 @@ export default function ExpenditureRequestForm({ requestData, isReadOnly = false
 
           {/* 3. EMPLOYEE SIGNATURE */}
           <Section title="3. EMPLOYEE SIGNATURE">
-            <Row label="3.1 Your Signature">
-              <div className="space-y-3 w-full">
-                {isReadOnly ? (
-                  <div className="space-y-1">
-                    {form.employeeSignatureUrl ? (
-                      <>
-                        <img src={form.employeeSignatureUrl} alt="Employee Signature" className="h-14 object-contain" />
-                        <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">{form.employeeName || requestData?.user?.name || ""}</p>
-                      </>
-                    ) : (
-                      <p className="text-xs italic text-gray-500">No signature provided</p>
-                    )}
-                  </div>
-                ) : (
+            {isReadOnly ? (
+              <div className="p-3 bg-white dark:bg-[#1f426b] flex flex-col items-start justify-start min-h-[75px]">
+                {form.employeeSignatureUrl ? (
                   <>
-                    <div className="flex gap-2 mb-3">
-                      <button
-                        type="button"
-                        onClick={() => setForm({ ...form, signatureMethod: "draw", signatureFile: null, employeeSignatureUrl: "" })}
-                        className={`px-5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${form.signatureMethod === "draw"
-                            ? "bg-[#2d3a6d] text-white border-[#2d3a6d] shadow-sm"
-                            : "bg-white dark:bg-[#1f426b] text-gray-600 dark:text-slate-300 border-gray-300 dark:border-[#3b6dae]/40 hover:border-[#2d3a6d] hover:text-[#2d3a6d]"
-                          } cursor-pointer`}
-                      >
-                        Draw
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setForm({ ...form, signatureMethod: "upload", signatureFile: null, employeeSignatureUrl: "" })}
-                        className={`px-5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${form.signatureMethod === "upload"
-                            ? "bg-[#2d3a6d] text-white border-[#2d3a6d] shadow-sm"
-                            : "bg-white dark:bg-[#1f426b] text-gray-600 dark:text-slate-300 border-gray-300 dark:border-[#3b6dae]/40 hover:border-[#2d3a6d] hover:text-[#2d3a6d]"
-                          } cursor-pointer`}
-                      >
-                        Upload image
-                      </button>
-                    </div>
-
-                    {form.signatureMethod === "upload" ? (
-                      <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                        {form.employeeSignatureUrl ? (
-                          <div className="flex items-center gap-3 bg-blue-50 dark:bg-[#1a385c] rounded-lg border border-blue-200 dark:border-[#3b6dae]/30 p-3">
-                            <Paperclip size={14} className="text-blue-600 shrink-0" />
-                            <span className="text-xs font-medium text-blue-800 dark:text-blue-200 flex-1 truncate">{form.signatureFile?.name || "Signature image"}</span>
-                            <button type="button" onClick={() => setForm({ ...form, signatureFile: null, employeeSignatureUrl: "" })} className="text-red-500 hover:text-red-700 text-xs font-semibold">Remove</button>
-                          </div>
-                        ) : (
-                          <label className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-blue-300 dark:border-[#3b6dae]/50 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-[#1a385c]/50 transition-all duration-200 w-fit">
-                            <span className="text-xs font-bold text-blue-600 dark:text-blue-400">+ Upload signature image</span>
-                            <input type="file" className="hidden" accept="image/*" onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                const reader = new FileReader();
-                                reader.onload = (ev) => {
-                                  setForm({ ...form, signatureFile: file, signaturePreview: URL.createObjectURL(file), employeeSignatureUrl: ev.target?.result as string });
-                                };
-                                reader.readAsDataURL(file);
-                              }
-                            }} />
-                          </label>
-                        )}
-                      </div>
-                    ) : (
-                      <SignaturePad
-                        onSave={(dataUrl) => {
-                          const file = base64ToFile(dataUrl, "signature.png");
-                          setForm({ ...form, signatureFile: file, employeeSignatureUrl: dataUrl });
-                        }}
-                        onClear={() => {
-                          setForm({ ...form, signatureFile: null, employeeSignatureUrl: "" });
-                        }}
-                      />
-                    )}
-
-                    {form.employeeSignatureUrl && form.signatureMethod === "upload" && (
-                      <div className="mt-2 animate-in zoom-in duration-300">
-                        <img src={form.employeeSignatureUrl} alt="sig" className="h-16 object-contain" />
-                      </div>
-                    )}
+                    <img src={form.employeeSignatureUrl} alt="Employee Signature" className="h-12 max-h-12 object-contain" />
+                    <p className="text-[11px] text-gray-900 dark:text-slate-100 mt-1 font-semibold text-left">{form.employeeName || requestData?.user?.name || ""}</p>
                   </>
+                ) : (
+                  <p className="text-xs italic text-gray-400">No signature provided</p>
                 )}
               </div>
-            </Row>
+            ) : (
+              <Row label="Signature">
+                <div className="space-y-3 w-full">
+                  <FormSignatureSelector
+                    value={form.employeeSignatureUrl}
+                    initialFile={form.signatureFile}
+                    onChange={({ dataUrl, file, saveToProfile }) => {
+                      setForm((prev: any) => ({
+                        ...prev,
+                        employeeSignatureUrl: dataUrl,
+                        signatureFile: file,
+                        signaturePreview: dataUrl,
+                      }));
+                      if (saveToProfile && dataUrl) {
+                        saveSignatureToProfile.mutate({ signatureUrl: dataUrl });
+                      }
+                    }}
+                  />
+                </div>
+              </Row>
+            )}
           </Section>
 
-          {/* Draft-only: approval route preview (no section header) */}
+          {/* 4. APPROVER SIGNATURES */}
+          <Section title="4. APPROVER SIGNATURES">
+            {isReadOnly ? (
+              (() => {
+                const hodApproval = requestData?.approvals?.find((a: any) => a.approvalLevel === "head_of_department");
+                const hodName = savedFormData.data?.managerSignerName || savedFormData.data?.checkedByName || hodApproval?.approver?.name || form.checkedByName || "HOD";
+                const hodSig = savedFormData.data?.managerSignatureUrl || hodApproval?.signature?.fileUrl || requestData?.managerSignatureUrl;
+
+                const finApproval = requestData?.approvals?.find((a: any) => a.approvalLevel === "head_of_finance");
+                const finName = savedFormData.data?.financeSignerName || savedFormData.data?.reviewedByName || finApproval?.approver?.name || "Head of Finance";
+                const finSig = savedFormData.data?.financeSignatureUrl || finApproval?.signature?.fileUrl || requestData?.financeSignatureUrl;
+
+                const ceoApproval = requestData?.approvals?.find((a: any) => a.approvalLevel === "ceo_md" || a.approvalLevel === "md");
+                const ceoName = savedFormData.data?.ceoSignerName || savedFormData.data?.approvedByName || ceoApproval?.approver?.name || "CEO / MD";
+                const ceoSig = savedFormData.data?.ceoSignatureUrl || ceoApproval?.signature?.fileUrl || requestData?.ceoSignatureUrl;
+                const isCeoNotRequired = !ceoSig && requestData?.status === "approved";
+
+                return (
+                  <div className="grid grid-cols-3 divide-x divide-blue-200 dark:divide-[#3b6dae]/30 border-b border-blue-200 dark:border-[#3b6dae]/30">
+                    {/* 4.1 Checked by */}
+                    <div className="p-2.5 flex flex-col justify-between min-h-[85px] bg-white dark:bg-[#1f426b]">
+                      <div className="text-center mb-1">
+                        <span className="text-[10px] font-bold text-[#3b6dae] dark:text-blue-300 uppercase tracking-wider">4.1 Checked by</span>
+                      </div>
+                      <div className="flex-1 flex items-center justify-center my-1">
+                        {hodSig ? (
+                          <img src={hodSig} alt="Checked by Signature" className="h-10 max-h-10 object-contain" />
+                        ) : (
+                          <p className="text-[10px] italic text-gray-400">Signature pending</p>
+                        )}
+                      </div>
+                      <div className="border-t border-gray-100 dark:border-slate-700/60 pt-1">
+                        <p className="text-[11px] font-semibold text-gray-900 dark:text-slate-100 truncate text-center">{hodName}</p>
+                      </div>
+                    </div>
+
+                    {/* 4.2 Reviewed by */}
+                    <div className="p-2.5 flex flex-col justify-between min-h-[85px] bg-white dark:bg-[#1f426b]">
+                      <div className="text-center mb-1">
+                        <span className="text-[10px] font-bold text-[#3b6dae] dark:text-blue-300 uppercase tracking-wider">4.2 Reviewed by</span>
+                      </div>
+                      <div className="flex-1 flex items-center justify-center my-1">
+                        {finSig ? (
+                          <img src={finSig} alt="Reviewed by Signature" className="h-10 max-h-10 object-contain" />
+                        ) : (
+                          <p className="text-[10px] italic text-gray-400">Signature pending</p>
+                        )}
+                      </div>
+                      <div className="border-t border-gray-100 dark:border-slate-700/60 pt-1">
+                        <p className="text-[11px] font-semibold text-gray-900 dark:text-slate-100 truncate text-center">{finName}</p>
+                      </div>
+                    </div>
+
+                    {/* 4.3 Approved by */}
+                    <div className="p-2.5 flex flex-col justify-between min-h-[85px] bg-white dark:bg-[#1f426b]">
+                      <div className="text-center mb-1">
+                        <span className="text-[10px] font-bold text-[#3b6dae] dark:text-blue-300 uppercase tracking-wider">4.3 Approved by</span>
+                      </div>
+                      <div className="flex-1 flex items-center justify-center my-1">
+                        {ceoSig ? (
+                          <img src={ceoSig} alt="Approved by Signature" className="h-10 max-h-10 object-contain" />
+                        ) : isCeoNotRequired ? (
+                          <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/50">
+                            Not required (Concluded at Review)
+                          </span>
+                        ) : (
+                          <p className="text-[10px] italic text-gray-400">Signature pending</p>
+                        )}
+                      </div>
+                      <div className="border-t border-gray-100 dark:border-slate-700/60 pt-1">
+                        <p className="text-[11px] font-semibold text-gray-900 dark:text-slate-100 truncate text-center">
+                          {isCeoNotRequired ? "N/A" : ceoName}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()
+            ) : (
+              <>
+                <Row label="4.1 Checked by">
+                  <div className="w-full space-y-1.5 py-1">
+                    <Select
+                      value={String(form.checkedById || form.reportingManager || "")}
+                      onValueChange={(val) => {
+                        const selected = staffList.find((s: any) => String(s.id) === String(val));
+                        setForm({
+                          ...form,
+                          reportingManager: val,
+                          checkedById: val,
+                          checkedByName: selected?.name || "",
+                        });
+                      }}
+                    >
+                      <SelectTrigger className="w-full h-8 border-blue-300 dark:border-[#3b6dae]/40 text-xs bg-white dark:bg-[#1a385c]">
+                        <SelectValue placeholder="Select staff member to check this request..." />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-60 bg-white dark:bg-[#1f426b] border-blue-200 dark:border-[#3b6dae]/30">
+                        {staffList.map((staff: any) => (
+                          <SelectItem key={staff.id} value={String(staff.id)} className="text-xs cursor-pointer">
+                            <div className="flex items-center gap-2 py-0.5">
+                              <span className="font-semibold text-gray-900 dark:text-slate-100">{staff.name}</span>
+                              {staff.department && (
+                                <span className="text-[10px] text-blue-600 dark:text-blue-300 font-medium">({staff.department})</span>
+                              )}
+                              {staff.position && (
+                                <span className="text-[10px] text-gray-500 dark:text-slate-400">• {staff.position}</span>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </Row>
+                <Row label="4.2 Reviewed by">
+                  <div className="py-1">
+                    <p className="text-xs italic text-gray-500 dark:text-gray-400">
+                      To be selected by the Checked-by approver
+                    </p>
+                  </div>
+                </Row>
+                <Row label="4.3 Approved by">
+                  <div className="py-1">
+                    <p className="text-xs italic text-gray-500 dark:text-gray-400">
+                      To be selected by the Reviewed-by approver
+                    </p>
+                  </div>
+                </Row>
+              </>
+            )}
+          </Section>
+
+          {/* Draft-only: approval route preview (placed after Section 4) */}
           {!isReadOnly && (() => {
             const empInitials = (user?.name || "Me").split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
-            const managerFromHeads = heads.find((h: any) => h.id === Number(autoFillData?.managerId || form.reportingManager));
-            const mgrName = managerFromHeads?.name || autoFillData?.managerName || "HOD";
-            const mgrInitials = mgrName !== "HOD" ? mgrName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) : "HOD";
+            const selectedStaff = staffList.find((s: any) => String(s.id) === String(form.checkedById || form.reportingManager));
+            const mgrName = selectedStaff?.name || form.checkedByName || "Select Staff Member";
+            const mgrInitials = selectedStaff ? mgrName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) : "HOD";
             return (
               <ApprovalRoutePreview steps={[
-                { initials: empInitials, name: user?.name || "You", role: "Submitter", isSubmitter: true },
-                { initials: mgrInitials, name: mgrName, role: "Line Manager / HOD" },
-                { initials: "HR", name: "HR Department", role: "HR Review" },
-                { initials: "FIN", name: "Head of Finance", role: "Finance" },
+                { initials: empInitials, name: user?.name || "You", role: "Initiated by", isSubmitter: true },
+                { initials: mgrInitials, name: mgrName, role: "Checked by" },
+                { initials: "REV", name: "To be assigned", role: "Reviewed by" },
+                { initials: "APP", name: "To be assigned", role: "Approved by" },
               ]} />
             );
           })()}
 
-          {/* 4. APPROVER SIGNATURES — only after resolution */}
-          {(requestData?.status === "approved" || requestData?.status === "rejected") && (
-            <Section title="4. APPROVER SIGNATURES">
-              {/* Approved/rejected: show actual signatures only */}
-              {(requestData?.status === "approved" || requestData?.status === "rejected") && (() => {
-                const hodApproval = requestData?.approvals?.find((a: any) => a.approvalLevel === "head_of_department");
-                const hodName = savedFormData.data?.managerSignerName || hodApproval?.approver?.name || "Line Manager / HOD";
-                const hodSig = savedFormData.data?.managerSignatureUrl || requestData?.managerSignatureUrl;
 
-                const hrApproval = requestData?.approvals?.find((a: any) => a.approvalLevel === "hr");
-                const hrName = savedFormData.data?.hrSignerName || hrApproval?.approver?.name || "HR Department";
-                const hrSig = savedFormData.data?.hrSignatureUrl || requestData?.hrSignatureUrl;
-
-                const finApproval = requestData?.approvals?.find((a: any) => a.approvalLevel === "head_of_finance");
-                const finName = savedFormData.data?.financeSignerName || finApproval?.approver?.name || "Head of Finance";
-                const finSig = savedFormData.data?.financeSignatureUrl || requestData?.financeSignatureUrl;
-
-                const ceoApproval = requestData?.approvals?.find((a: any) => a.approvalLevel === "ceo_md" || a.approvalLevel === "md");
-                const ceoName = savedFormData.data?.ceoSignerName || ceoApproval?.approver?.name || "CEO / MD";
-                const ceoSig = savedFormData.data?.ceoSignatureUrl || requestData?.ceoSignatureUrl;
-
-                const renderSlot = (label: string, name: string, sigUrl?: string, altText?: string) => sigUrl ? (
-                  <Row label={label}>
-                    <div className="py-1">
-                      <img src={sigUrl} alt={altText || "Signature"} className="h-10 object-contain" />
-                      <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-medium">✓ {name}</p>
-                    </div>
-                  </Row>
-                ) : null;
-
-                return (
-                  <>
-                    {renderSlot("4.1 HOD / Line Manager", hodName, hodSig, "HOD Signature")}
-                    {renderSlot("4.2 HR Review", hrName, hrSig, "HR Signature")}
-                    {renderSlot("4.3 Head of Finance", finName, finSig, "Finance Signature")}
-                    {ceoSig && renderSlot("4.4 CEO / MD", ceoName, ceoSig, "CEO Signature")}
-                  </>
-                );
-              })()}
-            </Section>
-          )}
-
-
-          {/* 5. APPROVAL CHAIN (preview) */}
+          {/* 5. APPROVAL CHAIN (preview) - Hidden on Print and PDF */}
           {(isReadOnly || requestData?.status === "pending" || requestData?.status === "approved" || requestData?.status === "rejected") && (
-            <Section title="5. APPROVAL CHAIN (preview)">
+            <Section title="5. APPROVAL CHAIN (preview)" className="no-print">
               <div className="px-3 lg:px-4 py-3 lg:py-4">
                 <ApprovalChainPreview
                   requestType="expenditure"
@@ -623,30 +952,36 @@ export default function ExpenditureRequestForm({ requestData, isReadOnly = false
         </div>
 
         {/* ===== ACTIONS ===== */}
-        {!isReadOnly && (
-          <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center px-3 lg:px-6 py-3 lg:py-4 bg-gray-50 dark:bg-[#1a385c] gap-2 lg:gap-4">
-            <div className="flex gap-2">
-              {/* Print/Download hidden until approved */}
-            </div>
-            <div className="flex flex-col lg:flex-row gap-2 w-full lg:justify-end">
-              <Button
-                variant="outline"
-                disabled={isSubmitting}
-                onClick={() => handleSubmit(false)}
-                className="border-blue-400 dark:border-[#3b6dae]/50"
-              >
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save Draft
-              </Button>
-              <Button
-                disabled={isSubmitting}
-                onClick={() => handleSubmit(true)}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Submit Request
-              </Button>
-            </div>
+        {(!isReadOnly || (requestData?.status && requestData.status !== "draft")) && (
+          <div className={`no-print ${requestData?.status && requestData.status !== "draft" ? 'flex flex-col lg:flex-row justify-between items-stretch lg:items-center px-3 lg:px-6 py-3 lg:py-4 bg-gray-50 dark:bg-[#1a385c] gap-2 lg:gap-4' : 'sticky bottom-0 z-50 flex flex-col sm:flex-row justify-between items-center gap-3 px-4 lg:px-6 py-3 bg-white dark:bg-[#1a385c] border-t-2 border-[#3b6dae]/20 shadow-[0_-2px_12px_rgba(59,109,174,0.08)] mt-6 rounded-b-lg'}`}>
+            {requestData?.status && requestData.status !== "draft" ? (
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" type="button" disabled={isPrintingForm} onClick={handlePrint} className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-[#1f426b] h-9 font-semibold text-xs flex items-center gap-1.5">
+                  {isPrintingForm ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Printer size={14} />}
+                  Print Form
+                </Button>
+                <Button variant="outline" size="sm" type="button" disabled={isExportingPdf} onClick={handleDownloadPdf} className="border-blue-400 dark:border-[#3b6dae]/50 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-[#1f426b] h-9 font-semibold text-xs flex items-center gap-1.5">
+                  {isExportingPdf ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download size={14} />}
+                  Download PDF
+                </Button>
+              </div>
+            ) : (
+              <p className="text-xs text-gray-400 dark:text-slate-400 hidden sm:block">
+                <span className="font-semibold text-[#3b6dae] dark:text-blue-400">💾 Tip:</span> Save as draft to continue later
+              </p>
+            )}
+            {!isReadOnly && (
+              <div className="flex gap-3 w-full sm:w-auto justify-end">
+                <Button variant="outline" disabled={savingAction !== null} type="button" onClick={() => handleSubmit(false)} className="flex-1 sm:flex-none min-w-[140px] border-[#3b6dae]/40 text-[#3b6dae] dark:text-blue-300 dark:border-[#3b6dae]/40 hover:bg-blue-50 dark:hover:bg-[#1f426b] h-9 font-semibold text-xs">
+                  {savingAction === "draft" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                  {savingAction === "draft" ? "Saving..." : "Save Draft"}
+                </Button>
+                <Button disabled={savingAction !== null} type="button" onClick={() => handleSubmit(true)} className="flex-1 sm:flex-none min-w-[140px] bg-[#3b6dae] hover:bg-[#2d5a9e] text-white h-9 font-semibold text-xs transition-colors">
+                  {savingAction === "submit" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                  {savingAction === "submit" ? "Submitting..." : "Submit Request"}
+                </Button>
+              </div>
+            )}
           </div>
         )}
 
@@ -665,17 +1000,17 @@ export default function ExpenditureRequestForm({ requestData, isReadOnly = false
 function Section({ title, children, className = "" }: { title: string, children: React.ReactNode, className?: string }) {
   return (
     <div className={className}>
-      <div className="lg:bg-[#3b6dae] lg:text-white font-bold px-4 py-2 text-sm">{title}</div>
+      <div className="bg-[#3b6dae] text-white font-bold px-4 py-1.5 text-xs tracking-wide">{title}</div>
       {children}
     </div>
   );
 }
 
-function Row({ label, children, colSpan = false }: { label: React.ReactNode, children: React.ReactNode, colSpan?: boolean }) {
+function Row({ label, children, colSpan = false, className = "" }: { label: React.ReactNode, children: React.ReactNode, colSpan?: boolean, className?: string }) {
   return (
-    <div className={`grid ${colSpan ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-[220px_1fr]'} gap-0`}>
+    <div className={`grid ${colSpan ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-[220px_1fr]'} gap-0 ${className}`}>
       {!colSpan && (
-        <div className="px-2 lg:px-3 py-1.5 lg:py-2 font-medium lg:bg-blue-100 text-[#3b6dae] text-[10px] lg:text-xs flex items-center">
+        <div className="px-2 lg:px-3 py-1.5 lg:py-2 font-medium bg-blue-100/70 dark:bg-[#1a385c] text-[#3b6dae] dark:text-blue-300 text-[10px] lg:text-xs flex items-center">
           {label}
         </div>
       )}

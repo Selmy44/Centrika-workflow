@@ -790,9 +790,14 @@ export const requestsRouter = router({
       if (!request) throw new TRPCError({ code: "NOT_FOUND" });
 
       const finalApprove = async () => {
+        // Clear any lingering pending approvals so no one shows as pending
+        await prisma.requestApproval.deleteMany({
+          where: { requestId: input.requestId, status: "pending" }
+        });
+
         await prisma.request.update({
           where: { id: input.requestId },
-          data: { status: "approved", updatedAt: new Date() }
+          data: { status: "approved", currentApprovalLevel: "final", updatedAt: new Date() }
         });
 
         // ── Recalculate leave balance when a leave request is approved ──

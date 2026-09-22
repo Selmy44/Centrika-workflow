@@ -755,16 +755,18 @@ export const appRouter = router({
           throw new TRPCError({ code: "CONFLICT", message: "Email already exists" });
         }
 
-        const tempPassword = Math.random().toString(36).slice(-8);
+        // Generate a secure temporary password: 10 chars, mix of upper/lower/digits
+        const tempPassword = crypto.randomBytes(6).toString("base64url").slice(0, 10);
         const hashedPassword = await bcrypt.hash(tempPassword, 10);
         const openId = `admin-create-${crypto.randomBytes(16).toString("hex")}`;
         const today = new Date().toISOString().split('T')[0];
         const dateOfEmployment = input.dateOfEmployment || today;
+        const normalizedEmail = input.email.trim().toLowerCase();
 
         const newUser = await prisma.user.create({
           data: {
             openId,
-            email: input.email,
+            email: normalizedEmail,
             name: input.name,
             password: hashedPassword,
             loginMethod: "email",
@@ -789,21 +791,39 @@ export const appRouter = router({
           data: { staffId: generatedStaffId }
         });
 
-        // Send welcome email with temporary password to the new user
+        const appUrl = getFrontendUrl(ctx.req);
+
+        // 1) Send the welcome email
         try {
-          const welcomeEmail = emailTemplates.welcomeEmail(input.name, input.email, {
+          const welcomeEmail = emailTemplates.welcomeEmail(input.name, normalizedEmail, {
             dept: "SYSTEM",
             pos: "USER",
             topic: "WELCOME",
             action: "ACCOUNT-CREATED",
             level: "NORMAL",
-            appUrl: getFrontendUrl(ctx.req),
-            recipientEmail: input.email,
-          }, tempPassword);
-          await sendEmail(input.email, welcomeEmail.subject, welcomeEmail.html);
+            appUrl,
+            recipientEmail: normalizedEmail,
+          });
+          await sendEmail(normalizedEmail, welcomeEmail.subject, welcomeEmail.html);
         } catch (emailError) {
           console.error("[CreateUser] Failed to send welcome email:", emailError);
-          // Don't fail user creation if email fails
+        }
+
+        // 2) Send separate credentials email with temporary password
+        try {
+          const credentialsEmail = emailTemplates.temporaryPasswordEmail(input.name, normalizedEmail, tempPassword, {
+            dept: "SYSTEM",
+            pos: "USER",
+            topic: "CREDENTIALS",
+            action: "TEMP-PASSWORD",
+            level: "URGENT",
+            appUrl,
+            recipientEmail: normalizedEmail,
+          });
+          await sendEmail(normalizedEmail, credentialsEmail.subject, credentialsEmail.html);
+          console.log(`[CreateUser] Temporary password email sent to ${normalizedEmail}`);
+        } catch (emailError) {
+          console.error("[CreateUser] Failed to send credentials email:", emailError);
         }
 
         return {

@@ -8,10 +8,15 @@ import { FileReviewComponent } from "@/components/FileReviewComponent";
 import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/StatusBadge";
 import LeaveRequestForm from "@/components/forms/LeaveRequestForm";
+import SickLeaveForm from "@/components/forms/SickLeaveForm";
+import PersonalLeaveForm from "@/components/forms/PersonalLeaveForm";
+import UnpaidLeaveForm from "@/components/forms/UnpaidLeaveForm";
+import AnnualLeaveForm from "@/components/forms/AnnualLeaveForm";
 import CarRequestApprovalView from "@/components/forms/CarRequestApprovalView";
 import ExpenditureRequestApprovalView from "@/components/forms/ExpenditureRequestApprovalView";
 import AssetRequestApprovalView from "@/components/forms/AssetRequestApprovalView";
 import { SignaturePad } from "@/components/SignaturePad";
+import { FormSignatureSelector } from "@/components/forms/FormSignatureSelector";
 import {
   Dialog,
   DialogContent,
@@ -22,11 +27,12 @@ import {
 } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
 import { formatDateTime } from "@/lib/dateFormatter";
-import { Loader2, FileText, Car, DollarSign, CheckCircle, XCircle, Clock, Eye, Package, Search, Paperclip } from "lucide-react";
+import { Loader2, FileText, Car, DollarSign, CheckCircle, XCircle, Clock, Eye, Package, Search, Paperclip, ShieldCheck } from "lucide-react";
 import { Link, useSearch } from "wouter";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { FilterBar, parseUrlFilters, DEFAULT_FILTER, type FilterState } from "@/components/shared/FilterBar";
 
 const base64ToFile = (base64: string, filename: string) => {
   const arr = base64.split(",");
@@ -43,9 +49,16 @@ const base64ToFile = (base64: string, filename: string) => {
 export default function Approvals() {
   const { isAuthenticated, user } = useAuth();
   const queryClient = useQueryClient();
-  const searchParams = new URLSearchParams(useSearch());
+  const searchString = useSearch();
+  const searchParams = new URLSearchParams(searchString);
   const requestIdFromUrl = searchParams.get("requestId");
   const autoOpenAttempted = useRef(false);
+
+  // FilterBar state — initialized from URL params
+  const [filters, setFilters] = useState<FilterState>(() => {
+    const fromUrl = parseUrlFilters(searchString);
+    return { ...DEFAULT_FILTER, ...fromUrl };
+  });
 
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
@@ -55,51 +68,81 @@ export default function Approvals() {
   const [comments, setComments] = useState("");
   const [signatureFile, setSignatureFile] = useState<File | null>(null);
   const [approverSignatureUrl, setApproverSignatureUrl] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState<"all" | "pending" | "approved" | "rejected">("all");
   const [isProcessingApproval, setIsProcessingApproval] = useState(false);
   const [signatureMethod, setSignatureMethod] = useState<"upload" | "draw">("draw");
 
   // Mark notifications as read when a form is opened
   const markReadByRequestId = (trpc as any).notifications.markReadByRequestId.useMutation();
+  const saveSignatureToProfile = (trpc as any).auth.saveSignature.useMutation();
 
   const { data: pendingRequests, isLoading: pendingLoading, refetch } = (trpc as any).requests.listPendingApprovals.useQuery(undefined, {
-    enabled: isAuthenticated && (user?.role !== "user" || !!user?.additionalRoles),
+    enabled: isAuthenticated,
+    refetchInterval: 4000,
+    refetchOnWindowFocus: true,
   });
 
   const { data: historyRequests, isLoading: historyLoading, refetch: refetchHistory } = (trpc as any).requests.listApprovalHistory.useQuery(undefined, {
-    enabled: isAuthenticated && (user?.role !== "user" || !!user?.additionalRoles),
+    enabled: isAuthenticated,
+    refetchInterval: 4000,
+    refetchOnWindowFocus: true,
   });
 
   const isLoading = pendingLoading || historyLoading;
 
   // Combine and deduplicate: pending from listPendingApprovals + history from listApprovalHistory
-  const allRequests = (() => {
+  const allRequests = useMemo(() => {
     const map = new Map<number, any>();
     (pendingRequests || []).forEach((r: any) => map.set(r.id, r));
     (historyRequests || []).forEach((r: any) => { if (!map.has(r.id)) map.set(r.id, r); });
     return Array.from(map.values()).sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  })();
+  }, [pendingRequests, historyRequests]);
 
-  // Filter by tab
-  const tabFilteredRequests = activeTab === "all" ? allRequests
-    : allRequests.filter((r: any) => r.status === activeTab);
-
-  // Then apply search filter
-  const filteredRequests = tabFilteredRequests.filter((request: any) =>
-    request.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    request.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    request.type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    request.userId?.toString().includes(searchTerm)
-  );
-
-  // Tab counts
-  const tabCounts = {
+  // Filter counts for the FilterBar badges
+  const filterCounts = useMemo(() => ({
     all: allRequests.length,
     pending: allRequests.filter((r: any) => r.status === "pending").length,
     approved: allRequests.filter((r: any) => r.status === "approved").length,
     rejected: allRequests.filter((r: any) => r.status === "rejected").length,
-  };
+  }), [allRequests]);
+
+  // Apply all filters: status → type → date → search
+  const filteredRequests = useMemo(() => {
+    let result = allRequests;
+
+    // Status filter
+    if (filters.status !== "all") {
+      result = result.filter((r: any) => r.status === filters.status);
+    }
+
+    // Type filter
+    if (filters.types.length > 0) {
+      result = result.filter((r: any) => filters.types.includes(r.type));
+    }
+
+    // Date filter
+    if (filters.dateRange.from) {
+      const from = filters.dateRange.from;
+      result = result.filter((r: any) => new Date(r.createdAt) >= from);
+    }
+    if (filters.dateRange.to) {
+      const to = new Date(filters.dateRange.to);
+      to.setHours(23, 59, 59, 999);
+      result = result.filter((r: any) => new Date(r.createdAt) <= to);
+    }
+
+    // Search filter
+    if (filters.search) {
+      const term = filters.search.toLowerCase();
+      result = result.filter((r: any) =>
+        r.title?.toLowerCase().includes(term) ||
+        r.description?.toLowerCase().includes(term) ||
+        r.type?.toLowerCase().includes(term) ||
+        r.userId?.toString().includes(term)
+      );
+    }
+
+    return result;
+  }, [allRequests, filters]);
 
   // Auto-open request if coming from notification link - only try once per URL
   useEffect(() => {
@@ -134,9 +177,8 @@ export default function Approvals() {
         // Refresh the list to remove the approved request
         refetch();
         refetchHistory();
-        // Invalidate dashboard stats so counts update in real-time
-        queryClient.invalidateQueries({ queryKey: ["requests", "getDashboardStats"] });
-        queryClient.invalidateQueries({ queryKey: ["requests", "getRecentRequests"] });
+        // Invalidate all request queries so everywhere updates in real-time
+        queryClient.invalidateQueries({ queryKey: ["requests"] });
       }, 800);
     },
     onError: (error: any) => {
@@ -158,9 +200,8 @@ export default function Approvals() {
         setIsProcessingApproval(false);
         refetch();
         refetchHistory();
-        // Invalidate dashboard stats so counts update in real-time
-        queryClient.invalidateQueries({ queryKey: ["requests", "getDashboardStats"] });
-        queryClient.invalidateQueries({ queryKey: ["requests", "getRecentRequests"] });
+        // Invalidate all request queries so everywhere updates in real-time
+        queryClient.invalidateQueries({ queryKey: ["requests"] });
       }, 800);
     },
     onError: (error: any) => {
@@ -227,16 +268,26 @@ export default function Approvals() {
       const signatureUpdate: any = {};
       
       if (signatureDataUrl) {
-        if (type === "leave") signatureUpdate.approverSignatureUrl = signatureDataUrl;
+        if (type === "leave") {
+          signatureUpdate.approverSignatureUrl = signatureDataUrl;
+          signatureUpdate.approverSignerName = user?.name || "Approver";
+        }
         
         if (level === "head_of_department") {
           signatureUpdate.managerSignatureUrl = signatureDataUrl;
+          signatureUpdate.managerSignerName = user?.name || "Checked by";
+          signatureUpdate.checkedByName = user?.name || "Checked by";
         } else if (level === "hr") {
           signatureUpdate.hrSignatureUrl = signatureDataUrl;
+          signatureUpdate.hrSignerName = user?.name || "HR";
         } else if (level === "head_of_finance") {
           signatureUpdate.financeSignatureUrl = signatureDataUrl;
+          signatureUpdate.financeSignerName = user?.name || "Reviewed by";
+          signatureUpdate.reviewedByName = user?.name || "Reviewed by";
         } else if (level === "ceo_md" || level === "md") {
           signatureUpdate.ceoSignatureUrl = signatureDataUrl;
+          signatureUpdate.ceoSignerName = user?.name || "Approved by (CEO / MD)";
+          signatureUpdate.approvedByName = user?.name || "Approved by (CEO / MD)";
         }
       }
 
@@ -265,6 +316,8 @@ export default function Approvals() {
         comments: data.comments,
         signatureFileId: undefined,
         escalateToCeo: data.escalateToCeo,
+        nextApproverId: data.nextApproverId,
+        isFinalApproval: data.isFinalApproval,
       });
     } catch (err) {
       console.error("[Approvals] Error in handleGenericApprove:", err);
@@ -275,25 +328,6 @@ export default function Approvals() {
 
   if (!isAuthenticated) {
     return null;
-  }
-
-  // Regular employees without any additional roles don't have approval responsibilities
-  if (user?.role === "user" && !user?.additionalRoles) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>No Approvals</CardTitle>
-              <CardDescription>You don't have any pending requests to approve</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">Only managers and administrators can approve requests.</p>
-            </CardContent>
-          </Card>
-        </div>
-      </DashboardLayout>
-    );
   }
 
   const getRequestIcon = (type: string) => {
@@ -369,47 +403,15 @@ export default function Approvals() {
             <h1 className="text-2xl sm:text-3xl font-bold text-[#3b6dae] dark:text-[#c79d2d]">Approvals</h1>
             <p className="text-muted-foreground mt-1 sm:mt-2 text-sm">Review and manage employee requests</p>
           </div>
-
-          {/* Premium animated search bar on the right */}
-          {!isLoading && allRequests.length > 0 && (
-          <div className="relative group transition-all duration-300 z-10 w-full lg:w-64 shrink-0 focus-within:w-full lg:focus-within:w-80">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-[#3b6dae] to-[#c79d2d] rounded-xl blur opacity-0 group-hover:opacity-20 group-focus-within:opacity-30 transition duration-500"></div>
-            <div className="relative flex items-center">
-              <Search className="absolute left-3.5 w-4 h-4 text-slate-400 group-focus-within:text-[#3b6dae] transition-colors z-10" />
-              <Input
-                placeholder="Search requests..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-10 pl-10 pr-4 text-xs font-semibold rounded-xl border border-slate-200/60 dark:border-slate-800/60 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md shadow-sm focus:bg-white dark:focus:bg-slate-900 transition-all duration-300 focus:ring-2 focus:ring-[#3b6dae]/20 focus:border-[#3b6dae]/40"
-              />
-            </div>
-          </div>
-          )}
         </div>
 
-        {/* Status filter tabs */}
-        <div className="overflow-x-auto border-b border-border pb-0 -mx-3 px-3 sm:mx-0 sm:px-0">
-          <div className="flex gap-2 min-w-max">
-          {(["all", "pending", "approved", "rejected"] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium rounded-t-lg transition-colors border-b-2 -mb-px whitespace-nowrap ${
-                activeTab === tab
-                  ? "border-blue-600 text-blue-600 bg-blue-50/50"
-                  : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              }`}
-            >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              <span className={`ml-2 text-xs px-1.5 py-0.5 rounded-full ${
-                activeTab === tab ? "bg-blue-100 text-blue-700" : "bg-muted text-muted-foreground"
-              }`}>
-                {tabCounts[tab]}
-              </span>
-            </button>
-          ))}
-          </div>
-        </div>
+        {/* Premium Filter Bar */}
+        <FilterBar
+          value={filters}
+          onChange={setFilters}
+          counts={filterCounts}
+          syncUrl={true}
+        />
 
         {isLoading ? (
           <Card className="bg-card border-border">
@@ -433,7 +435,13 @@ export default function Approvals() {
           <Card className="bg-card border-border">
             <CardContent className="pt-6">
               <div className="text-center py-8">
-                <p className="text-muted-foreground">No requests match your search or filter</p>
+                <p className="text-muted-foreground">No requests match your filters</p>
+                <button
+                  onClick={() => setFilters(DEFAULT_FILTER)}
+                  className="mt-2 text-sm text-[#3b6dae] hover:underline font-semibold"
+                >
+                  Clear all filters
+                </button>
               </div>
             </CardContent>
           </Card>
@@ -453,14 +461,19 @@ export default function Approvals() {
                               {request.type.charAt(0).toUpperCase() + request.type.slice(1)} Request
                             </p>
                           </div>
-                          <StatusBadge status={request.status || "pending"} size="sm" />
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <StatusBadge status={request.status || "pending"} size="sm" />
+                            {request.hasApproverDraft && request.status === "pending" && (
+                              <StatusBadge status="draft_saved" size="sm" />
+                            )}
+                          </div>
                         </div>
 
                         {request.description && (
                           <p className="text-sm text-foreground mt-2 line-clamp-2">{request.description}</p>
                         )}
 
-                        {request.currentApprovalLevel && (
+                        {request.currentApprovalLevel && request.status === "pending" && request.currentApprovalLevel !== "final" && (
                           <div className="mt-3 p-2 bg-blue-500/10 border border-blue-500/30 rounded text-xs text-blue-300">
                             <p className="font-medium">Currently at: {getApprovalLevelLabel(request.currentApprovalLevel)}</p>
                           </div>
@@ -523,92 +536,40 @@ export default function Approvals() {
               </div>
               <div>
                 <label className="text-sm font-medium">Signature (Optional)</label>
-                <div className="mt-4">
-                  <div className="flex gap-2 mb-3">
-                    <button
-                      type="button"
-                      onClick={() => { setSignatureMethod("draw"); setSignatureFile(null); setApproverSignatureUrl(""); }}
-                      className={`px-5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
-                        signatureMethod === "draw"
-                          ? "bg-[#2d3a6d] text-white border-[#2d3a6d] shadow-sm"
-                          : "bg-white dark:bg-[#1f426b] text-gray-600 dark:text-slate-300 border-gray-300 dark:border-[#3b6dae]/40 hover:border-[#2d3a6d] hover:text-[#2d3a6d]"
-                      } cursor-pointer`}
-                    >
-                      Draw
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setSignatureMethod("upload"); setSignatureFile(null); setApproverSignatureUrl(""); }}
-                      className={`px-5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
-                        signatureMethod === "upload"
-                          ? "bg-[#2d3a6d] text-white border-[#2d3a6d] shadow-sm"
-                          : "bg-white dark:bg-[#1f426b] text-gray-600 dark:text-slate-300 border-gray-300 dark:border-[#3b6dae]/40 hover:border-[#2d3a6d] hover:text-[#2d3a6d]"
-                      } cursor-pointer`}
-                    >
-                      Upload image
-                    </button>
-                  </div>
-
-                  {signatureMethod === "upload" ? (
-                    <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                      {approverSignatureUrl ? (
-                        <div className="flex items-center gap-3 bg-blue-50 dark:bg-[#1a385c] rounded-lg border border-blue-200 dark:border-[#3b6dae]/30 p-3">
-                          <Paperclip size={14} className="text-blue-600 shrink-0" />
-                          <span className="text-xs font-medium text-blue-800 dark:text-blue-200 flex-1 truncate">{signatureFile?.name || "Signature image"}</span>
-                          <button type="button" onClick={() => { setSignatureFile(null); setApproverSignatureUrl(""); }} className="text-red-500 hover:text-red-700 text-xs font-semibold">Remove</button>
-                        </div>
-                      ) : (
-                        <label className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-blue-300 dark:border-[#3b6dae]/50 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-[#1a385c]/50 transition-all duration-200 w-fit">
-                          <span className="text-xs font-bold text-blue-600 dark:text-blue-400">+ Upload signature image</span>
-                          <input type="file" className="hidden" accept="image/*" onChange={(e) => {
-                            const file = e.target.files?.[0] || null;
-                            setSignatureFile(file);
-                            if (file) {
-                              const reader = new FileReader();
-                              reader.onload = (ev) => setApproverSignatureUrl(ev.target?.result as string);
-                              reader.readAsDataURL(file);
-                            }
-                          }} />
-                        </label>
-                      )}
-                    </div>
-                  ) : (
-                    <SignaturePad 
-                      onSave={(dataUrl) => {
-                        const file = base64ToFile(dataUrl, "approver_signature.png");
-                        setSignatureFile(file);
-                        setApproverSignatureUrl(dataUrl);
-                      }}
-                      onClear={() => {
-                        setSignatureFile(null);
-                        setApproverSignatureUrl("");
-                      }}
-                    />
-                  )}
-                  
-                  {approverSignatureUrl && signatureMethod === "upload" && (
-                    <div className="mt-2 animate-in zoom-in duration-300">
-                       <img src={approverSignatureUrl} alt="sig" className="h-16 object-contain rounded-lg p-1 bg-white" />
-                    </div>
-                  )}
+                <div className="mt-2">
+                  <FormSignatureSelector
+                    value={approverSignatureUrl}
+                    initialFile={signatureFile}
+                    onChange={({ dataUrl, file, saveToProfile }) => {
+                      setApproverSignatureUrl(dataUrl);
+                      setSignatureFile(file);
+                      if (saveToProfile && dataUrl) {
+                        saveSignatureToProfile.mutate({ signatureUrl: dataUrl });
+                      }
+                    }}
+                  />
                 </div>
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => {
-                setShowApproveDialog(false);
-                setComments("");
-                setSignatureFile(null);
-              }}>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowApproveDialog(false);
+                  setComments("");
+                  setSignatureFile(null);
+                }}
+                className="w-full sm:w-auto"
+              >
                 Cancel
               </Button>
               <Button
-                className="bg-green-600 hover:bg-green-700"
+                className="w-full sm:w-auto min-w-[140px] bg-[#3b6dae] hover:bg-[#2d5a9e] text-white font-semibold text-xs transition-colors disabled:opacity-50"
                 onClick={confirmApprove}
                 disabled={approveMutation.isPending}
               >
-                {approveMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Approve Request
+                {approveMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
+                Approve & Sign
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -639,15 +600,16 @@ export default function Approvals() {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowRejectDialog(false)}>
+              <Button variant="outline" onClick={() => setShowRejectDialog(false)} className="w-full sm:w-auto">
                 Cancel
               </Button>
               <Button
-                variant="destructive"
+                variant="outline"
                 onClick={confirmReject}
                 disabled={rejectMutation.isPending || !comments.trim()}
+                className="w-full sm:w-auto min-w-[120px] border-[#3b6dae]/40 text-[#3b6dae] dark:text-blue-300 dark:border-[#3b6dae]/40 hover:bg-blue-50 dark:hover:bg-[#1f426b] font-semibold text-xs"
               >
-                {rejectMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {rejectMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
                 Reject Request
               </Button>
             </DialogFooter>
@@ -689,7 +651,7 @@ export default function Approvals() {
             )}
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowFilesDialog(false)}>
+              <Button variant="outline" onClick={() => setShowFilesDialog(false)} className="w-full sm:w-auto">
                 Close
               </Button>
             </DialogFooter>
@@ -708,21 +670,27 @@ export default function Approvals() {
               {selectedRequest ? (
                 <>
                   {/* ===== LEAVE REQUEST ===== */}
-                  {selectedRequest.type === "leave" && (
-                    <LeaveRequestForm
-                      isApprover={true}
-                      requestData={selectedRequest}
-                      onApprove={(data) => handleGenericApprove(data, "leave", getFormDataDynamic, storeFormData)}
-                      onReject={(reason) => {
+                  {selectedRequest.type === "leave" && (() => {
+                    const leaveType = selectedRequest.leaveRequest?.leaveType;
+                    const commonProps = {
+                      isApprover: true as const,
+                      requestData: selectedRequest,
+                      onApprove: (data: any) => handleGenericApprove(data, "leave", getFormDataDynamic, storeFormData),
+                      onReject: (reason: string) => {
                         setIsProcessingApproval(true);
                         rejectMutation.mutate({
                           requestId: selectedRequest.id,
                           comments: reason,
                         });
-                      }}
-                      isLoading={approveMutation.isPending || rejectMutation.isPending || isProcessingApproval}
-                    />
-                  )}
+                      },
+                      isLoading: approveMutation.isPending || rejectMutation.isPending || isProcessingApproval,
+                    };
+                    if (leaveType === "sick") return <SickLeaveForm {...commonProps} />;
+                    if (leaveType === "personal") return <PersonalLeaveForm {...commonProps} />;
+                    if (leaveType === "unpaid") return <UnpaidLeaveForm {...commonProps} />;
+                    if (leaveType === "annual") return <AnnualLeaveForm {...commonProps} />;
+                    return <LeaveRequestForm {...commonProps} />;
+                  })()}
 
                   {/* ===== CAR REQUEST ===== */}
                   {selectedRequest.type === "car" && (
