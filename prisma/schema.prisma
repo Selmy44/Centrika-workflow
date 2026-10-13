@@ -14,6 +14,8 @@ enum Role {
   head_of_department
   head_of_finance
   ceo_md
+  hr_admin_officer
+  stock_procurement_officer
 }
 
 enum RequestType {
@@ -74,6 +76,8 @@ enum NotificationType {
   request_submitted
   request_approved
   request_rejected
+  request_returned
+  user_registered
   approval_needed
   approval_completed
   escalation_notification
@@ -82,20 +86,16 @@ enum NotificationType {
   announcement_posted
   new_suggestion
   feedback_reply
+  role_updated
+  asset_assigned
+  document_reviewed
+  document_requested
 }
 
 enum MfaMethod {
   email
   sms
   totp
-}
-
-enum AssetCategory {
-  it_equipment
-  furniture
-  vehicles
-  software
-  other
 }
 
 enum AssetStatus {
@@ -126,6 +126,8 @@ model User {
   name              String?
   email             String?  @unique @db.VarChar(320)
   password          String?
+  // false while a self-registered user is still setting up their profile; existing and HR-created accounts are complete
+  onboardingCompleted Boolean @default(true) @map("onboarding_completed")
   gender            String?  @db.VarChar(10)
   loginMethod       String?  @map("login_method") @db.VarChar(64)
   role              Role     @default(user)
@@ -178,6 +180,9 @@ model User {
   suggestionReplies SuggestionReply[] @relation("UserSuggestionReplies")
   employeeDocuments EmployeeDocument[] @relation("EmployeeDocs")
   verifiedDocuments EmployeeDocument[] @relation("VerifiedDocs")
+  uploadedEmployeeDocuments EmployeeDocument[] @relation("UploadedEmployeeDocs")
+  documentRequests          DocumentRequest[]  @relation("DocumentRequestsFor")
+  documentRequestsMade      DocumentRequest[]  @relation("DocumentRequestsBy")
   assignedAssets    AssetAssignment[] @relation("AssignedAssets")
   assetsAssignedBy  AssetAssignment[] @relation("AssetsAssignedBy")
   uploadedAssetDocs AssetDocument[]  @relation("UploadedAssetDocs")
@@ -186,9 +191,13 @@ model User {
   suggestionReadStatuses SuggestionReadStatus[]
   announcementLikes      AnnouncementLike[]            @relation("UserAnnouncementLikes")
   announcementCommentLikes AnnouncementCommentLike[]   @relation("UserAnnouncementCommentLikes")
+  announcementReads      AnnouncementRead[]            @relation("UserAnnouncementReads")
+  announcementPollVotes  AnnouncementPollVote[]        @relation("UserAnnouncementPollVotes")
   suggestionLikes        SuggestionLike[]              @relation("UserSuggestionLikes")
   suggestionReplyLikes   SuggestionReplyLike[]         @relation("UserSuggestionReplyLikes")
   leaveHandovers         LeaveRequest[]                @relation("LeaveHandoverPerson")
+  fulfilledAssetRequests AssetRequest[]                @relation("FulfilledAssetRequests")
+  verifiedAssets         Asset[]                       @relation("VerifiedAssets")
 
   @@map("users")
 }
@@ -205,6 +214,7 @@ model Department {
   users         User[]         @relation("DepartmentUsers")
   announcements Announcement[]
   budgets       Budget[]
+  assets        Asset[]        @relation("DepartmentAssets")
 
   @@map("departments")
 }
@@ -218,6 +228,11 @@ model Request {
   description          String?
   currentApprovalLevel ApprovalLevel @default(head_of_department) @map("current_approval_level")
   initialApproverId    Int?          @map("initial_approver_id")
+  // Set when an approver sends the request back for changes (it returns to draft); cleared on resubmit
+  returnedAt           DateTime?     @map("returned_at")
+  returnReason         String?       @map("return_reason")
+  returnedById         Int?          @map("returned_by_id")
+  returnedByName       String?       @map("returned_by_name") @db.VarChar(255)
   createdAt            DateTime      @default(now()) @map("created_at")
   updatedAt            DateTime      @default(now()) @updatedAt @map("updated_at")
 
@@ -308,7 +323,7 @@ model CarRequest {
 model ExpenditureRequest {
   id          Int      @id @default(autoincrement())
   requestId   Int      @unique @map("request_id")
-  amount      Int
+  amount      Decimal  @db.Decimal(18, 2)
   currency    String   @default("RWF") @db.VarChar(3)
   department  String?  @db.VarChar(255)
   category    String?  @db.VarChar(255)
@@ -324,12 +339,19 @@ model AssetRequest {
   requestId     Int      @unique @map("request_id")
   itemName      String   @map("item_name") @db.VarChar(255)
   description   String?
-  estimatedCost Int      @map("estimated_cost")
+  estimatedCost Decimal  @map("estimated_cost") @db.Decimal(18, 2)
   currency      String   @default("RWF") @db.VarChar(3)
   category      String?  @db.VarChar(255)
   createdAt     DateTime @default(now()) @map("created_at")
+  // Set by Stock & Procurement once an approved request has been handed over
+  fulfilledAt     DateTime? @map("fulfilled_at")
+  fulfilledById   Int?      @map("fulfilled_by_id")
+  fulfilledAssetId Int?     @map("fulfilled_asset_id")
+  fulfillmentNote String?   @map("fulfillment_note") @db.Text
 
   request       Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  fulfilledBy   User?    @relation("FulfilledAssetRequests", fields: [fulfilledById], references: [id], onDelete: SetNull)
+  fulfilledAsset Asset?  @relation("FulfilledAssetRequests", fields: [fulfilledAssetId], references: [id], onDelete: SetNull)
 
   @@map("asset_requests")
 }
@@ -357,10 +379,11 @@ model LeaveBalance {
   id                   Int      @id @default(autoincrement())
   userId               Int      @map("user_id")
   year                 Int
-  annualLeaveEntitled  Int      @default(18) @map("annual_leave_entitled")
-  annualLeaveCarryover Int      @default(0) @map("annual_leave_carryover")
-  annualLeaveTaken     Int      @default(0) @map("annual_leave_taken")
-  annualLeaveRemaining Int      @default(18) @map("annual_leave_remaining")
+  // Annual leave accrues 1.5 days a month, so these hold half days
+  annualLeaveEntitled  Float    @default(18) @map("annual_leave_entitled")
+  annualLeaveCarryover Float    @default(0) @map("annual_leave_carryover")
+  annualLeaveTaken     Float    @default(0) @map("annual_leave_taken")
+  annualLeaveRemaining Float    @default(18) @map("annual_leave_remaining")
   sickLeave            Int      @default(10) @map("sick_leave")
   personalLeave        Int      @default(3) @map("personal_leave")
   updatedAt            DateTime @default(now()) @updatedAt @map("updated_at")
@@ -433,6 +456,21 @@ model MfaMethodSettings {
   @@map("mfa_methods")
 }
 
+// One-time codes proving ownership of a work email before an account exists (self-registration)
+model EmailVerification {
+  id        Int       @id @default(autoincrement())
+  email     String    @db.VarChar(320)
+  codeHash  String    @map("code_hash") @db.VarChar(64)
+  purpose   String    @default("registration") @db.VarChar(32)
+  expiresAt DateTime  @map("expires_at")
+  attempts  Int       @default(0)
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([email, purpose])
+  @@map("email_verifications")
+}
+
 model OtpToken {
   id          Int       @id @default(autoincrement())
   userId      Int       @map("user_id")
@@ -446,7 +484,6 @@ model OtpToken {
 
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId, usedAt])
   @@map("otp_tokens")
 }
 
@@ -578,13 +615,20 @@ model Announcement {
   content      String      @db.Text
   authorId     Int         @map("author_id")
   departmentId Int?        @map("department_id")
+  category     String      @default("general") @db.VarChar(30) // general, policy, event, celebration, operations, it, hr
+  priority     String      @default("normal") @db.VarChar(20)  // normal, important, urgent
+  isPinned     Boolean     @default(false) @map("is_pinned")
+  requiresAck  Boolean     @default(false) @map("requires_ack")
   createdAt    DateTime    @default(now()) @map("created_at")
+  editedAt     DateTime?   @map("edited_at")
 
   author       User        @relation("UserAnnouncements", fields: [authorId], references: [id], onDelete: Cascade)
   department   Department? @relation(fields: [departmentId], references: [id])
   comments     AnnouncementComment[]
   notifications Notification[]
   likes        AnnouncementLike[]
+  reads        AnnouncementRead[]
+  poll         AnnouncementPoll?
 
   @@map("announcements")
 }
@@ -675,13 +719,57 @@ model EmployeeDocument {
   status      String    @default("pending") @db.VarChar(50) // pending, verified, rejected
   verifiedBy  Int?      @map("verified_by")
   verifiedAt  DateTime? @map("verified_at")
+  // When the document itself stops being valid (ID, contract, certificate…)
+  expiresAt       DateTime? @map("expires_at")
+  rejectionReason String?   @map("rejection_reason") @db.Text
+  notes           String?   @db.Text
+  // Who put it in the system: the employee, or HR on their behalf
+  uploadedById    Int?      @map("uploaded_by_id")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at")
 
   user        User      @relation("EmployeeDocs", fields: [userId], references: [id], onDelete: Cascade)
   verifier    User?     @relation("VerifiedDocs", fields: [verifiedBy], references: [id], onDelete: SetNull)
+  uploadedBy  User?     @relation("UploadedEmployeeDocs", fields: [uploadedById], references: [id], onDelete: SetNull)
 
+  @@index([userId, category])
+  @@index([status])
   @@map("employee_documents")
+}
+
+/// Kinds of staff document HR keeps, and which ones every employee must have.
+model DocumentType {
+  id           Int      @id @default(autoincrement())
+  // What EmployeeDocument.category stores
+  key          String   @unique @db.VarChar(50)
+  name         String   @unique @db.VarChar(120)
+  description  String?  @db.VarChar(255)
+  isRequired   Boolean  @default(false) @map("is_required")
+  tracksExpiry Boolean  @default(false) @map("tracks_expiry")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("document_types")
+}
+
+/// HR asking an employee to provide a document. Closed automatically when they upload it.
+model DocumentRequest {
+  id            Int       @id @default(autoincrement())
+  userId        Int       @map("user_id")
+  typeKey       String    @map("type_key") @db.VarChar(50)
+  requestedById Int       @map("requested_by_id")
+  message       String?   @db.Text
+  dueDate       DateTime? @map("due_date")
+  status        String    @default("open") @db.VarChar(20) // open, fulfilled, cancelled
+  createdAt     DateTime  @default(now()) @map("created_at")
+  closedAt      DateTime? @map("closed_at")
+
+  user        User @relation("DocumentRequestsFor", fields: [userId], references: [id], onDelete: Cascade)
+  requestedBy User @relation("DocumentRequestsBy", fields: [requestedById], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@map("document_requests")
 }
 
 model Budget {
@@ -737,7 +825,10 @@ model Asset {
   id             Int           @id @default(autoincrement())
   assetTag       String        @unique @map("asset_tag") @db.VarChar(100)
   name           String        @db.VarChar(255)
-  category       AssetCategory @default(it_equipment)
+  // Key of an AssetCategoryDef (managed in the registry)
+  category       String        @default("other") @db.VarChar(50)
+  // The department the asset belongs to, whoever is holding it
+  departmentId   Int?          @map("department_id")
   serialNumber   String?       @map("serial_number") @db.VarChar(255)
   purchaseDate   DateTime      @map("purchase_date")
   purchaseCost   Decimal       @map("purchase_cost") @db.Decimal(18, 2)
@@ -746,6 +837,12 @@ model Asset {
   warrantyExpiry DateTime?     @map("warranty_expiry")
   status         AssetStatus   @default(available)
   location       String?       @db.VarChar(255)
+  // new, good, fair, poor, damaged
+  condition      String        @default("good") @db.VarChar(20)
+  notes          String?       @db.Text
+  // Last physical stock-take check
+  lastVerifiedAt   DateTime?   @map("last_verified_at")
+  lastVerifiedById Int?        @map("last_verified_by_id")
   createdAt      DateTime      @default(now()) @map("created_at")
   updatedAt      DateTime      @default(now()) @updatedAt @map("updated_at")
 
@@ -753,8 +850,40 @@ model Asset {
   documents   AssetDocument[]
   maintenance AssetMaintenance[]
   auditLogs   AssetAuditLog[]
+  fulfilledRequests AssetRequest[] @relation("FulfilledAssetRequests")
+  lastVerifiedBy User?         @relation("VerifiedAssets", fields: [lastVerifiedById], references: [id], onDelete: SetNull)
+  department     Department?   @relation("DepartmentAssets", fields: [departmentId], references: [id], onDelete: SetNull)
 
+  @@index([category])
+  @@index([departmentId])
   @@map("assets")
+}
+
+/// Asset categories, managed by Stock & Procurement. `key` is what assets and requests store.
+model AssetCategoryDef {
+  id              Int      @id @default(autoincrement())
+  key             String   @unique @db.VarChar(50)
+  name            String   @unique @db.VarChar(100)
+  tagPrefix       String   @unique @map("tag_prefix") @db.VarChar(10)
+  usefulLifeYears Int      @default(5) @map("useful_life_years")
+  description     String?  @db.VarChar(255)
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("asset_categories")
+}
+
+/// Company sites and rooms where assets are kept.
+model AssetLocation {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique @db.VarChar(255)
+  description String?  @db.VarChar(255)
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("asset_locations")
 }
 
 model AssetAssignment {
@@ -833,12 +962,18 @@ model AnnouncementComment {
   announcementId Int          @map("announcement_id")
   userId         Int          @map("user_id")
   content        String       @db.Text
+  parentId       Int?         @map("parent_id") // set on replies; replies are one level deep
   createdAt      DateTime     @default(now()) @map("created_at")
+  editedAt       DateTime?    @map("edited_at")
+  deletedAt      DateTime?    @map("deleted_at") // soft delete keeps the thread intact for replies
 
   announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
   user           User         @relation("UserAnnouncementComments", fields: [userId], references: [id], onDelete: Cascade)
+  parent         AnnouncementComment?  @relation("AnnouncementCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies        AnnouncementComment[] @relation("AnnouncementCommentReplies")
   likes          AnnouncementCommentLike[]
 
+  @@index([announcementId, parentId])
   @@map("announcement_comments")
 }
 
@@ -846,6 +981,7 @@ model AnnouncementLike {
   id             Int          @id @default(autoincrement())
   announcementId Int          @map("announcement_id")
   userId         Int          @map("user_id")
+  reaction       String       @default("like") @db.VarChar(20) // like, love, celebrate, applause, insightful
   createdAt      DateTime     @default(now()) @map("created_at")
 
   announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
@@ -859,6 +995,7 @@ model AnnouncementCommentLike {
   id        Int                 @id @default(autoincrement())
   commentId Int                 @map("comment_id")
   userId    Int                 @map("user_id")
+  reaction  String              @default("like") @db.VarChar(10) // like, dislike
   createdAt DateTime            @default(now()) @map("created_at")
 
   comment   AnnouncementComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
@@ -866,6 +1003,72 @@ model AnnouncementCommentLike {
 
   @@unique([commentId, userId])
   @@map("announcement_comment_likes")
+}
+
+/// A vote attached to a communication (at most one per communication). Single choice per person.
+model AnnouncementPoll {
+  id                Int       @id @default(autoincrement())
+  announcementId    Int       @unique @map("announcement_id")
+  question          String    @db.VarChar(300)
+  preset            String    @default("yes_no") @db.VarChar(20) // yes_no, agree_disagree, approve_reject, custom
+  isAnonymous       Boolean   @default(false) @map("is_anonymous")
+  allowChangeVote   Boolean   @default(true) @map("allow_change_vote")
+  resultsVisibility String    @default("always") @map("results_visibility") @db.VarChar(20) // always, after_vote, after_close
+  closesAt          DateTime? @map("closes_at")
+  closedAt          DateTime? @map("closed_at") // set when closed by hand
+  lastRemindedAt    DateTime? @map("last_reminded_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+
+  announcement      Announcement          @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  options           AnnouncementPollOption[]
+  votes             AnnouncementPollVote[]
+
+  @@map("announcement_polls")
+}
+
+model AnnouncementPollOption {
+  id        Int    @id @default(autoincrement())
+  pollId    Int    @map("poll_id")
+  label     String @db.VarChar(80)
+  tone      String @default("neutral") @db.VarChar(10) // positive, negative, neutral, custom
+  position  Int    @default(0)
+
+  poll      AnnouncementPoll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  votes     AnnouncementPollVote[]
+
+  @@index([pollId])
+  @@map("announcement_poll_options")
+}
+
+model AnnouncementPollVote {
+  id        Int      @id @default(autoincrement())
+  pollId    Int      @map("poll_id")
+  optionId  Int      @map("option_id")
+  userId    Int      @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  poll      AnnouncementPoll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  option    AnnouncementPollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  user      User                   @relation("UserAnnouncementPollVotes", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([pollId, userId])
+  @@index([optionId])
+  @@map("announcement_poll_votes")
+}
+
+model AnnouncementRead {
+  id             Int          @id @default(autoincrement())
+  announcementId Int          @map("announcement_id")
+  userId         Int          @map("user_id")
+  readAt         DateTime     @default(now()) @map("read_at")
+  acknowledgedAt DateTime?    @map("acknowledged_at")
+
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  user           User         @relation("UserAnnouncementReads", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([announcementId, userId])
+  @@map("announcement_reads")
 }
 
 model SuggestionLike {
