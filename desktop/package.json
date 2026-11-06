@@ -1,0 +1,78 @@
+{
+  "name": "centrika-oneportal-desktop",
+  "productName": "Centrika OnePortal",
+  "version": "1.0.0",
+  "description": "Centrika OnePortal for Windows and Mac: opens at login and keeps OnePortal one click away.",
+  "author": "Centrika Ltd",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "icons": "node scripts/make-icons.mjs",
+    "dist:mac": "npm run icons && electron-builder --mac",
+    "dist:win": "npm run icons && electron-builder --win",
+    "dist": "npm run icons && electron-builder --mac --win"
+  },
+  "devDependencies": {
+    "electron": "44.7.2",
+    "electron-builder": "26.15.3",
+    "sharp": "0.35.5"
+  },
+  "build": {
+    "appId": "rw.centrika.oneportal",
+    "productName": "Centrika OnePortal",
+    "copyright": "© Centrika Ltd",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "offline.html",
+      "build/icon.png",
+      "build/tray.png",
+      "build/tray@2x.png",
+      "build/trayTemplate.png",
+      "build/trayTemplate@2x.png"
+    ],
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        }
+      ],
+      "category": "public.app-category.business",
+      "icon": "build/icon.png",
+      "identity": "-",
+      "hardenedRuntime": false
+    },
+    "dmg": {
+      "title": "Centrika OnePortal",
+      "artifactName": "Centrika-OnePortal-${version}-mac.${ext}"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "runAfterFinish": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Centrika OnePortal",
+      "artifactName": "Centrika-OnePortal-Setup-${version}.${ext}"
+    }
+  }
+}

@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview --port 5173"
+    "preview": "vite preview --port 5173",
+    "otp": "pnpm --prefix backend otp"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

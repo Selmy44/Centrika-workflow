@@ -47,7 +47,7 @@ export async function sendEmail(to: string, subject: string, html: string) {
     // Add timeout to prevent hanging
     await Promise.race([
       emailTransporter.sendMail({
-        from: ENV.emailFrom || "noreply@centrika.rw",
+        from: ENV.emailFrom || "no-reply@centrika.rw",
         to,
         subject,
         html,

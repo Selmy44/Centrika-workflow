@@ -40,6 +40,17 @@ enum LeaveType {
   personal
   unpaid
   parental
+  // Special leave family (sick is a member too)
+  emergency
+  authorized_absence
+  remote
+  circumstantial
+  study
+  // Statutory work-injury leave (RSSB occupational hazards) and time off in lieu
+  work_injury
+  compensatory
+  // A few hours away during the working day (1 to 3 hours)
+  short_leave
 }
 
 enum ParentalLeaveType {
@@ -90,6 +101,18 @@ enum NotificationType {
   asset_assigned
   document_reviewed
   document_requested
+  short_leave_requested
+  short_leave_decided
+  task_assigned
+  task_due_soon
+  task_overdue
+  task_comment
+  task_mention
+  task_status_changed
+  task_reminder
+  project_member_added
+  project_due_soon
+  leave_reminder
 }
 
 enum MfaMethod {
@@ -147,6 +170,7 @@ model User {
   lastSignedIn      DateTime @default(now()) @map("last_signed_in")
   dateOfBirth       String?  @map("date_of_birth") @db.VarChar(10)
   jobDescription    String?  @map("job_description") @db.Text
+  bio               String?  @db.VarChar(500) // a short "about me" staff write themselves, shown on their profile
   contractType      String?  @map("contract_type") @db.VarChar(50)
   contractStart     String?  @map("contract_start") @db.VarChar(10)
   contractEnd       String?  @map("contract_end") @db.VarChar(10)
@@ -162,9 +186,21 @@ model User {
   uploadedFiles     RequestAttachment[] @relation("UploadedBy")
   approvals         RequestApproval[]
   leaveBalances     LeaveBalance[]
+  annualLeaveYears     AnnualLeaveYear[]
   resetTokens       PasswordResetToken[]
   notifications     Notification[] @relation("NotificationUser")
   triggeredNotifications Notification[] @relation("TriggeredByUser")
+  attendanceDays    AttendanceDay[]
+  ownedProjects     Project[]       @relation("ProjectOwner")
+  projectMemberships ProjectMember[]
+  createdTasks      Task[]          @relation("TaskCreator")
+  taskAssignments   TaskAssignee[]
+  taskComments      TaskComment[]
+  taskActivity      TaskActivity[]
+  taskReminders     TaskReminder[]
+  attendanceEvents  AttendanceEvent[]
+  shortLeaves       ShortLeave[] @relation("ShortLeaveRequester")
+  shortLeavesToDecide ShortLeave[] @relation("ShortLeaveApprover")
   mfaMethods        MfaMethodSettings[]
   otpTokens         OtpToken[]
   magicLinks        MagicLink[]
@@ -198,6 +234,8 @@ model User {
   leaveHandovers         LeaveRequest[]                @relation("LeaveHandoverPerson")
   fulfilledAssetRequests AssetRequest[]                @relation("FulfilledAssetRequests")
   verifiedAssets         Asset[]                       @relation("VerifiedAssets")
+  maternityClaims        MaternityClaim[]              @relation("MaternityClaimEmployee")
+  leaveCredits           LeaveCredit[]                 @relation("LeaveCreditEmployee")
 
   @@map("users")
 }
@@ -212,6 +250,7 @@ model Department {
 
   hod           User?          @relation("DepartmentHOD", fields: [hodId], references: [id], onDelete: SetNull)
   users         User[]         @relation("DepartmentUsers")
+  projects      Project[]
   announcements Announcement[]
   budgets       Budget[]
   assets        Asset[]        @relation("DepartmentAssets")
@@ -281,12 +320,16 @@ model LeaveRequest {
   parentalLeaveType        ParentalLeaveType? @map("parental_leave_type")
   startDate                String            @map("start_date") @db.VarChar(10)
   endDate                  String            @map("end_date") @db.VarChar(10)
+  /// Short leave: the hours away (HH:MM, Kigali time) and their length
+  startTime                String?           @map("start_time") @db.VarChar(5)
+  endTime                  String?           @map("end_time") @db.VarChar(5)
+  hoursRequested           Float?            @map("hours_requested")
   reason                   String?
   createdAt                DateTime          @default(now()) @map("created_at")
-  leaveDaysRequested       Int?              @map("leave_days_requested")
-  leaveDaysEntitled        Int?              @map("leave_days_entitled")
-  leaveDaysTaken           Int?              @map("leave_days_taken")
-  leaveDaysRemaining       Int?              @map("leave_days_remaining")
+  leaveDaysRequested       Float?             @map("leave_days_requested")
+  leaveDaysEntitled        Float?             @map("leave_days_entitled")
+  leaveDaysTaken           Float?             @map("leave_days_taken")
+  leaveDaysRemaining       Float?             @map("leave_days_remaining")
   employeeSignatureFileId  Int?              @map("employee_signature_file_id")
   managerSignatureFileId   Int?              @map("manager_signature_file_id")
   backupPersonName         String?           @map("backup_person_name") @db.VarChar(255)
@@ -294,11 +337,25 @@ model LeaveRequest {
   handoverPersonId         Int?              @map("handover_person_id")
   handoverPersonEmail      String?           @map("handover_person_email") @db.VarChar(320)
   handoverResponsibilities String?           @map("handover_responsibilities") @db.Text
+  // Which grant of the type this is: the circumstantial event, maternity/paternity and their extensions (lib/leavePolicy)
+  leaveSubtype             String?           @map("leave_subtype") @db.VarChar(50)
+  // The event the grant is for (date of birth, marriage, death, transfer) and, for maternity, the expected delivery date
+  eventDate                String?           @map("event_date") @db.VarChar(10)
+  expectedDeliveryDate     String?           @map("expected_delivery_date") @db.VarChar(10)
+  // An extension (e.g. maternity complications) links to the leave it extends
+  extendsRequestId         Int?              @map("extends_request_id")
+  // "working_days" or "calendar_days": the unit leaveDaysRequested is counted in
+  dayUnit                  String?           @map("day_unit") @db.VarChar(20)
+  // Set when HR recalls approved leave (cancelled after approval), with why
+  recalledAt               DateTime?         @map("recalled_at")
+  recallReason             String?           @map("recall_reason") @db.Text
 
   request                  Request           @relation(fields: [requestId], references: [id], onDelete: Cascade)
   employeeSignature        RequestAttachment? @relation("EmployeeSignature", fields: [employeeSignatureFileId], references: [id])
   managerSignature         RequestAttachment? @relation("ManagerSignature", fields: [managerSignatureFileId], references: [id])
   handoverPerson           User?             @relation("LeaveHandoverPerson", fields: [handoverPersonId], references: [id])
+  maternityClaim           MaternityClaim?
+  creditUses               LeaveCreditUse[]
 
   @@map("leave_requests")
 }
@@ -393,6 +450,33 @@ model LeaveBalance {
   @@map("leave_balances")
 }
 
+/// One leave year of a person's annual leave (anniversary to anniversary), as the ledger works it out.
+/// Rewritten whenever their leave changes; closed years record what carried over and what was reset.
+model AnnualLeaveYear {
+  id                  Int      @id @default(autoincrement())
+  userId              Int      @map("user_id")
+  /// 1 for the first year of service, 2 for the second...
+  yearNumber          Int      @map("year_number")
+  startsOn            String   @map("starts_on") @db.VarChar(10)
+  endsOn              String   @map("ends_on") @db.VarChar(10)
+  earned              Float    @default(0)
+  carriedFromRejected Float    @default(0) @map("carried_from_rejected")
+  carriedFromWaiting  Float    @default(0) @map("carried_from_waiting")
+  hrAdjustment        Float    @default(0) @map("hr_adjustment")
+  taken               Float    @default(0)
+  rejectedDays        Float    @default(0) @map("rejected_days")
+  carriedOut          Float    @default(0) @map("carried_out")
+  forfeited           Float    @default(0)
+  remaining           Float    @default(0)
+  closed              Boolean  @default(false)
+  updatedAt           DateTime @default(now()) @updatedAt @map("updated_at")
+
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, yearNumber])
+  @@map("annual_leave_years")
+}
+
 model PasswordResetToken {
   id        Int       @id @default(autoincrement())
   userId    Int       @map("user_id")
@@ -418,6 +502,8 @@ model Notification {
   createdAt         DateTime         @default(now()) @map("created_at")
   announcementId    Int?             @map("announcement_id")
   suggestionId      Int?             @map("suggestion_id")
+  // Where clicking the notification goes, e.g. /projects/4?task=12
+  link              String?          @db.VarChar(300)
 
   user              User             @relation("NotificationUser", fields: [userId], references: [id], onDelete: Cascade)
   request           Request?         @relation(fields: [requestId], references: [id], onDelete: Cascade)
@@ -1113,3 +1199,391 @@ model UserAuditLog {
   @@map("user_audit_logs")
 }
 
+// ===== Attendance =====
+// One row per person per working day (Kigali date). Clocking in creates it; breaks and short
+// leave are events inside it. Statuses (late, left early, overtime, absent) are computed, not stored.
+
+enum AttendanceEventKind {
+  tea_break
+  lunch_break
+  personal_break
+  short_leave
+}
+
+enum ShortLeaveStatus {
+  pending
+  approved
+  rejected
+  cancelled
+}
+
+model AttendanceDay {
+  id         Int       @id @default(autoincrement())
+  userId     Int       @map("user_id")
+  date       String    @db.VarChar(10) // YYYY-MM-DD in Africa/Kigali
+  clockIn    DateTime  @map("clock_in")
+  clockOut   DateTime? @map("clock_out")
+  // Closed by the system at the end of the day because the person never clocked out
+  autoClosed Boolean   @default(false) @map("auto_closed")
+  // How the day started: "manual" (Clock in) or "auto" (signed in when the shift started at 09:00)
+  clockInMethod  String  @default("manual") @map("clock_in_method") @db.VarChar(10)
+  // How it ended: "manual" (Clock out), "sign_out" (signed out of OnePortal) or "system" (20:00 close)
+  clockOutMethod String? @map("clock_out_method") @db.VarChar(10)
+  // HR's note, e.g. why a time was corrected
+  note           String? @db.Text
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  user   User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  events AttendanceEvent[]
+
+  @@unique([userId, date])
+  @@index([date])
+  @@map("attendance_days")
+}
+
+model AttendanceEvent {
+  id           Int                 @id @default(autoincrement())
+  dayId        Int                 @map("day_id")
+  userId       Int                 @map("user_id")
+  kind         AttendanceEventKind
+  startedAt    DateTime            @map("started_at")
+  endedAt      DateTime?           @map("ended_at")
+  shortLeaveId Int?                @map("short_leave_id")
+  createdAt    DateTime            @default(now()) @map("created_at")
+
+  day        AttendanceDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shortLeave ShortLeave?   @relation(fields: [shortLeaveId], references: [id], onDelete: SetNull)
+
+  @@index([dayId])
+  @@map("attendance_events")
+}
+
+model ShortLeave {
+  id           Int              @id @default(autoincrement())
+  userId       Int              @map("user_id")
+  date         String           @db.VarChar(10) // YYYY-MM-DD in Africa/Kigali
+  startTime    String           @map("start_time") @db.VarChar(5) // HH:MM
+  endTime      String           @map("end_time") @db.VarChar(5) // HH:MM
+  minutes      Int
+  reason       String           @db.Text
+  status       ShortLeaveStatus @default(pending)
+  approverId   Int?             @map("approver_id")
+  decidedAt    DateTime?        @map("decided_at")
+  decisionNote String?          @map("decision_note") @db.Text
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @default(now()) @updatedAt @map("updated_at")
+
+  user     User              @relation("ShortLeaveRequester", fields: [userId], references: [id], onDelete: Cascade)
+  approver User?             @relation("ShortLeaveApprover", fields: [approverId], references: [id], onDelete: SetNull)
+  events   AttendanceEvent[]
+
+  @@index([userId, date])
+  @@index([approverId, status])
+  @@map("short_leaves")
+}
+
+// ===== Projects & tasks =====
+// One task engine for personal productivity ("My Work": a private list per person) and team
+// projects (members, assignees, discussion, deadlines). Personal lists are projects of kind
+// "personal" that only their owner can see.
+
+enum ProjectKind {
+  personal
+  team
+}
+
+enum ProjectStatus {
+  active
+  on_hold
+  completed
+  archived
+}
+
+enum ProjectRole {
+  lead
+  member
+  viewer
+}
+
+enum TaskStatus {
+  todo
+  in_progress
+  review
+  blocked
+  done
+  closed
+}
+
+enum TaskPriority {
+  urgent
+  high
+  normal
+  low
+}
+
+model Project {
+  id               Int           @id @default(autoincrement())
+  kind             ProjectKind   @default(team)
+  name             String        @db.VarChar(120)
+  description      String?       @db.Text
+  color            String        @default("#3b6dae") @db.VarChar(9)
+  departmentId     Int?          @map("department_id")
+  // Head of the project: always a lead, gets every deadline alert
+  ownerId          Int           @map("owner_id")
+  status           ProjectStatus @default(active)
+  startDate        String?       @map("start_date") @db.VarChar(10)
+  dueDate          String?       @map("due_date") @db.VarChar(10)
+  dueSoonAlertedAt DateTime?     @map("due_soon_alerted_at")
+  overdueAlertedAt DateTime?     @map("overdue_alerted_at")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @default(now()) @updatedAt @map("updated_at")
+
+  owner            User          @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  department       Department?   @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  members          ProjectMember[]
+  tasks            Task[]
+
+  @@index([ownerId])
+  @@index([departmentId])
+  @@map("projects")
+}
+
+model ProjectMember {
+  id        Int         @id @default(autoincrement())
+  projectId Int         @map("project_id")
+  userId    Int         @map("user_id")
+  role      ProjectRole @default(member)
+  addedAt   DateTime    @default(now()) @map("added_at")
+
+  project   Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@index([userId])
+  @@map("project_members")
+}
+
+model Task {
+  id               Int          @id @default(autoincrement())
+  projectId        Int          @map("project_id")
+  creatorId        Int          @map("creator_id")
+  title            String       @db.VarChar(300)
+  description      String?      @db.Text
+  status           TaskStatus   @default(todo)
+  priority         TaskPriority @default(normal)
+  startAt          DateTime?    @map("start_at")
+  dueAt            DateTime?    @map("due_at")
+  completedAt      DateTime?    @map("completed_at")
+  estimateMinutes  Int?         @map("estimate_minutes")
+  tags             String[]     @default([])
+  position         Float        @default(0)
+  dueSoonAlertedAt DateTime?    @map("due_soon_alerted_at")
+  overdueAlertedAt DateTime?    @map("overdue_alerted_at")
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @default(now()) @updatedAt @map("updated_at")
+
+  project          Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  creator          User         @relation("TaskCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  assignees        TaskAssignee[]
+  checklist        TaskChecklistItem[]
+  comments         TaskComment[]
+  activity         TaskActivity[]
+  reminders        TaskReminder[]
+
+  @@index([projectId, status])
+  @@index([dueAt])
+  @@map("tasks")
+}
+
+model TaskAssignee {
+  taskId     Int      @map("task_id")
+  userId     Int      @map("user_id")
+  assignedAt DateTime @default(now()) @map("assigned_at")
+
+  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, userId])
+  @@index([userId])
+  @@map("task_assignees")
+}
+
+model TaskChecklistItem {
+  id        Int      @id @default(autoincrement())
+  taskId    Int      @map("task_id")
+  text      String   @db.VarChar(500)
+  done      Boolean  @default(false)
+  position  Float    @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@map("task_checklist_items")
+}
+
+model TaskComment {
+  id        Int       @id @default(autoincrement())
+  taskId    Int       @map("task_id")
+  userId    Int       @map("user_id")
+  body      String    @db.Text
+  createdAt DateTime  @default(now()) @map("created_at")
+  editedAt  DateTime? @map("edited_at")
+
+  task      Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@map("task_comments")
+}
+
+model TaskActivity {
+  id        Int      @id @default(autoincrement())
+  taskId    Int      @map("task_id")
+  userId    Int      @map("user_id")
+  action    String   @db.VarChar(40)
+  detail    String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@map("task_activity")
+}
+
+model TaskReminder {
+  id       Int       @id @default(autoincrement())
+  taskId   Int       @map("task_id")
+  userId   Int       @map("user_id")
+  remindAt DateTime  @map("remind_at")
+  sentAt   DateTime? @map("sent_at")
+
+  task     Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([remindAt])
+  @@map("task_reminders")
+}
+
+// A locked screen, per sign-in session (each session has an id in its signed token). While a row
+// exists, that session can only unlock, sign out or show the attendance badge.
+model SessionLock {
+  sid      String   @id @db.VarChar(64)
+  userId   Int      @map("user_id")
+  lockedAt DateTime @default(now()) @map("locked_at")
+
+  @@index([userId])
+  @@map("session_locks")
+}
+
+// ---- Leave policy: HR's public-holiday calendar, tunable rules, RSSB maternity claims, time-off-in-lieu credits
+
+// The public holidays every leave count skips. HR keeps it up to date (Presidential Order, election days, Eid dates).
+model PublicHoliday {
+  id          Int      @id @default(autoincrement())
+  date        String   @unique @db.VarChar(10) // YYYY-MM-DD
+  name        String   @db.VarChar(120)
+  // national, election (declared for a vote) or special (declared for one occasion)
+  kind        String   @default("national") @db.VarChar(20)
+  // false for dates still to be announced (Eid follows the moon)
+  confirmed   Boolean  @default(true)
+  createdById Int?     @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("public_holidays")
+}
+
+// HR's changes to the leave policy defaults (lib/leavePolicy), as one JSON document. One row, id 1.
+model LeavePolicySetting {
+  id          Int      @id @default(1)
+  settings    Json
+  updatedById Int?     @map("updated_by_id")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("leave_policy_settings")
+}
+
+enum MaternityClaimStatus {
+  not_filed
+  submitted
+  approved
+  paid
+  rejected
+}
+
+// The RSSB refund for the weeks of maternity leave RSSB covers. Opened when maternity leave is approved.
+model MaternityClaim {
+  id               Int                  @id @default(autoincrement())
+  leaveRequestId   Int                  @unique @map("leave_request_id")
+  userId           Int                  @map("user_id")
+  leaveStart       String               @map("leave_start") @db.VarChar(10)
+  leaveEnd         String               @map("leave_end") @db.VarChar(10)
+  // The RSSB-covered stretch of the leave, and how many days it is (plus any complications month)
+  rssbStart        String               @map("rssb_start") @db.VarChar(10)
+  rssbEnd          String               @map("rssb_end") @db.VarChar(10)
+  rssbDays         Int                  @map("rssb_days")
+  extensionDays    Int                  @default(0) @map("extension_days")
+  // File by: the RSSB deadline, and the internal target
+  dueDate          String               @map("due_date") @db.VarChar(10)
+  targetDate       String               @map("target_date") @db.VarChar(10)
+  status           MaternityClaimStatus @default(not_filed)
+  // Salary for the month before the leave ended; RSSB refunds salary / 30 × days
+  monthlySalary    Decimal?             @map("monthly_salary") @db.Decimal(18, 2)
+  expectedAmount   Decimal?             @map("expected_amount") @db.Decimal(18, 2)
+  amountPaid       Decimal?             @map("amount_paid") @db.Decimal(18, 2)
+  rssbReference    String?              @map("rssb_reference") @db.VarChar(100)
+  filedAt          String?              @map("filed_at") @db.VarChar(10)
+  approvedAt       String?              @map("approved_at") @db.VarChar(10)
+  paidAt           String?              @map("paid_at") @db.VarChar(10)
+  notes            String?              @db.Text
+  // Reminder days (after the leave ended) already sent, e.g. [0, 30]
+  remindersSent    Int[]                @default([]) @map("reminders_sent")
+  updatedById      Int?                 @map("updated_by_id")
+  createdAt        DateTime             @default(now()) @map("created_at")
+  updatedAt        DateTime             @default(now()) @updatedAt @map("updated_at")
+
+  leaveRequest     LeaveRequest         @relation(fields: [leaveRequestId], references: [id], onDelete: Cascade)
+  user             User                 @relation("MaternityClaimEmployee", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@map("maternity_claims")
+}
+
+// Days of time off in lieu HR credits for approved overtime, weekend or holiday work. They expire.
+model LeaveCredit {
+  id          Int              @id @default(autoincrement())
+  userId      Int              @map("user_id")
+  days        Float
+  reason      String           @db.Text
+  // The day the extra work was done, and the last day the credit can be used
+  earnedOn    String           @map("earned_on") @db.VarChar(10)
+  expiresOn   String           @map("expires_on") @db.VarChar(10)
+  grantedById Int              @map("granted_by_id")
+  revokedAt   DateTime?        @map("revoked_at")
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  user        User             @relation("LeaveCreditEmployee", fields: [userId], references: [id], onDelete: Cascade)
+  uses        LeaveCreditUse[]
+
+  @@index([userId])
+  @@map("leave_credits")
+}
+
+// Which credits an approved time-off-in-lieu request used (oldest expiry first).
+model LeaveCreditUse {
+  id             Int          @id @default(autoincrement())
+  creditId       Int          @map("credit_id")
+  leaveRequestId Int          @map("leave_request_id")
+  days           Float
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  credit         LeaveCredit  @relation(fields: [creditId], references: [id], onDelete: Cascade)
+  leaveRequest   LeaveRequest @relation(fields: [leaveRequestId], references: [id], onDelete: Cascade)
+
+  @@index([leaveRequestId])
+  @@map("leave_credit_uses")
+}

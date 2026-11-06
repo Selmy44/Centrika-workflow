@@ -55,12 +55,12 @@ VITE_APP_ID=local-dev-app
 FRONTEND_URL=http://localhost:5173
 APP_URL=http://localhost:5173
 
-EMAIL_HOST=smtp.gmail.com
+EMAIL_HOST=smtp.sendgrid.net
 EMAIL_PORT=587
 EMAIL_SECURE=false
-EMAIL_USER=centrikaoneportal@gmail.com
-EMAIL_PASSWORD=your-app-password
-EMAIL_FROM=Centrika <centrikaoneportal@gmail.com>
+EMAIL_USER=apikey
+EMAIL_PASSWORD=your-sendgrid-api-key
+EMAIL_FROM=Centrika OnePortal <no-reply@centrika.rw>
 ```
 
 Set up the database:

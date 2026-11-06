@@ -13,7 +13,7 @@ export const ENV = {
   emailSecure: process.env.EMAIL_SECURE ?? "false",
   emailUser: process.env.EMAIL_USER ?? "",
   emailPassword: process.env.EMAIL_PASSWORD ?? "",
-  emailFrom: process.env.EMAIL_FROM ?? "noreply@centrika.rw",
+  emailFrom: process.env.EMAIL_FROM ?? "no-reply@centrika.rw",
   appUrl: process.env.APP_URL ?? "http://localhost:5173",
   // Redis configuration
   redisHost: process.env.REDIS_HOST ?? "localhost",
